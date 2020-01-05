@@ -63,6 +63,7 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -87,6 +88,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -160,7 +162,7 @@ public class KafkaClusterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
     }
 
     @Test
@@ -182,7 +184,11 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.METRICS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
         assertThat(headful.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
-        assertThat(headful.getMetadata().getAnnotations(), is(kc.getPrometheusAnnotations()));
+
+        assertThat(headful.getMetadata().getAnnotations(), is(AbstractModel.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation(), kc.getPrometheusAnnotations())));
+
+        assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
         checkOwnerReference(kc.createOwnerReference(), headful);
     }
@@ -216,6 +222,9 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
+        assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
+
         checkOwnerReference(kc.createOwnerReference(), headful);
     }
 
@@ -247,6 +256,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.JMX_PORT)));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
 
+        assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
+
         checkOwnerReference(kc.createOwnerReference(), headless);
     }
 
@@ -272,6 +283,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
+
+        assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
     }
 
     @Test
@@ -725,6 +738,8 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
         assertThat(ext.getSpec().getLoadBalancerIP(), is(nullValue()));
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(nullValue()));
+        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
         checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
@@ -735,7 +750,153 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
             assertThat(srv.getSpec().getLoadBalancerIP(), is(nullValue()));
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(nullValue()));
+            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
             checkOwnerReference(kc.createOwnerReference(), srv);
+        }
+    }
+
+    @Test
+    public void testLoadBalancerExternalTrafficPolicyLocal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                        .withNewTemplate()
+                            .withNewExternalBootstrapService()
+                                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                            .endExternalBootstrapService()
+                            .withNewPerPodService()
+                                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                            .endPerPodService()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+        }
+    }
+
+    @Test
+    public void testLoadBalancerExternalTrafficPolicyCluster() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                        .withNewTemplate()
+                            .withNewExternalBootstrapService()
+                                .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
+                            .endExternalBootstrapService()
+                            .withNewPerPodService()
+                                .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
+                            .endPerPodService()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
+        }
+    }
+
+    @Test
+    public void testLoadBalancerSourceRange() {
+        List<String> sourceRanges = new ArrayList();
+        sourceRanges.add("10.0.0.0/8");
+        sourceRanges.add("130.211.204.1/32");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                        .withNewTemplate()
+                            .withNewExternalBootstrapService()
+                                .withLoadBalancerSourceRanges(sourceRanges)
+                            .endExternalBootstrapService()
+                            .withNewPerPodService()
+                                .withLoadBalancerSourceRanges(sourceRanges)
+                            .endPerPodService()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
+        }
+    }
+
+    @Test
+    public void testSourceRangeOnNodePort() {
+        List<String> sourceRanges = new ArrayList();
+        sourceRanges.add("10.0.0.0/8");
+        sourceRanges.add("130.211.204.1/32");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                        .withNewTemplate()
+                            .withNewExternalBootstrapService()
+                                .withLoadBalancerSourceRanges(sourceRanges)
+                            .endExternalBootstrapService()
+                            .withNewPerPodService()
+                                .withLoadBalancerSourceRanges(sourceRanges)
+                            .endPerPodService()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
         }
     }
 
@@ -744,13 +905,13 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                                .withTls(false)
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                    .endKafka()
+                .editKafka()
+                .withNewListeners()
+                .withNewKafkaListenerExternalLoadBalancer()
+                .withTls(false)
+                .endKafkaListenerExternalLoadBalancer()
+                .endListeners()
+                .endKafka()
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -789,16 +950,16 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                                .withNewOverrides()
-                                    .withBootstrap(bootstrapOverride)
-                                    .withBrokers(brokerOverride0, brokerOverride2)
-                                .endOverrides()
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                    .endKafka()
+                .editKafka()
+                .withNewListeners()
+                .withNewKafkaListenerExternalLoadBalancer()
+                .withNewOverrides()
+                .withBootstrap(bootstrapOverride)
+                .withBrokers(brokerOverride0, brokerOverride2)
+                .endOverrides()
+                .endKafkaListenerExternalLoadBalancer()
+                .endListeners()
+                .endKafka()
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1219,7 +1380,7 @@ public class KafkaClusterTest {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
-        kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses);
+        kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses, true);
         return kc.generateBrokersSecret();
     }
 

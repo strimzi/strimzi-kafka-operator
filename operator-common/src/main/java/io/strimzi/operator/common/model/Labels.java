@@ -54,6 +54,14 @@ public class Labels {
      */
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
+    /**
+     * The name of the label used for Strimzi discovery.
+     * This label should be set by Strimzi on services which are user interfaces when users are expected to connect.
+     * Applications using Strimzi can use this label to find the services and connect to Strimzi created clusters.
+     * This label should be used for example on the Kafka bootstrap service.
+     */
+    public static final String STRIMZI_DISCOVERY_LABEL = STRIMZI_DOMAIN + "discovery";
+
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
@@ -271,6 +279,14 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but with "true" for the {@code strimzi.io/discovery} key.
+     * @return A new instance with the given name added.
+     */
+    public Labels withDiscovery() {
+        return with(STRIMZI_DISCOVERY_LABEL, "true");
+    }
+
+    /**
      * The same labels as this instance, but with the given {@code name} for the {@code statefulset.kubernetes.io/pod-name} key.
      * @param name The pod name to add
      * @return A new instance with the given pod name added.
@@ -305,11 +321,11 @@ public class Labels {
     /**
      * @return An instances containing just the strimzi.io labels present in this instance.
      */
-    public Labels strimziLabels() {
+    public Labels strimziSelectorLabels() {
         Map<String, String> newLabels = new HashMap<>(3);
 
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-            if (entry.getKey().startsWith(STRIMZI_DOMAIN)) {
+            if (entry.getKey().startsWith(STRIMZI_DOMAIN) && !entry.getKey().equals(STRIMZI_DISCOVERY_LABEL)) {
                 newLabels.put(entry.getKey(), entry.getValue());
             }
         }

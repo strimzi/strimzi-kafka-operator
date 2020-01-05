@@ -302,14 +302,17 @@ public class EntityOperator extends AbstractModel {
      * It also contains the related Entity Operator private key.
      *
      * @param clusterCa The cluster CA.
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa) {
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }
         Secret secret = clusterCa.entityOperatorSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), name, "entity-operator", labels, createOwnerReference());
+        return ModelUtils.buildSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
+                "entity-operator", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

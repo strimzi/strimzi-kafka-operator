@@ -188,25 +188,38 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String commonName, String keyCertName, Labels labels, OwnerReference ownerReference) {
+    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
+            String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>();
         CertAndKey certAndKey = null;
-        if (secret == null || clusterCa.certRenewed()) {
-            log.debug("Generating certificates");
+        boolean shouldBeRegenerated = false;
+        List<String> reasons = new ArrayList<>(2);
+
+        if (secret == null) {
+            reasons.add("certificate doesn't exist yet");
+            shouldBeRegenerated = true;
+        } else {
+            if (clusterCa.certRenewed() || (clusterCa.isExpiring(secret, keyCertName + ".crt") && isMaintenanceTimeWindowsSatisfied)) {
+                reasons.add("certificate needs to be renewed");
+                shouldBeRegenerated = true;
+            }
+        }
+
+        if (shouldBeRegenerated) {
+            log.debug("Certificate for pod {} need to be regenerated because:", keyCertName, String.join(", ", reasons));
+
             try {
-                log.debug(keyCertName + " certificate to generate");
                 certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
                 log.warn("Error while generating certificates", e);
             }
+
             log.debug("End generating certificates");
         } else {
-
             if (secret.getData().get(keyCertName + ".p12") != null &&
                     !secret.getData().get(keyCertName + ".p12").isEmpty() &&
                     secret.getData().get(keyCertName + ".password") != null &&
                     !secret.getData().get(keyCertName + ".password").isEmpty()) {
-
                 certAndKey = new CertAndKey(
                         decodeFromSecret(secret, keyCertName + ".key"),
                         decodeFromSecret(secret, keyCertName + ".crt"),
@@ -225,12 +238,14 @@ public class ModelUtils {
                 }
             }
         }
+
         if (certAndKey != null) {
             data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
             data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
             data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
         }
+
         return createSecret(secretName, namespace, labels, ownerReference, data);
     }
 

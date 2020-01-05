@@ -96,8 +96,15 @@ public class KafkaBridgeClusterTest {
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
+    private Map<String, String> expectedServiceLabels(String name)    {
+        Map<String, String> serviceLabels = expectedLabels(name);
+        serviceLabels.put(Labels.STRIMZI_DISCOVERY_LABEL, "true");
+
+        return serviceLabels;
+    }
+
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
     }
 
     private Map<String, String> expectedLabels()    {
@@ -152,13 +159,15 @@ public class KafkaBridgeClusterTest {
         Service svc = kbc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kbc.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(2));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(emptyMap()));
+
+        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
+
         checkOwnerReference(kbc.createOwnerReference(), svc);
     }
 
@@ -892,12 +901,12 @@ public class KafkaBridgeClusterTest {
         Service svc = kb.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kb.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(1874)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(emptyMap()));
+        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(1874)));
         checkOwnerReference(kbc.createOwnerReference(), svc);
     }
 
