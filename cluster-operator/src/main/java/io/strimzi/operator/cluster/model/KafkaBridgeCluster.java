@@ -35,6 +35,8 @@ import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -219,7 +221,25 @@ public class KafkaBridgeCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+        return createDiscoverableService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+    }
+
+    /**
+     * Generates a JSON String with the discovery annotation for the bridge service
+     *
+     * @return  JSON with discovery annotation
+     */
+    /*test*/ Map<String, String> getDiscoveryAnnotation(int port) {
+        JsonObject discovery = new JsonObject();
+        discovery.put("port", port);
+        discovery.put("tls", false);
+        discovery.put("auth", "none");
+        discovery.put("protocol", "http");
+
+        JsonArray anno = new JsonArray();
+        anno.add(discovery);
+
+        return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
     protected List<ContainerPort> getContainerPortList() {

@@ -12,6 +12,8 @@
 * Add support for Istio protocol selection in service port names  
 Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
 (e.g clientstls -> tcp-clientstls)
+* Add service discovery labels and annotations
+* Add possibility to specify custom server certificates to TLS based listeners
 
 ## 0.15.0
 
