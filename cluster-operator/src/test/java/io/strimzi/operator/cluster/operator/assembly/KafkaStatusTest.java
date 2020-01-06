@@ -38,6 +38,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -305,6 +306,71 @@ public class KafkaStatusTest {
         });
     }
 
+    @Test
+    public void testInitialStatusOnNewResource() throws ParseException {
+        Kafka kafka = getKafkaCrd();
+        kafka.setStatus(null);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the Kafka Operator
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getAllValues().size(), is(2));
+            assertThat(kafkaCaptor.getAllValues().get(0).getStatus(), is(notNullValue()));
+            KafkaStatus status = kafkaCaptor.getAllValues().get(0).getStatus();
+
+            assertThat(status.getListeners(), is(nullValue()));
+
+            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().get(0).getType(), is("NotReady"));
+            assertThat(status.getConditions().get(0).getStatus(), is("True"));
+            assertThat(status.getConditions().get(0).getReason(), is("Creating"));
+            assertThat(status.getConditions().get(0).getMessage(), is("Kafka cluster is being deployed"));
+        });
+    }
+
+    @Test
+    public void testInitialStatusOnOldResource() throws ParseException {
+        Kafka kafka = getKafkaCrd();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the Kafka Operator
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getAllValues().size(), is(1));
+        });
+    }
+
     // This allows to test the status handling when reconciliation succeeds
     class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
@@ -361,6 +427,19 @@ public class KafkaStatusTest {
             reconcileState.kafkaStatus.setListeners(singletonList(ls));
 
             return Future.failedFuture(exception);
+        }
+    }
+
+    // This allows to test the initial status handling when new resource is created
+    class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+        public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        Future<Void> reconcile(ReconciliationState reconcileState)  {
+            return reconcileState.initialStatus()
+                    .map((Void) null);
         }
     }
 }
