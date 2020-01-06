@@ -5,16 +5,12 @@
 package io.strimzi.systemtest.kafka;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -30,14 +26,13 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 
 public class ExternalListenersST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(ExternalListenersST.class);
 
-    public static final String NAMESPACE = "certs-cluster-test";
+    public static final String NAMESPACE = "custom-certs-cluster-test";
     public static final String CO_NAMESPACE = "infra";
 
     @Test
@@ -274,7 +269,7 @@ public class ExternalListenersST extends MessagingBaseST {
                 getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
                 getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
@@ -286,7 +281,7 @@ public class ExternalListenersST extends MessagingBaseST {
                 .build());
         });
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
         sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
@@ -295,7 +290,7 @@ public class ExternalListenersST extends MessagingBaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testCustomCertLoadBalancertRollingUpdate() throws Exception {
+    void testCustomCertLoadBalancerRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
@@ -355,7 +350,7 @@ public class ExternalListenersST extends MessagingBaseST {
                 .build());
         });
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
         sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
@@ -424,17 +419,12 @@ public class ExternalListenersST extends MessagingBaseST {
                 .build());
         });
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
         sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
         receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
     }
-
-
-
-
-
 
     @BeforeAll
     void setup() {
