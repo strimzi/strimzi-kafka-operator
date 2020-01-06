@@ -194,7 +194,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         assertKafkaConnectStatus(3, connectUrl);
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
@@ -227,7 +227,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
-                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
