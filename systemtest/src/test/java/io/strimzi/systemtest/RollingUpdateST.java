@@ -218,7 +218,6 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertEquals(3, initialReplicas);
 
-        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, initialReplicas).done();
 
         sendMessagesExternal(NAMESPACE, topicName, messageCount);
@@ -268,19 +267,18 @@ class RollingUpdateST extends MessagingBaseST {
 
     /**
      * This test cover case, when KafkaRoller will not roll Kafka pods, because created topic doesn't meet requirements for roll remaining pods
-     * 1. Deploy kafka cluster with 3 pods
+     * 1. Deploy kafka cluster with 4 pods
      * 2. Create topic with 4 replicas
-     * 3. Scale kafka cluster to 7 replicas and wait, until all pods are ready
-     * 4. Scale down kafka cluster to 3 replicas
-     * 5. Trigger rolling update for Kafka cluster
-     * 6. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
+     * 3. Scale down kafka cluster to 3 replicas
+     * 4. Trigger rolling update for Kafka cluster
+     * 5. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
      */
     @Test
-    void testKafkaWontRollUp() throws Exception {
+    void testKafkaWontRollUpBecauseTopic() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
             .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
@@ -289,26 +287,14 @@ class RollingUpdateST extends MessagingBaseST {
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertEquals(3, initialReplicas);
+        assertEquals(4, initialReplicas);
 
-        // scale up
-        final int scaleTo = initialReplicas + 4;
-        final int newPodId = initialReplicas;
-        final String newPodName = KafkaResources.kafkaPodName(CLUSTER_NAME,  newPodId);
-        LOGGER.info("Scaling up to {}", scaleTo);
-        // Create snapshot of current cluster
-        String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        // No need to roll kafka cluster during scale up (no external listeners in Kafka)
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaleTo);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
-        LOGGER.info("Scaling to {} finished", scaleTo);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 4, 4, 4).done();
 
         //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient().getPodUid(newPodName);
+        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME,  3));
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
@@ -317,14 +303,22 @@ class RollingUpdateST extends MessagingBaseST {
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
         // scale down
-        LOGGER.info("Scaling down to {}", initialReplicas);
+        int scaledDownReplicas = 3;
+        LOGGER.info("Scaling down to {}", scaledDownReplicas);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
 
-        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
+
+        // set annotation to trigger Kafka rolling update
+        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
+            .editMetadata()
+                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+            .endMetadata().done();
+
         // Wait for first reconciliation
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-        // Wait for second reconciliation and check that pods are not rollable
+        // Wait for second reconciliation and check that pods are not rolled
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
