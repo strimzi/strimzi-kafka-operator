@@ -1946,6 +1946,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getCustomTlsListenerThumbprint() {
+            if (kafkaCluster.getSecretSourceTls() != null) {
+                Secret secret =  secretOperations.get(namespace, kafkaCluster.getSecretSourceTls().getSecretName());
+                if (secret == null) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceTls().getSecretName() + " not found");
+                }
+                if (!secret.getData().containsKey(kafkaCluster.getSecretSourceTls().getKey())) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceTls().getSecretName() + " does not contain a key " + kafkaCluster.getSecretSourceTls().getKey());
+                }
+                if (!secret.getData().containsKey(kafkaCluster.getSecretSourceTls().getCertificate())) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceTls().getSecretName() + " does not contain a certificate " + kafkaCluster.getSecretSourceTls().getCertificate());
+                }
+            }
             return getCertificateSignature(kafkaCluster.getSecretSourceTls()).map(thumbprint -> {
                 tlsListenerCustomCertificateThumbprint = thumbprint;
                 return this;
@@ -1953,6 +1965,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getCustomExternalListenerThumbprint() {
+            if (kafkaCluster.getSecretSourceExternal() != null) {
+                Secret secret = secretOperations.get(namespace, kafkaCluster.getSecretSourceExternal().getSecretName());
+                if (secret == null) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceExternal().getSecretName() + " not found");
+                }
+                if (!secret.getData().containsKey(kafkaCluster.getSecretSourceExternal().getKey())) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceExternal().getSecretName() + " does not contain a key " + kafkaCluster.getSecretSourceExternal().getKey());
+                }
+                if (!secret.getData().containsKey(kafkaCluster.getSecretSourceExternal().getCertificate())) {
+                    return Future.failedFuture("Secret " + kafkaCluster.getSecretSourceExternal().getSecretName() + " does not contain a certificate " + kafkaCluster.getSecretSourceExternal().getCertificate());
+                }
+            }
             return getCertificateSignature(kafkaCluster.getSecretSourceExternal()).map(thumbprint -> {
                 externalListenerCustomCertificateThumbprint = thumbprint;
                 return this;
@@ -1971,12 +1995,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 if (certSecret != null) {
                                     try {
                                         X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-                                        if (cert != null) {
-                                            byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
-                                            thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
-                                        } else {
-                                            thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain custom TLS certificate " + customCertSecret.getCertificate() + ".");
-                                        }
+                                        byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+                                        thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
                                     } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
                                         log.warn("{}: Failed to get certificate signature of {} from Secret {}.", reconciliation, customCertSecret.getCertificate(), customCertSecret.getSecretName());
                                         thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
