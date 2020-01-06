@@ -88,8 +88,9 @@ class UserST extends BaseST {
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
         SecretUtils.waitForSecretReady(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -98,7 +99,7 @@ class UserST extends BaseST {
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        KafkaUser kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
@@ -106,7 +107,6 @@ class UserST extends BaseST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
         long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
-        LOGGER.info("observation: {}", observedGeneration);
 
         KafkaUserResource.replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
