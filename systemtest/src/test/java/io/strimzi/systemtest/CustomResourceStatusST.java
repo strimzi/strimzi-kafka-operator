@@ -201,14 +201,19 @@ class CustomResourceStatusST extends MessagingBaseST {
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
 
+        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getClassName();
+
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getSpec().setClassName("non-existing-class"));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
-        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+            kc -> {
+                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME));
+                kc.getSpec().setClassName(defaultClass);
+            });
 
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(2));
     }
 
@@ -236,12 +241,18 @@ class CustomResourceStatusST extends MessagingBaseST {
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
 
+        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getSpec().getClassName();
+
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME)));
+            kc -> {
+                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME));
+                kc.getSpec().setClassName(defaultClass);
+            });
+
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(1));
     }
