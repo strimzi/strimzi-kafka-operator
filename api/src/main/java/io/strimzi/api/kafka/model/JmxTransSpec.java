@@ -68,7 +68,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
         this.queries = queries;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;

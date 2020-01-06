@@ -786,7 +786,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |Property               |Description
 |authentication  1.2+<.<|Authentication configuration for connecting to the Kafka JMX port. The type depends on the value of the `authentication.type` property within the given object, which must be one of [password].
 |xref:type-KafkaJmxAuthenticationPassword-{context}[`KafkaJmxAuthenticationPassword`]
-|jmxTrans        1.2+<.<|Configuration for JMX Trans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. More information can be found here https://github.com/jmxtrans/jmxtrans.
+|jmxTrans        1.2+<.<|Configuration for JmxTrans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. For more information, go to https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
 |xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |====
 
@@ -833,15 +833,15 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |Property           |Description
 |outputType  1.2+<.<|Template for setting the format of the data that will be pushed.
 |string
-|host        1.2+<.<|The ip of the remote host that the data will be pushed to.
+|host        1.2+<.<|The IP address of the remote host that the data is pushed to.
 |string
-|port        1.2+<.<|The port of the remote host that the data will be pushed to.
+|port        1.2+<.<|The port of the remote host that the data is pushed to.
 |integer
-|flushDelay  1.2+<.<|How many seconds the JmxTransSpec will wait before pushing a new set of data out.
+|flushDelay  1.2+<.<|How many seconds the JmxTransSpec waits before pushing a new set of data out.
 |integer
-|typeNames   1.2+<.<|Template for being able to filter out exactly what data you want when a wildcard query is sent. More information can be found here: https://github.com/jmxtrans/jmxtrans/wiki/Queries.
+|typeNames   1.2+<.<|Template for filtering data you want when a wildcard query is sent. For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries].
 |string array
-|name        1.2+<.<|Template for setting the name of the output definition which will be used to know where to send the data of the queries to.
+|name        1.2+<.<|Template for setting the name of the output definition, which is used to identify where to send the data of the queries to.
 |string
 |====
 
@@ -854,11 +854,11 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 [options="header"]
 |====
 |Property            |Description
-|targetMBean  1.2+<.<|If using a wildcard, the MBean(s) hat the data will be gathered from.
+|targetMBean  1.2+<.<|If using a wildcard, the MBean(s) that the data is gathered from.
 |string
-|attributes   1.2+<.<|attributes determine which attributes of the targeted MBean will be read.
+|attributes   1.2+<.<|Determine which attributes of the targeted MBean are read.
 |string array
-|outputs      1.2+<.<|outputs is a list of names of the Output Definitions which configures where the data will be pushed to and what data format it will be in.
+|outputs      1.2+<.<|List of names of output definitions, which specify where JMX metrics are pushed to, and in which data format.
 |string array
 |====
 
