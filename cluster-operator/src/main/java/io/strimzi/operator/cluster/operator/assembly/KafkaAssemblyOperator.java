@@ -1214,7 +1214,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkScaleUp() {
-            return withVoid(zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas()));
+            return zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas())
+                    .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(zkCluster.getReplicas() - 1), 1_000, operationTimeoutMs))
+                    .map(this);
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {
