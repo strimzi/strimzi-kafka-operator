@@ -77,7 +77,7 @@ public class KafkaUserQuotasOperator {
             JsonNode diff = null;
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
-                diff = JsonDiff.asJson(objectMapper.readTree(data), objectMapper.readTree(quotas.toString()));
+                diff = JsonDiff.asJson(objectMapper.readTree(data), objectMapper.readTree(createUserJson(quotas)));
             } catch (IOException e) {
                 e.printStackTrace();
             }
