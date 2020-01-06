@@ -1970,10 +1970,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (certSecret != null) {
                                     if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
-                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain certificate " + customCertSecret.getCertificate() + ".");
+                                        log.warn("{}: Secret {} does not contain certificate under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getCertificate());
+                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + ".");
                                     } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
-                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain key " + customCertSecret.getKey() + ".");
-                                    } else try {
+                                        log.warn("{}: Secret {} does not contain custom certificate private key under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getKey());
+                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + ".");
+                                    } else
+                                        try {
                                             X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
                                             byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
                                             thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
