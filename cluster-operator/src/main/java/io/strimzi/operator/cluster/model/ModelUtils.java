@@ -366,4 +366,31 @@ public class ModelUtils {
     private static byte[] decodeFromSecret(Secret secret, String key) {
         return Base64.getDecoder().decode(secret.getData().get(key));
     }
+
+    /**
+     * Compares two Secrets with certificates and checks whether any value for a key which exists in both Secrets
+     * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
+     * certificates change. It separates changes for existing certificates with other changes to the secret such as
+     * added or removed certificates (scale-up or scale-down).
+     *
+     * @param current   Existing secret
+     * @param desired   Desired secret
+     *
+     * @return  True if there is a key which exists in the data sections of both secrets and which changed.
+     */
+    public static boolean didAnyCertificateChangedInSecret(Secret current, Secret desired) {
+        Map<String, String> currentData = current.getData();
+        Map<String, String> desiredData = desired.getData();
+
+        for (Map.Entry<String, String> entry : currentData.entrySet()) {
+            String desiredValue = desiredData.get(entry.getKey());
+            if (entry.getValue() != null
+                    && desiredValue != null
+                    && !entry.getValue().equals(desiredValue)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
