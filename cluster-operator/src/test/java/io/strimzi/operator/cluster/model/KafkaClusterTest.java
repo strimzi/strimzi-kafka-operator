@@ -865,37 +865,6 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testExternalLoadBalancersWithoutTls() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                .editKafka()
-                .withNewListeners()
-                .withNewKafkaListenerExternalLoadBalancer()
-                .withTls(false)
-                .endKafkaListenerExternalLoadBalancer()
-                .endListeners()
-                .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        Set<String> addresses = new HashSet<>();
-        addresses.add("my-address-0");
-        addresses.add("my-address-1");
-        addresses.add("my-address-2");
-        kc.setExternalAddresses(addresses);
-
-        // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
-
-        List<EnvVar> envs = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        assertThat(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")), is(true));
-        assertThat(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")), is(true));
-        assertThat(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))), is(true));
-    }
-
-    @Test
     public void testExternalLoadBalancersWithDnsAnnotations() {
         LoadBalancerListenerBootstrapOverride bootstrapOverride = new LoadBalancerListenerBootstrapOverrideBuilder()
                 .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
