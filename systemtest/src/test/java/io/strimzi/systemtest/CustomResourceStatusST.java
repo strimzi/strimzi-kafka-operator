@@ -187,15 +187,16 @@ class CustomResourceStatusST extends MessagingBaseST {
                 .build()));
         waitForKafkaConnectStatus("NotReady");
 
-        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
-        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
-
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
         assertKafkaConnectStatus(3, connectUrl);
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
@@ -219,15 +220,16 @@ class CustomResourceStatusST extends MessagingBaseST {
                 .build()));
         waitForKafkaConnectS2IStatus("NotReady");
 
-        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
-        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
-
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
+                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
+
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
