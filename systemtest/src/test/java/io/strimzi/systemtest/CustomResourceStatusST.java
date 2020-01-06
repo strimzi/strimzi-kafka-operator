@@ -23,7 +23,16 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -32,15 +41,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Collections;
 import java.util.List;
@@ -200,6 +200,16 @@ class CustomResourceStatusST extends MessagingBaseST {
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+                kc -> kc.getSpec().setClassName("non-existing-class"));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(2));
     }
 
     @Test
@@ -233,6 +243,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(1));
     }
 
     @Test
