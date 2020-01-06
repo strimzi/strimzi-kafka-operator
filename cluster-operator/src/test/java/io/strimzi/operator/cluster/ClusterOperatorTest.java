@@ -20,6 +20,9 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import okhttp3.OkHttpClient;
@@ -67,7 +70,11 @@ public class ClusterOperatorTest {
 
     @BeforeEach
     public void createClient() {
-        vertx = Vertx.vertx();
+        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true)
+        ));
     }
 
     @AfterEach

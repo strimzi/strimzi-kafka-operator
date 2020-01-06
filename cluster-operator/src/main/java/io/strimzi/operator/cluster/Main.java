@@ -36,6 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
+
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
@@ -51,7 +55,13 @@ public class Main {
     public static void main(String[] args) {
         log.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
-        Vertx vertx = Vertx.vertx();
+
+        //Setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        Vertx vertx = Vertx.vertx(options);
         KubernetesClient client = new DefaultKubernetesClient();
 
         maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
