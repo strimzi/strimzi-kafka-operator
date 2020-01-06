@@ -57,6 +57,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaExporter;
@@ -1971,10 +1972,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 if (certSecret != null) {
                                     if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
                                         log.warn("{}: Secret {} does not contain certificate under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getCertificate());
-                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + ".");
+                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
                                     } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
                                         log.warn("{}: Secret {} does not contain custom certificate private key under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getKey());
-                                        thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + ".");
+                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
                                     } else
                                         try {
                                             X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
