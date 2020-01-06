@@ -256,9 +256,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 return maybeUpdateConnectorStatus(reconciliation, connector,
                         new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
-                return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
+                Promise<Void> promise = Promise.promise();
+                apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
                         connector.getMetadata().getName(), asJson(connector.getSpec()))
-                        .compose(i -> maybeUpdateConnectorStatus(reconciliation, connector, null));
+                        .setHandler(result -> {
+                            if (result.succeeded()) {
+                                maybeUpdateConnectorStatus(reconciliation, connector, null);
+                            } else {
+                                maybeUpdateConnectorStatus(reconciliation, connector, result.cause());
+                            }
+                            promise.complete();
+                        });
+                return promise.future();
             }
         }
     }

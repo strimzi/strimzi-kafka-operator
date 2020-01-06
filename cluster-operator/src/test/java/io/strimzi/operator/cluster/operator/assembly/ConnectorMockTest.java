@@ -641,10 +641,52 @@ public class ConnectorMockTest {
                 eq(connectorName));
     }
 
-    /*
-     * With and without openshift
-     *
-     */
+    /** Create connect, create connector, delete connector, delete connect */
+    @Test
+    public void testExceptionFromRestApi() {
+        when(api.createOrUpdatePutRequest(any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
+            return Future.failedFuture(new ConnectRestException("Bad stuff happened"));
+        });
+        String connectName = "cluster";
+        String connectorName = "connector";
 
+        // Create KafkaConnect cluster and wait till it's ready
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(connectName)
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .done();
+        waitForConnectReady(connectName);
+
+        // triggered twice (creation+status update)
+        verify(api, atLeastOnce()).list(
+                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+        verify(api, never()).createOrUpdatePutRequest(
+                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(connectorName), any());
+
+        // Create KafkaConnect cluster and wait till it's ready
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
+                .withNewMetadata()
+                .withName(connectorName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .done();
+        waitForConnectorNotReady(connectorName,
+                "ConnectRestException", "Bad stuff happened");
+
+        verify(api, atLeastOnce()).list(
+                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+        verify(api, atLeastOnce()).createOrUpdatePutRequest(
+                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(connectorName), any());
+        assertEquals(runningConnectors.keySet(), emptySet());
+    }
 
 }
