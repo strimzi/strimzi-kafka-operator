@@ -141,6 +141,7 @@ class KafkaClientProperties {
 
         try {
             Secret clusterCaCertSecret = kubeClient(namespace).getSecret(caSecretName);
+            LOGGER.info("XXXXXXXXXXXXXXXX "+ caSecretName);
 
             File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
             String tsPassword = "foo";

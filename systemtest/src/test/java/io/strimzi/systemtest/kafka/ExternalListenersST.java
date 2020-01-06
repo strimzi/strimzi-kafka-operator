@@ -4,11 +4,19 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,23 +25,29 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Collections.singletonMap;
 
 public class ExternalListenersST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(ExternalListenersST.class);
 
     public static final String NAMESPACE = "certs-cluster-test";
+    public static final String CO_NAMESPACE = "infra";
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testCustomSoloCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSoloSecrets();
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -60,7 +74,10 @@ public class ExternalListenersST extends MessagingBaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testCustomChainCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSecretsFromChain();
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -88,7 +105,10 @@ public class ExternalListenersST extends MessagingBaseST {
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomSoloCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSoloSecrets();
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -116,7 +136,10 @@ public class ExternalListenersST extends MessagingBaseST {
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomChainCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSecretsFromChain();
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -143,7 +166,10 @@ public class ExternalListenersST extends MessagingBaseST {
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSoloSecrets();
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -170,7 +196,11 @@ public class ExternalListenersST extends MessagingBaseST {
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        createCustomSecretsFromChain();
+        LOGGER.info(kubeClient().getClient().getConfiguration());
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -193,39 +223,229 @@ public class ExternalListenersST extends MessagingBaseST {
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-6", "custom-certificate");
     }
 
-    private void createCustomSoloSecrets() {
-        Map<String, String> secretLabels = new HashMap<>();
-        secretLabels.put("strimzi.io/cluster", CLUSTER_NAME);
-        secretLabels.put("strimzi.io/kind", "Kafka");
 
-        Map<String, String> certsPaths = new HashMap<>();
-        certsPaths.put("ca.crt", getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile());
-        certsPaths.put("ca.key", getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
+    @Test
+    @Tag(NODEPORT_SUPPORTED)
+    void testCustomCertNodePortRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createSecretFromFile(certsPaths, "custom-certificate", NAMESPACE, secretLabels);
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec().done();
+
+        String userName = "alice";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+            .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("custom-certificate")
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+            .endConfiguration()
+            .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 20, "", "consumer-group-certs-66", "custom-certificate");
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 30, "", "consumer-group-certs-68", "custom-certificate");
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withTls(true)
+                .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
     }
 
-    private void createCustomSecretsFromChain() {
-        Map<String, String> secretLabels = new HashMap<>();
-        secretLabels.put("strimzi.io/cluster", CLUSTER_NAME);
-        secretLabels.put("strimzi.io/kind", "Kafka");
+    @Test
+    @Tag(LOADBALANCER_SUPPORTED)
+    void testCustomCertLoadBalancertRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        Map<String, String> certsPaths2 = new HashMap<>();
-        certsPaths2.put("ca.crt", getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile());
-        certsPaths2.put("ca.key", getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
 
-        SecretUtils.createSecretFromFile(certsPaths2, "custom-certificate", NAMESPACE, secretLabels);
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec().done();
+
+        String userName = "alice";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("custom-certificate")
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 20, "", "consumer-group-certs-66", "custom-certificate");
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 30, "", "consumer-group-certs-68", "custom-certificate");
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withTls(true)
+                .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
     }
+
+    @Test
+    @OpenShiftOnly
+    void testCustomCertRouteRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec().done();
+
+        String userName = "alice";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("custom-certificate")
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 20, "", "consumer-group-certs-66", "custom-certificate");
+
+        SecretUtils.createCustomSecret(CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
+        receiveMessagesExternalTls(NAMESPACE, topicName, 30, "", "consumer-group-certs-68", "custom-certificate");
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withTls(true)
+                .build());
+        });
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
+        receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
+    }
+
+
+
+
+
 
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
 
-        prepareEnvForOperator(NAMESPACE);
+        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, NAMESPACE));
 
-        applyRoleBindings(NAMESPACE);
+        applyRoleBindings(CO_NAMESPACE, NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
+        cluster.setNamespace(NAMESPACE);
     }
 
     @Override

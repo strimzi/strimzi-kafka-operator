@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -55,6 +56,7 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
+        AtomicInteger count = new AtomicInteger();
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
             if (pods.isEmpty()) {
@@ -68,6 +70,7 @@ public class PodUtils {
             for (Pod pod : pods) {
                 if (!Readiness.isPodReady(pod)) {
                     LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
+                    count.set(0);
                     return false;
                 } else {
                     if (containers) {
@@ -82,7 +85,8 @@ public class PodUtils {
             }
             LOGGER.debug("Pods {} are ready",
                 pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
-            return true;
+            int c = count.getAndIncrement();
+            return c > 10;
         });
     }
 
