@@ -89,7 +89,6 @@ import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.dynamicconfig.KafkaBrokerConfigurationBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
@@ -184,7 +183,7 @@ public class KafkaCluster extends AbstractModel {
     // Env vars for JMX service
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
-    // NAme of the broker configuration file in the config map
+    // Name of the broker configuration file in the config map
     private static final String BROKER_CONFIGURATION_FILENAME = "server.config";
     private static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
     private static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
@@ -2212,7 +2211,7 @@ public class KafkaCluster extends AbstractModel {
             return null;
         }
 
-        String url = String.valueOf(podNumber)
+        String url = podNumber
                 + "://"
                 + (advertisedHost != null ? advertisedHost : address);
 
@@ -2230,7 +2229,7 @@ public class KafkaCluster extends AbstractModel {
     public String getExternalAdvertisedPort(int podNumber, String port) {
         Integer advertisedPort = getExternalServiceAdvertisedPortOverride(podNumber);
 
-        String url = String.valueOf(podNumber)
+        String url = podNumber
                 + "://"
                 + (advertisedPort != null ? advertisedPort : port);
 
