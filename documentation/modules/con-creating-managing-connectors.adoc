@@ -19,11 +19,12 @@ Once you have created a container image for your connector plug-in, you need to 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
 * Kafka Connect REST API
 
-NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks and pausing and resuming connectors. You need to use the Kafka Connect REST API to perform these tasks.
+NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks or pausing and resuming connectors. You need to use the Kafka Connect REST API to perform those tasks.
 
 .`KafkaConnector` resources
 
-`KafkaConnectors` allow you to create and manage source and sink connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required. Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create the connector instance. 
+`KafkaConnectors` allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required.
+Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create the connector instance. 
 
 You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates (for example, using `kubectl apply`). You remove a connector by deleting its corresponding `KafkaConnector`.
 
