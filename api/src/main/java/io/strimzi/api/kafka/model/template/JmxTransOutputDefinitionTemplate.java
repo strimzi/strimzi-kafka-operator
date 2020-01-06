@@ -52,7 +52,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.outputType = outputType;
     }
 
-    @Description("The ip of the remote host that the data will be pushed to.")
+    @Description("The IP address of the remote host that the data is pushed to.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;
@@ -62,7 +62,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.host = host;
     }
 
-    @Description("The port of the remote host that the data will be pushed to.")
+    @Description("The port of the remote host that the data is pushed to.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getPort() {
         return port;
@@ -72,7 +72,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.port = port;
     }
 
-    @Description("How many seconds the JmxTransSpec will wait before pushing a new set of data out.")
+    @Description("How many seconds the JmxTransSpec waits before pushing a new set of data out.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getFlushDelay() {
         return flushDelay;
@@ -82,8 +82,8 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.flushDelay = flushDelay;
     }
 
-    @Description("Template for being able to filter out exactly what data you want when a wildcard query is sent. " +
-            "More information can be found here: https://github.com/jmxtrans/jmxtrans/wiki/Queries")
+    @Description("Template for filtering data you want when a wildcard query is sent. " +
+            "For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries]")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public List<String> getTypeNames() {
         return typeNames;
@@ -93,7 +93,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.typeNames = typeNames;
     }
 
-    @Description("Template for setting the name of the output definition which will be used to know where to send " +
+    @Description("Template for setting the name of the output definition, which is used to identify where to send " +
             "the data of the queries to.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)

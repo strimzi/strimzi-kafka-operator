@@ -36,7 +36,7 @@ public class JmxTransQueryTemplate implements Serializable, UnknownPropertyPrese
 
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("If using a wildcard, the MBean(s) hat the data will be gathered from.")
+    @Description("If using a wildcard, the MBean(s) that the data is gathered from.")
     public String getTargetMBean() {
         return targetMBean;
     }
@@ -47,7 +47,7 @@ public class JmxTransQueryTemplate implements Serializable, UnknownPropertyPrese
 
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("attributes determine which attributes of the targeted MBean will be read")
+    @Description("Determine which attributes of the targeted MBean are read")
     public List<String> getAttributes() {
         return attributes;
     }
@@ -58,8 +58,7 @@ public class JmxTransQueryTemplate implements Serializable, UnknownPropertyPrese
 
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("outputs is a list of names of the Output Definitions which configures where the data will be pushed " +
-            "to and what data format it will be in.")
+    @Description("List of names of output definitions, which specify where JMX metrics are pushed to, and in which data format")
     public List<String> getOutputs() {
         return outputs;
     }

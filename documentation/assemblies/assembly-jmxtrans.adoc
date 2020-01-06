@@ -14,9 +14,6 @@ JmxTrans can communicate with a secure JMX port.
 
 include::../modules/con-jmxtrans.adoc[leveloffset=+1]
 
-.Prerequisites
-* A running kubernetes cluster
-
 include::../modules/proc-jmxtrans-deployment.adoc[leveloffset=+1]
 
 == Additional resources
