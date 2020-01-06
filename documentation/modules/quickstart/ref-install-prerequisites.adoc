@@ -5,4 +5,5 @@
 [id='ref-install-prerequisites-{context}']
 = Prerequisites
 
-* {Minikube}
+* {Minikube} must be installed.
+* You need to be able to access {ProductName} {ReleaseDownload}. 

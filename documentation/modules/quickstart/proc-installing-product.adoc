@@ -8,7 +8,7 @@
 Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
 
 In this task you create namespaces in the cluster for your deployment.
-It is good practice to use namespaces to separate functions.
+Use namespaces to separate functions.
 
 .Prerequisites
 
@@ -16,7 +16,7 @@ It is good practice to use namespaces to separate functions.
 
 .Procedure
 
-. Log in to the Kubernetes cluster with cluster admin privileges.
+. Log in to the Kubernetes cluster using an account that has cluster admin privileges.
 
 . Create a new `kafka` namespace for the {ProductName} Kafka Cluster Operator.
 +

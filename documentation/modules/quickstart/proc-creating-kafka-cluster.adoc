@@ -5,14 +5,14 @@
 [id='proc-kafka-cluster-{context}']
 = Creating a cluster
 
-Create a Kafka cluster, then a topic within the cluster.
+With {ProductName} installed, you create a Kafka cluster, then a topic within the cluster.
 
-When you create a cluster, the Cluster Operator you deployed watches for new Kafka resources.
+When you create a cluster, the Cluster Operator you deployed when installing {ProductName} watches for new Kafka resources.
 
 .Prerequisites
 
-* For the Kafka cluster, a Cluster Operator is deployed
-* For the topic, a running Kafka cluster
+* For the Kafka cluster, ensure a Cluster Operator is deployed.
+* For the topic, you must have a running Kafka cluster.
 
 .Procedure
 

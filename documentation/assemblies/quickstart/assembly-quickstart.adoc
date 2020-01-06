@@ -1,0 +1,32 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-evaluation-{context}']
+
+= Evaluate {ProductName}
+
+The procedures in this chapter provide a quick way to evaluate the functionality of {ProductName}.
+
+Follow the steps in the order provided to install {ProductName}, and start sending and receiving messages from a topic:
+
+* Ensure you have the required prerequisites
+* Install and start Minikube
+* Install {ProductName}
+* Create a Kafka cluster
+* Access the Kafka cluster to send and receive messages
+
+//prerequisites
+include::modules/ref-install-prerequisites.adoc[leveloffset=+1]
+
+//download the files
+include::modules/proc-downloading-product.adoc[leveloffset=+1]
+
+//install the product
+include::modules/proc-installing-product.adoc[leveloffset=+1]
+
+//create kafka cluster
+include::modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
+
+//send and receive messages from a topic
+include::modules/proc-sending-messages.adoc[leveloffset=+1]

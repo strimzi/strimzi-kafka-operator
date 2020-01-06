@@ -5,7 +5,7 @@ include::shared/attributes.adoc[]
 = {ProductName} Quick Start
 
 // common intro
-include::assemblies/assembly-overview.adoc[leveloffset=+1]
+include::assemblies/assembly-quickstart-overview.adoc[leveloffset=+1]
 
 //evaluating
 include::assemblies/assembly-quickstart.adoc[leveloffset=+1]
