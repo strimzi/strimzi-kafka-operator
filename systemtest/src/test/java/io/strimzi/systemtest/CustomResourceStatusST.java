@@ -202,11 +202,11 @@ class CustomResourceStatusST extends MessagingBaseST {
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-                kc -> kc.getSpec().setClassName("non-existing-class"));
+            kc -> kc.getSpec().setClassName("non-existing-class"));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-                kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
 
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(2));
