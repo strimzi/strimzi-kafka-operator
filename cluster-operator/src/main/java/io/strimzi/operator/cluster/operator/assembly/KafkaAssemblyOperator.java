@@ -474,7 +474,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
                                 .withType("NotReady")
                                 .withStatus("True")
-                                .withReason("Deploying")
+                                .withReason("Creating")
                                 .withMessage("Kafka cluster is being deployed")
                                 .build();
 

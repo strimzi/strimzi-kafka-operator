@@ -339,7 +339,7 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("NotReady"));
             assertThat(status.getConditions().get(0).getStatus(), is("True"));
-            assertThat(status.getConditions().get(0).getReason(), is("Deploying"));
+            assertThat(status.getConditions().get(0).getReason(), is("Creating"));
             assertThat(status.getConditions().get(0).getMessage(), is("Kafka cluster is being deployed"));
         });
     }
