@@ -214,7 +214,7 @@ class CustomResourceStatusST extends MessagingBaseST {
             });
 
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(2));
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(3L));
     }
 
     @Test
@@ -254,7 +254,7 @@ class CustomResourceStatusST extends MessagingBaseST {
             });
 
         waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(1));
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(3L));
     }
 
     @Test
