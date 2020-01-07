@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.kafkaclients.internalclients;
 
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
-import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,7 +12,6 @@ import java.util.concurrent.Future;
 
 public class TracingKafkaClient implements IKafkaClient {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
-    private Vertx vertx = Vertx.vertx();
 
     private String serviceName;
 
@@ -23,7 +21,6 @@ public class TracingKafkaClient implements IKafkaClient {
     public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
         return null;
     }
-
 
     @Override
     public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) {

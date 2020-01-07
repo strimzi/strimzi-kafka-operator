@@ -80,11 +80,7 @@ class KafkaClientProperties {
 
         producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
 
-        if (clientType == EClientType.TRACING) {
-            // TODO: create Tracing client properties
-        } else if (clientType == EClientType.OAUTH) {
-            // TODO: create Oauth client properties
-        }
+        // TODO: create Tracing client properties if (clientType == EClientType.TRACING) { setTracingProperties().... serviceName} same with Oauth
 
         return producerProperties;
     }
