@@ -243,14 +243,14 @@ public abstract class AbstractModel {
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
-        return labels.withName(name).strimziLabels();
+        return labels.withName(name).strimziSelectorLabels();
     }
 
     /**
      * @return The selector labels as Map.
      */
     public Map<String, String> getSelectorLabelsAsMap() {
-        return labels.withName(name).strimziLabels().toMap();
+        return getSelectorLabels().toMap();
     }
 
     protected Map<String, String> getLabelsWithName() {
@@ -736,7 +736,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels), getSelectorLabelsAsMap(), annotations);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
@@ -744,7 +744,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithNameAndDiscovery(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithNameAndDiscovery(serviceName), templateServiceLabels, labels), getSelectorLabelsAsMap(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
