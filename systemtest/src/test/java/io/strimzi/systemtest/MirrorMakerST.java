@@ -77,13 +77,13 @@ public class MirrorMakerST extends BaseST {
 
         // Check brokers availability
         externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount),
-            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+            externalKafkaClient.sendMessages("topic-for-test-broker-1", NAMESPACE, kafkaClusterSourceName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-for-test-broker-1", NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
         );
 
         externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterTargetName, messagesCount),
-            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+            externalKafkaClient.sendMessages("topic-for-test-broker-2", NAMESPACE, kafkaClusterTargetName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-for-test-broker-2", NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
         );
 
         // Deploy Mirror Maker
@@ -116,8 +116,6 @@ public class MirrorMakerST extends BaseST {
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-
-        externalKafkaClient.setPodName(kafkaClientsPodName);
 
         int sent = externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount);
 
@@ -204,10 +202,9 @@ public class MirrorMakerST extends BaseST {
         );
 
         externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
-            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
-
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
@@ -226,8 +223,6 @@ public class MirrorMakerST extends BaseST {
                 .done();
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-
-        externalKafkaClient.setPodName(kafkaClientsPodName);
 
         int sent = externalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
@@ -314,8 +309,8 @@ public class MirrorMakerST extends BaseST {
         );
 
         externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
-            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
 
         // Deploy Mirror Maker with TLS and ScramSha512
