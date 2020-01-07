@@ -251,7 +251,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.zookeeperServiceAccount())
                 .compose(state -> state.zkPvcs())
-                .compose(state -> state.zkScaleUpStep())
+                .compose(state -> state.zkScaleUpInSmallSteps())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -355,6 +355,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap zkMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
         private boolean zkAncillaryCmChange;
+        private boolean zkScalingUp = false;
 
         private KafkaCluster kafkaCluster = null;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
@@ -1244,20 +1245,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * There is one special case of scaling from standalone (single one) Zookeeper pod.
          * In this case quorum cannot be preserved.
          */
-        Future<ReconciliationState> zkScaleUpStep() {
-            Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            return withVoid(futsts.map(sts -> sts == null ? Integer.valueOf(0) : sts.getSpec().getReplicas())
+        Future<ReconciliationState> zkScaleUpInSmallSteps() {
+            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                    .map(sts -> sts == null ? Integer.valueOf(0) : sts.getSpec().getReplicas())
                     .compose(currentReplicas -> {
                         if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
                             zkCluster.setReplicas(currentReplicas + 1);
+                            zkScalingUp = true;
                         }
-                        Future<Integer> result = Future.succeededFuture(zkCluster.getReplicas() + 1);
-                        return result;
-                    }));
+
+                        return Future.succeededFuture(this);
+                    });
         }
 
         Future<ReconciliationState> zkScaleUp() {
-            return withVoid(zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas()));
+            if (zkScalingUp) {
+                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas())
+                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(zkCluster.getReplicas() - 1), 1_000, operationTimeoutMs))
+                        .map(this);
+            } else {
+                return Future.succeededFuture(this);
+            }
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {

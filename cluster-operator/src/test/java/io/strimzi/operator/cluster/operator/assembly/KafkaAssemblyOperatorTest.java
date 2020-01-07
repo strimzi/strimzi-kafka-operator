@@ -1047,7 +1047,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
 
-        when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.getAsync(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
+                Future.succeededFuture(originalZookeeperCluster.generateStatefulSet(openShift, null, null))
+        );
         when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
@@ -1112,9 +1114,12 @@ public class KafkaAssemblyOperatorTest {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
 
+            // Check that ZK scale-up happens when it should
+            verify(mockZsOps, times(updatedAssembly.getSpec().getZookeeper().getReplicas() > originalAssembly.getSpec().getZookeeper().getReplicas() ? 1 : 0)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
+
             // No metrics config  => no CMs created
-            verify(mockZsOps, times(1)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
             verify(mockCmOps, never()).createOrUpdate(any());
+
             async.flag();
         });
     }
