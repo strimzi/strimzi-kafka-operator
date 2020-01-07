@@ -21,11 +21,11 @@
 :oauth: OAuth 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
-:KafkaVersionLower: 2.2.1
-:KafkaVersionHigher: 2.3.1
+:KafkaVersionLower: 2.3.1
+:KafkaVersionHigher: 2.4.0
 //log message format version
-:LogMsgVersLower: 2.2
-:LogMsgVersHigher: 2.3
+:LogMsgVersLower: 2.3
+:LogMsgVersHigher: 2.4
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
