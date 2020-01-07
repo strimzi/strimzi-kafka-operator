@@ -814,9 +814,9 @@ Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 [options="header"]
 |====
 |Property                  |Description
-|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on. For more information, see `proc-jmxtrans-deployment.adoc`.
+|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on. For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].
 |xref:type-JmxTransOutputDefinitionTemplate-{context}[`JmxTransOutputDefinitionTemplate`] array
-|queries            1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information, see `proc-jmxtrans-deployment.adoc`.
+|queries            1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].
 |xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
 |resources          1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
