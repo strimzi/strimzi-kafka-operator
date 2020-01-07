@@ -519,10 +519,10 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 secrets
         );
-        // Getting JMX Secret
-        when(mockSecretOps.getAsync(anyString(), eq(kafkaCluster.jmxSecretName(clusterCmName)))).thenReturn(
+        when(mockSecretOps.getAsync(anyString(), any())).thenReturn(
                 Future.succeededFuture(null)
         );
+
         Set<String> createdOrUpdatedSecrets = new HashSet<>();
         when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             Secret desired = invocation.getArgument(2);
@@ -953,6 +953,18 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, EntityOperator.secretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
+                Future.succeededFuture()
         );
 
         // Mock NetworkPolicy get

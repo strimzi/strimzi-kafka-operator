@@ -386,10 +386,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
         // Certificate change indicators
-        private boolean isZookeeperCertsChanged = false;
-        private boolean isKafkaCertsChanged = false;
-        private boolean isKafkaExporterCertsChanged = false;
-        private boolean isEntityOperatorCertsChanged = false;
+        private boolean existingZookeeperCertsChanged = false;
+        private boolean existingKafkaCertsChanged = false;
+        private boolean existingKafkaExporterCertsChanged = false;
+        private boolean existingEntityOperatorCertsChanged = false;
 
         // Custom Listener certificates
         private String tlsListenerCustomCertificateThumbprint;
@@ -1199,11 +1199,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return getReconciliationStateOfConfigMap(zkCluster, zkMetricsAndLogsConfigMap, this::withZkAncillaryCmChanged);
         }
 
+        /**
+         * Reconciles Secret with certificates and evaluates whether any existing certificates inside changed.
+         *
+         * @param secretName    Name of the secret
+         * @param secret        The new secret
+         * @return              Future with True if the existing certificates changed and False if they didn't
+         */
+        Future<Boolean> updateCertificateSecretWithDiff(String secretName, Secret secret)   {
+            return secretOperations.getAsync(namespace, secretName)
+                    .compose(oldSecret -> secretOperations.reconcile(namespace, secretName, secret)
+                            .map(res -> {
+                                if (res instanceof ReconcileResult.Patched) {
+                                    // The secret is patched and some changes to the existing certificates actually occured
+                                    return ModelUtils.doExistingCertificatesDiffer(oldSecret, res.resource());
+                                }
+
+                                return false;
+                            })
+                    );
+        }
+
         Future<ReconciliationState> zkNodesSecret(Supplier<Date> dateSupplier) {
-            return secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name),
-                    zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
-                    .map(res -> {
-                        isZookeeperCertsChanged = res instanceof ReconcileResult.Patched;
+            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingZookeeperCertsChanged = changed;
                         return this;
                     });
         }
@@ -1224,7 +1244,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, isZookeeperCertsChanged, this.clusterCa)
+                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, existingZookeeperCertsChanged, this.clusterCa)
             ));
         }
 
@@ -1854,9 +1874,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
-            return secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret())
-                    .map(res -> {
-                        isKafkaCertsChanged = res instanceof ReconcileResult.Patched;
+            return updateCertificateSecretWithDiff(KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret())
+                    .map(changed -> {
+                        existingKafkaCertsChanged = changed;
                         return this;
                     });
         }
@@ -2035,7 +2055,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, isKafkaCertsChanged, this.clusterCa, this.clientsCa)
+                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -2607,7 +2627,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
-                        if (isEntityOperatorCertsChanged) {
+                        if (existingEntityOperatorCertsChanged) {
                             return entityOperatorRollingUpdate();
                         }
                     }
@@ -2637,10 +2657,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
-            return secretOperations.reconcile(namespace, EntityOperator.secretName(name),
-                    entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
-                    .map(res -> {
-                        isEntityOperatorCertsChanged = res instanceof ReconcileResult.Patched;
+            return updateCertificateSecretWithDiff(EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingEntityOperatorCertsChanged = changed;
                         return this;
                     });
         }
@@ -2707,9 +2726,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (ca.certsRemoved()) {
                         reasons.add(ca + " certificate removal");
                     }
-                    if (nodeCertsChange) {
-                        reasons.add(ca + " certificate changed");
-                    }
                     if (!isPodCaCertUpToDate(pod, ca)) {
                         reasons.add("Pod has old " + ca + " certificate generation");
                     }
@@ -2728,6 +2744,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 if (!isCustomCertExternalListenerUpToDate)   {
                     reasons.add("custom certificate on the external listener changes");
+                }
+                if (nodeCertsChange) {
+                    reasons.add("server certificates changed");
                 }
                 if (!reasons.isEmpty()) {
                     if (isPodToRestart) {
@@ -2917,10 +2936,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaExporterSecret(Supplier<Date> dateSupplier) {
-            return secretOperations.reconcile(namespace, KafkaExporter.secretName(name),
-                    kafkaExporter == null ? null : kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
-                    .map(res -> {
-                        isKafkaExporterCertsChanged = res instanceof ReconcileResult.Patched;
+            return updateCertificateSecretWithDiff(KafkaExporter.secretName(name), kafkaExporter == null ? null : kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingKafkaExporterCertsChanged = changed;
                         return this;
                     });
         }
@@ -2938,7 +2956,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
-                        if (isKafkaExporterCertsChanged) {
+                        if (existingKafkaExporterCertsChanged) {
                             return kafkaExporterRollingUpdate();
                         }
                     }

@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -176,5 +178,100 @@ public class ModelUtilsTest {
         assertThat(probe.getTcpSocket().getPort().getIntVal(), is(new Integer(1234)));
         assertThat(probe.getInitialDelaySeconds(), is(new Integer(10)));
         assertThat(probe.getTimeoutSeconds(), is(new Integer(20)));
+    }
+
+    @Test
+    public void testExistingCertificatesDiffer()   {
+        Secret defaultSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .addToData("my-cluster-kafka-1.crt", "Certificate1")
+                .addToData("my-cluster-kafka-1.key", "Key1")
+                .addToData("my-cluster-kafka-2.crt", "Certificate2")
+                .addToData("my-cluster-kafka-2.key", "Key2")
+                .build();
+
+        Secret sameAsDefaultSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .addToData("my-cluster-kafka-1.crt", "Certificate1")
+                .addToData("my-cluster-kafka-1.key", "Key1")
+                .addToData("my-cluster-kafka-2.crt", "Certificate2")
+                .addToData("my-cluster-kafka-2.key", "Key2")
+                .build();
+
+        Secret scaleDownSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .build();
+
+        Secret scaleUpSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .addToData("my-cluster-kafka-1.crt", "Certificate1")
+                .addToData("my-cluster-kafka-1.key", "Key1")
+                .addToData("my-cluster-kafka-2.crt", "Certificate2")
+                .addToData("my-cluster-kafka-2.key", "Key2")
+                .addToData("my-cluster-kafka-3.crt", "Certificate3")
+                .addToData("my-cluster-kafka-3.key", "Key3")
+                .addToData("my-cluster-kafka-4.crt", "Certificate4")
+                .addToData("my-cluster-kafka-4.key", "Key4")
+                .build();
+
+        Secret changedSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .addToData("my-cluster-kafka-1.crt", "Certificate1")
+                .addToData("my-cluster-kafka-1.key", "NewKey1")
+                .addToData("my-cluster-kafka-2.crt", "Certificate2")
+                .addToData("my-cluster-kafka-2.key", "Key2")
+                .build();
+
+        Secret changedScaleUpSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "Certificate0")
+                .addToData("my-cluster-kafka-0.key", "Key0")
+                .addToData("my-cluster-kafka-1.crt", "Certificate1")
+                .addToData("my-cluster-kafka-1.key", "Key1")
+                .addToData("my-cluster-kafka-2.crt", "NewCertificate2")
+                .addToData("my-cluster-kafka-2.key", "Key2")
+                .addToData("my-cluster-kafka-3.crt", "Certificate3")
+                .addToData("my-cluster-kafka-3.key", "Key3")
+                .addToData("my-cluster-kafka-4.crt", "Certificate4")
+                .addToData("my-cluster-kafka-4.key", "Key4")
+                .build();
+
+        Secret changedScaleDownSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName("my-secret")
+                .endMetadata()
+                .addToData("my-cluster-kafka-0.crt", "NewCertificate0")
+                .addToData("my-cluster-kafka-0.key", "NewKey0")
+                .build();
+
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, defaultSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, sameAsDefaultSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, scaleDownSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, scaleUpSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
     }
 }
