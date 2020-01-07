@@ -751,7 +751,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             versionChangeType = "upgrade";
                         }
                         if (versionChange.requiresZookeeperChange()) {
-                            log.debug("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
+                            log.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
                                     versionChangeType,
                                     versionChange.from().version(),
                                     versionChange.to().version(),
@@ -759,7 +759,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     versionChange.from().zookeeperVersion(),
                                     versionChange.to().zookeeperVersion());
                         } else {
-                            log.debug("Kafka {} from {} to {} requires no change in Zookeeper version",
+                            log.info("Kafka {} from {} to {} requires no change in Zookeeper version",
                                     versionChangeType,
                                     versionChange.from().version(),
                                     versionChange.to().version());
@@ -772,7 +772,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkCluster.setImage(newZkImage);
 
                         if (versionChange.from().compareVersion("2.4.0") < 0) {
-                            log.debug("Upgrade from Zookeeper 3.4.x detected, setting upgrade env var for ZK containers");
+                            log.info("Upgrade from Zookeeper 3.4.x detected, setting upgrade env var for ZK containers");
                             this.zkCluster.disableSnapshotChecks();
                         }
 
