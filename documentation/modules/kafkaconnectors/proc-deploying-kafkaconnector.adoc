@@ -46,11 +46,14 @@ spec:
 oc apply -f examples/connector/source-connector.yaml
 ----
 
+. Check that the resource was created:
++
+[source,shell,subs="+quotes"]
+----
+oc get all --selector strimzi.io/cluster: my-connect-cluster -o name
+----
+
 .Additional resources
-
-* xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[] 
-
-* xref:kafka-connect-{context}[] 
 
 * xref:type-KafkaConnect-reference[] 
 
