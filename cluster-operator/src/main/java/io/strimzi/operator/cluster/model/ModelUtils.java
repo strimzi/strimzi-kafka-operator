@@ -378,7 +378,7 @@ public class ModelUtils {
      *
      * @return  True if there is a key which exists in the data sections of both secrets and which changed.
      */
-    public static boolean didAnyCertificateChangedInSecret(Secret current, Secret desired) {
+    public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
         Map<String, String> currentData = current.getData();
         Map<String, String> desiredData = desired.getData();
 

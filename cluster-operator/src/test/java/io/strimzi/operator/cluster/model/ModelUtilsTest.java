@@ -181,7 +181,7 @@ public class ModelUtilsTest {
     }
 
     @Test
-    public void testCertificateSecretChange()   {
+    public void testExistingCertificatesDiffer()   {
         Secret defaultSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName("my-secret")
@@ -266,12 +266,12 @@ public class ModelUtilsTest {
                 .addToData("my-cluster-kafka-0.key", "NewKey0")
                 .build();
 
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, defaultSecret), is(false));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, sameAsDefaultSecret), is(false));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, scaleDownSecret), is(false));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, scaleUpSecret), is(false));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, changedSecret), is(true));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, changedScaleUpSecret), is(true));
-        assertThat(ModelUtils.didAnyCertificateChangedInSecret(defaultSecret, changedScaleDownSecret), is(true));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, defaultSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, sameAsDefaultSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, scaleDownSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, scaleUpSecret), is(false));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
+        assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
     }
 }
