@@ -41,11 +41,22 @@ spec:
     volumeMounts:
     - name: secret-volume
       mountPath: /data/p12
+    env:
+    - name: SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: my-secret
+          key: my-password
   volumes:
-  - name: secret-config
+  - name: secret-volume
     secret:
       secretName: my-cluster-cluster-cert
 ----
++
+Here we're mounting:
++
+* The PKCS #12 file into an exact path, which can be configured
+* The password into an environment variable, where it can be used for Java configuration
 
 . Configure the Kafka client with the following properties:
 +
@@ -53,7 +64,7 @@ spec:
 ** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication).
 ** `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
 * `ssl.truststore.location` with the truststore location where the certificates were imported.
-* `ssl.truststore.password` with the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
+* `ssl.truststore.password` with the password for accessing the truststore.
 * `ssl.truststore.type=PKCS12` to identify the truststore type.
 
 .Using PEM format (.crt)
@@ -76,7 +87,7 @@ spec:
     - name: secret-volume
       mountPath: /data/crt
   volumes:
-  - name: secret-config
+  - name: secret-volume
     secret:
       secretName: my-cluster-cluster-cert
 ----
