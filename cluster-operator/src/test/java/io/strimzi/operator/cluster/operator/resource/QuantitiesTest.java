@@ -111,6 +111,7 @@ public class QuantitiesTest {
 
     @Test
     public void testParse() {
+        assertThat(parseCpuAsMilliCpus("100000"), is(100000000));
         assertThat(parseCpuAsMilliCpus("1"), is(1000));
         assertThat(parseCpuAsMilliCpus("1m"), is(1));
         assertThat(parseCpuAsMilliCpus("0.5"), is(500));
