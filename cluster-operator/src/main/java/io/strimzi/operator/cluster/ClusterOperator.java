@@ -54,7 +54,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private static final PrometheusMeterRegistry METRICS_REGISTRY = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+    private final PrometheusMeterRegistry metrics;
 
     private final KubernetesClient client;
     private final String namespace;
@@ -86,6 +86,8 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
+
+        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
         setupMetrics();
     }
 
@@ -170,7 +172,7 @@ public class ClusterOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/metrics")) {
                         request.response().setStatusCode(200)
-                                .end(METRICS_REGISTRY.scrape());
+                                .end(metrics.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {
@@ -185,11 +187,11 @@ public class ClusterOperator extends AbstractVerticle {
     }
 
     private void setupMetrics() {
-        new ClassLoaderMetrics().bindTo(METRICS_REGISTRY);
-        new JvmMemoryMetrics().bindTo(METRICS_REGISTRY);
-        new ProcessorMetrics().bindTo(METRICS_REGISTRY);
-        new JvmThreadMetrics().bindTo(METRICS_REGISTRY);
-        new JvmGcMetrics().bindTo(METRICS_REGISTRY);
+        new ClassLoaderMetrics().bindTo(metrics);
+        new JvmMemoryMetrics().bindTo(metrics);
+        new ProcessorMetrics().bindTo(metrics);
+        new JvmThreadMetrics().bindTo(metrics);
+        new JvmGcMetrics().bindTo(metrics);
     }
 
     public static String secretName(String cluster) {

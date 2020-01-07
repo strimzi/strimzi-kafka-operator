@@ -26,7 +26,9 @@ import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import okhttp3.OkHttpClient;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,8 +56,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
-
-    private Vertx vertx;
+    private static Vertx vertx;
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -68,8 +69,8 @@ public class ClusterOperatorTest {
         return env;
     }
 
-    @BeforeEach
-    public void createClient() {
+    @BeforeAll
+    public static void createClient() {
         vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
@@ -77,8 +78,8 @@ public class ClusterOperatorTest {
         ));
     }
 
-    @AfterEach
-    public void closeClient() {
+    @AfterAll
+    public static void closeClient() {
         vertx.close();
     }
 
