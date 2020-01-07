@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 2.3.1
+    version: 2.4.0
     replicas: 1
     listeners:
       plain: {}
@@ -13,7 +13,7 @@ spec:
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1
-      log.message.format.version: "2.3"
+      log.message.format.version: "2.4"
     storage:
       type: jbod
       volumes:

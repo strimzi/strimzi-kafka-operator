@@ -7,11 +7,14 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 /**
  * Class for handling Zookeeper configuration passed by the user
@@ -19,17 +22,21 @@ import static java.util.Arrays.asList;
 public class ZookeeperConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_OPTIONS;
-    private static final Map<String, String> DEFAULTS;
+    protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
-                ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
+        FORBIDDEN_OPTIONS = new ArrayList<>();
+        FORBIDDEN_OPTIONS.addAll(Arrays.asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *")));
+        // This option is handled in the Zookeeper container startup script
+        FORBIDDEN_OPTIONS.add("snapshot.trust.empty");
 
-        DEFAULTS = new HashMap<>();
-        DEFAULTS.put("tickTime", "2000");
-        DEFAULTS.put("initLimit", "5");
-        DEFAULTS.put("syncLimit", "2");
-        DEFAULTS.put("autopurge.purgeInterval", "1");
+        Map<String, String> config = new HashMap<>();
+        config.put("tickTime", "2000");
+        config.put("initLimit", "5");
+        config.put("syncLimit", "2");
+        config.put("autopurge.purgeInterval", "1");
+        config.put("4lw.commands.whitelist", "*");
+        DEFAULTS = Collections.unmodifiableMap(config);
     }
 
     /**
@@ -40,7 +47,19 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public ZookeeperConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
+        this(configuration, FORBIDDEN_OPTIONS);
+    }
+
+    /**
+     * Constructor used to instantiate this class from String configuration and validated against the supplied forbidden
+     * options.
+     *
+     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
+     *                      pairs.
+     * @param forbiddenOptions List of option names that are not allowed to be set.
+     */
+    public ZookeeperConfiguration(String configuration, List<String> forbiddenOptions) {
+        super(configuration, forbiddenOptions, DEFAULTS);
     }
 
     /**
@@ -52,4 +71,14 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
+
+    /**
+     * Returns a ZookeeperConfiguration created without forbidden option filtering.
+     * @param string A string representation of the Properties
+     * @return The ZookeeperConfiguration
+     */
+    public static ZookeeperConfiguration unvalidated(String string) {
+        return new ZookeeperConfiguration(string, emptyList());
+    }
+
 }

@@ -79,6 +79,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -700,5 +701,83 @@ public class KafkaAssemblyOperatorMockTest {
     public void testResumePartialRoll(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaAssemblyOperator kco = createCluster(params, context);
         context.completeNow();
+    }
+
+
+    /** Test the ZK version change functions */
+    private void zkVersionChange(Params params, VertxTestContext context, String initialKafkaVersion, String changedKafkaVersion, String changedImage) throws InterruptedException, ExecutionException, TimeoutException {
+
+        KafkaAssemblyOperator kco = createCluster(params, context);
+
+        Kafka initialKafka = new KafkaBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
+                        .withNamespace(NAMESPACE)
+                        .build())
+                .withNewSpec()
+                .withNewKafka()
+                .withReplicas(3)
+                .withVersion(initialKafkaVersion)
+                .withNewEphemeralStorage().endEphemeralStorage()
+                .endKafka()
+                .withNewZookeeper()
+                .withReplicas(3)
+                .withNewEphemeralStorage().endEphemeralStorage()
+                .endZookeeper()
+                .withNewTopicOperator()
+                .endTopicOperator()
+                .endSpec()
+                .build();
+
+        Kafka updatedKafka = new KafkaBuilder(initialKafka)
+                .editSpec()
+                .editKafka()
+                .withVersion(changedKafkaVersion)
+                .endKafka()
+                .endSpec()
+                .build();
+
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
+
+        kco.new ReconciliationState(reconciliation, updatedKafka)
+                .getZookeeperDescription()
+                .compose(KafkaAssemblyOperator.ReconciliationState::zkVersionChange)
+                .onSuccess(result -> {
+                    context.verify(() -> assertThat(result.zkCluster.getImage(), containsStringIgnoringCase(changedImage)));
+                    context.completeNow();
+                });
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void zkUpgradeFromPrevToLatest(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
+        String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
+
+        zkVersionChange(params, context, initialKafkaVersion, changedKafkaVersion, changedImage);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void zkDowngradeFromLatestToPrev(Params params, VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+
+        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
+        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
+
+        zkVersionChange(params, context, initialKafkaVersion, changedKafkaVersion, changedImage);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void zkUpgradeFromMinorToPrev(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
+        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
+
+        zkVersionChange(params, context, initialKafkaVersion, changedKafkaVersion, changedImage);
+
     }
 }

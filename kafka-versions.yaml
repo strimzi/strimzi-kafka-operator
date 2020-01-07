@@ -13,36 +13,17 @@
 #   <format> is the default `log.message.format.version` used by this Kafka version
 #   <url> is the remote (using prefix 'http://' or 'https://') or local (using prefix 'file://') address of the Kafka binary tar archive for this version of Kafka. When using a local file path the absolute path to the binary archive should be used. It is assumed in both cases that the name of the file forms the last section of the path.
 #   <checksum> is the SHA512 checksum of the Kafka binary which is specified in the 'url' field.
+#   <zookeeper> is the version of zookeeper required by this version of Kafka.
 #   <third-party-libs> is the version string for the third party libraries
 
-#- version: 1.0.2
-  #format: 1.0     
-  #protocol: 1.0   
-  #checksum: 4CBCDAF8CCC4EFE3D1B6275F3F2C32CF8F2F1A62104B5DD0BD9E2974160AB89D85A6E1791AF8B948A413B99ED696B06EA9D4299B27EA63C3F7318DABF5761144  
-  #third-party-libs: 1.0.x
+#- version: 2.3.0
+  #format: 2.3     
+  #protocol: 2.3   
+  #url: https://archive.apache.org/dist/kafka/2.3.0/kafka_2.12-2.3.0.tgz
+  #checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E   
+  #zookeeper: 3.4.14
+  #third-party-libs: 2.3.x
   #default: false
-#- version: 1.1.1
-  #format: 1.1
-  #protocol: 1.1   
-  #checksum: 2A1EB9A7C8C8337C424EEFED7BAAE26B3DACBA6A4AB8B64D9A7D5C6EE2CDB66CFA76C5B366F23435941569B89BF02482625189016296B2EA2A05FD0F38F6B709  
-  #third-party-libs: 1.1.x
-  #default: false
-- version: 2.2.1 
-  format: 2.2     
-  protocol: 2.2   
-  url: https://archive.apache.org/dist/kafka/2.2.1/kafka_2.12-2.2.1.tgz
-  checksum: B8D828F06DFE59E34C4CFA20C57C8C8B43374F1E7C09F12DFA5433534A380BFE09A6DE90FB86A4403939A87AB9C665E2369143C138C71391B01BBB9B384E7AC5  
-  zookeeper: 3.4.13
-  third-party-libs: 2.2.x
-  default: false
-- version: 2.3.0
-  format: 2.3     
-  protocol: 2.3   
-  url: https://archive.apache.org/dist/kafka/2.3.0/kafka_2.12-2.3.0.tgz
-  checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E   
-  zookeeper: 3.4.14
-  third-party-libs: 2.3.x
-  default: false
 - version: 2.3.1
   format: 2.3
   protocol: 2.3
@@ -50,4 +31,12 @@
   checksum: B9FD57DE7D9691C89CF668901E5E29728F10249667611A0603C322C8823EC2D5568B51EB1A570D4D9119CD4E44E84B590CAB99B33A0355EBAC37811A7D453608
   zookeeper: 3.4.14
   third-party-libs: 2.3.x
+  default: false
+- version: 2.4.0
+  format: 2.4
+  protocol: 2.4
+  url: https://archive.apache.org/dist/kafka/2.4.0/kafka_2.12-2.4.0.tgz
+  checksum: 53B52F86EA56C9FAC62046524F03F75665A089EA2DAE554AEFE3A3D2694F2DA88B5BA8725D8BE55F198BA80695443559ED9DE7C0B2A2817F7A6141008FF79F49
+  zookeeper: 3.5.6
+  third-party-libs: 2.4.x
   default: true
