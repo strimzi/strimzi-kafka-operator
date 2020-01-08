@@ -63,6 +63,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
     public int sendMessagesPlain(long timeoutMs) {
 
         String clientName = "sender-plain-" + this.clusterName;
+        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 

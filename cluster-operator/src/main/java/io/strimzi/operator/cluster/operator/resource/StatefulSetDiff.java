@@ -29,6 +29,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         "^(/metadata/managedFields"
         + "|/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/" + SHORTENED_STRIMZI_DOMAIN + "~1generation"
+        + "|/spec/template/metadata/annotations/" + SHORTENED_STRIMZI_DOMAIN + "~1old-logging-hash"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"

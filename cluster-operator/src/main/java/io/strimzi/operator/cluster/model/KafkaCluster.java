@@ -205,6 +205,7 @@ public class KafkaCluster extends AbstractModel {
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
+    public static final String ANNO_STRIMZI_WAS_EXPOSED_WITH_NODEPORT = Annotations.STRIMZI_DOMAIN + "broker-exposed-by-nodeport";
 
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-tls-listener-thumbprint";
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-external-listener-thumbprint";

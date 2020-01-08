@@ -1,839 +1,1031 @@
 {
   "configs" : {
     "advertised.host.name" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "advertised.listeners" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "advertised.port" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "alter.config.policy.class.name" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "alter.log.dirs.replication.quota.window.num" : {
+      "defaultValue" : "11",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "alter.log.dirs.replication.quota.window.size.seconds" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "authorizer.class.name" : {
+      "defaultValue" : "\"\"",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "auto.create.topics.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "auto.leader.rebalance.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "background.threads" : {
+      "defaultValue" : "10",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "broker.id" : {
+      "defaultValue" : "-1",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "broker.id.generation.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "broker.rack" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "client.quota.callback.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "compression.type" : {
+      "defaultValue" : "producer",
       "scope" : "CLUSTER_WIDE",
       "type" : "STRING"
     },
     "connection.failed.authentication.delay.ms" : {
+      "defaultValue" : "100",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "connections.max.idle.ms" : {
+      "defaultValue" : "600000",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "connections.max.reauth.ms" : {
+      "defaultValue" : "0",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "control.plane.listener.name" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "controlled.shutdown.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "controlled.shutdown.max.retries" : {
+      "defaultValue" : "3",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "controlled.shutdown.retry.backoff.ms" : {
+      "defaultValue" : "5000",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "controller.socket.timeout.ms" : {
+      "defaultValue" : "30000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "create.topic.policy.class.name" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "default.replication.factor" : {
+      "defaultValue" : "1",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "delegation.token.expiry.check.interval.ms" : {
+      "defaultValue" : "3600000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "delegation.token.expiry.time.ms" : {
+      "defaultValue" : "86400000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "delegation.token.master.key" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "PASSWORD"
     },
     "delegation.token.max.lifetime.ms" : {
+      "defaultValue" : "604800000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "delete.records.purgatory.purge.interval.requests" : {
+      "defaultValue" : "1",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "delete.topic.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "fetch.purgatory.purge.interval.requests" : {
+      "defaultValue" : "1000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "group.initial.rebalance.delay.ms" : {
+      "defaultValue" : "3000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "group.max.session.timeout.ms" : {
+      "defaultValue" : "1800000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "group.max.size" : {
+      "defaultValue" : "2147483647",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "group.min.session.timeout.ms" : {
+      "defaultValue" : "6000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "host.name" : {
+      "defaultValue" : "\"\"",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "inter.broker.listener.name" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "inter.broker.protocol.version" : {
+      "defaultValue" : "2.4-IV1",
       "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "kafka.metrics.polling.interval.secs" : {
+      "defaultValue" : "10",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "kafka.metrics.reporters" : {
+      "defaultValue" : "\"\"",
       "scope" : "READ_ONLY",
       "type" : "LIST"
     },
     "leader.imbalance.check.interval.seconds" : {
+      "defaultValue" : "300",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "leader.imbalance.per.broker.percentage" : {
+      "defaultValue" : "10",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "listener.security.protocol.map" : {
+      "defaultValue" : "PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "listeners" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "log.cleaner.backoff.ms" : {
+      "defaultValue" : "15000",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.cleaner.dedupe.buffer.size" : {
+      "defaultValue" : "134217728",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.cleaner.delete.retention.ms" : {
+      "defaultValue" : "86400000",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.cleaner.enable" : {
+      "defaultValue" : "true",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "log.cleaner.io.buffer.load.factor" : {
+      "defaultValue" : "0.9",
       "scope" : "CLUSTER_WIDE",
       "type" : "DOUBLE"
     },
     "log.cleaner.io.buffer.size" : {
+      "defaultValue" : "524288",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "log.cleaner.io.max.bytes.per.second" : {
+      "defaultValue" : "1.7976931348623157E308",
       "scope" : "CLUSTER_WIDE",
       "type" : "DOUBLE"
     },
     "log.cleaner.max.compaction.lag.ms" : {
+      "defaultValue" : "9223372036854775807",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.cleaner.min.cleanable.ratio" : {
+      "defaultValue" : "0.5",
       "scope" : "CLUSTER_WIDE",
       "type" : "DOUBLE"
     },
     "log.cleaner.min.compaction.lag.ms" : {
+      "defaultValue" : "0",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.cleaner.threads" : {
+      "defaultValue" : "1",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "log.cleanup.policy" : {
+      "defaultValue" : "delete",
       "items" : [ "compact", "delete" ],
       "scope" : "CLUSTER_WIDE",
       "type" : "LIST"
     },
     "log.dir" : {
+      "defaultValue" : "/tmp/kafka-logs",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "log.dirs" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "log.flush.interval.messages" : {
+      "defaultValue" : "9223372036854775807",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.flush.interval.ms" : {
+      "defaultValue" : "null",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.flush.offset.checkpoint.interval.ms" : {
+      "defaultValue" : "60000",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.flush.scheduler.interval.ms" : {
+      "defaultValue" : "9223372036854775807",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "log.flush.start.offset.checkpoint.interval.ms" : {
+      "defaultValue" : "60000",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.index.interval.bytes" : {
+      "defaultValue" : "4096",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "log.index.size.max.bytes" : {
+      "defaultValue" : "10485760",
       "minimum" : 4,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "log.message.downconversion.enable" : {
+      "defaultValue" : "true",
       "scope" : "CLUSTER_WIDE",
       "type" : "BOOLEAN"
     },
     "log.message.format.version" : {
+      "defaultValue" : "2.4-IV1",
       "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "log.message.timestamp.difference.max.ms" : {
+      "defaultValue" : "9223372036854775807",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.message.timestamp.type" : {
+      "defaultValue" : "CreateTime",
       "enum" : [ "CreateTime", "LogAppendTime" ],
       "scope" : "CLUSTER_WIDE",
       "type" : "STRING"
     },
     "log.preallocate" : {
+      "defaultValue" : "false",
       "scope" : "CLUSTER_WIDE",
       "type" : "BOOLEAN"
     },
     "log.retention.bytes" : {
+      "defaultValue" : "-1",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.retention.check.interval.ms" : {
+      "defaultValue" : "300000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "log.retention.hours" : {
+      "defaultValue" : "168",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.retention.minutes" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.retention.ms" : {
+      "defaultValue" : "null",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.roll.hours" : {
+      "defaultValue" : "168",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.roll.jitter.hours" : {
+      "defaultValue" : "0",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "log.roll.jitter.ms" : {
+      "defaultValue" : "null",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.roll.ms" : {
+      "defaultValue" : "null",
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "log.segment.bytes" : {
+      "defaultValue" : "1073741824",
       "minimum" : 14,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "log.segment.delete.delay.ms" : {
+      "defaultValue" : "60000",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "LONG"
     },
     "max.connections" : {
+      "defaultValue" : "2147483647",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "max.connections.per.ip" : {
+      "defaultValue" : "2147483647",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "max.connections.per.ip.overrides" : {
+      "defaultValue" : "\"\"",
       "scope" : "CLUSTER_WIDE",
       "type" : "STRING"
     },
     "max.incremental.fetch.session.cache.slots" : {
+      "defaultValue" : "1000",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "message.max.bytes" : {
+      "defaultValue" : "1000012",
       "minimum" : 0,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "metric.reporters" : {
+      "defaultValue" : "\"\"",
       "scope" : "CLUSTER_WIDE",
       "type" : "LIST"
     },
     "metrics.num.samples" : {
+      "defaultValue" : "2",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "metrics.recording.level" : {
+      "defaultValue" : "INFO",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "metrics.sample.window.ms" : {
+      "defaultValue" : "30000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "min.insync.replicas" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "num.io.threads" : {
+      "defaultValue" : "8",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "num.network.threads" : {
+      "defaultValue" : "3",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "num.partitions" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "num.recovery.threads.per.data.dir" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "num.replica.alter.log.dirs.threads" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "num.replica.fetchers" : {
+      "defaultValue" : "1",
       "scope" : "CLUSTER_WIDE",
       "type" : "INT"
     },
     "offset.metadata.max.bytes" : {
+      "defaultValue" : "4096",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.commit.required.acks" : {
+      "defaultValue" : "-1",
       "scope" : "READ_ONLY",
       "type" : "SHORT"
     },
     "offsets.commit.timeout.ms" : {
+      "defaultValue" : "5000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.load.buffer.size" : {
+      "defaultValue" : "5242880",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.retention.check.interval.ms" : {
+      "defaultValue" : "600000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "offsets.retention.minutes" : {
+      "defaultValue" : "10080",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.topic.compression.codec" : {
+      "defaultValue" : "0",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.topic.num.partitions" : {
+      "defaultValue" : "50",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "offsets.topic.replication.factor" : {
+      "defaultValue" : "3",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "SHORT"
     },
     "offsets.topic.segment.bytes" : {
+      "defaultValue" : "104857600",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "password.encoder.cipher.algorithm" : {
+      "defaultValue" : "AES/CBC/PKCS5Padding",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "password.encoder.iterations" : {
+      "defaultValue" : "4096",
       "minimum" : 1024,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "password.encoder.key.length" : {
+      "defaultValue" : "128",
       "minimum" : 8,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "password.encoder.keyfactory.algorithm" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "password.encoder.old.secret" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "PASSWORD"
     },
     "password.encoder.secret" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "PASSWORD"
     },
     "port" : {
+      "defaultValue" : "9092",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "principal.builder.class" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "CLASS"
     },
     "producer.purgatory.purge.interval.requests" : {
+      "defaultValue" : "1000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "queued.max.request.bytes" : {
+      "defaultValue" : "-1",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "queued.max.requests" : {
+      "defaultValue" : "500",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "quota.consumer.default" : {
+      "defaultValue" : "9223372036854775807",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "quota.producer.default" : {
+      "defaultValue" : "9223372036854775807",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "quota.window.num" : {
+      "defaultValue" : "11",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "quota.window.size.seconds" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.fetch.backoff.ms" : {
+      "defaultValue" : "1000",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.fetch.max.bytes" : {
+      "defaultValue" : "1048576",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.fetch.min.bytes" : {
+      "defaultValue" : "1",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.fetch.response.max.bytes" : {
+      "defaultValue" : "10485760",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.fetch.wait.max.ms" : {
+      "defaultValue" : "500",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.high.watermark.checkpoint.interval.ms" : {
+      "defaultValue" : "5000",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "replica.lag.time.max.ms" : {
+      "defaultValue" : "10000",
       "scope" : "READ_ONLY",
       "type" : "LONG"
     },
     "replica.selector.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "replica.socket.receive.buffer.bytes" : {
+      "defaultValue" : "65536",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replica.socket.timeout.ms" : {
+      "defaultValue" : "30000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replication.quota.window.num" : {
+      "defaultValue" : "11",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "replication.quota.window.size.seconds" : {
+      "defaultValue" : "1",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "request.timeout.ms" : {
+      "defaultValue" : "30000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "reserved.broker.max.id" : {
+      "defaultValue" : "1000",
       "minimum" : 0,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "sasl.client.callback.handler.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "sasl.enabled.mechanisms" : {
+      "defaultValue" : "GSSAPI",
       "scope" : "PER_BROKER",
       "type" : "LIST"
     },
     "sasl.jaas.config" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "PASSWORD"
     },
     "sasl.kerberos.kinit.cmd" : {
+      "defaultValue" : "/usr/bin/kinit",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "sasl.kerberos.min.time.before.relogin" : {
+      "defaultValue" : "60000",
       "scope" : "PER_BROKER",
       "type" : "LONG"
     },
     "sasl.kerberos.principal.to.local.rules" : {
+      "defaultValue" : "DEFAULT",
       "scope" : "PER_BROKER",
       "type" : "LIST"
     },
     "sasl.kerberos.service.name" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "sasl.kerberos.ticket.renew.jitter" : {
+      "defaultValue" : "0.05",
       "scope" : "PER_BROKER",
       "type" : "DOUBLE"
     },
     "sasl.kerberos.ticket.renew.window.factor" : {
+      "defaultValue" : "0.8",
       "scope" : "PER_BROKER",
       "type" : "DOUBLE"
     },
     "sasl.login.callback.handler.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "sasl.login.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "sasl.login.refresh.buffer.seconds" : {
+      "defaultValue" : "300",
       "scope" : "PER_BROKER",
       "type" : "SHORT"
     },
     "sasl.login.refresh.min.period.seconds" : {
+      "defaultValue" : "60",
       "scope" : "PER_BROKER",
       "type" : "SHORT"
     },
     "sasl.login.refresh.window.factor" : {
+      "defaultValue" : "0.8",
       "scope" : "PER_BROKER",
       "type" : "DOUBLE"
     },
     "sasl.login.refresh.window.jitter" : {
+      "defaultValue" : "0.05",
       "scope" : "PER_BROKER",
       "type" : "DOUBLE"
     },
     "sasl.mechanism.inter.broker.protocol" : {
+      "defaultValue" : "GSSAPI",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "sasl.server.callback.handler.class" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "CLASS"
     },
     "security.inter.broker.protocol" : {
+      "defaultValue" : "PLAINTEXT",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "security.providers" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "socket.receive.buffer.bytes" : {
+      "defaultValue" : "102400",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "socket.request.max.bytes" : {
+      "defaultValue" : "104857600",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "socket.send.buffer.bytes" : {
+      "defaultValue" : "102400",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "ssl.cipher.suites" : {
+      "defaultValue" : "\"\"",
       "scope" : "PER_BROKER",
       "type" : "LIST"
     },
     "ssl.client.auth" : {
+      "defaultValue" : "none",
       "enum" : [ "required", "requested", "none" ],
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.enabled.protocols" : {
+      "defaultValue" : "TLSv1.2,TLSv1.1,TLSv1",
       "scope" : "PER_BROKER",
       "type" : "LIST"
     },
     "ssl.endpoint.identification.algorithm" : {
+      "defaultValue" : "https",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.key.password" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "PASSWORD"
     },
     "ssl.keymanager.algorithm" : {
+      "defaultValue" : "SunX509",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.keystore.location" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.keystore.password" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "PASSWORD"
     },
     "ssl.keystore.type" : {
+      "defaultValue" : "JKS",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.principal.mapping.rules" : {
+      "defaultValue" : "DEFAULT",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "ssl.protocol" : {
+      "defaultValue" : "TLS",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.provider" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.secure.random.implementation" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.trustmanager.algorithm" : {
+      "defaultValue" : "PKIX",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.truststore.location" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "ssl.truststore.password" : {
+      "defaultValue" : "null",
       "scope" : "PER_BROKER",
       "type" : "PASSWORD"
     },
     "ssl.truststore.type" : {
+      "defaultValue" : "JKS",
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
     "transaction.abort.timed.out.transaction.cleanup.interval.ms" : {
+      "defaultValue" : "60000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.max.timeout.ms" : {
+      "defaultValue" : "900000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.remove.expired.transaction.cleanup.interval.ms" : {
+      "defaultValue" : "3600000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.state.log.load.buffer.size" : {
+      "defaultValue" : "5242880",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.state.log.min.isr" : {
+      "defaultValue" : "2",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.state.log.num.partitions" : {
+      "defaultValue" : "50",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transaction.state.log.replication.factor" : {
+      "defaultValue" : "3",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "SHORT"
     },
     "transaction.state.log.segment.bytes" : {
+      "defaultValue" : "104857600",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "transactional.id.expiration.ms" : {
+      "defaultValue" : "604800000",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "unclean.leader.election.enable" : {
+      "defaultValue" : "false",
       "scope" : "CLUSTER_WIDE",
       "type" : "BOOLEAN"
     },
     "zookeeper.connect" : {
+      "defaultValue" : "",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
     "zookeeper.connection.timeout.ms" : {
+      "defaultValue" : "null",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "zookeeper.max.in.flight.requests" : {
+      "defaultValue" : "10",
       "minimum" : 1,
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "zookeeper.session.timeout.ms" : {
+      "defaultValue" : "6000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     },
     "zookeeper.set.acl" : {
+      "defaultValue" : "false",
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
     "zookeeper.sync.time.ms" : {
+      "defaultValue" : "2000",
       "scope" : "READ_ONLY",
       "type" : "INT"
     }
