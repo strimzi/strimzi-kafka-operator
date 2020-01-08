@@ -16,7 +16,6 @@ import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -44,7 +43,6 @@ class UserST extends BaseST {
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
-    @Disabled
     @Test
     void testUserWithNameMoreThan64Chars() {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
@@ -58,39 +56,29 @@ class UserST extends BaseST {
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
-        LOGGER.info(condition.getMessage() != null);
 
         verifyCRStatusCondition(condition,
                 "True",
                 "Ready");
 
-        // Create sasl user with long name
-        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, saslUserWithLongName)
+        // Create sasl user with long name, shouldn't fail
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
+        KafkaUserUtils.waitForKafkaUserCreation(saslUserWithLongName);
+
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
             .editSpec()
-                .withNewKafkaUserScramSha512ClientAuthentication()
-                .endKafkaUserScramSha512ClientAuthentication()
+                .withNewKafkaUserTlsClientAuthentication()
+                .endKafkaUserTlsClientAuthentication()
             .endSpec()
             .build());
-
-        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
-
-        condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
-
-        verifyCRStatusCondition(condition,
-                "must be no more than 63 characters",
-                "KubernetesClientException",
-                "True",
-                "NotReady");
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userWithLongName).done();
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
 
         condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition,
-                "must be no more than 63 characters",
-                "KubernetesClientException",
+                "only up to 64 characters",
+                "InvalidResourceException",
                 "True",
                 "NotReady");
     }
@@ -100,8 +88,9 @@ class UserST extends BaseST {
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
         SecretUtils.waitForSecretReady(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -110,7 +99,7 @@ class UserST extends BaseST {
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        KafkaUser kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
@@ -118,7 +107,6 @@ class UserST extends BaseST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
         long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
-        LOGGER.info("observation: {}", observedGeneration);
 
         KafkaUserResource.replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
