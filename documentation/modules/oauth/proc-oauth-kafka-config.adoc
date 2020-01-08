@@ -76,7 +76,7 @@ spec:
       secretName: my-bridge-oauth
       key: clientSecret
     tlsTrustedCertificates: <3>
-      - secretName: oauth-server-cert
+    - secretName: oauth-server-cert
       certificate: tls.crt
 ----
 <1> Authentication type set to `oauth`.

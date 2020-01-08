@@ -7,16 +7,14 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
 
-{oauth} requires configuration of TLS listeners.
+We advise use of {oauth} over an encrypted interface through configuration of TLS listeners.
 Plain listeners are not recommended.
 
 If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection works using the default settings.
 Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
 
-. TLS connection to the authorization server with trusted certificates
-. Direct connection using an introspection endpoint configuration
-
-Examples of the connection options are described in this procedure.
+. <<example-1, Connection to the authorization server with trusted certificates>>
+. <<example-2, Direct connection using an introspection endpoint configuration>>
 
 .Before you start
 
@@ -49,6 +47,7 @@ The configuration for each type of listener does not have to be the same, as the
 The examples here show the configuration options as configured for external listeners.
 +
 --
+[[example-1]]
 .Example 1: External TLS connection to the authorization server with trusted certificates
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -75,6 +74,7 @@ external:
 <7> The duration the JWKs certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <8> The period between refreshes of JWKs certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
 
+[[example-2]]
 .Example 2: External connection to the authorization server using an introspection endpoint
 [source,yaml,subs="+quotes,attributes"]
 ----
