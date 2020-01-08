@@ -88,7 +88,7 @@ public class KubeClient {
     }
 
     public void deleteNamespace(String name) {
-        client.namespaces().withName(name).delete();
+        client.namespaces().withName(name).cascading(true).delete();
     }
 
     /**
@@ -100,7 +100,7 @@ public class KubeClient {
 
 
     public void deleteConfigMap(String configMapName) {
-        client.configMaps().inNamespace(getNamespace()).withName(configMapName).delete();
+        client.configMaps().inNamespace(getNamespace()).withName(configMapName).cascading(true).delete();
     }
 
     public ConfigMap getConfigMap(String configMapName) {
@@ -261,7 +261,7 @@ public class KubeClient {
     }
 
     public void deleteStatefulSet(String statefulSetName) {
-        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).delete();
+        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).cascading(true).delete();
     }
 
     public Deployment createOrReplaceDeployment(Deployment deployment) {
@@ -308,7 +308,7 @@ public class KubeClient {
      * @param deploymentConfigName deployment config name
      */
     public void deleteDeploymentConfig(String deploymentConfigName) {
-        client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).delete();
+        client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).cascading(true).delete();
     }
 
     /**
@@ -359,7 +359,7 @@ public class KubeClient {
     }
 
     public boolean deleteSecret(String secretName) {
-        return client.secrets().inNamespace(getNamespace()).withName(secretName).delete();
+        return client.secrets().inNamespace(getNamespace()).withName(secretName).cascading(true).delete();
     }
 
     public Service createService(Service service) {
@@ -412,7 +412,7 @@ public class KubeClient {
     }
 
     public void deleteService(String serviceName) {
-        client.services().inNamespace(getNamespace()).withName(serviceName).delete();
+        client.services().inNamespace(getNamespace()).withName(serviceName).cascading(true).delete();
     }
 
     public void deleteService(Service service) {

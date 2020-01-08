@@ -203,7 +203,7 @@ public abstract class TopicOperatorBaseIT {
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
                     LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
                     LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
                     waitForTopicInKafka(new TopicName(item).toString(), false);
                     waitForTopicInKube(item.getMetadata().getName(), false);
@@ -218,7 +218,7 @@ public abstract class TopicOperatorBaseIT {
 
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
                     waitForTopicInKube(item.getMetadata().getName(), false);
                 }
             }

@@ -193,14 +193,14 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
 
     @Override
     protected void mockDelete(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
-        when(resource.delete()).thenAnswer(i -> {
+        when(resource.cascading(true).delete()).thenAnswer(i -> {
             LOGGER.debug("delete {} {}", resourceType, resourceName);
             StatefulSet removed = db.remove(resourceName);
             if (removed != null) {
                 fireWatchers(resourceName, removed, Watcher.Action.DELETED, "delete");
                 for (Map.Entry<String, Pod> pod : new HashMap<>(podDb).entrySet()) {
                     if (pod.getKey().matches(resourceName + "-[0-9]+")) {
-                        mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).delete();
+                        mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).cascading(true).delete();
                     }
                 }
             }
@@ -226,7 +226,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
             LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
             for (int i = oldScale - 1; i >= newScale; i--) {
                 String newPodName = argument.getMetadata().getName() + "-" + i;
-                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
+                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).cascading(true).delete();
             }
         } else {
             db.put(resourceName, copyResource(argument));

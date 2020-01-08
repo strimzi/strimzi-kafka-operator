@@ -228,7 +228,7 @@ public class TopicST extends MessagingBaseST {
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
         KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
