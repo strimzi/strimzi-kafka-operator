@@ -23,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -188,7 +187,6 @@ class RollingUpdateST extends MessagingBaseST {
         assertThat(received, is(sent));
     }
 
-    @Disabled
     @Test
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
@@ -274,7 +272,6 @@ class RollingUpdateST extends MessagingBaseST {
      * 4. Trigger rolling update for Kafka cluster
      * 5. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
      */
-    @Disabled
     @Test
     void testKafkaWontRollUpBecauseTopic() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -329,7 +326,6 @@ class RollingUpdateST extends MessagingBaseST {
         }
     }
 
-    @Disabled
     @Test
     void testZookeeperScaleUpScaleDown() throws Exception {
         int messageCount = 50;
