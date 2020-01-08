@@ -58,12 +58,14 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeUtils;
+import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -1995,21 +1997,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 Secret certSecret = result.result();
 
                                 if (certSecret != null) {
-                                    try {
-                                        X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-                                        byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
-                                        thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
-                                    } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
-                                        log.warn("{}: Failed to get certificate signature of {} from Secret {}.", reconciliation, customCertSecret.getCertificate(), customCertSecret.getSecretName());
-                                        thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
-                                    }
+                                    if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
+                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
+                                    } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
+                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
+                                    } else
+                                        try {
+                                            X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
+                                            byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+                                            thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
+                                        } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
+                                            thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
+                                        }
                                 } else {
-                                    log.warn("{}: Secret {} with custom TLS certificate does not exist.", reconciliation, customCertSecret.getSecretName());
-                                    thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist.");
+                                    thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist."));
                                 }
                             } else {
-                                log.warn("{}: Failed to get secret {} with custom TLS certificate.", reconciliation, customCertSecret.getSecretName());
-                                thumbprintPromise.fail("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate.");
+                                thumbprintPromise.fail(new NoSuchResourceException("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate."));
                             }
                         });
             } else {
