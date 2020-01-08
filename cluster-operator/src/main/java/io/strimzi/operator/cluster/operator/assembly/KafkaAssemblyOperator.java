@@ -3238,31 +3238,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getJmxTransDescription() {
-            Promise<ReconciliationState> promise = Promise.promise();
+            int numOfBrokers = kafkaCluster.getReplicas();
+            this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
+            if (this.jmxTrans != null) {
+                this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTransSpec(), numOfBrokers);
+                this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
+            }
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                future -> {
-                    try {
-                        this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
-                        if (this.jmxTrans != null) {
-                            int numOfBrokers = kafkaCluster.getReplicas();
-                            this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getKafka().getJmxOptions().getJmxTransSpec(), numOfBrokers);
-                            this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
-                        }
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        promise.complete(res.result());
-                    } else {
-                        promise.fail(res.cause());
-                    }
-                }
-            );
-            return promise.future();
+            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> jmxTransConfigMap() {
@@ -3284,26 +3267,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return deploymentFuture.compose(dep -> {
                     Future<ConfigMap> configMapFuture = configMapOperations.getAsync(namespace, jmxTransConfigMap.getMetadata().getName());
                     return configMapFuture.compose(res -> {
-                        if (configMapFuture.succeeded()) {
-                            String resourceVersion = configMapFuture.result().getMetadata().getResourceVersion();
-                            // getting the current cluster CA generation from the current deployment, if exists
-                            int caCertGeneration = getCaCertGeneration(this.clusterCa);
-                            Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
-                                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                            Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
-                                    JmxTrans.CONFIG_MAP_ANNOTATION_KEY, resourceVersion);
-                            return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name),
-                                    jmxTransDeployment));
-                        } else {
-                            System.out.println("Couldn't Get Config Map, will destroy deployment");
-                            return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name), null));
-                        }
+                        String resourceVersion = res.getMetadata().getResourceVersion();
+                        // getting the current cluster CA generation from the current deployment, if it exists
+                        int caCertGeneration = getCaCertGeneration(this.clusterCa);
+                        Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
+                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
+                                JmxTrans.CONFIG_MAP_ANNOTATION_KEY, resourceVersion);
+                        return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name),
+                                jmxTransDeployment));
                     }).map(i -> this);
                 }).map(i -> this);
             } else {
                 return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name), null));
             }
-
         }
 
         Future<ReconciliationState> jmxTransDeploymentReady() {

@@ -36,12 +36,22 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
 
     private static final long serialVersionUID = 1L;
+    protected String image;
     private List<JmxTransOutputDefinitionTemplate> outputDefinitionTemplates = null;
-    private List<JmxTransQueryTemplate> queries = null;
+    private List<JmxTransQueryTemplate> kafkaQueries = null;
 
     private ResourceRequirements resources;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    @Description("The image to use for the JmxTrans")
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
 
 
     @JsonProperty(value = "outputDefinitions", required = true)
@@ -60,12 +70,12 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Queries to send to the Kafka brokers to define what data should be read from each broker. " +
             "For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].")
-    public List<JmxTransQueryTemplate> getQueries() {
-        return queries;
+    public List<JmxTransQueryTemplate> getKafkaQueries() {
+        return kafkaQueries;
     }
 
-    public void setQueries(List<JmxTransQueryTemplate> queries) {
-        this.queries = queries;
+    public void setKafkaQueries(List<JmxTransQueryTemplate> kafkaQueries) {
+        this.kafkaQueries = kafkaQueries;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

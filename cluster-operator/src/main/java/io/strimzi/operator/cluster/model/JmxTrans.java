@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
-import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
@@ -33,6 +32,7 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +50,11 @@ public class JmxTrans extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final String DEFAULT_JMXTRANS_IMAGE = "strimzi/jmxtrans:latest";
-    public static final Probe LIVENESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final io.strimzi.api.kafka.model.Probe DEFAULT_JMX_TRANS_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
+            .withInitialDelaySeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_DELAY)
+            .withTimeoutSeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
+            .build();
 
     // Configuration for mounting `config.json` to be used as Config during run time of the JmxTrans
     public static final String JMXTRANS_CONFIGMAP_KEY = "config.json";
@@ -78,7 +82,7 @@ public class JmxTrans extends AbstractModel {
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.livenessPath = "/metrics";
-        this.livenessProbeOptions = LIVENESS_PROBE_OPTIONS;
+        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
 
         this.mountPath = "/var/lib/kafka";
 
@@ -88,21 +92,28 @@ public class JmxTrans extends AbstractModel {
 
     public static JmxTrans fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         JmxTrans result = null;
-
-        KafkaJmxOptions spec = kafkaAssembly.getSpec().getKafka().getJmxOptions();
-        if (spec != null && spec.getJmxTransSpec() != null) {
+        JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTransSpec();
+        if (spec != null) {
+            if (kafkaAssembly.getSpec().getKafka().getJmxOptions() == null) {
+                log.info("Can't start up JmxTrans as Kafka JmxOptions is disabled");
+                return null;
+            }
             result = new JmxTrans(kafkaAssembly.getMetadata().getNamespace(),
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
             result.isDeployed = true;
 
-            if (spec.getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
+            if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
                 result.isJmxAuthenticated = true;
             }
 
-            result.setResources(spec.getJmxTransSpec().getResources());
+            result.setResources(spec.getResources());
 
-            result.setImage(DEFAULT_JMXTRANS_IMAGE);
+            String image = spec.getImage();
+            if (image == null) {
+                image = DEFAULT_JMXTRANS_IMAGE;
+            }
+            result.setImage(image);
 
             result.setOwnerReference(kafkaAssembly);
         }
@@ -149,7 +160,7 @@ public class JmxTrans extends AbstractModel {
         String headlessService = KafkaCluster.headlessServiceName(cluster) + "." + namespace + ".svc";
         for (int brokerNumber = 0; brokerNumber < numOfBrokers; brokerNumber++) {
             String brokerServiceName = KafkaCluster.externalServiceName(clusterName, brokerNumber) + "." + headlessService;
-            servers.servers.add(convertSpecToServers(spec, brokerServiceName, JMX_PORT));
+            servers.servers.add(convertSpecToServers(spec, brokerServiceName));
         }
         try {
             return mapper.writeValueAsString(servers);
@@ -189,7 +200,7 @@ public class JmxTrans extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
-                .withReadinessProbe(ModelUtils.kafkaJmxMetricsBrokerProbe(readinessProbeOptions, clusterName))
+                .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, clusterName))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -255,6 +266,12 @@ public class JmxTrans extends AbstractModel {
         return isJmxAuthenticated;
     }
 
+    protected static io.fabric8.kubernetes.api.model.Probe jmxTransReadinessProbe(io.strimzi.api.kafka.model.Probe  kafkaJmxMetricsReadinessProbe, String clusterName) {
+        String internalBootstrapServiceName = KafkaCluster.headlessServiceName(clusterName);
+        String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);
+        kafkaJmxMetricsReadinessProbe = kafkaJmxMetricsReadinessProbe == null ? DEFAULT_JMX_TRANS_PROBE : kafkaJmxMetricsReadinessProbe;
+        return ModelUtils.createExecProbe(Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue), kafkaJmxMetricsReadinessProbe);
+    }
     /**
      * Wrapper class used to create the overall config file
      * Servers: A list of servers and what they will query and output
@@ -274,12 +291,17 @@ public class JmxTrans extends AbstractModel {
     @SuppressWarnings("SE_BAD_FIELD_INNER_CLASS")
     static class Server implements Serializable {
         private static final long serialVersionUID = 1L;
+
         public String host;
+
         public int port;
+
         @JsonProperty("queries")
         public List<Queries> queriesTemplate;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public String username;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public String password;
 
@@ -294,8 +316,11 @@ public class JmxTrans extends AbstractModel {
     @SuppressWarnings("SE_BAD_FIELD_INNER_CLASS")
     static class Queries implements Serializable {
         private static final long serialVersionUID = 1L;
+
         public String obj;
+
         public List<String> attr;
+
         @JsonProperty("outputWriters")
         public List<OutputWriter> outputDefinitionTemplates = null;
     }
@@ -312,26 +337,30 @@ public class JmxTrans extends AbstractModel {
         private static final long serialVersionUID = 1L;
         @JsonProperty("@class")
         public String atClasses;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public String host;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public int port;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public int flushDelayInSeconds;
+
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         public List<String> typeNames;
     }
 
-    private Server convertSpecToServers(JmxTransSpec spec, String brokerServiceName, int metricsPort) {
+    private Server convertSpecToServers(JmxTransSpec spec, String brokerServiceName) {
         Server server = new Server();
         server.host = brokerServiceName;
-        server.port = metricsPort;
+        server.port = AbstractModel.JMX_PORT;
         if (isJmxAuthenticated()) {
             server.username = "${kafka.username}";
             server.password = "${kafka.password}";
         }
         List<Queries> queriesTemplates = new ArrayList<>();
-        for (JmxTransQueryTemplate queryTemplate : spec.getQueries()) {
+        for (JmxTransQueryTemplate queryTemplate : spec.getKafkaQueries()) {
             Queries query = new Queries();
             query.obj = queryTemplate.getTargetMBean();
             query.attr = queryTemplate.getAttributes();

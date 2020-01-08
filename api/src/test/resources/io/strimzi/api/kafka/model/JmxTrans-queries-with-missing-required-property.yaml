@@ -12,13 +12,12 @@ spec:
     listeners:
       plain: {}
       tls: {}
-    jmxOptions:
-      jmxTrans:
-        outputDefinitions:
-          - outputType: "wont matter about type"
-            name: "won't matter"
-        queries:
-          - empty: "object"
+  jmxTrans:
+    outputDefinitions:
+      - outputType: "wont matter about type"
+        name: "won't matter"
+    kafkaQueries:
+      - empty: "object"
   zookeeper:
     replicas: 1
     storage:

@@ -361,20 +361,23 @@ public class KafkaAssemblyOperatorTest {
     public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
-        kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
-            .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
-            .withJmxTransSpec(new JmxTransSpecBuilder()
-                    .withQueries(new JmxTransQueryTemplateBuilder()
-                            .withNewTargetMBean("mbean")
-                            .withAttributes("attribute")
-                            .withOutputs("output")
-                            .build())
-                    .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
-                            .withOutputType("host")
-                            .withName("output")
-                            .build())
-                    .build())
-            .build());
+        kafka.getSpec()
+                .getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
+                .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
+                .build());
+
+        kafka.getSpec().setJmxTransSpec(new JmxTransSpecBuilder()
+                .withKafkaQueries(new JmxTransQueryTemplateBuilder()
+                        .withNewTargetMBean("mbean")
+                        .withAttributes("attribute")
+                        .withOutputs("output")
+                        .build())
+                .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                        .withOutputType("host")
+                        .withName("output")
+                        .build())
+                .build());
+
         createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
                 .withNewMetadata()
                 .withName(KafkaCluster.jmxSecretName("foo"))
@@ -588,7 +591,6 @@ public class KafkaAssemblyOperatorTest {
                     .withNewMetadata().withResourceVersion("123").endMetadata()
                     .build())
         );
-
 
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
