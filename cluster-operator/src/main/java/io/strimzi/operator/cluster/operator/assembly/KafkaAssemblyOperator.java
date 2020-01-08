@@ -1971,10 +1971,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (certSecret != null) {
                                     if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
-                                        log.warn("{}: Secret {} does not contain certificate under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getCertificate());
                                         thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
                                     } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
-                                        log.warn("{}: Secret {} does not contain custom certificate private key under the key {}.", reconciliation, customCertSecret.getSecretName(), customCertSecret.getKey());
                                         thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
                                     } else
                                         try {
@@ -1982,15 +1980,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
                                             thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
                                         } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
-                                            log.warn("{}: Failed to get certificate signature of {} from Secret {}.", reconciliation, customCertSecret.getCertificate(), customCertSecret.getSecretName());
                                             thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
                                         }
                                 } else {
-                                    log.warn("{}: Secret {} with custom TLS certificate does not exist.", reconciliation, customCertSecret.getSecretName());
                                     thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist.");
                                 }
                             } else {
-                                log.warn("{}: Failed to get secret {} with custom TLS certificate.", reconciliation, customCertSecret.getSecretName());
                                 thumbprintPromise.fail("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate.");
                             }
                         });
