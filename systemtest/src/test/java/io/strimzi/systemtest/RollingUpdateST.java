@@ -358,7 +358,6 @@ class RollingUpdateST extends MessagingBaseST {
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
         // check the new node is either in leader or follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
-        checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
@@ -481,16 +480,6 @@ class RollingUpdateST extends MessagingBaseST {
         LOGGER.info("{} pods statutes: {}", stableComponent, statusCount);
 
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
-    }
-
-    void checkZkPodsLog(List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            //Test that second pod does not have errors or failures in events
-            LOGGER.info("Checking logs from pod {}", name);
-            String uid = kubeClient().getPodUid(name);
-            List<Event> eventsForSecondPod = kubeClient().listEvents(uid);
-            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        }
     }
 
     void deployTestSpecificResources() {
