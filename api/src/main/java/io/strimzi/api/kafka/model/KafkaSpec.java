@@ -41,6 +41,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
     private TopicOperatorSpec topicOperator;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
+    private JmxTransSpec jmxTransSpec;
     private KafkaExporterSpec kafkaExporter;
 
     private CertificateAuthority clientsCa;
@@ -111,6 +112,17 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
     @Description("A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
     public List<String> getMaintenanceTimeWindows() {
         return maintenanceTimeWindows;
+    }
+
+    @Description("Configuration for JmxTrans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. " +
+            "For more information, go to https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]")
+    @JsonProperty("jmxTrans")
+    public JmxTransSpec getJmxTransSpec() {
+        return jmxTransSpec;
+    }
+
+    public void setJmxTransSpec(JmxTransSpec jmxTransSpec) {
+        this.jmxTransSpec = jmxTransSpec;
     }
 
     public void setMaintenanceTimeWindows(List<String> maintenanceTimeWindows) {

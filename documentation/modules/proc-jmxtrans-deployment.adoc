@@ -11,16 +11,19 @@
 
 You can configure a JmxTrans deployment using the jmxTrans property in the following resources:
 
-* `Kafka.spec.kafka.jmxOptions`
+* `Kafka.spec`
 
 A JmxTrans deployment can read from a secure or insecure Kafka broker.
 
 To configure a JmxTrans deployment, define the following properties:
 
-* `Kafka.spec.kafka.jmxOptions.jmxTrans.outputDefinitions`
-* `Kafka.spec.kafka.jmxOptions.jmxTrans.queries`
+* `Kafka.spec.jmxTrans.outputDefinitions`
+* `Kafka.spec.jmxTrans.kafkaQueries`
 
+For more information on these properties see, xref:type-JmxTransSpec-reference[JmxTransSpec schema reference].
 
+NOTE: JmxTrans will not come up enable you specify that JmxOptions on the Kafka broker.
+For more information see, xref:assembly-kafka-jmx-options[Kafka Jmx Options]
 .Configuring JmxTrans output definitions
 
 Output definitions specify where JMX metrics are pushed to, and in which data format.
@@ -37,19 +40,15 @@ kind: Kafka
 metadata:
   name: my-cluster
 spec:
-  kafka:
-    # ...
-    jmxOptions:
-      # ...
-      jmxTrans:
-        outputDefinitions:
-          - outputType: "com.googlecode.jmxtrans.model.output.GraphiteWriter"
-            host: "http://myLogstash"
-            port: 9999
-            flushDelay: 5
-            name: "logstash"
-          - outputType: "com.googlecode.jmxtrans.model.output.StdOutWriter"
-            name: "standardOut"
+  jmxTrans:
+    outputDefinitions:
+      - outputType: "com.googlecode.jmxtrans.model.output.GraphiteWriter"
+        host: "http://myLogstash"
+        port: 9999
+        flushDelay: 5
+        name: "logstash"
+      - outputType: "com.googlecode.jmxtrans.model.output.StdOutWriter"
+        name: "standardOut"
         # ...
     # ...
   zookeeper:
@@ -58,6 +57,7 @@ spec:
 
 .Configuring JmxTrans queries
 JmxTrans queries specify what JMX metrics are read from the Kafka brokers.
+Currently JmxTrans queries can only be sent to the Kafka Brokers.
 Configure the `targetMBean` property to specify which target MBean on the Kafka broker is addressed.
 Configuring the `attributes` property specifies which MBean attribute is read as JMX metrics from the target MBean.
 JmxTrans supports wildcards to read from target MBeans, and filter by specifying the `typenames`.
@@ -72,21 +72,13 @@ kind: Kafka
 metadata:
   name: my-cluster
 spec:
-  kafka:
-    # ...
-    jmxOptions:
-      # ...
-      jmxTrans:
-        outputDefinitions:
-          - outputType: "com.googlecode.jmxtrans.model.output.StdOutWriter"
-            name: "standardOut"
-        queries:
-          - targetMBean: "kafka.server:type=BrokerTopicMetrics,*"
-            typeNames: ["name"]
-            attributes:  ["Count"]
-            outputs: ["standardOut"]
-        # ...
-    # ...
+  # ...
+  jmxTrans:
+    kafkaQueries:
+      - targetMBean: "kafka.server:type=BrokerTopicMetrics,*"
+        typeNames: ["name"]
+        attributes:  ["Count"]
+        outputs: ["standardOut"]
   zookeeper:
     # ...
 ----

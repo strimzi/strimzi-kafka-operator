@@ -42,7 +42,8 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty(value = "outputType", required = true)
-    @Description("Template for setting the format of the data that will be pushed")
+    @Description("Template for setting the format of the data that will be pushed." +
+            "For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans OutputWriters]")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getOutputType() {
         return outputType;
@@ -52,7 +53,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.outputType = outputType;
     }
 
-    @Description("The IP address of the remote host that the data is pushed to.")
+    @Description("The DNS/hostname of the remote host that the data is pushed to.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;

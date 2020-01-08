@@ -12,16 +12,15 @@ spec:
     listeners:
       plain: {}
       tls: {}
-    jmxOptions:
-      jmxTrans:
-        outputDefinitions:
-          - host: "wont matter about the host"
-            port: 123
-            flushDelay: 321
-        queries:
-          - targetMBean: "MBean"
-            attributes:  ["attribute1"]
-            outputs: ["outputs"]
+  jmxTrans:
+    outputDefinitions:
+      - host: "wont matter about the host"
+        port: 123
+        flushDelay: 321
+    kafkaQueries:
+      - targetMBean: "MBean"
+        attributes:  ["attribute1"]
+        outputs: ["outputs"]
   zookeeper:
     replicas: 1
     storage:

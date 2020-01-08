@@ -851,60 +851,6 @@ spec:
                           - password
                       required:
                       - type
-                    jmxTrans:
-                      type: object
-                      properties:
-                        outputDefinitions:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              outputType:
-                                type: string
-                              host:
-                                type: string
-                              port:
-                                type: integer
-                              flushDelay:
-                                type: integer
-                              typeNames:
-                                type: array
-                                items:
-                                  type: string
-                              name:
-                                type: string
-                            required:
-                            - outputType
-                            - name
-                        queries:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              targetMBean:
-                                type: string
-                              attributes:
-                                type: array
-                                items:
-                                  type: string
-                              outputs:
-                                type: array
-                                items:
-                                  type: string
-                            required:
-                            - targetMBean
-                            - attributes
-                            - outputs
-                        resources:
-                          type: object
-                          properties:
-                            limits:
-                              type: object
-                            requests:
-                              type: object
-                      required:
-                      - outputDefinitions
-                      - queries
                 resources:
                   type: object
                   properties:
@@ -3326,6 +3272,62 @@ spec:
                   enum:
                   - renew-certificate
                   - replace-key
+            jmxTrans:
+              type: object
+              properties:
+                outputDefinitions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      outputType:
+                        type: string
+                      host:
+                        type: string
+                      port:
+                        type: integer
+                      flushDelay:
+                        type: integer
+                      typeNames:
+                        type: array
+                        items:
+                          type: string
+                      name:
+                        type: string
+                    required:
+                    - outputType
+                    - name
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                image:
+                  type: string
+                kafkaQueries:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      targetMBean:
+                        type: string
+                      attributes:
+                        type: array
+                        items:
+                          type: string
+                      outputs:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                    - targetMBean
+                    - attributes
+                    - outputs
+              required:
+              - outputDefinitions
+              - kafkaQueries
             kafkaExporter:
               type: object
               properties:
