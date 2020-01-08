@@ -158,7 +158,8 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.7", String.format("%s.%s.svc", KafkaCluster.headlessServiceName(cluster), namespace));
             sbjAltNames.put("DNS.8", String.format("%s.%s.svc.%s", KafkaCluster.headlessServiceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
             sbjAltNames.put("DNS.9", KafkaCluster.podDnsName(namespace, cluster, i));
-            int nextDnsId = 10;
+            sbjAltNames.put("DNS.10", KafkaCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
+            int nextDnsId = 11;
             int nextIpId = 1;
 
             if (externalBootstrapAddresses != null)   {

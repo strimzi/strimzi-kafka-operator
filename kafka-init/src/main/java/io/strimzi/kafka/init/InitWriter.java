@@ -6,7 +6,6 @@ package io.strimzi.kafka.init;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import java.util.Arrays;
 
 import io.strimzi.operator.cluster.model.NodeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -73,31 +72,6 @@ public class InitWriter {
         }
 
         return write(FILE_EXTERNAL_ADDRESS, externalAddress);
-    }
-
-    /**
-     * Write external addresses of each broker
-     *
-     * @return if the operation was executed successfully
-     */
-    public boolean writeExternalBrokerAddresses() {
-        if (config.getExternalAdvertisedAddresses() == null || config.getExternalAdvertisedAddresses().trim().isEmpty()) {
-            return true;
-        }
-        Arrays.stream(config.getExternalAdvertisedAddresses().split(" "))
-                .map(BrokerAddress::parse)
-                .forEach(this::writeBrokerAddress);
-
-        return true;
-    }
-
-    private void writeBrokerAddress(BrokerAddress brokerAddress) {
-        if (brokerAddress.getAdvertisedHost() != null) {
-            write(FILE_EXTERNAL_ADDRESS + "." + brokerAddress.getIndex() + ".host", brokerAddress.getAdvertisedHost());
-        }
-        if (brokerAddress.getAdvertisedPort() != null) {
-            write(FILE_EXTERNAL_ADDRESS + "." + brokerAddress.getIndex() + ".port", brokerAddress.getAdvertisedPort().toString());
-        }
     }
 
     /**

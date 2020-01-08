@@ -246,13 +246,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(1);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
-        createClientSecretVolume(producer, volumeList, isOpenShift);
-        createClientSecretVolume(consumer, volumeList, isOpenShift);
+        createClientSecretVolume(producer, volumeList, "producer-oauth-certs", isOpenShift);
+        createClientSecretVolume(consumer, volumeList, "consumer-oauth-certs", isOpenShift);
 
         return volumeList;
     }
 
-    protected void createClientSecretVolume(KafkaMirrorMakerClientSpec client, List<Volume> volumeList, boolean isOpenShift) {
+    protected void createClientSecretVolume(KafkaMirrorMakerClientSpec client, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift) {
         if (client.getTls() != null && client.getTls().getTrustedCertificates() != null && client.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: client.getTls().getTrustedCertificates()) {
                 // skipping if a volume with same Secret name was already added
@@ -262,7 +262,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(client.getAuthentication(), volumeList, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(client.getAuthentication(), volumeList, oauthVolumeNamePrefix, isOpenShift);
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -280,7 +280,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs");
 
         /** consumer auth*/
         if (consumer.getTls() != null && consumer.getTls().getTrustedCertificates() != null && consumer.getTls().getTrustedCertificates().size() > 0) {
@@ -293,7 +293,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs");
 
         return volumeMountList;
     }

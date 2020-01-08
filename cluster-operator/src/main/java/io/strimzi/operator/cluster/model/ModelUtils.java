@@ -9,14 +9,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -393,5 +398,79 @@ public class ModelUtils {
         }
 
         return false;
+    }
+
+    public static List<VolumeMount> getDataVolumeMountPaths(Storage storage, String mountPath)   {
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    volumeMounts.addAll(getDataVolumeMountPaths(volume, mountPath));
+                }
+            } else {
+                Integer id;
+
+                if (storage instanceof EphemeralStorage) {
+                    id = ((EphemeralStorage) storage).getId();
+                } else if (storage instanceof PersistentClaimStorage) {
+                    id = ((PersistentClaimStorage) storage).getId();
+                } else {
+                    throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
+                }
+
+                String name = getVolumePrefix(id);
+                String namedMountPath = mountPath + "/" + name;
+                volumeMounts.add(AbstractModel.createVolumeMount(name, namedMountPath));
+            }
+        }
+
+        return volumeMounts;
+    }
+
+    public static List<PersistentVolumeClaim> getDataPersistentVolumeClaims(Storage storage)   {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(getDataPersistentVolumeClaims(volume));
+                }
+            } else if (storage instanceof PersistentClaimStorage) {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String name = getVolumePrefix(id);
+                pvcs.add(AbstractModel.createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
+            }
+        }
+
+        return pvcs;
+    }
+
+    public static List<Volume> getDataVolumes(Storage storage)   {
+        List<Volume> volumes = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    volumes.addAll(getDataVolumes(volume));
+                }
+            } else if (storage instanceof EphemeralStorage) {
+                Integer id = ((EphemeralStorage) storage).getId();
+                String name = getVolumePrefix(id);
+                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
+                volumes.add(AbstractModel.createEmptyDirVolume(name, sizeLimit));
+            }
+        }
+
+        return volumes;
     }
 }
