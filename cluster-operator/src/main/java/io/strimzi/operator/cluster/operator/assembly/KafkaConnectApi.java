@@ -49,6 +49,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Future<Map<String, Object>> createOrUpdatePutRequest(
             String host, int port,
             String connectorName, JsonObject configJson) {
@@ -65,7 +66,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         response.bodyHandler(buffer -> {
                             ObjectMapper mapper = new ObjectMapper();
                             try {
-                                result.complete(mapper.readValue(buffer.getBytes(), new TypeReference<Map<String, Object>>() { }));
+                                result.complete(mapper.readValue(buffer.getBytes(), Map.class));
                             } catch (IOException e) {
                                 result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
                             }
@@ -114,6 +115,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Future<Map<String, Object>> status(String host, int port, String connectorName) {
         Future<Map<String, Object>> result = Future.future();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
@@ -124,7 +126,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         response.bodyHandler(buffer -> {
                             ObjectMapper mapper = new ObjectMapper();
                             try {
-                                result.complete(mapper.readValue(buffer.getBytes(), new TypeReference<Map<String, Object>>() { }));
+                                result.complete(mapper.readValue(buffer.getBytes(), Map.class));
                             } catch (IOException e) {
                                 result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
                             }
