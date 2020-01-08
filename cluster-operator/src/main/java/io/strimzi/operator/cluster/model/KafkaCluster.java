@@ -2357,7 +2357,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns the preferred node address type is configured by the user. Returns null otherwise.
+     * Returns the preferred node address type if configured by the user. Returns null otherwise.
      *
      * @return Preferred node address type as selected by the user
      */

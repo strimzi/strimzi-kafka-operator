@@ -21,7 +21,6 @@ public class NodeOperator extends AbstractNonNamespacedResourceOperator<Kubernet
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout in milliseconds.
      */
-
     public NodeOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
         super(vertx, client, "ClusterRoleBinding", operationTimeoutMs);
     }
