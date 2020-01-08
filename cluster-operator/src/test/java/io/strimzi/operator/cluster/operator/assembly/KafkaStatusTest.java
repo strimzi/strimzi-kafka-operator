@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
@@ -490,6 +492,120 @@ public class KafkaStatusTest {
             List<ListenerAddress> expected = new ArrayList<>();
             expected.add(new ListenerAddressBuilder().withHost("50.35.18.119").withPort(31234).build());
             expected.add(new ListenerAddressBuilder().withHost("55.36.78.115").withPort(31234).build());
+            expected.add(new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build());
+
+            async.flag();
+        });
+    }
+
+    @Test
+    public void testKafkaListenerNodePortAddressInStatusWithOverrides(VertxTestContext context) throws ParseException {
+        NodePortListenerBrokerOverride broker0 = new NodePortListenerBrokerOverrideBuilder()
+                .withBroker(0)
+                .withAdvertisedHost("my-address-0")
+                .build();
+
+        NodePortListenerBrokerOverride broker1 = new NodePortListenerBrokerOverrideBuilder()
+                .withBroker(1)
+                .withAdvertisedHost("my-address-1")
+                .build();
+
+        Kafka kafka = new KafkaBuilder(getKafkaCrd())
+                .editOrNewSpec()
+                    .editOrNewKafka()
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewOverrides()
+                                    .withBrokers(broker0, broker1)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the CRD Operator for Kafka resources
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock the KafkaSetOperator
+        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+
+        // Mock the ConfigMapOperator
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+
+        // Mock Pods Operator
+        Pod pod0 = new PodBuilder()
+                .withNewMetadata()
+                    .withNewName(clusterName + "-kafka-" + 0)
+                .endMetadata()
+                .withNewStatus()
+                    .withNewHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        Pod pod1 = new PodBuilder()
+                .withNewMetadata()
+                    .withNewName(clusterName + "-kafka-" + 1)
+                .endMetadata()
+                .withNewStatus()
+                    .withNewHostIP("10.0.0.25")
+                .endStatus()
+                .build();
+
+        Pod pod2 = new PodBuilder()
+                .withNewMetadata()
+                    .withNewName(clusterName + "-kafka-" + 2)
+                .endMetadata()
+                .withNewStatus()
+                    .withNewHostIP("10.0.0.13")
+                .endStatus()
+                .build();
+
+        List<Pod> pods = new ArrayList<>();
+        pods.add(pod0);
+        pods.add(pod1);
+        pods.add(pod2);
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+
+        // Mock Node operator
+        NodeOperator mockNodeOps = supplier.nodeOperator;
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
+
+        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+
+            assertThat(status.getListeners().size(), is(1));
+            assertThat(status.getListeners().get(0).getType(), is("external"));
+
+            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
+            assertThat(addresses.size(), is(3));
+
+            List<ListenerAddress> expected = new ArrayList<>();
+            expected.add(new ListenerAddressBuilder().withHost("my-address-0").withPort(31234).build());
+            expected.add(new ListenerAddressBuilder().withHost("my-address-1").withPort(31234).build());
             expected.add(new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build());
 
             async.flag();
