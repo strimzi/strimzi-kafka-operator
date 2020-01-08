@@ -30,9 +30,9 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * This class is used to generate the broker configuration templte. The template is later passed using a config map to
+ * This class is used to generate the broker configuration template. The template is later passed using a config map to
  * the broker pods. The scripts in the container images will fill in the variables in the template and use the
- * configuration file. This class is using the builder pattern to make it easy to test he different parts etc. To
+ * configuration file. This class is using the builder pattern to make it easy to test the different parts etc. To
  * generate the configuration file, it is using the PrintWriter.
  */
 public class KafkaBrokerConfigurationBuilder {

@@ -974,7 +974,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             .editSpec()
                                 .editFirstContainer()
                                     .withImage(upgradedImage)
-                                    //.withEnv(ModelUtils.envAsList(env))
                                 .endContainer()
                             .endSpec()
                         .endTemplate()
