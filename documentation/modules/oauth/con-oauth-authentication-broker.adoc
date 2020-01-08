@@ -86,8 +86,8 @@ NOTE: All communication with the authorization server should be performed using 
 
 You can configure a certificate truststore as a Kubernetes Secret in your {ProductName} project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
 
-You may want to configure a `userNameClaim` to properly extract a username from the JWT token.
-If you want to use Kafka ACL authorization, you will need to identify the user by their username during authentication.
+You might want to configure a `userNameClaim` to properly extract a username from the JWT token.
+If you want to use Kafka ACL authorization, you need to identify the user by their username during authentication.
 (The `sub` claim in JWT tokens is typically a unique ID, not a username.)
 
 .Example configuration for fast local JWT token validation
