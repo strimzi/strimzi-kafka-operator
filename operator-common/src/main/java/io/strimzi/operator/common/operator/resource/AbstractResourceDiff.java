@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
 public abstract class AbstractResourceDiff {
-    protected JsonNode lookupPath(JsonNode source, String path) {
+    protected static JsonNode lookupPath(JsonNode source, String path) {
         JsonNode s = source;
         for (String component : path.substring(1).split("/")) {
             if (s.isArray()) {

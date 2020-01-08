@@ -144,4 +144,14 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     public static String getLatestKafkaVersion() {
         return LATEST_KAFKA_VERSION;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

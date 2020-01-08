@@ -4,18 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import java.util.List;
+import java.util.function.Function;
+
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.BackOff;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.function.Function;
 
 /**
  * Specialization of {@link StatefulSetOperator} for StatefulSets of Kafka brokers
@@ -66,11 +66,13 @@ public class KafkaSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart,
-                                           Secret clusterCaCertSecret, Secret coKeySecret) {
-        return new KafkaRoller(vertx, podOperations, 1_000, operationTimeoutMs,
-            () -> new BackOff(250, 2, 10), sts, clusterCaCertSecret, coKeySecret, adminClientProvider)
-                .rollingRestart(podNeedsRestart);
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart) {
+        return maybeRollingUpdate(sts, podNeedsRestart, null, null);
     }
 
+    @Override
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart,
+                                           Secret clusterCaCertSecret, Secret coKeySecret) {
+        throw new UnsupportedOperationException();
+    }
 }

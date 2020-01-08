@@ -551,4 +551,43 @@ public class ModelUtils {
         }
         return String.join(" ", javaSystemPropertiesList);
     }
+
+    /**
+     * This method transforms a String into a List of Strings, where entry = line from input.
+     * The lines beginning with '#' (comments) are ignored.
+     * @param config ConfigMap data as a String
+     * @return List of String key=value
+     */
+    public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
+        List<String> validLines = new ArrayList<>();
+        if (config != null) {
+            List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
+
+            for (String line : allLines) {
+                if (!line.startsWith("#") && !line.isEmpty()) {
+                    validLines.add(line);
+                }
+            }
+        }
+        return validLines;
+    }
+
+    /**
+     * Transforms data from String into Map. The entries are line separated tuples of key=value.
+     * @param string string to get data from
+     * @return Map of (key, value)
+     */
+    public static Map<String, String> stringToMap(String string) {
+        Map<String, String> result = new HashMap<>();
+        List<String> list = ModelUtils.getLinesWithoutCommentsAndEmptyLines(string);
+        for (String line: list) {
+            String[] split = line.split("=", 2);
+            if (split.length == 1) {
+                result.put(split[0], "");
+            } else {
+                result.put(split[0], split[1]);
+            }
+        }
+        return result;
+    }
 }
