@@ -606,7 +606,7 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapService();
         assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
-        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabelsAsMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
         checkOwnerReference(kc.createOwnerReference(), ext);
 
@@ -735,7 +735,7 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapService();
         assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("LoadBalancer"));
-        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabelsAsMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
         assertThat(ext.getSpec().getLoadBalancerIP(), is(nullValue()));
         assertThat(ext.getSpec().getExternalTrafficPolicy(), is(nullValue()));
@@ -1091,7 +1091,7 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapService();
         assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("NodePort"));
-        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabelsAsMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
         checkOwnerReference(kc.createOwnerReference(), ext);
 
@@ -1178,7 +1178,7 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapService();
         assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("NodePort"));
-        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabelsAsMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, 32001, "TCP"))));
         checkOwnerReference(kc.createOwnerReference(), ext);
 
@@ -2485,7 +2485,7 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapService();
         assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
-        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels()));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabelsAsMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
         checkOwnerReference(kc.createOwnerReference(), ext);
 

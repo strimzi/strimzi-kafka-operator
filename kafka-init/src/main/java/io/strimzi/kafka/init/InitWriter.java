@@ -7,6 +7,8 @@ package io.strimzi.kafka.init;
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import java.util.Arrays;
+
+import io.strimzi.operator.cluster.model.NodeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +63,7 @@ public class InitWriter {
 
         List<NodeAddress> addresses = client.nodes().withName(config.getNodeName()).get().getStatus().getAddresses();
         log.info("NodeLabels = {}", addresses);
-        String externalAddress = findAddress(addresses);
+        String externalAddress = NodeUtils.findAddress(addresses, config.getAddressType());
 
         if (externalAddress == null) {
             log.error("External address not found");

@@ -119,7 +119,8 @@ public class CertificateRenewalTest {
     }
 
     private ArgumentCaptor<Secret> reconcileCa(VertxTestContext context, Kafka kafka, Supplier<Date> dateSupplier) throws InterruptedException {
-        SecretOperator secretOps = mock(SecretOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        SecretOperator secretOps = supplier.secretOperations;
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
             Map<String, String> requiredLabels = ((Labels) invocation.getArgument(1)).toMap();
@@ -136,10 +137,7 @@ public class CertificateRenewalTest {
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager, passwordGenerator,
-                new ResourceOperatorSupplier(null, null, null,
-                        null, null, secretOps, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null),
-                ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         AtomicReference<Throwable> error = new AtomicReference<>();

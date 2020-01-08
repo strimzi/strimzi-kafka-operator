@@ -867,7 +867,7 @@ public class KafkaCluster extends AbstractModel {
 
             Service service = createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
-                getSelectorLabels(),
+                getSelectorLabelsAsMap(),
                 mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations), loadBalancerIP);
 
             if (isExposedWithLoadBalancer()) {
@@ -947,7 +947,7 @@ public class KafkaCluster extends AbstractModel {
                 }
             }
 
-            Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
+            Labels selector = Labels.fromMap(getSelectorLabelsAsMap()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
             Service service = createService(perPodServiceName, getExternalServiceType(), ports,
                     getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
@@ -2354,5 +2354,22 @@ public class KafkaCluster extends AbstractModel {
 
     public void setJmxAuthenticated(boolean jmxAuthenticated) {
         isJmxAuthenticated = jmxAuthenticated;
+    }
+
+    /**
+     * Returns the preferred node address type if configured by the user. Returns null otherwise.
+     *
+     * @return Preferred node address type as selected by the user
+     */
+    public String getPreferredNodeAddressType()    {
+        if (isExposedWithNodePort())    {
+            KafkaListenerExternalNodePort listener = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+            if (listener.getConfiguration() != null)    {
+                return listener.getConfiguration().getPreferredAddressType().toValue();
+            }
+        }
+
+        return null;
     }
 }

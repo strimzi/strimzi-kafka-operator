@@ -29,4 +29,12 @@ rules:
   - storageclasses
   verbs:
    - get
+# The listing of nodes is needed to find the node addresses when the NodePort access is configured and set the proper
+# addresses in the status
+- apiGroups:
+    - ""
+  resources:
+    - nodes
+  verbs:
+    - list
 {{- end -}}

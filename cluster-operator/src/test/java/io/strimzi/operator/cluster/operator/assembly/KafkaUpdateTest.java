@@ -57,7 +57,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -124,7 +123,8 @@ public class KafkaUpdateTest {
     private List<StatefulSet> upgrade(VertxTestContext context, Map<String, String> versionMap,
                                       Kafka initialKafka, StatefulSet initialSs, Kafka updatedKafka,
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
-        KafkaSetOperator kso = mock(KafkaSetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        KafkaSetOperator kso = supplier.kafkaSetOperations;
 
         StatefulSet kafkaSts = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, VERSIONS).generateStatefulSet(false, null, null);
 
@@ -147,9 +147,7 @@ public class KafkaUpdateTest {
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                new ResourceOperatorSupplier(null, null, null,
-                        kso, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null, null),
+                supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 

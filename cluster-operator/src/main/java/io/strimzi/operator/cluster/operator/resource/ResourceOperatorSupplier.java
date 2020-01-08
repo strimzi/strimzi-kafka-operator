@@ -34,6 +34,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -74,6 +75,7 @@ public class ResourceOperatorSupplier {
     public final BuildConfigOperator buildConfigOperations;
     public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
+    public final NodeOperator nodeOperator;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -111,7 +113,8 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class),
                 new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class),
                 new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class),
-                new StorageClassOperator(vertx, client, operationTimeoutMs));
+                new StorageClassOperator(vertx, client, operationTimeoutMs),
+                new NodeOperator(vertx, client, operationTimeoutMs));
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -138,7 +141,8 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator,
                                     CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge> kafkaBridgeOperator,
                                     CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> kafkaConnectorOperator,
-                                    StorageClassOperator storageClassOperator) {
+                                    StorageClassOperator storageClassOperator,
+                                    NodeOperator nodeOperator) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -164,5 +168,6 @@ public class ResourceOperatorSupplier {
         this.kafkaBridgeOperator = kafkaBridgeOperator;
         this.storageClassOperations = storageClassOperator;
         this.kafkaConnectorOperator = kafkaConnectorOperator;
+        this.nodeOperator = nodeOperator;
     }
 }

@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -59,7 +59,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         this.operationTimeoutMs = operationTimeoutMs;
     }
 
-    protected abstract MixedOperation<T, L, D, R> operation();
+    protected abstract NonNamespaceOperation<T, L, D, R> operation();
 
     /**
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
@@ -244,9 +244,25 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return listInAnyNamespace(selector);
     }
 
+    /**
+     * Asynchronously list the resources with the given {@code selector}.
+     * @param selector The selector.
+     * @return A list of matching resources.
+     */
+    public Future<List<T>> listAsync(Labels selector) {
+        Promise<List<T>> result = Promise.promise();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+            future -> {
+                List<T> resource = list(selector);
+                future.complete(resource);
+            }, true, result
+        );
+        return result.future();
+    }
+
     @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
-        FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
+        FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
