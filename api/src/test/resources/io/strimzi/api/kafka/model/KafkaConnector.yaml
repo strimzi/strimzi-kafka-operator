@@ -11,3 +11,19 @@ spec:
   config:
     file: "/home/source/test.source.txt"
     topic: "test.topic"
+status:
+  observedGeneration: 0
+  connectorStatus:
+    name: "hdfs-sink-connector"
+    connector:
+      state: "RUNNING"
+      worker_id: "whatever:8083"
+    tasks:
+    - id: 0
+      state: "FAILED"
+      worker_id: "whatever:8083"
+      trace: "org.apache.kafka.common.errors.RecordTooLargeException\n"
+    - id: 1
+      state: "PAUSED"
+      worker_id: "whatever:8083"
+

@@ -39,6 +39,8 @@ spec:
               minimum: 1
             config:
               type: object
+            pause:
+              type: boolean
         status:
           type: object
           properties:
@@ -59,4 +61,6 @@ spec:
                     type: string
             observedGeneration:
               type: integer
+            connectorStatus:
+              type: object
 {{- end -}}

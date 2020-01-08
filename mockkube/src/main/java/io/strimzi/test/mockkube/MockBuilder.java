@@ -169,7 +169,10 @@ class MockBuilder<T extends HasMetadata,
                 return doCreate(resourceName, resource);
             }
         });
-        when(mixed.createOrReplaceWithNew()).thenReturn(doneable(mixed::createOrReplace));
+        when(mixed.createOrReplaceWithNew()).thenAnswer(i -> {
+            T resource = i.getArgument(0);
+            return doneable(resource, r -> mixed.withName(resource.getMetadata().getName()).createOrReplace(r));
+        });
         when(mixed.delete(ArgumentMatchers.<T[]>any())).thenAnswer(i -> {
             T resource = i.getArgument(0);
             String resourceName = resource.getMetadata().getName();
@@ -208,6 +211,15 @@ class MockBuilder<T extends HasMetadata,
         try {
             Constructor<D> declaredConstructor = doneableClass.getDeclaredConstructor(io.fabric8.kubernetes.api.builder.Function.class);
             return declaredConstructor.newInstance(f);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    D doneable(T instance, io.fabric8.kubernetes.api.builder.Function<T, T> f) {
+        try {
+            Constructor<D> declaredConstructor = doneableClass.getDeclaredConstructor(resourceTypeClass, io.fabric8.kubernetes.api.builder.Function.class);
+            return declaredConstructor.newInstance(instance, f);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -280,10 +292,17 @@ class MockBuilder<T extends HasMetadata,
                 return doCreate(resourceName, resource2);
             }
         });
-        when(resource.createOrReplaceWithNew()).thenReturn(doneable(resource::createOrReplace));
+        when(resource.createOrReplaceWithNew()).thenAnswer(i -> {
+            T t = resource.get();
+            return doneable(t, resource::createOrReplace);
+        });
         when(resource.withGracePeriod(anyLong())).thenReturn(resource);
         mockCascading(resource);
         mockPatch(resourceName, resource);
+        when(resource.edit()).thenAnswer(i -> {
+            T t = resource.get();
+            return doneable(t, instance -> doPatch(instance.getMetadata().getName(), resource, instance));
+        });
         mockDelete(resourceName, resource);
         if (Readiness.isReadinessApplicable(resourceTypeClass)) {
             mockIsReady(resourceName, resource);
@@ -362,13 +381,17 @@ class MockBuilder<T extends HasMetadata,
 
     protected void mockPatch(String resourceName, R resource) {
         when(resource.patch(any())).thenAnswer(invocation -> {
-            checkDoesExist(resourceName);
-            T argument = copyResource(invocation.getArgument(0));
-            LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
-            db.put(resourceName, incrementGeneration(incrementResourceVersion(argument)));
-            fireWatchers(resourceName, argument, Watcher.Action.MODIFIED, "patch");
-            return argument;
+            return doPatch(resourceName, resource, invocation.getArgument(0));
         });
+    }
+
+    private T doPatch(String resourceName, R resource, T instance) {
+        checkDoesExist(resourceName);
+        T argument = copyResource(instance);
+        LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
+        db.put(resourceName, incrementGeneration(incrementResourceVersion(argument)));
+        fireWatchers(resourceName, argument, Watcher.Action.MODIFIED, "patch");
+        return copyResource(argument);
     }
 
     protected void mockCascading(R resource) {
