@@ -138,7 +138,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
