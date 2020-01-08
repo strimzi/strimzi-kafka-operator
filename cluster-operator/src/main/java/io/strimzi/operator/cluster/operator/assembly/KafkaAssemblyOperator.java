@@ -1983,7 +1983,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
                                         }
                                 } else {
-                                    thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist.");
+                                    thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist."));
                                 }
                             } else {
                                 thumbprintPromise.fail("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate.");
