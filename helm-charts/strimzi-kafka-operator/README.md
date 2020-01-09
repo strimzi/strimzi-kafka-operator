@@ -54,7 +54,7 @@ the documentation for more details.
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
-| `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPresent`                                       |
+| `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`                                       |
 | `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
