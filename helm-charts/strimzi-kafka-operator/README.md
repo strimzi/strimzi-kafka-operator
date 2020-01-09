@@ -104,7 +104,6 @@ the documentation for more details.
 | `readinessProbe.periodSeconds`       | Readiness probe period in seconds         | 30                                                   |
 | `imageRepositoryOverride`            | Override all image repository config      | `nil`                                                |
 | `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
-| `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
 | `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |

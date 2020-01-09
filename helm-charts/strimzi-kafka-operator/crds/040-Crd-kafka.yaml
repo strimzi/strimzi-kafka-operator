@@ -1,14 +1,9 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: kafkas.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
-    chart: '{{ template "strimzi.chart" . }}'
     component: kafkas.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
   versions:
@@ -3689,4 +3684,3 @@ spec:
                           type: string
                         port:
                           type: integer
-{{- end -}}
