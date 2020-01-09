@@ -91,7 +91,7 @@
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
-:BridgeDockerTag: {ProductVersion}
+:BridgeDockerTag: {BridgeVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
@@ -106,7 +106,7 @@
 :DockerTopicOperator: strimzi/operator:{DockerTag}
 :DockerUserOperator: strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaBridge: strimzi/kafka-bridge:{DockerTag}
+:DockerKafkaBridge: strimzi/kafka-bridge:{BridgeDockerTag}
 :DockerImageUser: 1001
 
 // API Versions current

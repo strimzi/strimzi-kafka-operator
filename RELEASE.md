@@ -27,3 +27,12 @@ The release process should normally look like this:
 10. The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 11. Update the Strimzi manifest files in Operate Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
 
+## Updating Kafka Bridge version
+
+The version of Strimzi Kafka Bridge is defined in the file `./bridge.version`.
+Even the master branch is using this fixed version and not the version build from the `master` branch of Kafka Bridge.
+If you need to update the Kafka bridge to newer version, you should do it with following steps:
+
+1. Edit the `bridge.version` file and update it to contain the new Bridge version
+2. Run `make bridge_version` to update the related files to the new version
+3. Commit all modified files to Git and open a PR.
