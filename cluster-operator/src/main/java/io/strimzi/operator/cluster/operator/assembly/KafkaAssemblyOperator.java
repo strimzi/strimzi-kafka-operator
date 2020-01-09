@@ -1688,7 +1688,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             Set<ListenerAddress> statusAddresses = new HashSet<>();
 
                             for (Pod broker : pods) {
-                                if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
+                                String podName = broker.getMetadata().getName();
+                                Integer podIndex = Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
+
+                                if (kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex) != null)    {
+                                    ListenerAddress address = new ListenerAddressBuilder()
+                                            .withHost(kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex))
+                                            .withPort(externalBootstrapNodePort)
+                                            .build();
+
+                                    statusAddresses.add(address);
+                                } else if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                     String hostIP = broker.getStatus().getHostIP();
                                     Node podNode = nodes.stream().filter(node -> {
                                         if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
