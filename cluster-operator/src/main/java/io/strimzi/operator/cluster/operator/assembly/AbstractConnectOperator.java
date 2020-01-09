@@ -246,8 +246,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, boolean useResources, String connectorName, KafkaConnector connector) {
         if (connector == null) {
-            log.debug("{}: {}} cluster: deleting connector: {}", reconciliation, kind(), connectorName);
-            return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+            if (useResources) {
+                log.debug("{}: {}} cluster: deleting connector: {}", reconciliation, kind(), connectorName);
+                return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+            } else {
+                return Future.succeededFuture();
+            }
         } else {
             log.debug("{}: {}} cluster: creating/updating connector: {}", reconciliation, kind(), connectorName);
             if (connector.getSpec() == null) {
