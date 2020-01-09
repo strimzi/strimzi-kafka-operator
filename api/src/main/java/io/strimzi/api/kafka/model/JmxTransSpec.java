@@ -37,7 +37,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
     protected String image;
-    private List<JmxTransOutputDefinitionTemplate> outputDefinitionTemplates = null;
+    private List<JmxTransOutputDefinitionTemplate> outputDefinitions = null;
     private List<JmxTransQueryTemplate> kafkaQueries = null;
 
     private ResourceRequirements resources;
@@ -53,17 +53,16 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
         this.image = image;
     }
 
-
-    @JsonProperty(value = "outputDefinitions", required = true)
+    @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Defines the output hosts that will be referenced later on. " +
             "For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].")
-    public List<JmxTransOutputDefinitionTemplate> getOutputDefinitionTemplates() {
-        return outputDefinitionTemplates;
+    public List<JmxTransOutputDefinitionTemplate> getOutputDefinitions() {
+        return outputDefinitions;
     }
 
-    public void setOutputDefinitionTemplates(List<JmxTransOutputDefinitionTemplate>  outputDefinitionTemplates) {
-        this.outputDefinitionTemplates = outputDefinitionTemplates;
+    public void setOutputDefinitions(List<JmxTransOutputDefinitionTemplate> outputDefinitions) {
+        this.outputDefinitions = outputDefinitions;
     }
 
     @JsonProperty(required = true)

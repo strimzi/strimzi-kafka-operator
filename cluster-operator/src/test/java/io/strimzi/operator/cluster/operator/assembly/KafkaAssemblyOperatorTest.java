@@ -366,13 +366,13 @@ public class KafkaAssemblyOperatorTest {
                 .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
                 .build());
 
-        kafka.getSpec().setJmxTransSpec(new JmxTransSpecBuilder()
+        kafka.getSpec().setJmxTrans(new JmxTransSpecBuilder()
                 .withKafkaQueries(new JmxTransQueryTemplateBuilder()
                         .withNewTargetMBean("mbean")
                         .withAttributes("attribute")
                         .withOutputs("output")
                         .build())
-                .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
                         .withOutputType("host")
                         .withName("output")
                         .build())

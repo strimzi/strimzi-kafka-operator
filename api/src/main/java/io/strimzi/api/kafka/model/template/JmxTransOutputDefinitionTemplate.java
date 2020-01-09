@@ -35,7 +35,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
     private String outputType;
     private String host;
     private Integer port;
-    private Integer flushDelay;
+    private Integer flushDelaySeconds;
     private String name;
     private List<String> typeNames;
 
@@ -75,12 +75,12 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
 
     @Description("How many seconds the JmxTransSpec waits before pushing a new set of data out.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getFlushDelay() {
-        return flushDelay;
+    public Integer getFlushDelaySeconds() {
+        return flushDelaySeconds;
     }
 
-    public void setFlushDelay(Integer flushDelay) {
-        this.flushDelay = flushDelay;
+    public void setFlushDelaySeconds(Integer flushDelaySeconds) {
+        this.flushDelaySeconds = flushDelaySeconds;
     }
 
     @Description("Template for filtering data you want when a wildcard query is sent. " +

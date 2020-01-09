@@ -38,7 +38,7 @@ public class JmxTransTest {
     private final InlineLogging zooLog = new InlineLogging();
 
     private final JmxTransSpec jmxTransSpec = new JmxTransSpecBuilder()
-            .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+            .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
                     .withName("Name")
                     .withOutputType("output")
                     .build())
@@ -51,7 +51,7 @@ public class JmxTransTest {
 
     private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
             .editSpec()
-                .withJmxTransSpec(jmxTransSpec)
+                .withJmxTrans(jmxTransSpec)
                 .editKafka().withJmxOptions(new KafkaJmxOptionsBuilder()
                     .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
                 .build())

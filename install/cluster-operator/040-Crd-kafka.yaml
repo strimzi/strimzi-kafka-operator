@@ -3281,14 +3281,14 @@ spec:
                         type: string
                       port:
                         type: integer
-                      flushDelay:
-                        type: integer
                       typeNames:
                         type: array
                         items:
                           type: string
                       name:
                         type: string
+                      flushDelaySeconds:
+                        type: integer
                     required:
                     - outputType
                     - name
