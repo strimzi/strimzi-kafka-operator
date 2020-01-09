@@ -32,6 +32,7 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
 
     private String className;
     private Integer tasksMax;
+    private Boolean pause;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
@@ -62,6 +63,15 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
     }
     public void setConfig(Map<String, Object> config) {
         this.config = config;
+    }
+
+    @Description("Whether the connector should be paused. Defaults to false.")
+    public Boolean getPause() {
+        return pause;
+    }
+
+    public void setPause(Boolean pause) {
+        this.pause = pause;
     }
 
     @Override

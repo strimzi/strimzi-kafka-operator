@@ -4,27 +4,37 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public interface KafkaConnectApi {
-    Future<JsonObject> createOrUpdatePutRequest(String host, int port, String connectorName, JsonObject configJson);
+    Future<Map<String, Object>> createOrUpdatePutRequest(String host, int port, String connectorName, JsonObject configJson);
     Future<Void> delete(String host, int port, String connectorName);
+    Future<Map<String, Object>> status(String host, int port, String connectorName);
+    Future<Void> pause(String host, int port, String connectorName);
+    Future<Void> resume(String host, int port, String connectorName);
     Future<List<String>> list(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {
-    public ConnectRestException(String message) {
-        super(message);
+    ConnectRestException(String method, String path, int statusCode, String statusMessage, String message) {
+        super(method + " " + path + " returned " + statusCode + " (" + statusMessage + "): " + message);
+    }
+    public ConnectRestException(HttpClientResponse response, String message) {
+        this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message);
     }
 }
 
@@ -38,11 +48,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<JsonObject> createOrUpdatePutRequest(
+    @SuppressWarnings("unchecked")
+    public Future<Map<String, Object>> createOrUpdatePutRequest(
             String host, int port,
-            String connectorName,
-                                                       JsonObject configJson) {
-        Future<JsonObject> result = Future.future();
+            String connectorName, JsonObject configJson) {
+        Future<Map<String, Object>> result = Future.future();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
@@ -53,19 +63,22 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
                         response.bodyHandler(buffer -> {
-                            result.complete(buffer.toJsonObject());
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                result.complete(mapper.readValue(buffer.getBytes(), Map.class));
+                            } catch (IOException e) {
+                                result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
+                            }
                         });
                     } else {
                         // TODO Handle 409 (Conflict) indicating a rebalance in progress
                         response.bodyHandler(buffer -> {
                             JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(x.getString("message")));
+                            result.fail(new ConnectRestException(response, x.getString("message")));
                         });
                     }
                 })
-                .exceptionHandler(error -> {
-                    result.fail(error);
-                })
+                .exceptionHandler(result::fail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .putHeader("Content-Type", "application/json")
@@ -88,14 +101,79 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         // TODO Handle 409 (Conflict) indicating a rebalance in progress
                         response.bodyHandler(buffer -> {
                             JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(x.getString("message")));
+                            result.fail(new ConnectRestException(response, x.getString("message")));
                         });
                     }
                 })
+                .exceptionHandler(result::fail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .putHeader("Content-Type", "application/json")
-                //.write(configJson.toBuffer())
+                .end();
+        return result;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Future<Map<String, Object>> status(String host, int port, String connectorName) {
+        Future<Map<String, Object>> result = Future.future();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        String path = "/connectors/" + connectorName + "/status";
+        vertx.createHttpClient(options)
+                .get(port, host, path, response -> {
+                    if (response.statusCode() == 200) {
+                        response.bodyHandler(buffer -> {
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                result.complete(mapper.readValue(buffer.getBytes(), Map.class));
+                            } catch (IOException e) {
+                                result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
+                            }
+                        });
+                    } else {
+                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                        response.bodyHandler(buffer -> {
+                            JsonObject x = buffer.toJsonObject();
+                            result.fail(new ConnectRestException(response, x.getString("message")));
+                        });
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .setFollowRedirects(true)
+                .putHeader("Accept", "application/json")
+                .putHeader("Content-Type", "application/json")
+                .end();
+        return result;
+    }
+
+    @Override
+    public Future<Void> pause(String host, int port, String connectorName) {
+        return pauseResume(host, port, "/connectors/" + connectorName + "/pause");
+    }
+
+    @Override
+    public Future<Void> resume(String host, int port, String connectorName) {
+        return pauseResume(host, port, "/connectors/" + connectorName + "/resume");
+    }
+
+    private Future<Void> pauseResume(String host, int port, String path) {
+        Future<Void> result = Future.future();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        vertx.createHttpClient(options)
+                .put(port, host, path, response -> {
+                    response.exceptionHandler(error -> {
+                        result.fail(error);
+                    });
+                    if (response.statusCode() == 202) {
+                        result.complete();
+                    } else {
+                        result.fail("Unexpected status code " + response.statusCode()
+                                + " for GET request to " + host + ":" + port + path);
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .setFollowRedirects(true)
+                .putHeader("Accept", "application/json")
                 .end();
         return result;
     }
@@ -110,7 +188,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     response.exceptionHandler(error -> {
                         result.fail(error);
                     });
-                    if (response.statusCode() == 200 || response.statusCode() == 201) {
+                    if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
                             JsonArray objects = buffer.toJsonArray();
                             List<String> list = new ArrayList<>(objects.size());
@@ -128,13 +206,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 + " for GET request to " + host + ":" + port + path);
                     }
                 })
-                .exceptionHandler(error -> {
-                    result.fail(error);
-                })
+                .exceptionHandler(result::fail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end();
         return result;
-
     }
 }

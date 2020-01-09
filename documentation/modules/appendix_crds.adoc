@@ -2375,6 +2375,8 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |integer
 |config    1.2+<.<|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
+|pause     1.2+<.<|Whether the connector should be paused. Defaults to false.
+|boolean
 |====
 
 [id='type-KafkaConnectorStatus-{context}']
@@ -2390,5 +2392,7 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
+|connectorStatus     1.2+<.<|The connector status, as reported by the Kafka Connect REST API.
+|map
 |====
 

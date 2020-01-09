@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.debezium.kafka.KafkaCluster;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -21,11 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -87,6 +92,7 @@ public class KafkaConnectApiTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         CountDownLatch async = new CountDownLatch(1);
@@ -101,6 +107,51 @@ public class KafkaConnectApiTest {
                 return client.createOrUpdatePutRequest("localhost", PORT, "test", o);
             })
             .compose(created -> {
+                Promise<Map<String, Object>> promise = Promise.promise();
+                Handler<Long> handler = new Handler<Long>() {
+                    @Override
+                    public void handle(Long timerId) {
+                        client.status("localhost", PORT, "test").setHandler(result -> {
+                            if (result.succeeded()) {
+                                Map<String, Object> status = result.result();
+                                if ("RUNNING".equals(((Map) status.getOrDefault("connector", emptyMap())).get("state"))) {
+                                    promise.complete(status);
+                                    return;
+                                } else {
+                                    System.err.println(status);
+                                }
+                            } else {
+                                result.cause().printStackTrace();
+                            }
+                            vertx.setTimer(1000, this);
+                        });
+                    }
+                };
+                vertx.setTimer(1000, handler);
+                return promise.future();
+            })
+            .compose(status -> {
+                try {
+                    assertEquals("test", status.get("name"));
+                    assertEquals("RUNNING", ((Map) status.getOrDefault("connector", emptyMap())).get("state"));
+                    assertEquals("localhost:18083", ((Map) status.getOrDefault("connector", emptyMap())).get("worker_id"));
+                    List<Map> tasks = (List<Map>) status.get("tasks");
+                    for (Map an : tasks) {
+                        assertEquals("RUNNING", an.get("state"));
+                        assertEquals("localhost:18083", an.get("worker_id"));
+                    }
+                    return Future.succeededFuture();
+                } catch (Throwable e) {
+                    return Future.failedFuture(e);
+                }
+            })
+            .compose(ignored -> {
+                return client.pause("localhost", PORT, "test");
+            })
+            .compose(ignored -> {
+                return client.resume("localhost", PORT, "test");
+            })
+            .compose(ignored1 -> {
                 JsonObject o = new JsonObject()
                     .put("connector.class", "ThisConnectorDoesNotExist")
                     .put("tasks.max", "1")
@@ -168,7 +219,10 @@ public class KafkaConnectApiTest {
                 async.countDown();
                 return Future.succeededFuture();
             });
-        async.await(30, TimeUnit.SECONDS);
-        context.completeNow();
+        if (async.await(60, TimeUnit.SECONDS)) {
+            context.completeNow();
+        } else {
+            context.failNow(new TimeoutException("Timeout!"));
+        }
     }
 }
