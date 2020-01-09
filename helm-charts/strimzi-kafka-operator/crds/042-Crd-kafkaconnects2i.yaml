@@ -1,14 +1,9 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kafkamirrormakers.kafka.strimzi.io
+  name: kafkaconnects2is.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
-    chart: '{{ template "strimzi.chart" . }}'
-    component: kafkamirrormakers.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
+    component: kafkaconnects2is.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
   versions:
@@ -21,27 +16,17 @@ spec:
   version: v1beta1
   scope: Namespaced
   names:
-    kind: KafkaMirrorMaker
-    listKind: KafkaMirrorMakerList
-    singular: kafkamirrormaker
-    plural: kafkamirrormakers
+    kind: KafkaConnectS2I
+    listKind: KafkaConnectS2IList
+    singular: kafkaconnects2i
+    plural: kafkaconnects2is
     shortNames:
-    - kmm
+    - kcs2i
   additionalPrinterColumns:
   - name: Desired replicas
-    description: The desired number of Kafka Mirror Maker replicas
+    description: The desired number of Kafka Connect replicas
     JSONPath: .spec.replicas
     type: integer
-  - name: Consumer Bootstrap Servers
-    description: The boostrap servers for the consumer
-    JSONPath: .spec.consumer.bootstrapServers
-    type: string
-    priority: 1
-  - name: Producer Bootstrap Servers
-    description: The boostrap servers for the producer
-    JSONPath: .spec.producer.bootstrapServers
-    type: string
-    priority: 1
   subresources:
     status: {}
   validation:
@@ -52,254 +37,58 @@ spec:
           properties:
             replicas:
               type: integer
-              minimum: 1
             image:
               type: string
-            whitelist:
-              type: string
-            consumer:
-              type: object
-              properties:
-                numStreams:
-                  type: integer
-                  minimum: 1
-                offsetCommitInterval:
-                  type: integer
-                groupId:
-                  type: string
-                bootstrapServers:
-                  type: string
-                authentication:
-                  type: object
-                  properties:
-                    accessToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    accessTokenIsJwt:
-                      type: boolean
-                    certificateAndKey:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - certificate
-                      - key
-                      - secretName
-                    clientId:
-                      type: string
-                    clientSecret:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    disableTlsHostnameVerification:
-                      type: boolean
-                    maxTokenExpirySeconds:
-                      type: integer
-                    passwordSecret:
-                      type: object
-                      properties:
-                        password:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - password
-                      - secretName
-                    refreshToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    tlsTrustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                        - certificate
-                        - secretName
-                    tokenEndpointUri:
-                      type: string
-                    type:
-                      type: string
-                      enum:
-                      - tls
-                      - scram-sha-512
-                      - plain
-                      - oauth
-                    username:
-                      type: string
-                  required:
-                  - type
-                config:
-                  type: object
-                tls:
-                  type: object
-                  properties:
-                    trustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                        - certificate
-                        - secretName
-              required:
-              - groupId
-              - bootstrapServers
-            producer:
-              type: object
-              properties:
-                bootstrapServers:
-                  type: string
-                abortOnSendFailure:
-                  type: boolean
-                authentication:
-                  type: object
-                  properties:
-                    accessToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    accessTokenIsJwt:
-                      type: boolean
-                    certificateAndKey:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - certificate
-                      - key
-                      - secretName
-                    clientId:
-                      type: string
-                    clientSecret:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    disableTlsHostnameVerification:
-                      type: boolean
-                    maxTokenExpirySeconds:
-                      type: integer
-                    passwordSecret:
-                      type: object
-                      properties:
-                        password:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - password
-                      - secretName
-                    refreshToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        secretName:
-                          type: string
-                      required:
-                      - key
-                      - secretName
-                    tlsTrustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                        - certificate
-                        - secretName
-                    tokenEndpointUri:
-                      type: string
-                    type:
-                      type: string
-                      enum:
-                      - tls
-                      - scram-sha-512
-                      - plain
-                      - oauth
-                    username:
-                      type: string
-                  required:
-                  - type
-                config:
-                  type: object
-                tls:
-                  type: object
-                  properties:
-                    trustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                        - certificate
-                        - secretName
-              required:
-              - bootstrapServers
-            resources:
+            buildResources:
               type: object
               properties:
                 limits:
                   type: object
                 requests:
                   type: object
+            livenessProbe:
+              type: object
+              properties:
+                failureThreshold:
+                  type: integer
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                periodSeconds:
+                  type: integer
+                successThreshold:
+                  type: integer
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
+            readinessProbe:
+              type: object
+              properties:
+                failureThreshold:
+                  type: integer
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                periodSeconds:
+                  type: integer
+                successThreshold:
+                  type: integer
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
+            jvmOptions:
+              type: object
+              properties:
+                -XX:
+                  type: object
+                -Xms:
+                  type: string
+                  pattern: '[0-9]+[mMgG]?'
+                -Xmx:
+                  type: string
+                  pattern: '[0-9]+[mMgG]?'
+                gcLoggingEnabled:
+                  type: boolean
             affinity:
               type: object
               properties:
@@ -508,34 +297,6 @@ spec:
                               type: string
                           topologyKey:
                             type: string
-            tolerations:
-              type: array
-              items:
-                type: object
-                properties:
-                  effect:
-                    type: string
-                  key:
-                    type: string
-                  operator:
-                    type: string
-                  tolerationSeconds:
-                    type: integer
-                  value:
-                    type: string
-            jvmOptions:
-              type: object
-              properties:
-                -XX:
-                  type: object
-                -Xms:
-                  type: string
-                  pattern: '[0-9]+[mMgG]?'
-                -Xmx:
-                  type: string
-                  pattern: '[0-9]+[mMgG]?'
-                gcLoggingEnabled:
-                  type: boolean
             logging:
               type: object
               properties:
@@ -552,15 +313,6 @@ spec:
               - type
             metrics:
               type: object
-            tracing:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - jaeger
-              required:
-              - type
             template:
               type: object
               properties:
@@ -863,7 +615,17 @@ spec:
                             type: integer
                           value:
                             type: string
-                mirrorMakerContainer:
+                apiService:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                connectContainer:
                   type: object
                   properties:
                     env:
@@ -888,43 +650,234 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
-            livenessProbe:
+            authentication:
               type: object
               properties:
-                failureThreshold:
+                accessToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                accessTokenIsJwt:
+                  type: boolean
+                certificateAndKey:
+                  type: object
+                  properties:
+                    certificate:
+                      type: string
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - certificate
+                  - key
+                  - secretName
+                clientId:
+                  type: string
+                clientSecret:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                disableTlsHostnameVerification:
+                  type: boolean
+                maxTokenExpirySeconds:
                   type: integer
-                initialDelaySeconds:
-                  type: integer
-                  minimum: 0
-                periodSeconds:
-                  type: integer
-                successThreshold:
-                  type: integer
-                timeoutSeconds:
-                  type: integer
-                  minimum: 0
-            readinessProbe:
+                passwordSecret:
+                  type: object
+                  properties:
+                    password:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - password
+                  - secretName
+                refreshToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                tlsTrustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
+                tokenEndpointUri:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                  - tls
+                  - scram-sha-512
+                  - plain
+                  - oauth
+                username:
+                  type: string
+              required:
+              - type
+            bootstrapServers:
+              type: string
+            config:
+              type: object
+            externalConfiguration:
               type: object
               properties:
-                failureThreshold:
-                  type: integer
-                initialDelaySeconds:
-                  type: integer
-                  minimum: 0
-                periodSeconds:
-                  type: integer
-                successThreshold:
-                  type: integer
-                timeoutSeconds:
-                  type: integer
-                  minimum: 0
+                env:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                          secretKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                    required:
+                    - name
+                    - valueFrom
+                volumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      configMap:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          optional:
+                            type: boolean
+                          secretName:
+                            type: string
+                    required:
+                    - name
+            insecureSourceRepository:
+              type: boolean
+            resources:
+              type: object
+              properties:
+                limits:
+                  type: object
+                requests:
+                  type: object
+            tls:
+              type: object
+              properties:
+                trustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
+            tolerations:
+              type: array
+              items:
+                type: object
+                properties:
+                  effect:
+                    type: string
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  tolerationSeconds:
+                    type: integer
+                  value:
+                    type: string
+            tracing:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jaeger
+              required:
+              - type
             version:
               type: string
           required:
-          - replicas
-          - whitelist
-          - consumer
-          - producer
+          - bootstrapServers
         status:
           type: object
           properties:
@@ -945,4 +898,7 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-{{- end -}}
+            url:
+              type: string
+            buildConfigName:
+              type: string

@@ -1,14 +1,9 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kafkaconnects2is.kafka.strimzi.io
+  name: kafkaconnects.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
-    chart: '{{ template "strimzi.chart" . }}'
-    component: kafkaconnects2is.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
+    component: kafkaconnects.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
   versions:
@@ -21,12 +16,12 @@ spec:
   version: v1beta1
   scope: Namespaced
   names:
-    kind: KafkaConnectS2I
-    listKind: KafkaConnectS2IList
-    singular: kafkaconnects2i
-    plural: kafkaconnects2is
+    kind: KafkaConnect
+    listKind: KafkaConnectList
+    singular: kafkaconnect
+    plural: kafkaconnects
     shortNames:
-    - kcs2i
+    - kc
   additionalPrinterColumns:
   - name: Desired replicas
     description: The desired number of Kafka Connect replicas
@@ -42,15 +37,10 @@ spec:
           properties:
             replicas:
               type: integer
+            config:
+              type: object
             image:
               type: string
-            buildResources:
-              type: object
-              properties:
-                limits:
-                  type: object
-                requests:
-                  type: object
             livenessProbe:
               type: object
               properties:
@@ -302,6 +292,21 @@ spec:
                               type: string
                           topologyKey:
                             type: string
+            tolerations:
+              type: array
+              items:
+                type: object
+                properties:
+                  effect:
+                    type: string
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  tolerationSeconds:
+                    type: integer
+                  value:
+                    type: string
             logging:
               type: object
               properties:
@@ -318,6 +323,15 @@ spec:
               - type
             metrics:
               type: object
+            tracing:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jaeger
+              required:
+              - type
             template:
               type: object
               properties:
@@ -746,8 +760,6 @@ spec:
               - type
             bootstrapServers:
               type: string
-            config:
-              type: object
             externalConfiguration:
               type: object
               properties:
@@ -831,8 +843,6 @@ spec:
                             type: string
                     required:
                     - name
-            insecureSourceRepository:
-              type: boolean
             resources:
               type: object
               properties:
@@ -855,30 +865,6 @@ spec:
                     required:
                     - certificate
                     - secretName
-            tolerations:
-              type: array
-              items:
-                type: object
-                properties:
-                  effect:
-                    type: string
-                  key:
-                    type: string
-                  operator:
-                    type: string
-                  tolerationSeconds:
-                    type: integer
-                  value:
-                    type: string
-            tracing:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - jaeger
-              required:
-              - type
             version:
               type: string
           required:
@@ -905,6 +891,3 @@ spec:
               type: integer
             url:
               type: string
-            buildConfigName:
-              type: string
-{{- end -}}
