@@ -29,6 +29,10 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
+
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
@@ -45,7 +49,12 @@ public class Main {
     public static void main(String[] args) {
         log.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
-        Vertx vertx = Vertx.vertx();
+        //Setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        Vertx vertx = Vertx.vertx(options);
         KubernetesClient client = new DefaultKubernetesClient();
         SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
 
