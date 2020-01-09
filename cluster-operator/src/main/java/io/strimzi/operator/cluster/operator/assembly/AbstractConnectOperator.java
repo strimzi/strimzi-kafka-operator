@@ -249,6 +249,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             if (useResources) {
                 log.debug("{}: {}} cluster: deleting connector: {}", reconciliation, kind(), connectorName);
                 return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+            } else {
+                return Future.succeededFuture();
             }
         } else {
             log.debug("{}: {}} cluster: creating/updating connector: {}", reconciliation, kind(), connectorName);
