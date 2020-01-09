@@ -143,7 +143,7 @@ public class PodUtils {
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
-        LOGGER.info("Waiting till pods with prefix {} count is present", podNamePrefix);
+        LOGGER.info("Waiting till {} pods with prefix {} are present", numberOfPods, podNamePrefix);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == numberOfPods);
         LOGGER.info("Pods with count {} are present", numberOfPods);

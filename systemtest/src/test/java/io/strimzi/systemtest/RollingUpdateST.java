@@ -16,9 +16,9 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
-import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,7 +38,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -50,6 +49,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
@@ -203,7 +203,7 @@ class RollingUpdateST extends MessagingBaseST {
                             .withTls(false)
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
-                    .addToConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig(singletonMap("default.replication.factor", 1))
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec().done();
@@ -217,12 +217,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertEquals(3, initialReplicas);
 
-        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas)
-            .editSpec()
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
-            .endSpec()
-            .done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, initialReplicas).done();
 
         sendMessagesExternal(NAMESPACE, topicName, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
@@ -269,6 +264,68 @@ class RollingUpdateST extends MessagingBaseST {
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
     }
 
+    /**
+     * This test cover case, when KafkaRoller will not roll Kafka pods, because created topic doesn't meet requirements for roll remaining pods
+     * 1. Deploy kafka cluster with 4 pods
+     * 2. Create topic with 4 replicas
+     * 3. Scale down kafka cluster to 3 replicas
+     * 4. Trigger rolling update for Kafka cluster
+     * 5. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
+     */
+    @Test
+    void testKafkaWontRollUpBecauseTopic() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("auto.create.topics.enable", "false")
+                .endKafka()
+            .endSpec().done();
+
+        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
+        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
+        assertEquals(4, initialReplicas);
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 4, 4, 4).done();
+
+        //Test that the new pod does not have errors or failures in events
+        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME,  3));
+        List<Event> events = kubeClient().listEvents(uid);
+        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+
+        //Test that CO doesn't have any exceptions in log
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+
+        // scale down
+        int scaledDownReplicas = 3;
+        LOGGER.info("Scaling down to {}", scaledDownReplicas);
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
+
+        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
+
+        // set annotation to trigger Kafka rolling update
+        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
+            .editMetadata()
+                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+            .endMetadata().done();
+
+        // Wait for first reconciliation
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        // Wait for second reconciliation and check that pods are not rolled
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        for (Map.Entry<String, String> entry : kafkaPodsScaleDown.entrySet()) {
+            assertThat(kafkaPods, hasEntry(entry.getKey(), entry.getValue()));
+        }
+    }
+
     @Test
     void testZookeeperScaleUpScaleDown() throws Exception {
         int messageCount = 50;
@@ -301,7 +358,6 @@ class RollingUpdateST extends MessagingBaseST {
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
         // check the new node is either in leader or follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
-        checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
@@ -371,7 +427,7 @@ class RollingUpdateST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
@@ -393,7 +449,7 @@ class RollingUpdateST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
@@ -426,18 +482,8 @@ class RollingUpdateST extends MessagingBaseST {
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
-    void checkZkPodsLog(List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            //Test that second pod does not have errors or failures in events
-            LOGGER.info("Checking logs from pod {}", name);
-            String uid = kubeClient().getPodUid(name);
-            List<Event> eventsForSecondPod = kubeClient().listEvents(uid);
-            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        }
-    }
-
     void deployTestSpecificResources() {
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(Constants.KAFKA_CLIENTS).done();
     }
 
     @Override
@@ -450,7 +496,7 @@ class RollingUpdateST extends MessagingBaseST {
     void setKafkaClientsPodName() {
         // Get clients pod name
         defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                kubeClient().listPodsByPrefixInName(Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
     }
 
     @BeforeAll
