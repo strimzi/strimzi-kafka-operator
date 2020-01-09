@@ -349,7 +349,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.jmxTransDeployment())
                 .compose(state -> state.jmxTransDeploymentReady())
 
-
                 .map((Void) null)
                 .setHandler(chainPromise);
 
@@ -3241,7 +3240,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             int numOfBrokers = kafkaCluster.getReplicas();
             this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
             if (this.jmxTrans != null) {
-                this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTransSpec(), numOfBrokers);
+                this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
                 this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
             }
 
@@ -3263,10 +3262,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> jmxTransDeployment() {
             if (this.jmxTrans != null && this.jmxTransDeployment != null) {
-                Future<Deployment> deploymentFuture = deploymentOperations.getAsync(namespace, this.jmxTrans.getName());
-                return deploymentFuture.compose(dep -> {
-                    Future<ConfigMap> configMapFuture = configMapOperations.getAsync(namespace, jmxTransConfigMap.getMetadata().getName());
-                    return configMapFuture.compose(res -> {
+                return  deploymentOperations.getAsync(namespace, this.jmxTrans.getName()).compose(dep -> {
+                    return configMapOperations.getAsync(namespace, jmxTransConfigMap.getMetadata().getName()).compose(res -> {
                         String resourceVersion = res.getMetadata().getResourceVersion();
                         // getting the current cluster CA generation from the current deployment, if it exists
                         int caCertGeneration = getCaCertGeneration(this.clusterCa);
@@ -3276,8 +3273,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 JmxTrans.CONFIG_MAP_ANNOTATION_KEY, resourceVersion);
                         return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name),
                                 jmxTransDeployment));
-                    }).map(i -> this);
-                }).map(i -> this);
+                    });
+                });
             } else {
                 return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name), null));
             }

@@ -47,10 +47,8 @@ import static java.util.Collections.singletonList;
 public class JmxTrans extends AbstractModel {
 
     // Configuration defaults
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static final String DEFAULT_JMXTRANS_IMAGE = "strimzi/jmxtrans:latest";
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(15).build();
     private static final io.strimzi.api.kafka.model.Probe DEFAULT_JMX_TRANS_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
             .withInitialDelaySeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
@@ -92,7 +90,7 @@ public class JmxTrans extends AbstractModel {
 
     public static JmxTrans fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         JmxTrans result = null;
-        JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTransSpec();
+        JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTrans();
         if (spec != null) {
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions() == null) {
                 log.info("Can't start up JmxTrans as Kafka JmxOptions is disabled");
@@ -111,7 +109,7 @@ public class JmxTrans extends AbstractModel {
 
             String image = spec.getImage();
             if (image == null) {
-                image = DEFAULT_JMXTRANS_IMAGE;
+                image = System.getenv().getOrDefault(STRIMZI_DEFAULT_JMXTRANS_IMAGE, "strimzi/jmxtrans:latest");
             }
             result.setImage(image);
 
@@ -366,7 +364,7 @@ public class JmxTrans extends AbstractModel {
             query.attr = queryTemplate.getAttributes();
             query.outputDefinitionTemplates = new ArrayList<>();
 
-            for (JmxTransOutputDefinitionTemplate outputDefinitionTemplate : spec.getOutputDefinitionTemplates()) {
+            for (JmxTransOutputDefinitionTemplate outputDefinitionTemplate : spec.getOutputDefinitions()) {
                 if (queryTemplate.getOutputs().contains(outputDefinitionTemplate.getName())) {
                     OutputWriter outputWriter = new OutputWriter();
                     outputWriter.atClasses = outputDefinitionTemplate.getOutputType();
@@ -376,8 +374,8 @@ public class JmxTrans extends AbstractModel {
                     if (outputDefinitionTemplate.getPort() != null) {
                         outputWriter.port = outputDefinitionTemplate.getPort();
                     }
-                    if (outputDefinitionTemplate.getFlushDelay()  != null) {
-                        outputWriter.flushDelayInSeconds = outputDefinitionTemplate.getFlushDelay();
+                    if (outputDefinitionTemplate.getFlushDelaySeconds()  != null) {
+                        outputWriter.flushDelayInSeconds = outputDefinitionTemplate.getFlushDelaySeconds();
                     }
                     outputWriter.typeNames = outputDefinitionTemplate.getTypeNames();
                     query.outputDefinitionTemplates.add(outputWriter);

@@ -48,6 +48,7 @@ release_version:
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+/strimzi\/jmxtrans:$(RELEASE_VERSION)/g' {} \;
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 

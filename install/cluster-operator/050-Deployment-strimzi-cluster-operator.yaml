@@ -65,6 +65,8 @@ spec:
           value: strimzi/kafka-bridge:0.15.0
         - name: STRIMZI_LOG_LEVEL
           value: INFO
+        - name: STRIMZI_IMAGE_PULL_POLICY
+          value: Never
         livenessProbe:
           httpGet:
             path: /healthy
