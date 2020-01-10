@@ -93,9 +93,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
@@ -1447,13 +1445,30 @@ public class KafkaClusterTest {
         // Check Network Policies
         NetworkPolicy np = k.generateNetworkPolicy(true);
 
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
+
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertEquals(4, rules.size());
-        assertTrue(rules.contains(kafkaBrokersPeer));
-        assertTrue(rules.contains(eoPeer));
-        assertTrue(rules.contains(kafkaExporterPeer));
-        assertTrue(rules.contains(clusterOperatorPeer));
+        assertThat(rules.size(), is(4));
+        assertThat(rules.contains(kafkaBrokersPeer), is(true));
+        assertThat(rules.contains(eoPeer), is(true));
+        assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(clusterOperatorPeer), is(true));
+    }
+
+    @Test
+    public void testReplicationPortNetworkPolicyOnOldKubernetes() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy(false);
+
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
+
+        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+        assertThat(rules.size(), is(0));
     }
 
     @Test

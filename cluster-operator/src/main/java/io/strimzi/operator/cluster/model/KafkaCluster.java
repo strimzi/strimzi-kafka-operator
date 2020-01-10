@@ -41,6 +41,8 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -1869,34 +1871,50 @@ public class KafkaCluster extends AbstractModel {
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
+        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
+                .addNewPort()
+                    .withNewPort(REPLICATION_PORT)
+                .endPort()
+                .build();
+
         // Restrict access to 9091 / replication port
         if (namespaceAndPodSelectorNetworkPolicySupported) {
-            rules.add(new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort().withNewPort(REPLICATION_PORT).endPort()
-                    .addNewFrom()
-                        .withNewPodSelector() // cluster operator
-                            .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                        .endPodSelector()
-                        .withNewNamespaceSelector().endNamespaceSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // kafka cluster
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
-                        .endPodSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // entity operator
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
-                        .endPodSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // cluster operator
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
-                        .endPodSelector()
-                    .endFrom().build());
+            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                    .endPodSelector()
+                    .withNewNamespaceSelector()
+                    .endNamespaceSelector()
+                    .build();
+
+            NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // kafka cluster
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // entity operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
+            clientsPortPeers.add(clusterOperatorPeer);
+            clientsPortPeers.add(kafkaClusterPeer);
+            clientsPortPeers.add(entityOperatorPeer);
+            clientsPortPeers.add(kafkaExporterPeer);
+
+            replicationRule.setFrom(clientsPortPeers);
         }
 
-
+        rules.add(replicationRule);
 
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {
