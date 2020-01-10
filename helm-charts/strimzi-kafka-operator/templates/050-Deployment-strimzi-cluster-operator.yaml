@@ -67,6 +67,10 @@ spec:
             - name: STRIMZI_IMAGE_PULL_SECRETS
               value: {{ .Values.image.imagePullSecrets }}
             {{- end }}
+            {{- if .Values.image.imagePullPolicy }}
+            - name: STRIMZI_IMAGE_PULL_POLICY
+              value: {{ .Values.image.imagePullPolicy }}
+            {{- end }}
             {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}- name: KUBERNETES_SERVICE_DNS_DOMAIN
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
           livenessProbe:
