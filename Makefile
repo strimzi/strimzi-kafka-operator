@@ -131,6 +131,8 @@ pushtonexus:
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
 	$(CP) -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/quickstart.html strimzi-$(RELEASE_VERSION)/docs/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
