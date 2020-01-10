@@ -19,7 +19,7 @@ When you have created a container image for your connector plug-in, you need to 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
 * Kafka Connect REST API
 
-NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks or pausing and resuming connectors. You need to use the Kafka Connect REST API to perform those tasks.
+NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks. You need to use the Kafka Connect REST API to do this.
 
 .`KafkaConnector` resources
 
