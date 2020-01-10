@@ -805,6 +805,8 @@ spec:
                         minimum: 1
                       config:
                         type: object
+                      pause:
+                        type: boolean
                   checkpointConnector:
                     type: object
                     properties:
@@ -815,6 +817,8 @@ spec:
                         minimum: 1
                       config:
                         type: object
+                      pause:
+                        type: boolean
                   heartbeatConnector:
                     type: object
                     properties:
@@ -825,6 +829,8 @@ spec:
                         minimum: 1
                       config:
                         type: object
+                      pause:
+                        type: boolean
                   topics:
                     type: string
                   groups:

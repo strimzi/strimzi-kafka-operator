@@ -13,6 +13,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,6 +39,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -58,6 +61,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
+    private final String mirrorMakerClusterTlsTruststorePassword;
 
     public static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
     public static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
@@ -74,6 +78,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
     public static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
     
+    private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
+    private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
 
     /**
      * @param vertx The Vertx instance
@@ -82,18 +88,21 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+                                        PasswordGenerator passwordGenerator,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+        this(vertx, pfa, passwordGenerator, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
     }
 
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+                                        PasswordGenerator passwordGenerator,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
+        this.mirrorMakerClusterTlsTruststorePassword = passwordGenerator.generate();
     }
 
     @Override
@@ -124,6 +133,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Map<String, String> annotations = new HashMap<>();
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
+        mirrorMaker2Cluster.setClusterTlsTruststorePassword(this.mirrorMakerClusterTlsTruststorePassword);
+
         log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
@@ -134,7 +145,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaMirrorMaker2))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster))
                 .map((Void) null)
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult);
@@ -170,11 +181,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     /**
      * Reconcile all the MirrorMaker 2.0 connectors selected by the given MirrorMaker 2.0 instance.
      * @param reconciliation The reconciliation
-     * @param connect The MirrorMaker 2.0
-     * @return A future, failed if any of the connectors' could not be reconciled.
+     * @param kafkaMirrorMaker2 The MirrorMaker 2.0
+     * @return A future, failed if any of the connectors could not be reconciled.
      */
-    @Override
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
+    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         String mirrorMaker2Name = kafkaMirrorMaker2.getMetadata().getName();
         if (kafkaMirrorMaker2.getSpec() == null) {
             return maybeUpdateMirrorMaker2Status(reconciliation, kafkaMirrorMaker2,
@@ -196,12 +206,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             Stream<Future<Void>> deletionFutures = deleteMirrorMaker2ConnectorNames.stream()
                     .map(connectorName -> apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName));
             Stream<Future<Void>> createUpdateFutures = mirrors.stream()
-                    .map(mirror -> reconcileMirrorMaker2Connectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirror));
+                    .map(mirror -> reconcileMirrorMaker2Connectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirror, mirrorMaker2Cluster));
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
     }
 
-    private Future<Void> reconcileMirrorMaker2Connectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, KafkaMirrorMaker2MirrorSpec mirror) {
+    private Future<Void> reconcileMirrorMaker2Connectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         String targetClusterAlias = mirror.getTargetCluster();
         String sourceClusterAlias = mirror.getSourceCluster();
         if (targetClusterAlias == null) {
@@ -239,7 +249,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                             connectorSpec.setClassName(className);
                         }
 
-                        connectorSpec = prepareMirrorMaker2Connector(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec);
+                        connectorSpec = prepareMirrorMaker2Connector(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
                         log.debug("{}: {}} cluster: creating/updating connector {} config: {}", reconciliation, kind(), connectorName, asJson(connectorSpec).toString());
                         return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT, connectorName, asJson(connectorSpec));
                     })                            
@@ -247,16 +257,28 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .map((Void) null);
     }
 
-    private static KafkaConnectorSpec prepareMirrorMaker2Connector(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec) {
+    private static KafkaConnectorSpec prepareMirrorMaker2Connector(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Map<String, Object> config = connectorSpec.getConfig();
-        config.put(TARGET_CLUSTER_PREFIX + "alias", mirror.getTargetCluster());
-        config.put(TARGET_CLUSTER_PREFIX + "bootstrap.servers", targetCluster.getBootstrapServers());
+        config.put(TARGET_CLUSTER_PREFIX + "alias", targetCluster.getAlias());
+        config.put(TARGET_CLUSTER_PREFIX + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, targetCluster.getBootstrapServers());
+        if (targetCluster.getTls() != null) {
+            config.put(TARGET_CLUSTER_PREFIX + AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
+            config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + targetCluster.getAlias() + TRUSTSTORE_SUFFIX);
+            config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, mirrorMaker2Cluster.getClusterTlsTruststorePassword());
+        }
         config.putAll(targetCluster.getConfig().entrySet().stream()
                 .collect(Collectors.toMap(entry -> TARGET_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));
         config.putAll(targetCluster.getAdditionalProperties());
 
-        config.put(SOURCE_CLUSTER_PREFIX + "alias", mirror.getSourceCluster());
-        config.put(SOURCE_CLUSTER_PREFIX + "bootstrap.servers", sourceCluster.getBootstrapServers());
+        config.put(SOURCE_CLUSTER_PREFIX + "alias", sourceCluster.getAlias());
+        config.put(SOURCE_CLUSTER_PREFIX + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, sourceCluster.getBootstrapServers());        
+        if (sourceCluster.getTls() != null) {
+            config.put(SOURCE_CLUSTER_PREFIX + AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
+            config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + sourceCluster.getAlias() + TRUSTSTORE_SUFFIX);
+            config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, mirrorMaker2Cluster.getClusterTlsTruststorePassword());
+        }
         config.putAll(sourceCluster.getConfig().entrySet().stream()
                 .collect(Collectors.toMap(entry -> SOURCE_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));
         config.putAll(sourceCluster.getAdditionalProperties());

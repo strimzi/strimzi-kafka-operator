@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -125,9 +126,11 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
+        mirrorMaker2.setClusterTlsTruststorePassword("aaaaaaaaaa");
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -218,6 +221,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
@@ -321,6 +325,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
@@ -328,6 +333,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
+            compareTo.setClusterTlsTruststorePassword("aaaaaaaaaa");
 
             // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -411,6 +417,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
@@ -465,6 +472,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
@@ -521,6 +529,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
@@ -570,6 +579,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         CountDownLatch async = new CountDownLatch(2);
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
@@ -618,6 +628,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockMirrorMaker2Ops.updateStatusAsync(mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new PasswordGenerator(10, "a", "a"), 
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();

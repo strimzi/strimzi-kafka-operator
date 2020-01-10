@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -21,7 +22,12 @@ import io.strimzi.operator.common.model.Labels;
 
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
+    // Kafka MirrorMaker 2.0 connector configuration keys (EnvVariables)
+    protected static final String ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS = "STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS";
+    protected static final String ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTER_TRUSTSTORE_PASSWORD = "STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTER_TRUSTSTORE_PASSWORD";
+
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
+    private String clusterTlsTruststorePassword = "";
 
     /**
      * Constructor
@@ -37,14 +43,22 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         this.ancillaryConfigName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
     }
 
-    public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaVersion.Lookup versions) {
+    /**
+     * Creates instance of KafkaMirrorMaker2Cluster from CRD definition.
+     *
+     * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
+     * @param versions The image versions for MirrorMaker 2.0 clusters.
+     * @return The MirrorMaker 2.0 cluster model.
+     */
+    public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, 
+                                                   KafkaVersion.Lookup versions) {
         KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2.getMetadata().getNamespace(),
                 kafkaMirrorMaker2.getMetadata().getName(),
                 Labels.fromResource(kafkaMirrorMaker2).withKind(kafkaMirrorMaker2.getKind()));
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
         cluster.setOwnerReference(kafkaMirrorMaker2);
         cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion()));
-        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(spec.getConfig().entrySet()));
+        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(spec.getConfig().entrySet())); 
 
         List<KafkaMirrorMaker2ClusterSpec> clustersList = Optional.ofNullable(spec.getClusters())
                 .orElse(Collections.emptyList());
@@ -103,7 +117,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 }
             }
     
-            AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, isOpenShift);
+            AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, "oauth-certs", isOpenShift);
         });
         return volumeList;
     }
@@ -129,9 +143,49 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 }
             }
     
-            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT);
+            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
         });
         return volumeMountList;
+    }
+
+    @Override
+    protected List<EnvVar> getEnvVars() {
+        List<EnvVar> varList = super.getEnvVars();        
+        final StringBuilder clusterTrustedCertsList = new StringBuilder();
+        boolean clusterTrustedCertsSeparator = false;
+
+        for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster : clusters) {
+            String clusterAlias = mirrorMaker2Cluster.getAlias();
+
+            if (clusterTrustedCertsSeparator) {
+                clusterTrustedCertsList.append("\n");
+            }
+            clusterTrustedCertsList.append(clusterAlias);
+            clusterTrustedCertsList.append("=");
+            clusterTrustedCertsSeparator = true;
+
+            KafkaMirrorMaker2Tls tls = mirrorMaker2Cluster.getTls();
+
+            if (tls != null) {
+                List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+    
+                if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                    boolean separator = false;
+                    for (CertSecretSource certSecretSource : trustedCertificates) {
+                        if (separator) {
+                            clusterTrustedCertsList.append(";");
+                        }
+                        clusterTrustedCertsList.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                        separator = true;
+                    }
+                }
+            }
+        }
+
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS, clusterTrustedCertsList.toString()));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTER_TRUSTSTORE_PASSWORD, this.clusterTlsTruststorePassword));
+
+        return varList;
     }
 
     /**
@@ -141,5 +195,28 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     protected void setClusters(List<KafkaMirrorMaker2ClusterSpec> clusters) {
         this.clusters = clusters;
+    }
+
+    /**
+     * Sets the MirrorMaker 2.0 cluster TLS truststore password
+     *
+     * @param clusterTlsTruststorePassword The cluster TLS truststore password
+     */
+    public void setClusterTlsTruststorePassword(String clusterTlsTruststorePassword) {
+        this.clusterTlsTruststorePassword = clusterTlsTruststorePassword;
+    }
+    
+    /**
+     * Gets the MirrorMaker 2.0 cluster TLS truststore password
+     *
+     * @return The cluster TLS truststore password
+     */
+    public String getClusterTlsTruststorePassword() {
+        return clusterTlsTruststorePassword;
+    }
+
+    @Override
+    protected String getCommand() {
+        return "/opt/kafka/kafka_mirror_maker_2_run.sh";
     }
 }

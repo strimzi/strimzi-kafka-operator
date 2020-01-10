@@ -174,7 +174,7 @@ public class ResourceOperatorSupplier {
         this.kafkaBridgeOperator = kafkaBridgeOperator;
         this.storageClassOperations = storageClassOperator;
         this.kafkaConnectorOperator = kafkaConnectorOperator;
-        this.mirrorMaker2Operator = mirrorMaker2Operator;s
+        this.mirrorMaker2Operator = mirrorMaker2Operator;
         this.nodeOperator = nodeOperator;
     }
 }

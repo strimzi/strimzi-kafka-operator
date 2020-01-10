@@ -119,7 +119,7 @@ public class Main {
         }
 
         KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
-                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, passwordGenerator, resourceOperatorSupplier, config);
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);

@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -98,6 +99,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         KafkaMirrorMaker2AssemblyOperator kco = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa,
+            new PasswordGenerator(10, "a", "a"), 
             supplier,
             config,
             foo -> {

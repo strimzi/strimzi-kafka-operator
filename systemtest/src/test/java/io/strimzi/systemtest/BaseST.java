@@ -82,6 +82,7 @@ public abstract class BaseST implements TestSeparator {
     private static final Logger LOGGER = LogManager.getLogger(BaseST.class);
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
+    protected static final String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
@@ -492,7 +493,7 @@ public abstract class BaseST implements TestSeparator {
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
                 assertThat(pod.getMetadata().getLabels().get("app"), is(appName));
-                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"), is(true));
+                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("[0-9A-Fa-f]+"), is(true));
                 assertThat(pod.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
                 assertThat(pod.getMetadata().getLabels().get("strimzi.io/kind"), is(kind));
                 assertThat(pod.getMetadata().getLabels().get("strimzi.io/name"), is(clusterName.concat("-" + podType)));
@@ -570,6 +571,9 @@ public abstract class BaseST implements TestSeparator {
                 } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
                     assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker"));
+                } else if (cm.getMetadata().getName().contains("-mirrormaker2-config")) {
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker2"));
                 } else {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
                     assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));

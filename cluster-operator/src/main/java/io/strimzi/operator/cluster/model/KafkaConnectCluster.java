@@ -413,7 +413,7 @@ public class KafkaConnectCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withCommand("/opt/kafka/kafka_connect_run.sh")
+                .withCommand(getCommand())
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
@@ -426,6 +426,10 @@ public class KafkaConnectCluster extends AbstractModel {
         containers.add(container);
 
         return containers;
+    }
+
+    protected String getCommand() {
+        return "/opt/kafka/kafka_connect_run.sh";
     }
 
     @Override
