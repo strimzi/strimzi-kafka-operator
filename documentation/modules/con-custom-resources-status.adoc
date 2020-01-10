@@ -29,6 +29,10 @@ m¦KafkaConnectS2I
 ¦xref:type-KafkaConnectS2Istatus-reference[]
 ¦The Kafka Connect cluster with Source-to-Image support, if deployed.
 
+m¦KafkaConnector
+¦xref:type-KafkaConnectorStatus-reference[]
+¦`KafkaConnector` resources, if deployed.
+
 m¦KafkaMirrorMaker
 ¦xref:type-KafkaMirrorMakerStatus-reference[]
 ¦The Kafka MirrorMaker tool, if deployed.

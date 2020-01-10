@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// getting-started.adoc
+// assembly-getting-started.adoc
 
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
@@ -11,10 +11,19 @@
 
 link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and external systems. It provides a framework for moving large amounts of data into and out of your Kafka cluster while maintaining scalability and reliability. Kafka Connect is typically used to integrate Kafka with external databases and storage and messaging systems.
 
-You can use Kafka Connect to:
+In Kafka Connect, a _source connector_ is a runtime entity that fetches data from an external system and feeds it to Kafka as messages. A _sink connector_ is a runtime entity that fetches messages from Kafka topics and feeds them to an external system. The workload of connectors is divided into _tasks_. Tasks are distributed among nodes (also called _workers_), which form a _Connect cluster_. This allows the message flow to be highly scalable and reliable.
 
-* Build connector plug-ins (as JAR files) for your Kafka cluster
-* Run connectors
+Each connector is an instance of a particular _connector class_ that knows how to communicate with the relevant external system in terms of messages. Connectors are available for many external systems, or you can develop your own.
+
+The term _connector_ is used interchangably to mean a connector instance running within a Kafka Connect cluster, or a connector class. This guide uses the term _connector_ when the meaning is clear from the context.
+
+{ProductName} allows you to:
+
+* Create a Kafka Connect image containing the connectors you want
+
+* Deploy and manage a Kafka Connect cluster running within Kubernetes using a `KafkaConnect` resource
+
+* Run connectors within your Kafka Connect cluster, optionally managed using `KafkaConnector` resources
 
 Kafka Connect includes the following built-in connectors for moving file-based data into and out of your Kafka cluster.
 
@@ -32,13 +41,22 @@ m¦FileStreamSinkConnector
 
 |===
 
-In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect to your Kubernetes cluster.
-OpenShift also supports Kafka Connect Source-2-Image (S2I) clusters.
+To use other connector classes, you need to prepare connector images by following one of these procedures:
 
-A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The Kafka Connect REST API is available on port 8083, as the `<connect-cluster-name>-connect-api` service.
+* xref:creating-new-image-from-base-{context}[] 
 
-For more information on deploying a Kafka Connect S2I cluster on OpenShift, see xref:using-openshift-s2i-create-image-str[Creating a container image using OpenShift builds and Source-to-Image].
+* xref:using-openshift-s2i-create-image-str[] (OpenShift only)
+
+The Cluster Operator can use images that you create to deploy a Kafka Connect cluster to your Kubernetes cluster.
+
+A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers.
+
+You can xref:con-creating-managing-connectors-{context}[create and manage connectors] using `KafkaConnector` resources or manually using the Kafka Connect REST API, which is available on port 8083 as the `<connect-cluster-name>-connect-api` service. The operations supported by the REST API are described in the link:https://kafka.apache.org/documentation/#connect_rest[Apache Kafka documentation^].
 
 include::../modules/proc-deploying-kafka-connect.adoc[leveloffset=+1]
 
 include::assembly-using-kafka-connect-with-plugins.adoc[leveloffset=+1]
+
+include::../modules/con-creating-managing-connectors.adoc[leveloffset=+1]
+
+include::../modules/kafkaconnectors/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
