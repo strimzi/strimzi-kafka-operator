@@ -1321,12 +1321,12 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |string
 |port               1.2+<.<|The port of the remote host that the data is pushed to.
 |integer
+|flushDelaySeconds  1.2+<.<|How many seconds the JmxTransSpec waits before pushing a new set of data out.
+|integer
 |typeNames          1.2+<.<|Template for filtering data you want when a wildcard query is sent. For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries].
 |string array
 |name               1.2+<.<|Template for setting the name of the output definition, which is used to identify where to send the data of the queries to.
 |string
-|flushDelaySeconds  1.2+<.<|How many seconds the JmxTransSpec waits before pushing a new set of data out.
-|integer
 |====
 
 [id='type-JmxTransQueryTemplate-{context}']

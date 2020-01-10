@@ -63,10 +63,10 @@ spec:
           value: strimzi/operator:latest
         - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
           value: strimzi/kafka-bridge:0.15.0
+        - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
+          value: strimzi/jmxtrans:latest
         - name: STRIMZI_LOG_LEVEL
           value: INFO
-        - name: STRIMZI_IMAGE_PULL_POLICY
-          value: Never
         livenessProbe:
           httpGet:
             path: /healthy
