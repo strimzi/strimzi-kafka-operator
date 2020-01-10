@@ -419,7 +419,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ int externalBootstrapNodePort;
 
         private JmxTrans jmxTrans = null;
-        private ConfigMap jmxTransConfigMap;
+        private ConfigMap jmxTransConfigMap = null;
         private Deployment jmxTransDeployment = null;
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
@@ -1068,7 +1068,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String stsName = KafkaCluster.kafkaClusterName(this.name);
             String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperator.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return true;
@@ -3200,7 +3200,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> jmxTransDeployment() {
             if (this.jmxTrans != null && this.jmxTransDeployment != null) {
-                return  deploymentOperations.getAsync(namespace, this.jmxTrans.getName()).compose(dep -> {
+                return deploymentOperations.getAsync(namespace, this.jmxTrans.getName()).compose(dep -> {
                     return configMapOperations.getAsync(namespace, jmxTransConfigMap.getMetadata().getName()).compose(res -> {
                         String resourceVersion = res.getMetadata().getResourceVersion();
                         // getting the current cluster CA generation from the current deployment, if it exists

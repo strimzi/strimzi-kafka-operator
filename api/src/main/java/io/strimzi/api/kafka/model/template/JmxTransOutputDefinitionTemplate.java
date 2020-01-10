@@ -26,7 +26,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"outputType", "host", "port", "flushDelay", "typeNames", "name"})
+@JsonPropertyOrder({"outputType", "host", "port", "flushDelaySeconds", "typeNames", "name"})
 @EqualsAndHashCode
 public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPropertyPreserving {
 

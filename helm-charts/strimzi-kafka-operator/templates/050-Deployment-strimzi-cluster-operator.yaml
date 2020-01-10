@@ -61,6 +61,8 @@ spec:
               value: "{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: "{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}"
+            - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
+              value: "{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
             {{- if .Values.image.imagePullSecrets }}
