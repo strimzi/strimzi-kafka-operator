@@ -1,18 +1,15 @@
 # Strimzi: Kafka as a Service
 
-Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on
-[Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
-See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more details about the project.
+Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations. See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more details about the project.
 
 ## Introduction
 
-This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cluster Role Bindings, Service Accounts, and
-Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io)
-cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cluster Role Bindings, Service Accounts, and Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.9+
+- Helm 3+.
 - PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
@@ -45,8 +42,7 @@ The command removes all the Kubernetes components associated with the operator a
 ## Configuration
 
 The following table lists the configurable parameters of the Strimzi chart and their default values.  Runtime
-configuration of Kafka and other components are defined within their respective Custom Resource Definitions.  See
-the documentation for more details.
+configuration of Kafka and other components are defined within their respective Custom Resource Definitions. See the documentation for more details.
 
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
@@ -104,6 +100,7 @@ the documentation for more details.
 | `readinessProbe.periodSeconds`       | Readiness probe period in seconds         | 30                                                   |
 | `imageRepositoryOverride`            | Override all image repository config      | `nil`                                                |
 | `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
+| `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
 | `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
