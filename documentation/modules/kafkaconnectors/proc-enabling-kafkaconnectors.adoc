@@ -13,7 +13,7 @@ To enable `KafkaConnectors` for a Kafka Connect cluster, add the `strimzi.io/use
 
 .Procedure
 
-. Edit the `KafkaConnect` or `KafkaConnectS2I` resource. Add the `strimzi.io/use-connector-resources` annotation For example:
+. Edit the `KafkaConnect` or `KafkaConnectS2I` resource. Add the `strimzi.io/use-connector-resources` annotation. For example:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -39,3 +39,7 @@ kubectl apply -f kafka-connect.yaml
 * xref:con-creating-managing-connectors-str[]
 
 * xref:proc-deploying-kafkaconnector-str[] 
+
+* xref:type-KafkaConnect-reference[] 
+
+* xref:type-KafkaConnectS2I-reference[] 
