@@ -57,6 +57,7 @@ spec:
             2.4.0=strimzi/kafka:latest-kafka-2.4.0
         - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
           value: |
+            2.3.1=strimzi/kafka:latest-kafka-2.3.1
             2.4.0=strimzi/kafka:latest-kafka-2.4.0
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
           value: strimzi/operator:latest

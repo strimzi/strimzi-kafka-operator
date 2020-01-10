@@ -39,7 +39,6 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -61,7 +60,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
-    private final String mirrorMakerClusterTlsTruststorePassword;
 
     public static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
     public static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
@@ -80,6 +78,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
+    private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
     /**
      * @param vertx The Vertx instance
@@ -88,21 +87,18 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                        PasswordGenerator passwordGenerator,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, passwordGenerator, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
     }
 
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                        PasswordGenerator passwordGenerator,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
-        this.mirrorMakerClusterTlsTruststorePassword = passwordGenerator.generate();
     }
 
     @Override
@@ -132,8 +128,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         Map<String, String> annotations = new HashMap<>();
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
-
-        mirrorMaker2Cluster.setClusterTlsTruststorePassword(this.mirrorMakerClusterTlsTruststorePassword);
 
         log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
@@ -265,7 +259,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             config.put(TARGET_CLUSTER_PREFIX + AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
             config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
             config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + targetCluster.getAlias() + TRUSTSTORE_SUFFIX);
-            config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, mirrorMaker2Cluster.getClusterTlsTruststorePassword());
+            config.put(TARGET_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG + "}");
         }
         config.putAll(targetCluster.getConfig().entrySet().stream()
                 .collect(Collectors.toMap(entry -> TARGET_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));
@@ -277,7 +271,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             config.put(SOURCE_CLUSTER_PREFIX + AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
             config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
             config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + sourceCluster.getAlias() + TRUSTSTORE_SUFFIX);
-            config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, mirrorMaker2Cluster.getClusterTlsTruststorePassword());
+            config.put(SOURCE_CLUSTER_PREFIX + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG + "}");
         }
         config.putAll(sourceCluster.getConfig().entrySet().stream()
                 .collect(Collectors.toMap(entry -> SOURCE_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));

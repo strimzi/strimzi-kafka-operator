@@ -135,16 +135,12 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
-
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration.asPairs()).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS).withValue(targetClusterAlias + "=").build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTER_TRUSTSTORE_PASSWORD).withValue("").build());
-
         return expected;
     }
 
@@ -307,7 +303,8 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
                 is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TLS), is("true"));
-        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS),
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_CLUSTERS), is("true"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
                 is("target=my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
 
     }
@@ -349,8 +346,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testGenerateDeploymentWithTlsSameSecret() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
-                .editSpec()
+        KafkaMirrorMaker2ClusterSpec targetClusterWithTlsAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
                 .editOrNewTls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .endTls()
@@ -362,6 +358,11 @@ public class KafkaMirrorMaker2ClusterTest {
                                 .withKey("user.key")
                                 .endCertificateAndKey()
                                 .build())
+                .build();
+
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withClusters(targetClusterWithTlsAuth)
                 .endSpec()
                 .build();
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);

@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set +x
 
-# Use generated keystore password
-export CERTS_STORE_PASSWORD=${STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTER_TRUSTSTORE_PASSWORD}
+# Generate temporary keystore password
+export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
 
 # Create dir where keystores and truststores will be stored
 mkdir -p /tmp/kafka/clusters
 
 # Import cluster certificates into keystores and truststores
 echo "Preparing MirrorMaker 2.0 cluster truststores"
-IFS=$'\n' read -rd '' -a CLUSTERS <<< "$STRIMZI_KAFKA_MIRRORMAKER_2_CLUSTERS_TRUSTED_CERTS"
+IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS"
 for cluster in "${CLUSTERS[@]}"
 do
-    IFS='=' read -ra CLUSTER_TRUSTED_CERTS <<< "${cluster}"
-    export clusterAlias="${CLUSTER_TRUSTED_CERTS[0]}"
-    export trustedCerts="${CLUSTER_TRUSTED_CERTS[1]}"
+    IFS='=' read -ra TRUSTED_CERTS_CLUSTER <<< "${cluster}"
+    export clusterAlias="${TRUSTED_CERTS_CLUSTER[0]}"
+    export trustedCerts="${TRUSTED_CERTS_CLUSTER[1]}"
 
     echo "Preparing MirrorMaker 2.0 truststores for cluster ${clusterAlias}"
     echo "  with trusted certs ${trustedCerts}"
@@ -30,5 +30,13 @@ do
         "/tmp/kafka/clusters/${clusterAlias}-oauth.keystore.p12"
 done
 echo "Preparing MirrorMaker 2.0 cluster truststores is complete"
+
+# Include the file config provider in the Kafka Connect config
+export KAFKA_CONNECT_FILE_CONFIG_PROVIDER="true"
+
+# Generate and print the connector config file
+echo "Creating connector configuration:"
+./kafka_mirror_maker_2_connector_config_generator.sh | tee /tmp/strimzi-mirrormaker2-connector.properties | sed -e 's/password=.*/password=[hidden]/g'
+echo ""
 
 ./kafka_connect_run.sh
