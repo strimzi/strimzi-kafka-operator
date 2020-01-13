@@ -99,7 +99,7 @@ public class KubernetesResource {
                     .editSpec()
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))
-                            .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(Constants.IMAGE_PULL_POLICY)
                         .endContainer()
                     .endSpec()
                 .endTemplate()

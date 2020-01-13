@@ -17,11 +17,9 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -33,7 +31,6 @@ public class ExternalListenersST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(ExternalListenersST.class);
 
     public static final String NAMESPACE = "custom-certs-cluster-test";
-    public static final String CO_NAMESPACE = "infra";
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
@@ -95,7 +92,6 @@ public class ExternalListenersST extends MessagingBaseST {
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-2", "custom-certificate");
     }
 
-    @Disabled
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomSoloCertificatesForLoadBalancer() throws Exception {
@@ -126,7 +122,6 @@ public class ExternalListenersST extends MessagingBaseST {
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-3", "custom-certificate");
     }
 
-    @Disabled
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomChainCertificatesForLoadBalancer() throws Exception {
@@ -430,9 +425,9 @@ public class ExternalListenersST extends MessagingBaseST {
     void setup() {
         ResourceManager.setClassResources();
 
-        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, NAMESPACE));
+        prepareEnvForOperator(NAMESPACE);
 
-        applyRoleBindings(CO_NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
         cluster.setNamespace(NAMESPACE);
