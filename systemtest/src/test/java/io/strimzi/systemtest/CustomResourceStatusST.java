@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
@@ -43,14 +44,19 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.StringContains.containsString;
 
 @Tag(REGRESSION)
 class CustomResourceStatusST extends MessagingBaseST {
@@ -171,16 +177,17 @@ class CustomResourceStatusST extends MessagingBaseST {
     }
 
     @Test
-    void testKafkaConnectStatus() {
+    void testKafkaConnectAndConnectorStatus() {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations("strimzi.io/use-connector-resources", "true")
             .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
-        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectStatus(1, connectUrl);
+        assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -196,16 +203,19 @@ class CustomResourceStatusST extends MessagingBaseST {
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+        assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
         String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getClassName();
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> kc.getSpec().setClassName("non-existing-class"));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> {
@@ -214,11 +224,11 @@ class CustomResourceStatusST extends MessagingBaseST {
             });
 
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(3L));
+        assertKafkaConnectorStatus(CLUSTER_NAME, 3, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
     }
 
     @Test
-    void testKafkaConnectS2IStatus() {
+    void testKafkaConnectS2IStatus() throws InterruptedException {
         String connectS2IUrl = "http://my-cluster-s2i-connect-api.status-cluster-test.svc:8083";
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
@@ -227,8 +237,6 @@ class CustomResourceStatusST extends MessagingBaseST {
             .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
-        KafkaConnectorResource.kafkaConnector(CONNECTS2I_CLUSTER_NAME, TOPIC_NAME).done();
-        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -240,21 +248,6 @@ class CustomResourceStatusST extends MessagingBaseST {
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
-
-        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getSpec().getClassName();
-
-        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
-        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
-
-        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
-            kc -> {
-                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME));
-                kc.getSpec().setClassName(defaultClass);
-            });
-
-        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(3L));
     }
 
     @Test
@@ -430,6 +423,18 @@ class CustomResourceStatusST extends MessagingBaseST {
         assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
+    }
+
+    @SuppressWarnings("unchecked")
+    void assertKafkaConnectorStatus(String clusterName, long expectedObservedGeneration, String connectorStates, int taskId, String taskState, String type) {
+        KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        assertThat(kafkaConnectorStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
+        String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
+        assertThat(connectorStates, containsString(currentState));
+        assertThat(connectorStatus.get("name"), is(clusterName));
+        assertThat(connectorStatus.get("type"), is(type));
+        assertThat(connectorStatus.get("tasks"), notNullValue());
     }
 
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {

@@ -185,7 +185,10 @@ class ConnectST extends MessagingBaseST {
 
         String connectorName = "license-source";
         String topicName = "my-topic";
-        KafkaConnectorResource.kafkaConnector(connectorName, CLUSTER_NAME, topicName, 2).done();
+        KafkaConnectorResource.kafkaConnector(connectorName, CLUSTER_NAME, 2)
+            .editSpec()
+                .addToConfig("topic", topicName)
+            .endSpec().done();
 
         // consume from the topic (we don't really care about the contents)
         try (KafkaClient testClient = new KafkaClient()) {

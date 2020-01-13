@@ -30,28 +30,27 @@ public class KafkaConnectorResource {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaConnector kafkaConnector(String name, String topicName) {
-        return kafkaConnector(name, name, topicName, 2);
+    public static DoneableKafkaConnector kafkaConnector(String name) {
+        return kafkaConnector(name, name, 2);
     }
 
-    public static DoneableKafkaConnector kafkaConnector(String name, String topicName, int maxTasks) {
-        return kafkaConnector(name, name, topicName, maxTasks);
+    public static DoneableKafkaConnector kafkaConnector(String name, int maxTasks) {
+        return kafkaConnector(name, name, maxTasks);
     }
 
-    public static DoneableKafkaConnector kafkaConnector(String name, String clusterName, String topicName, int maxTasks) {
+    public static DoneableKafkaConnector kafkaConnector(String name, String clusterName, int maxTasks) {
         KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
-        return deployKafkaConnector(defaultKafkaConnector(kafkaConnector, name, clusterName, topicName, maxTasks).build());
+        return deployKafkaConnector(defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks).build());
     }
 
-    private static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaClusterName, String topicName, int maxTasks) {
+    private static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
         return new KafkaConnectorBuilder(kafkaConnector)
             .editOrNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels("strimzi.io/cluster", kafkaClusterName)
+                .addToLabels("strimzi.io/cluster", kafkaConnectClusterName)
             .endMetadata()
             .editOrNewSpec()
-                .addToConfig("topic", topicName)
                 .withTasksMax(maxTasks)
             .endSpec();
     }
