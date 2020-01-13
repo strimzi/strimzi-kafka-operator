@@ -2296,7 +2296,8 @@ public class KafkaCluster extends AbstractModel {
         if (isExposedWithNodePort()) {
             KafkaListenerExternalNodePort listener = (KafkaListenerExternalNodePort) listeners.getExternal();
 
-            if (listener.getConfiguration() != null) {
+            if (listener.getConfiguration() != null
+                    && listener.getConfiguration().getPreferredAddressType() != null) {
                 return listener.getConfiguration().getPreferredAddressType().toValue();
             }
         }
