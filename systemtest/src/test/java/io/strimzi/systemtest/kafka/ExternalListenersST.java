@@ -244,14 +244,14 @@ public class ExternalListenersST extends MessagingBaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
-            .withNewConfiguration()
+                .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
                         .withSecretName("custom-certificate")
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
-            .endConfiguration()
-            .build());
+                .endConfiguration()
+                .build());
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
