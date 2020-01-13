@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
@@ -57,31 +58,66 @@ class ConnectS2IST extends MessagingBaseST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
-    void testDeployS2IWithMongoDBPlugin() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
+    void testDeployS2IWithMongoDBPlugin() throws InterruptedException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
+        // Calls to Connect API are executed from kafka-0 pod
+        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
 
-        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-            .endMetadata()
-            .done();
+        String mongoDbConfig = "{" +
+                "\"name\": \"" + kafkaConnectS2IName + "\"," +
+                "\"config\": {" +
+                "   \"connector.class\" : \"io.debezium.connector.mongodb.MongoDbConnector\"," +
+                "   \"tasks.max\" : \"1\"," +
+                "   \"mongodb.hosts\" : \"debezium/localhost:27017\"," +
+                "   \"mongodb.name\" : \"dbserver1\"," +
+                "   \"mongodb.user\" : \"debezium\"," +
+                "   \"mongodb.password\" : \"dbz\"," +
+                "   \"database.history.kafka.bootstrap.servers\" : \"localhost:9092\"}" +
+                "}";
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
 
-        File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
+        // Make sure that Connenct API is ready
+        // TODO remove this sleep when ENTMQST-1613 will be fixed
+        Thread.sleep(10_000);
 
-        // Start a new image build using the plugins directory
-        cmdKubeClient().execInCurrentNamespace("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath());
-        // Wait for rolling update connect pods
-        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
-        String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        LOGGER.info("Collect plugins information from connect s2i pod");
-        String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
+        String createConnectorOutput = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
+                "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
+        LOGGER.info("Create Connector result: {}", createConnectorOutput);
 
-        assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
-        assertThat(kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).list().getItems().size(), is(2));
+        // Make sure that connector is really created
+        Thread.sleep(10_000);
+
+        String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
+        assertThat(connectorStatus, containsString("RUNNING"));
+    }
+
+    @Test
+    void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws InterruptedException {
+        final String kafkaConnectS2IName = "kafka-connect-s2i-name-11";
+        // Calls to Connect API are executed from kafka-0 pod
+        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
+
+        // Make sure that Connenct API is ready
+        // TODO remove this sleep when ENTMQST-1613 will be fixed
+        Thread.sleep(10_000);
+
+        KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
+            .withNewSpec()
+                .withClassName("io.debezium.connector.mongodb.MongoDbConnector")
+                .withTasksMax(2)
+                .addToConfig("mongodb.hosts", "debezium/localhost:27017")
+                .addToConfig("mongodb.name", "dbserver1")
+                .addToConfig("mongodb.user", "debezium")
+                .addToConfig("mongodb.password", "dbz")
+                .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
+            .endSpec().done();
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        KafkaConnectUtils.waitForConnectorReady(kafkaConnectS2IName);
+
+        String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
+        assertThat(connectorStatus, containsString("RUNNING"));
     }
 
     @Test
@@ -269,6 +305,35 @@ class ConnectS2IST extends MessagingBaseST {
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
+    }
+
+    private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName) {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata()
+            .done();
+
+        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+
+        File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
+
+        // Start a new image build using the plugins directory
+        cmdKubeClient().execInCurrentNamespace("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath());
+        // Wait for rolling update connect pods
+        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
+        String podForExecName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
+        LOGGER.info("Collect plugins information from connect s2i pod");
+
+        String plugins = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
+
+        assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
+        assertThat(kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).list().getItems().size(), is(2));
+
+        return podForExecName;
     }
 
     @BeforeAll

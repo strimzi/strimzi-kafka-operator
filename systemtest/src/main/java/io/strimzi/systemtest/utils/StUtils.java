@@ -47,7 +47,7 @@ public class StUtils {
     public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
         String reconciliation = timeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 20000,
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 30000,
             () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
                 timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
                 "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
