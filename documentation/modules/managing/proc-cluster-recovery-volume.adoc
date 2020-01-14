@@ -1,6 +1,6 @@
 // Module included in the following assembly:
 //
-// assembly-management-tasks.adoc
+// assembly-cluster-recovery-volume.adoc
 
 [id="cluster-recovery-volume_{context}"]
 = Recovering a cluster from persistent volumes
