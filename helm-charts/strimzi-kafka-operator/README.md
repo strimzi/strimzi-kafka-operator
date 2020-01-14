@@ -9,7 +9,7 @@ This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cl
 ## Prerequisites
 
 - Kubernetes 1.9+
-- Helm 3+.
+- Helm 2+.
 - PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
