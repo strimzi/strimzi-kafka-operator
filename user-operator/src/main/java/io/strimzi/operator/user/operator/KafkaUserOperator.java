@@ -291,7 +291,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
                 kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(user), null),
-                kafkaUserQuotasOperator.reconcile(user, null),
+                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(user), null),
                 scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null))
             .map(Boolean.TRUE);
     }
