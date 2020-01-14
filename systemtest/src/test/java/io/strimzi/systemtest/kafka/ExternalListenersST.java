@@ -24,9 +24,11 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 
+@Tag(REGRESSION)
 public class ExternalListenersST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(ExternalListenersST.class);
 
