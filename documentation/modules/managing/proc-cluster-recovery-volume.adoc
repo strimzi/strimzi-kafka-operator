@@ -1,0 +1,218 @@
+// Module included in the following assembly:
+//
+// assembly-management-tasks.adoc
+
+[id="cluster-recovery-volume_{context}"]
+= Recovering a cluster from persistent volumes
+
+This procedure describes how to recover a deleted cluster from persistent volumes.
+
+The procedure assumes that the Topic Operator is deployed.
+In situations such as these, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
+The `KafkaTopic` resources must be recovered before a cluster is started so that the topics are not deleted by the Topic Operator.
+
+If you do not use the the Topic Operator, you just need to recover the `PersistentVolumeClaim` (PVC) resources.
+
+.Before you begin
+
+In this procedure, it is essential that PVs are mounted into the correct PVC to avoid data corruption.
+A `volumeName` is specified for the PVC and this must match the name of the PV.
+
+For more information, see:
+
+* xref:ref-persistent-storage-{context}#pvc-naming[Persistent Volume Claim naming]
+* xref:ref-jbod-storage-{context}#jbod-pvc[JBOD and Persistent Volume Claims]
+
+NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
+
+.Procedure
+
+. Check information on the PVs in the cluster:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl get pv
+----
++
+Information is presented for PVs with data.
++
+Example output showing columns important to this procedure:
++
+[source,shell,subs="+quotes,attributes"]
+----
+NAME                                         RECLAIM POLICY
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ... Retain
+pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ... Retain
+pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ... Retain
+pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ... Retain
+pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ... Retain
+pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ... Retain
+
+CLAIM                                     STORAGECLASS
+myproject/data-my-cluster-zookeeper-1 ... gp2-retain
+myproject/data-my-cluster-zookeeper-0 ... gp2-retain
+myproject/data-my-cluster-zookeeper-2 ... gp2-retain
+myproject/data-0-my-cluster-kafka-0   ... gp2-retain
+myproject/data-0-my-cluster-kafka-1   ... gp2-retain
+myproject/data-0-my-cluster-kafka-2   ... gp2-retain
+----
++
+* _NAME_ shows the name of each PV.
+* _RECLAIM POLICY_ shows that PVs are _retained_.
+* _CLAIM_ shows the link to the original PVCs.
+* _STORAGECLASS_ shows the name of the storage class used for dynamic volume allocation.
+
+. Recreate the original namespace:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl create namespace _myproject_
+----
+
+. Recreate the original PVC resource specifications, linking the PVCs to the appropriate PV:
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-0-my-cluster-kafka-0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: gp2-retain
+  volumeMode: Filesystem
+  volumeName: *pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c*
+----
+
+. Edit the PV specifications to delete the `claimRef` properties that bound the original PVC.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    kubernetes.io/createdby: aws-ebs-dynamic-provisioner
+    pv.kubernetes.io/bound-by-controller: "yes"
+    pv.kubernetes.io/provisioned-by: kubernetes.io/aws-ebs
+  creationTimestamp: "<date>"
+  finalizers:
+  - kubernetes.io/pv-protection
+  labels:
+    failure-domain.beta.kubernetes.io/region: eu-west-1
+    failure-domain.beta.kubernetes.io/zone: eu-west-1c
+  name: pvc-7e226978-3317-11ea-97b0-0aef8816c7ea
+  resourceVersion: "39431"
+  selfLink: /api/v1/persistentvolumes/pvc-7e226978-3317-11ea-97b0-0aef8816c7ea
+  uid: 7efe6b0d-3317-11ea-a650-06e1eadd9a4c
+spec:
+  accessModes:
+  - ReadWriteOnce
+  awsElasticBlockStore:
+    fsType: xfs
+    volumeID: aws://eu-west-1c/vol-09db3141656d1c258
+  capacity:
+    storage: 100Gi
+  *claimRef:*
+    *apiVersion: v1*
+    *kind: PersistentVolumeClaim*
+    *name: data-0-my-cluster-kafka-2*
+    *namespace: myproject*
+    *resourceVersion: "39113"*
+    *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: failure-domain.beta.kubernetes.io/zone
+          operator: In
+          values:
+          - eu-west-1c
+        - key: failure-domain.beta.kubernetes.io/region
+          operator: In
+          values:
+          - eu-west-1
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp2-retain
+  volumeMode: Filesystem
+----
++
+In the example, the following properties are deleted:
++
+[source,shell,subs="+quotes,attributes"]
+----
+claimRef:
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: data-0-my-cluster-kafka-2
+  namespace: myproject
+  resourceVersion: "39113"
+  uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
+----
+
+. Deploy the Cluster Operator.
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl apply -f install/cluster-operator -n _my-project_
+----
+
+. Recreate your cluster.
++
+Follow the steps depending on whether or not you have all the `KafkaTopic` resources needed to recreate your cluster.
++
+--
+*_Option 1_*: If you have *all* the `KafkaTopic` resources that existed before you lost your cluster, including internal topics such as committed offsets from `__consumer_offsets`:
+
+. Recreate all `KafkaTopic` resources.
++
+You must recreate the resources before deploying the clusters or the Topic Operator will delete the topics.
+
+. Deploy the Kafka cluster.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl apply -f _kafka.yaml_
+----
+--
++
+--
+*_Option 2_*: If you do not have all the `KafkaTopic` resources that existed before you lost your cluster:
+
+. Deploy the Kafka cluster, as with the first option, but without the Topic Operator by removing `topicOperator: {}` from the Kafka resource before deploying.
++
+If you include the Topic Operator in the deployment, the Topic Operator will delete all the topics.
+
+. Run an `exec` command to one of the Kafka broker pods to open the ZooKeeper shell script.
++
+For example, where _my-cluster-kafka-0_ is the name of the broker pod:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl exec _my-cluster-kafka-0_ bin/zookeeper-shell.sh localhost:2181
+----
+. Delete the whole `/strimzi` path to remove the Topic Operator storage.
++
+[source,shell,subs="+quotes,attributes"]
+----
+delete /strimzi
+----
+. Enable the Topic Operator by redeploying the Kafka cluster with `topicOperator: {}` to recreate the `KafkaTopic` resources.
+--
+
+. Verify the recovery by listing the `KafkaTopic` resources.
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl get KafkaTopic
+----

@@ -1,0 +1,10 @@
+// Module included in the following assembly:
+//
+// assembly-cluster-recovery-volume.adoc
+
+[id="cluster-loss_{context}"]
+= Cluster loss
+
+A cluster might be lost, for example, when using cloud computing services.
+When a cluster is lost, you can use PVs to recover the cluster if they were preserved within the infrastructure.
+The recovery procedure is the same as with namespace deletion, assuming PVs can be recovered and they were created manually.

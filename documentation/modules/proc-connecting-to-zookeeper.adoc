@@ -20,7 +20,7 @@ For example:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl exec -ti _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
+kubectl exec -it _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
 ----
 +
 Be sure to use `localhost:2181`.
