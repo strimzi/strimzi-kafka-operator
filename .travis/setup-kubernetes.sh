@@ -24,7 +24,7 @@ function install_helm {
     install_nsenter
     # Set `TEST_HELM_VERSION` to `latest` to get latest version
     HELM_INSTALL_DIR=/usr/bin
-    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
     chmod 700 get_helm.sh
     sudo ./get_helm.sh --version ${TEST_HELM_VERSION}
     helm init --client-only
