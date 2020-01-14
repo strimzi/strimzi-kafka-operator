@@ -265,8 +265,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @return future
      */
     public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol) {
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        return resultPromise;
+        return new CompletableFuture<>();
     }
 
     /**

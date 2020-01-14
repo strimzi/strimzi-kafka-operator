@@ -232,7 +232,6 @@ public class ExternalKafkaClient implements IKafkaClient {
         } else {
             return -1;
         }
-
     }
 
     /**

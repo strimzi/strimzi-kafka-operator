@@ -19,22 +19,22 @@ public class TracingKafkaClient implements IKafkaClient {
 
     @Override
     public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public String getServiceName() {
