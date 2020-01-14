@@ -27,7 +27,6 @@ function install_helm {
     curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
     chmod 700 get_helm.sh
     sudo ./get_helm.sh --version ${TEST_HELM_VERSION}
-    helm init --client-only
 }
 
 function wait_for_minikube {
