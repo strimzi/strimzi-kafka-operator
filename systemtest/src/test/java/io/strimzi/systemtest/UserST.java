@@ -32,6 +32,7 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -169,6 +170,13 @@ class UserST extends BaseST {
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
+
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(userName);
+
+        ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        assertThat(resultAfterDelete.out(), emptyString());
+
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
