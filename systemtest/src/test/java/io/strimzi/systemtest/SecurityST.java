@@ -341,6 +341,7 @@ class SecurityST extends BaseST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) throws Exception {
+
         createKafkaCluster();
 
         String aliceUserName = "alice";
@@ -553,7 +554,6 @@ class SecurityST extends BaseST {
                 internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
                 internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
         );
-
     }
 
     @SuppressWarnings("unchecked")
