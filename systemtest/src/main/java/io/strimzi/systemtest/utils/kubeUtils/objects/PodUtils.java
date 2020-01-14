@@ -171,7 +171,15 @@ public class PodUtils {
         TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
-        LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
+        LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
+    }
+
+    public static void waitUntilPodReplicasCount(String podNamePrefix, int exceptedPods) {
+        LOGGER.info("Waiting till pod {} will have {} replicas", podNamePrefix, exceptedPods);
+        TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == exceptedPods);
+        LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
     }
 
     public static void waitUntilPodIsInCrashLoopBackOff(String podName) {

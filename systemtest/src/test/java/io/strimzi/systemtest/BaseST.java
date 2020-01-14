@@ -648,7 +648,7 @@ public abstract class BaseST implements TestSeparator {
         }
     }
 
-    void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
