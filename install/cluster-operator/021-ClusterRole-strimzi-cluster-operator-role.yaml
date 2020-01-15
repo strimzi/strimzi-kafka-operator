@@ -22,3 +22,9 @@ rules:
   - storageclasses
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - list

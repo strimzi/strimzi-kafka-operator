@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils;
 
+import com.jayway.jsonpath.JsonPath;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
@@ -14,9 +15,12 @@ import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,21 +40,23 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
+    private static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
+
     private StUtils() { }
 
     public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
-        String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 20000,
+        String reconciliation = timeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 30000,
             () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
-                TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
+                timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
                 "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
-        TimeMeasuringSystem.stopOperation(reconciliation);
+        timeMeasuringSystem.stopOperation(reconciliation);
     }
 
     public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
         TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", timeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
     }
 
     /**
@@ -126,10 +132,48 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static void checkCOlogForUsedVariable(String varName) {
+    public static void checkCologForUsedVariable(String varName) {
         LOGGER.info("Check if ClusterOperator logs already defined variable occurrence");
         String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
         assertThat(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"), is(true));
         LOGGER.info("ClusterOperator logs contains proper warning");
+    }
+
+    /**
+     * Translate key/value pairs formatted like properties into a Map
+     * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
+     * @return THe map of key/values
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadProperties(String keyValuePairs) {
+        try {
+            Properties actual = new Properties();
+            actual.load(new StringReader(keyValuePairs));
+            return (Map) actual;
+        } catch (IOException e) {
+            throw new AssertionError("Invalid Properties definiton", e);
+        }
+    }
+
+    /**
+     * Get a Map of properties from an environment variable in json.
+     * @param containerIndex name of the container
+     * @param json The json from which to extract properties
+     * @param envVar The environment variable name
+     * @return The properties which the variable contains
+     */
+    public static Map<String, Object> getPropertiesFromJson(int containerIndex, String json, String envVar) {
+        List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(containerIndex, envVar));
+        return StUtils.loadProperties(array.get(0));
+    }
+
+    /**
+     * Get a jsonPath which can be used to extract envariable variables from a spec
+     * @param containerIndex index of the container
+     * @param envVar The environment variable name
+     * @return The json path
+     */
+    public static String globalVariableJsonPathBuilder(int containerIndex, String envVar) {
+        return "$.spec.containers[" + containerIndex + "].env[?(@.name=='" + envVar + "')].value";
     }
 }

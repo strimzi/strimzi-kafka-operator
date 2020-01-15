@@ -49,7 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @OpenShiftOnly
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-public class OpenShiftTemplatesST extends AbstractST {
+public class OpenShiftTemplatesST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 

@@ -1,44 +1,77 @@
 /**
- * Function for setup the test cluster.
+ * Download oc origin
  */
-def setupEnvironment(String workspace, String openshift) {
-    sh "rm -rf ~/.kube"
-    sh "mkdir -p /tmp/openshift"
-    clearImages()
+def downloadOcOrigin() {
+    def originDownloadUrl = "https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz"
+    sh(script: "rm -rf ~/.kube")
+    sh(script: "mkdir -p /tmp/openshift")
 
-    status = sh(
-        script: "wget ${openshift} -O openshift.tar.gz",
-        returnStatus: true
-    )
-    //////////////////////////////////////////////////
-
-    sh "tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1"
-    sh "sudo cp /tmp/openshift/oc /usr/bin/oc"
-    sh "sudo rm -rf /tmp/openshift/"
-    sh "sudo rm -rf openshift.tar.gz"
-
-    timeout(time: 10, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         status = sh(
-            script: "oc cluster up --base-dir ${workspace}/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
-            returnStatus: true
+                script: "wget $originDownloadUrl -O openshift.tar.gz -q",
+                returnStatus: true
         )
     }
+    //////////////////////////////////////////////////
 
+    sh(script: "tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1")
+    sh(script: "sudo cp /tmp/openshift/oc /usr/bin/oc")
+    sh(script: "sudo rm -rf /tmp/openshift/")
+    sh(script: "sudo rm -rf openshift.tar.gz")
+}
+
+
+/**
+ * Prepare and start origin environment.
+ */
+def startOrigin(String username = "developer", String password = "developer") {
+    downloadOcOrigin()
     timeout(time: 15, unit: 'MINUTES') {
+        status = sh(
+                script: "oc cluster up --public-hostname=\$(hostname -I | awk '{print \$1}') --base-dir ${ORIGIN_BASE_DIR} --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
+                returnStatus: true
+        )
+    }
+    def url = sh(script: "echo \"\$(hostname -I | awk '{print \$1}')\"", returnStdout: true).trim()
+    createUserOrigin("${username}", "https://${url}:8443")
+    login("https://${url}:8443", "${username}", "${password}")
+    fixPVOnOrigin()
+}
+
+/**
+ * Login kubernetes user
+ * @param url url to cluster
+ * @param user username
+ * @param pass password
+ */
+def login(String url, String user, String pass) {
+    for (i = 0; i < 10; i++) {
+        println("[INFO] Logging in on OCP ${url} as ${user}")
+        def status = sh(script: "oc login -u \"${user}\" -p \"${pass}\" --insecure-skip-tls-verify=true ${url}", returnStatus: true)
         if (status != 0) {
-            sleep(10)
-            sh "oc cluster down"
-            sh "oc cluster up --base-dir ${workspace}/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true"
+            echo "[WARN] Login failed, waiting 1 minute before next try"
+            sh(script: "sleep 60")
+        } else {
+            break
         }
     }
+}
 
-    sh "export KUBECONFIG=${workspace}/origin/kube-apiserver/admin.kubeconfig"
-    def KUBECONFIG="${workspace}/origin/kube-apiserver/admin.kubeconfig"
-    sh "oc login -u system:admin"
-    sh "oc --config ${KUBECONFIG} adm policy add-cluster-role-to-user cluster-admin developer"
+/**
+ * create user in cluster and set him as cluster-admin
+ * @param username
+ * @param url
+ */
+def createUserOrigin(String username, String url) {
+    println("Create user in on OCP ${username}")
+    sh(script: "oc login -u system:admin --insecure-skip-tls-verify=true --config=${KUBE_CONFIG_PATH} ${url}")
+    sh(script: "oc adm policy add-cluster-role-to-user cluster-admin ${username} --rolebinding-name=cluster-admin --config=${KUBE_CONFIG_PATH}")
+    sh(script: "oc label node localhost rack-key=zone --config=${KUBE_CONFIG_PATH}")
+}
 
-    sh "oc label node localhost rack-key=zone"
-    sh "oc apply -f ${workspace}/install/strimzi-admin/010-ClusterRole-strimzi-admin.yaml"
+def fixPVOnOrigin() {
+    sh(script: "oc get pv")
+    sh(script: "oc adm policy add-scc-to-group hostmount-anyuid system:serviceaccounts")
 }
 
 /**
@@ -69,7 +102,9 @@ def buildStrimziImages() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile) {
-    sh "mvn -f ${workspace}/systemtest/pom.xml -P ${testProfile} verify -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dfailsafe.rerunFailingTestsCount=2"
+    withMaven(mavenOpts: '-Djansi.force=true') {
+        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress"
+    }
 }
 
 def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {

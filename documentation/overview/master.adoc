@@ -1,0 +1,24 @@
+:experimental:
+include::shared/attributes.adoc[]
+
+:context: str
+
+[id="overview-book_{context}"]
+= {ProductName} Overview
+
+// Add include directives to include modules and assemblies here
+
+//key features
+include::assemblies/overview/assembly-key-features.adoc[leveloffset=+1]
+//Kafka concepts
+include::assemblies/overview/assembly-kafka-concepts.adoc[leveloffset=+1]
+//Kafka components
+include::assemblies/overview/assembly-kafka-components.adoc[leveloffset=+1]
+//Product components
+include::assemblies/overview/assembly-overview-components.adoc[leveloffset=+1]
+//Main configuration points
+include::assemblies/overview/assembly-configuration-points.adoc[leveloffset=+1]
+//security options
+include::assemblies/overview/assembly-security-overview.adoc[leveloffset=+1]
+//Metrics and monitoring
+include::assemblies/overview/assembly-metrics-overview.adoc[leveloffset=+1]

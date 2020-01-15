@@ -40,6 +40,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private int jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
+    private boolean checkAccessTokenType = true;
+    private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
 
@@ -136,6 +138,28 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserNameClaim(String userNameClaim) {
         this.userNameClaim = userNameClaim;
+    }
+
+    @Description("Configure whether the access token type check should be performed or not. This should be set to `false` " +
+            "if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isCheckAccessTokenType() {
+        return checkAccessTokenType;
+    }
+
+    public void setCheckAccessTokenType(boolean checkAccessTokenType) {
+        this.checkAccessTokenType = checkAccessTokenType;
+    }
+
+    @Description("Configure whether the access token should be treated as JWT. This should be set to `false` if " +
+            "the authorization server returns opaque tokens. Defaults to `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isAccessTokenIsJwt() {
+        return accessTokenIsJwt;
+    }
+
+    public void setAccessTokenIsJwt(boolean accessTokenIsJwt) {
+        this.accessTokenIsJwt = accessTokenIsJwt;
     }
 
     @Description("Trusted certificates for TLS connection to the OAuth server.")

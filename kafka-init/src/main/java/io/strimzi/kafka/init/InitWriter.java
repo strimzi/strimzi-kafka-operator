@@ -6,7 +6,8 @@ package io.strimzi.kafka.init;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import java.util.Arrays;
+
+import io.strimzi.operator.cluster.model.NodeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +62,7 @@ public class InitWriter {
 
         List<NodeAddress> addresses = client.nodes().withName(config.getNodeName()).get().getStatus().getAddresses();
         log.info("NodeLabels = {}", addresses);
-        String externalAddress = findAddress(addresses);
+        String externalAddress = NodeUtils.findAddress(addresses, config.getAddressType());
 
         if (externalAddress == null) {
             log.error("External address not found");
@@ -71,31 +72,6 @@ public class InitWriter {
         }
 
         return write(FILE_EXTERNAL_ADDRESS, externalAddress);
-    }
-
-    /**
-     * Write external addresses of each broker
-     *
-     * @return if the operation was executed successfully
-     */
-    public boolean writeExternalBrokerAddresses() {
-        if (config.getExternalAdvertisedAddresses() == null || config.getExternalAdvertisedAddresses().trim().isEmpty()) {
-            return true;
-        }
-        Arrays.stream(config.getExternalAdvertisedAddresses().split(" "))
-                .map(BrokerAddress::parse)
-                .forEach(this::writeBrokerAddress);
-
-        return true;
-    }
-
-    private void writeBrokerAddress(BrokerAddress brokerAddress) {
-        if (brokerAddress.getAdvertisedHost() != null) {
-            write(FILE_EXTERNAL_ADDRESS + "." + brokerAddress.getIndex() + ".host", brokerAddress.getAdvertisedHost());
-        }
-        if (brokerAddress.getAdvertisedPort() != null) {
-            write(FILE_EXTERNAL_ADDRESS + "." + brokerAddress.getIndex() + ".port", brokerAddress.getAdvertisedPort().toString());
-        }
     }
 
     /**
@@ -143,6 +119,11 @@ public class InitWriter {
         }
 
         Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
+
+        // If user set preferred address type, we should check it first
+        if (config.getAddressType() != null && addressMap.containsKey(config.getAddressType())) {
+            return addressMap.get(config.getAddressType());
+        }
 
         if (addressMap.containsKey("ExternalDNS"))  {
             return addressMap.get("ExternalDNS");

@@ -3,13 +3,20 @@
 
 ## 0.16.0
 
+* Add support for Kafka 2.4.0 and upgrade from Zookeeper 3.4.x to 3.5.x
+* Drop support for Kafka 2.2.1 and 2.3.0
+* Add KafkaConnector resource and connector operator
+* Let user choose which node address will be used as advertised host (`ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` or `Hostname`)
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
 * Expose JMX port on Kafka brokers via an internal service
+* Add support for `externalTrafficPolicy` and `loadBalancerSourceRanges` properties on loadbalancer and nodeport type services
 * Add support for user quotas
 * Add support for Istio protocol selection in service port names  
 Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
 (e.g clientstls -> tcp-clientstls)
+* Add service discovery labels and annotations
+* Add possibility to specify custom server certificates to TLS based listeners
 
 ## 0.15.0
 

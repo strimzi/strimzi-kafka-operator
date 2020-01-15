@@ -24,6 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
@@ -79,6 +81,11 @@ public class KafkaResource {
                 .endKafkaExporter()
             .endSpec()
             .build());
+    }
+
+    public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
@@ -186,6 +193,10 @@ public class KafkaResource {
 
     private static Kafka deleteLater(Kafka kafka) {
         return ResourceManager.deleteLater(kafkaClient(), kafka);
+    }
+
+    public static void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
+        ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }
 
 }

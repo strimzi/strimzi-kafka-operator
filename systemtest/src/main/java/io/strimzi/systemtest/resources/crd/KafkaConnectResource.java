@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -20,6 +21,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
+
+import java.util.function.Consumer;
 
 public class KafkaConnectResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectResource.class);
@@ -49,6 +52,11 @@ public class KafkaConnectResource {
         return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
     }
 
+    public static KafkaConnectBuilder defaultKafkaConnect(String name, String kafkaClusterName, int kafkaConnectReplicas) {
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
+        return defaultKafkaConnect(kafkaConnect, name, kafkaClusterName, kafkaConnectReplicas);
+    }
+
     private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, String name, String kafkaClusterName, int kafkaConnectReplicas) {
         return new KafkaConnectBuilder(kafkaConnect)
             .withNewMetadata()
@@ -56,10 +64,13 @@ public class KafkaConnectResource {
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
-                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
                 .withReplicas(kafkaConnectReplicas)
+                .withNewTls()
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                .endTls()
             .endSpec();
     }
 
@@ -105,6 +116,10 @@ public class KafkaConnectResource {
 
     private static KafkaConnect deleteLater(KafkaConnect kafkaConnect) {
         return ResourceManager.deleteLater(kafkaConnectClient(), kafkaConnect);
+    }
+
+    public static void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
+        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, resourceName, editor);
     }
 
 }

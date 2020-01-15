@@ -78,17 +78,20 @@ public class ZookeeperCluster extends AbstractModel {
 
     // Zookeeper configuration
     private TlsSidecar tlsSidecar;
+    private boolean isSnapshotCheckEnabled;
 
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
             .withInitialDelaySeconds(15)
             .build();
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
+    private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
+    public static final String ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = "ZOOKEEPER_SNAPSHOT_CHECK_ENABLED";
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
@@ -155,6 +158,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
+        this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
 
@@ -180,9 +184,6 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setReplicas(replicas);
 
         String image = zookeeperClusterSpec.getImage();
-        if (image == null) {
-            image = System.getenv().get(ClusterOperatorConfig.STRIMZI_DEFAULT_ZOOKEEPER_IMAGE);
-        }
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
@@ -450,9 +451,11 @@ public class ZookeeperCluster extends AbstractModel {
      *
      * @param clusterCa The cluster CA.
      * @param kafka The Kafka resource.
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka) {
+    public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) {
 
         Map<String, String> data = new HashMap<>();
 
@@ -460,7 +463,7 @@ public class ZookeeperCluster extends AbstractModel {
         Map<String, CertAndKey> certs;
         try {
             log.debug("Cluster communication certificates");
-            certs = clusterCa.generateZkCerts(kafka);
+            certs = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
             log.debug("End generating certificates");
             for (int i = 0; i < replicas; i++) {
                 CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
@@ -530,6 +533,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
@@ -637,5 +641,14 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     protected String getServiceAccountName() {
         return containerServiceAccountName(cluster);
+    }
+
+    @Override
+    public void setImage(String image) {
+        super.setImage(image);
+    }
+
+    public void disableSnapshotChecks() {
+        this.isSnapshotCheckEnabled = false;
     }
 }

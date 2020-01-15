@@ -25,7 +25,7 @@ include::assemblies/assembly-distributed-tracing.adoc[leveloffset=+1]
 
 include::assemblies/assembly-kafka-exporter.adoc[leveloffset=+1]
 
-include::assemblies/assembly-security.adoc[leveloffset=+1]
+include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 
 include::assemblies/assembly-upgrade.adoc[leveloffset=+1]
 

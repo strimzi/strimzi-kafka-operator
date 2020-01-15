@@ -170,10 +170,10 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
-        StUtils.checkCOlogForUsedVariable(usedVariable);
+        StUtils.checkCologForUsedVariable(usedVariable);
 
         LOGGER.info("Updating values in Bridge container");
-        replaceBridgeResource(bridgeName, kb -> {
+        KafkaBridgeResource.replaceBridgeResource(bridgeName, kb -> {
             kb.getSpec().getTemplate().getBridgeContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kb.getSpec().getProducer().setConfig(producerConfig);
             kb.getSpec().getConsumer().setConfig(consumerConfig);

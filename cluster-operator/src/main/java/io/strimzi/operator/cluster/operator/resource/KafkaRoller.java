@@ -425,7 +425,7 @@ public class KafkaRoller {
         } catch (TimeoutException e) {
             throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), e);
         }
-        int id = Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
+        int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
         log.debug("controller is {}", id);
         return id;
     }

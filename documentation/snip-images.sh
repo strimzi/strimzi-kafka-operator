@@ -50,7 +50,7 @@ a|
 
 |Kafka Bridge
 a|
-* {DockerOrg}/kafka-bridge:{DockerTag}
+* {DockerOrg}/kafka-bridge:{BridgeDockerTag}
 
 a|
 {ProductName} image for running the {ProductName} kafka Bridge

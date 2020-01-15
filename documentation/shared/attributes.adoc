@@ -21,23 +21,29 @@
 :oauth: OAuth 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
-:KafkaVersionLower: 2.2.1
-:KafkaVersionHigher: 2.3.1
+:KafkaVersionLower: 2.3.1
+:KafkaVersionHigher: 2.4.0
 //log message format version
-:LogMsgVersLower: 2.2
-:LogMsgVersHigher: 2.3
+:LogMsgVersLower: 2.3
+:LogMsgVersHigher: 2.4
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
-//kafka Exporter links
+//Monitoring links
+:GrafanaHome: link:https://grafana.com/[Grafana Labs^]
+:JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
+:PrometheusHome: link:https://github.com/prometheus[Prometheus^]
+:PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Configuration^]
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
-:oauth-artifact-version: 0.1.0.redhat-00002
+:oauth-artifact-version: 0.2.0
 
 // External links
+:docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]
+:docs-okd-s2i: link:https://docs.okd.io/3.9/creating_images/s2i.html[Source-to-Image (S2I)^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
@@ -72,7 +78,6 @@
 :ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
-:PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Configuration^]
 :ExternalListeners: link:https://strimzi.io/2019/04/17/accessing-kafka-part-1.html[Accessing Apache Kafka in Strimzi^]
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
@@ -86,7 +91,7 @@
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
-:BridgeDockerTag: {ProductVersion}
+:BridgeDockerTag: {BridgeVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
@@ -101,7 +106,7 @@
 :DockerTopicOperator: strimzi/operator:{DockerTag}
 :DockerUserOperator: strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaBridge: strimzi/kafka-bridge:{DockerTag}
+:DockerKafkaBridge: strimzi/kafka-bridge:{BridgeDockerTag}
 :DockerImageUser: 1001
 
 // API Versions current
@@ -145,4 +150,4 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.12.x
+:ProductVersion: 0.14.x

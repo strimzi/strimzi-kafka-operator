@@ -1,0 +1,21 @@
+// This module is included in:
+//
+// overview/assembly-key-features.adoc
+
+[id="key-features-product_{context}"]
+= How {ProductName} supports Kafka
+
+{ProductName} provides container images and Operators for running Kafka on Kubernetes.
+{ProductName} Operators are fundamental to the running of {ProductName}.
+The Operators provided with {ProductName} are purpose-built with specialist operational knowledge to effectively manage Kafka.
+
+Operators simplify the process of:
+
+* Deploying and running Kafka clusters
+* Deploying and running Kafka components
+* Configuring access to Kafka
+* Securing access to Kafka
+* Upgrading Kafka
+* Managing brokers
+* Creating and managing topics
+* Creating and managing users

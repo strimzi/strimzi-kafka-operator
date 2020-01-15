@@ -79,13 +79,14 @@ public class LabelsTest {
     }
 
     @Test
-    public void testStrimziLabels()   {
+    public void testStrimziSelectorLabels()   {
         Map sourceMap = new HashMap<String, String>(5);
         sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
         sourceMap.put("key1", "value1");
         sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         sourceMap.put("key2", "value2");
         sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
+        sourceMap.put(Labels.STRIMZI_DISCOVERY_LABEL, "true");
         Labels labels = Labels.fromMap(sourceMap);
 
         Map expected = new HashMap<String, String>(2);
@@ -93,7 +94,7 @@ public class LabelsTest {
         expected.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         expected.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
 
-        assertThat(labels.strimziLabels().toMap(), is(expected));
+        assertThat(labels.strimziSelectorLabels().toMap(), is(expected));
     }
 
     @Test
@@ -216,5 +217,15 @@ public class LabelsTest {
 
         Labels l = Labels.fromResource(kafka);
         assertThat(l.toMap(), is(expectedLabels));
+    }
+
+    @Test
+    public void testValidInstanceNamesAsLabelValues()   {
+        assertThat(Labels.getOrValidInstanceLabelValue(null), is(""));
+        assertThat(Labels.getOrValidInstanceLabelValue(""), is(""));
+        assertThat(Labels.getOrValidInstanceLabelValue("valid-label-value"), is("valid-label-value"));
+        assertThat(Labels.getOrValidInstanceLabelValue("too-long-012345678901234567890123456789012345678901234567890123456789"), is("too-long-012345678901234567890123456789012345678901234567890123"));
+        assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789012-456789"), is("too-long-01234567890123456789012345678901234567890123456789012"));
+        assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789.---456789"), is("too-long-01234567890123456789012345678901234567890123456789"));
     }
 }

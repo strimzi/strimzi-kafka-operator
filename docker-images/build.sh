@@ -175,12 +175,12 @@ function build {
 
         for image in $kafka_images
         do
-            DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
-            DOCKER_TAG="${tag}-kafka-${kafka_version}" \
-            BUILD_TAG="build-kafka-${kafka_version}" \
-            KAFKA_VERSION="${kafka_version}" \
-            THIRD_PARTY_LIBS="${lib_directory}" \
-            make -C "$image" "$targets"
+            make -C "$image" "$targets" \
+                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
+                DOCKER_TAG="${tag}-kafka-${kafka_version}" \
+                BUILD_TAG="build-kafka-${kafka_version}" \
+                KAFKA_VERSION="${kafka_version}" \
+                THIRD_PARTY_LIBS="${lib_directory}"
         done
     done
 

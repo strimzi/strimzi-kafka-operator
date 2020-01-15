@@ -102,7 +102,7 @@ public class KafkaExporterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
     }
 
     private Map<String, String> expectedLabels()    {
@@ -286,7 +286,7 @@ public class KafkaExporterTest {
 
         assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
         assertThat(ke.generateService(), is(nullValue()));
-        assertThat(ke.generateSecret(null), is(nullValue()));
+        assertThat(ke.generateSecret(null, true), is(nullValue()));
     }
 
     @Test

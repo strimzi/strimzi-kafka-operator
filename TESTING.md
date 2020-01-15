@@ -45,12 +45,14 @@ Modules worth mentioning are:
 * **clients** — client implementations used in tests.
 * **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
 * **utils** — a lot of actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
+* **resources** — heart of the systemtest package. In classes from this package, you can find all methods needed for deploy Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and all other useful resources. 
+The current mechanism will ensure that all resources created within these classesurce deleto will be deleted after tests.
 
 And classes: 
 
 * **Environment** — singleton class, which loads the test environment variables (see following section), which are used in the tests.
-* **Constants** — simple interface holding all constants used in the tests.
-* **Resources** — heart of the systemtest package. In this class, you can find all methods needed for deploy Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and all other useful resources. The current mechanism will ensure that all resources created within these class will be deleted after tests.   
+* **Constants** — simple interface holding all constants used in the tests. 
+* **resources/ResourceManager** - singleton class which store info about deployed resources and take care about proper resource deletion.  
 
 ## Test Phases
 
@@ -66,24 +68,31 @@ In this phase we do the following things:
 
 The reason why the last point is optional is because we have some test cases where you want to have a different kafka configuration for each test scenario so creation of the Kafka cluster and other resources is done in the test phase.
 
-We create resources in Kubernetes cluster via a `Resources` instance, which allows you to deploy all components and, if needed, change them from their default configuration using a builder. 
-Currently, we have two instances of `Resources` class — one for whole test class and one for test method.
+We create resources in Kubernetes cluster via classes in `resources` package, which allows you to deploy all components and, if needed, change them from their default configuration using a builder. 
+Currently, we have two stacks, which are stored in `ResourceManager` singleton instance — one for whole test class resources and one for test method resources.
+You can create resources anywhere you want, and our implementation will take care about put resource on top of one stack and delete them at the end of test method/class.
 
-Example:
+
+`ResourceManager` store info, which stack is active (class or method) in pointer stack.
+You can change between class and method resources stack with method `ResourceManager.setMethodResources()` or `ResourceManager.setClassResources()`. 
+Note that pointer stack is set automatically in base `@BeforeAll` or `@BeforeEach`.
+
+
+Cluster Operator setup example:
 ```
     @BeforeAll
     void createClassResources() {
         prepareEnvForOperator(NAMESPACE);                          <--- Create namespaces
         createTestClassResources();                                <--- Create Resources instance for class
         applyRoleBindings(NAMESPACE);                              <--- Apply Cluster Operator bindings
-        testClassResources().clusterOperator(NAMESPACE).done();    <--- Deploy Cluster Operator
+        KubernetesResource.clusterOperator(NAMESPACE).done();      <--- Deploy Cluster Operator
         ...
     }
 ```
 
 ##### Exercise
 In this phase you specify all the steps which you need to cover some functionality. 
-If you didn't create the Kafka cluster you should do so at the begging of test using the test method resources instance of `Resources` inherited from `AbstractST`.
+If you didn't create the Kafka cluster you should do so at the begging of test using the test method resources instance of `Resources` inherited from `BaseST`.
 
 ##### Test
 
@@ -91,8 +100,9 @@ When your environment is in place from the previous phase, you can add code for 
 
 #### Teardown
 
-Because we have two instances of `Resources`, cluster resources deletion can be easily done in `@AfterEach` or `@AfterAll` methods. Our implementation will ensure that all resources tied to a specific instance will be deleted in the correct order.
-Teardown is triggered in `@AfterAll` of `AbstractST`:
+Because we have two stacks for store resources info, cluster resources deletion can be easily done in `@AfterEach` or `@AfterAll` methods. 
+Our implementation will ensure that all resources tied to a specific stack will be deleted in the correct order.
+Teardown is triggered in `@AfterAll` of `BaseST`:
 ```
     @AfterAll
     void teardownEnvironmentClass() {
@@ -114,15 +124,15 @@ so if you want change teardown from your `@AfterAll`, you must override method `
 
 For delete all resources from specific `Resources` instance you can do it like:
 ```
-    testMethodResources().deleteResources();
-    testClassResources().deleteResources();
+    ResourceManager.deleteMethodResources();
+    ResourceManager.deleteClassResources();
 ```
 
 
-Another important thing is environment recreation in the case of failure. The `recreateTestEnv()` method in `AbstractST`  is called in the case of an exception during test execution. 
+Another important thing is environment recreation in the case of failure. The `recreateTestEnv()` method in `BaseST`  is called in the case of an exception during test execution. 
 This is useful for these tests, which can break the cluster operator for subsequent test cases.
 
-Example of skip recreate environment in the case of failures. You must override the method from `AbstractST` in your test class:
+Example of skip recreate environment in the case of failures. You must override the method from `BaseST` in your test class:
 ```
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {

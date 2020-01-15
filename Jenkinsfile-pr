@@ -13,16 +13,14 @@ pipeline {
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
     }
     options {
-        timeout(time: 16, unit: 'HOURS')
+        timeout(time: 22, unit: 'HOURS')
         ansiColor('xterm')
     }
     environment {
-        OPENSHIFT_URL="https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz"
-        // Workaround for skip flaky tests
-        MVN_ARGS="-Dfailsafe.rerunFailingTestsCount=5"
-
         ARTIFACTS_DIR = 'systemtest/target/logs'
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
+        ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
+        KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
     }
     stages {
         stage('Clean WS') {
@@ -72,7 +70,7 @@ pipeline {
                 timeout(time: 25, unit: 'MINUTES') {
                     script {
                         lib = evaluate readFile('./jenkins.groovy')
-                        lib.setupEnvironment(env.WORKSPACE, env.OPENSHIFT_URL)
+                        lib.startOrigin()
                     }
                 }
             }
@@ -80,7 +78,9 @@ pipeline {
         stage('Build project') {
             steps {
                 script {
-                    sh "mvn clean install -DskipTests"
+                    withMaven(mavenOpts: '-Djansi.force=true') {
+                        sh "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress"
+                    }
                 }
             }
         }
@@ -97,7 +97,9 @@ pipeline {
         stage('Execute system tests') {
             steps {
                 script {
-                    lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE)
+                    catchError {
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE)
+                    }
                 }
             }
         }

@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
 set +x
 
-export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
-echo "KAFKA_BROKER_ID=$KAFKA_BROKER_ID"
+# Wait for the TLS sidecar to be ready and listen on port 2181
+./kafka_pre_start.sh
 
-# Kafka server data dirs
-export KAFKA_LOG_DIR_PATH="kafka-log${KAFKA_BROKER_ID}"
-
-for DIR in $(echo $KAFKA_LOG_DIRS | tr ',' ' ')  ; do
-  export KAFKA_LOG_DIRS_WITH_PATH="${KAFKA_LOG_DIRS_WITH_PATH},${DIR}/${KAFKA_LOG_DIR_PATH}"
-done
-
-export KAFKA_LOG_DIRS_WITH_PATH="${KAFKA_LOG_DIRS_WITH_PATH:1}"
-
-echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS_WITH_PATH"
+export STRIMZI_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
+echo "STRIMZI_BROKER_ID=${STRIMZI_BROKER_ID}"
 
 # Disable Kafka's GC logging (which logs to a file)...
 export GC_LOG_ENABLED="false"
@@ -29,25 +21,23 @@ if [ "$KAFKA_JMX_ENABLED" = "true" ]; then
   KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
 
   if [ -n "$KAFKA_JMX_USERNAME" ]; then
-   # Secure JMX port on 9999 with username and password
+    # Secure JMX port on 9999 with username and password
     JMX_ACCESS_FILE="/tmp/access.file"
     JMX_PASSWORD_FILE="/tmp/password.file"
 
-  cat << EOF > "${JMX_ACCESS_FILE}"
+    cat << EOF > "${JMX_ACCESS_FILE}"
 ${KAFKA_JMX_USERNAME} readonly
 EOF
 
-  cat << EOF > "${JMX_PASSWORD_FILE}"
+    cat << EOF > "${JMX_PASSWORD_FILE}"
 $KAFKA_JMX_USERNAME $KAFKA_JMX_PASSWORD
 EOF
-  chmod 400 "${JMX_PASSWORD_FILE}"
-  KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${JMX_ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${JMX_PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
-  fi
-
+    chmod 400 "${JMX_PASSWORD_FILE}"
+    KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${JMX_ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${JMX_PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
   else
     # expose the port insecurely
     KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
-
+  fi
 fi
 
 KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
@@ -60,11 +50,6 @@ fi
 # We don't need LOG_DIR because we write no log files, but setting it to a
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
-
-# get broker rack if it's enabled
-if [ -e $KAFKA_HOME/init/rack.id ]; then
-  export KAFKA_RACK=$(cat $KAFKA_HOME/init/rack.id)
-fi
 
 # Generate temporary keystore password
 export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)

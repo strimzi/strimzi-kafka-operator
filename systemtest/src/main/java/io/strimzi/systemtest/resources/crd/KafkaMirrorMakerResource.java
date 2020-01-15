@@ -23,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaMirrorMakerResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerResource.class);
 
@@ -35,6 +37,16 @@ public class KafkaMirrorMakerResource {
     public static DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
         return deployKafkaMirrorMaker(defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
+    }
+
+    public static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(String name,
+                                                                  String sourceBootstrapServer,
+                                                                  String targetBootstrapServer,
+                                                                  String groupId,
+                                                                  int kafkaMirrorMakerReplicas,
+                                                                  boolean tlsListener) {
+        KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
+        return defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, kafkaMirrorMakerReplicas, tlsListener);
     }
 
     private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker,
@@ -109,4 +121,7 @@ public class KafkaMirrorMakerResource {
         return ResourceManager.deleteLater(kafkaMirrorMakerClient(), kafkaMirrorMaker);
     }
 
+    public static void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
+        ResourceManager.replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
+    }
 }

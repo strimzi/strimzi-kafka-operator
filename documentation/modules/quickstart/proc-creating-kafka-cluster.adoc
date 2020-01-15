@@ -1,0 +1,91 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='proc-kafka-cluster-{context}']
+= Creating a cluster
+
+With {ProductName} installed, you create a Kafka cluster, then a topic within the cluster.
+
+When you create a cluster, the Cluster Operator you deployed when installing {ProductName} watches for new Kafka resources.
+
+.Prerequisites
+
+* For the Kafka cluster, ensure a Cluster Operator is deployed.
+* For the topic, you must have a running Kafka cluster.
+
+.Procedure
+
+. Log in to the Kubernetes cluster as a non-privileged user.
+
+. Create a new `my-cluster` Kafka cluster with one ZooKeeper and one Kafka broker.
++
+* Use `persistent-claim` storage
+* Expose the Kafka cluster outside of the Kubernetes cluster using an external listener configured to use a `nodeport`.
++
+--
+[source,yaml,subs=attributes+]
+----
+cat << EOF | kubectl create -n my-kafka-project -f -
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 1
+    listeners:
+      plain: {}
+      tls: {}
+      external:
+        type: nodeport
+        tls: false
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+  zookeeper:
+    replicas: 1
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+EOF
+----
+--
+
+. Wait for the cluster to be deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n my-kafka-project
+----
+
+. When your cluster is ready, create a topic to publish and subscribe from your external client.
++
+Create the following `my-topic` custom resource definition with 3 partitions and replication factor 1 in the `my-cluster` Kafka cluster:
++
+[source, yaml, subs=attributes+]
+----
+cat << EOF | kubectl create -n my-kafka-project -f -
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: "my-cluster"
+spec:
+  partitions: 3
+  replicas: 1
+EOF
+----

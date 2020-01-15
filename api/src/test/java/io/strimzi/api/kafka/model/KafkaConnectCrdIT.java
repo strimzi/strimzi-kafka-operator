@@ -54,11 +54,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-missing-required-property.yaml");
             });
 
-        String expectedMsg1 = "spec.bootstrapServers in body is required";
-        String expectedMsg2 = "spec.bootstrapServers: Required value";
 
         assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+                containsStringIgnoringCase("spec.bootstrapServers in body is required"),
+                containsStringIgnoringCase("spec.bootstrapServers: Required value")));
     }
 
     @Test
@@ -91,15 +90,13 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml");
             });
 
-        String expectedMsg1a = "spec.authentication.certificateAndKey.certificate in body is required";
-        String expectedMsg1b = "spec.authentication.certificateAndKey.key in body is required";
-
-        String expectedMsg2a = "spec.authentication.certificateAndKey.certificate: Required value";
-        String expectedMsg2b = "spec.authentication.certificateAndKey.key: Required value";
-
         assertThat(exception.getMessage(), anyOf(
-                allOf(containsStringIgnoringCase(expectedMsg1a), containsStringIgnoringCase(expectedMsg1b)),
-                allOf(containsStringIgnoringCase(expectedMsg2a), containsStringIgnoringCase(expectedMsg2b))));
+                allOf(
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate in body is required"),
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key in body is required")),
+                allOf(
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate: Required value"),
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key: Required value"))));
     }
 
     @Test
@@ -125,11 +122,9 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml");
             });
 
-        String expectedMsg1 = "spec.externalConfiguration.env.valueFrom in body is required";
-        String expectedMsg2 = "spec.externalConfiguration.env.valueFrom: Required value";
-
         assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom in body is required"),
+                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom: Required value")));
     }
 
     @BeforeAll

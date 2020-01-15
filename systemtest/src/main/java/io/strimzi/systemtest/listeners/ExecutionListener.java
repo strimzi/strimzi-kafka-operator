@@ -13,6 +13,6 @@ public class ExecutionListener implements TestExecutionListener {
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        TimeMeasuringSystem.printAndSaveResults(Environment.TEST_LOG_DIR);
+        TimeMeasuringSystem.getInstance().printAndSaveResults(Environment.TEST_LOG_DIR);
     }
 }

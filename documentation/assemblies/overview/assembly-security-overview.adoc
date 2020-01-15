@@ -1,0 +1,21 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+[id="security-overview_{context}"]
+= Securing Kafka
+
+A secure deployment of {ProductName} can encompass:
+
+* Encryption for data exchange
+* Authentication to prove identity
+* Authorization to allow or decline actions executed by users
+
+//key points on encryption
+include::modules/con-security-configuration-encryption.adoc[leveloffset=+1]
+
+//key points on authentication
+include::modules/con-security-configuration-authentication.adoc[leveloffset=+1]
+
+//key points on authorization
+include::modules/con-security-configuration-authorization.adoc[leveloffset=+1]

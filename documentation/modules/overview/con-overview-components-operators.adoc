@@ -1,0 +1,18 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-overview-components.adoc
+
+[id="key-features-operators_{context}"]
+= Operators
+{ProductName} provides Operators for managing a Kafka cluster running within a Kubernetes cluster.
+
+Cluster Operator:: Deploys and manages Apache Kafka clusters, Kafka Connect, Kafka MirrorMaker, Kafka Bridge, Kafka Exporter, and the Entity Operator
+Entity Operator:: Comprises the Topic Operator and User Operator
+Topic Operator:: Manages Kafka topics
+User Operator:: Manages Kafka users
+
+The Cluster Operator can deploy the Topic Operator and User Operator as part of an *Entity Operator* configuration at the same time as a Kafka cluster.
+
+.Operators within the {ProductName} architecture
+
+image:operators.png[Operators]

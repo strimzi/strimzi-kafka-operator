@@ -130,6 +130,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -234,6 +238,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -354,6 +362,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -1247,6 +1259,15 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        externalTrafficPolicy:
+                          type: string
+                          enum:
+                          - Local
+                          - Cluster
+                        loadBalancerSourceRanges:
+                          type: array
+                          items:
+                            type: string
                     perPodService:
                       type: object
                       properties:
@@ -1257,6 +1278,15 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        externalTrafficPolicy:
+                          type: string
+                          enum:
+                          - Local
+                          - Cluster
+                        loadBalancerSourceRanges:
+                          type: array
+                          items:
+                            type: string
                     externalBootstrapRoute:
                       type: object
                       properties:

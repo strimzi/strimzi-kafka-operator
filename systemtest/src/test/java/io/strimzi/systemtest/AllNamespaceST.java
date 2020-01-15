@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +48,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
@@ -181,6 +182,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        teardownEnvForOperator();
         deployTestSpecificResources();
     }
 }

@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaConnectS2IResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IResource.class);
 
@@ -36,6 +38,11 @@ public class KafkaConnectS2IResource {
         return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build());
     }
 
+    public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {
+        KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
+        return defaultKafkaConnectS2I(kafkaConnectS2I, name, kafkaClusterName, kafkaConnectReplicas);
+    }
+
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String name, String kafkaClusterName, int kafkaConnectReplicas) {
         return new KafkaConnectS2IBuilder(kafkaConnectS2I)
             .withNewMetadata()
@@ -45,7 +52,7 @@ public class KafkaConnectS2IResource {
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
-                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
                 .withReplicas(kafkaConnectReplicas)
                 // Try it without TLS
                 .withNewTls()
@@ -99,4 +106,7 @@ public class KafkaConnectS2IResource {
         return ResourceManager.deleteLater(kafkaConnectS2IClient(), kafkaConnectS2I);
     }
 
+    public static void replaceConnectS2IResource(String resourceName, Consumer<KafkaConnectS2I> editor) {
+        ResourceManager.replaceCrdResource(KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, resourceName, editor);
+    }
 }

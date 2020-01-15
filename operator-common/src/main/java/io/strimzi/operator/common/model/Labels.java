@@ -54,12 +54,19 @@ public class Labels {
      */
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
+    /**
+     * The name of the label used for Strimzi discovery.
+     * This label should be set by Strimzi on services which are user interfaces when users are expected to connect.
+     * Applications using Strimzi can use this label to find the services and connect to Strimzi created clusters.
+     * This label should be used for example on the Kafka bootstrap service.
+     */
+    public static final String STRIMZI_DISCOVERY_LABEL = STRIMZI_DOMAIN + "discovery";
+
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
-    public static final String KUBERNETES_NAME = "strimzi";
-
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
-
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
+
+    public static final String KUBERNETES_NAME = "strimzi";
 
     /**
      * Used to identify individual pods
@@ -219,7 +226,38 @@ public class Labels {
      * @return A new instance with the given kubernetes application instance added.
      */
     public Labels withKubernetesInstance(String instance) {
-        return with(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+        return with(Labels.KUBERNETES_INSTANCE_LABEL, getOrValidInstanceLabelValue(instance));
+    }
+
+    /**
+     * Validates the instance name and if needed modifies it to make it a valid Label value:
+     *   - (([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?
+     *   - 63 characters max
+     * This method is written to handle instance names which are valid resource names, since they are derived from a
+     * custom resource. It does not modify arbitrary names as label values.
+     *
+     *
+     * @param instance Theoriginal name of the instance
+     * @return Either the original instance name or a modified version to match label value criteria
+     */
+    /*test*/ static String getOrValidInstanceLabelValue(String instance) {
+        if (instance == null)   {
+            return "";
+        }
+
+        int i = Math.min(instance.length(), 63);
+
+        while (i > 0)   {
+            char lastChar = instance.charAt(i - 1);
+
+            if (lastChar == '.' || lastChar == '-') {
+                i--;
+            } else {
+                break;
+            }
+        }
+
+        return instance.substring(0, i);
     }
 
     /**
@@ -238,6 +276,14 @@ public class Labels {
      */
     public Labels withName(String name) {
         return with(STRIMZI_NAME_LABEL, name);
+    }
+
+    /**
+     * The same labels as this instance, but with "true" for the {@code strimzi.io/discovery} key.
+     * @return A new instance with the given name added.
+     */
+    public Labels withDiscovery() {
+        return with(STRIMZI_DISCOVERY_LABEL, "true");
     }
 
     /**
@@ -275,11 +321,11 @@ public class Labels {
     /**
      * @return An instances containing just the strimzi.io labels present in this instance.
      */
-    public Labels strimziLabels() {
+    public Labels strimziSelectorLabels() {
         Map<String, String> newLabels = new HashMap<>(3);
 
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-            if (entry.getKey().startsWith(STRIMZI_DOMAIN)) {
+            if (entry.getKey().startsWith(STRIMZI_DOMAIN) && !entry.getKey().equals(STRIMZI_DISCOVERY_LABEL)) {
                 newLabels.put(entry.getKey(), entry.getValue());
             }
         }

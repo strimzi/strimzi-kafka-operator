@@ -60,6 +60,8 @@ public class KubeClusterResource {
     private List<String> deploymentResources = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
 
+    private TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
+
     protected String testClass;
     protected String testName;
 
@@ -91,8 +93,9 @@ public class KubeClusterResource {
      * Configuration files are loaded from install/cluster-operator directory.
      */
     public void applyClusterOperatorInstallFiles() {
-        TimeMeasuringSystem.setTestName(testClass, testClass);
-        TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
+        timeMeasuringSystem.setTestName(testClass, testClass);
+        timeMeasuringSystem.startOperation(Operation.CO_CREATION);
+        clusterOperatorConfigs.clear();
         Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
@@ -101,7 +104,7 @@ public class KubeClusterResource {
             clusterOperatorConfigs.push(entry.getKey().getPath());
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).apply(entry.getKey().getPath());
         }
-        TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
+        timeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
     public void setTestNamespace(String testNamespace) {
@@ -174,15 +177,15 @@ public class KubeClusterResource {
      * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
      */
     public void deleteClusterOperatorInstallFiles() {
-        TimeMeasuringSystem.setTestName(testClass, testName);
-        TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
+        timeMeasuringSystem.setTestName(testClass, testName);
+        timeMeasuringSystem.startOperation(Operation.CO_DELETION);
 
         while (!clusterOperatorConfigs.empty()) {
             String clusterOperatorConfig = clusterOperatorConfigs.pop();
             LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).delete(clusterOperatorConfig);
         }
-        TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
+        timeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
 
     /**
@@ -230,6 +233,7 @@ public class KubeClusterResource {
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
+        bindingsNamespaces = null;
         LOGGER.info("Using namespace {}", testNamespace);
         setNamespace(testNamespace);
     }

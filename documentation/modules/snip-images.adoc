@@ -6,9 +6,8 @@
 
 |Kafka
 a|
-* {DockerOrg}/kafka:{DockerTag}-kafka-2.2.1
-* {DockerOrg}/kafka:{DockerTag}-kafka-2.3.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.3.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.4.0
 
 a|
 {ProductName} image for running Kafka, including:
@@ -33,7 +32,7 @@ a|
 
 |Kafka Bridge
 a|
-* {DockerOrg}/kafka-bridge:{DockerTag}
+* {DockerOrg}/kafka-bridge:{BridgeDockerTag}
 
 a|
 {ProductName} image for running the {ProductName} kafka Bridge

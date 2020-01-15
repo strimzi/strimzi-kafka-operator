@@ -16,7 +16,6 @@ import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -33,18 +32,18 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
-class UserST extends AbstractST {
+class UserST extends BaseST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
-    @Disabled
     @Test
     void testUserWithNameMoreThan64Chars() {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
@@ -58,34 +57,29 @@ class UserST extends AbstractST {
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
-        LOGGER.info(condition.getMessage() != null);
 
         verifyCRStatusCondition(condition,
                 "True",
                 "Ready");
 
-        // Create sasl user with long name
+        // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
+        KafkaUserUtils.waitForKafkaUserCreation(saslUserWithLongName);
 
-        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
-
-        condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
-
-        verifyCRStatusCondition(condition,
-                "must be no more than 63 characters",
-                "KubernetesClientException",
-                "True",
-                "NotReady");
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userWithLongName).done();
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
+            .editSpec()
+                .withNewKafkaUserTlsClientAuthentication()
+                .endKafkaUserTlsClientAuthentication()
+            .endSpec()
+            .build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
 
         condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition,
-                "must be no more than 63 characters",
-                "KubernetesClientException",
+                "only up to 64 characters",
+                "InvalidResourceException",
                 "True",
                 "NotReady");
     }
@@ -95,8 +89,9 @@ class UserST extends AbstractST {
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
         SecretUtils.waitForSecretReady(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -105,7 +100,7 @@ class UserST extends AbstractST {
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        KafkaUser kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
@@ -113,9 +108,8 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
         long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
-        LOGGER.info("observation: {}", observedGeneration);
 
-        replaceUserResource(kafkaUser, ku -> {
+        KafkaUserResource.replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
@@ -168,13 +162,21 @@ class UserST extends AbstractST {
         String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOlogs.contains(messageUserWasAdded), is(true));
 
-        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users --entity-name " + userName;
+        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
         ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        assertThat(result.out().contains("Configs for user-principal 'CN=" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
+
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(userName);
+
+        ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        assertThat(resultAfterDelete.out(), emptyString());
+
     }
 
     void createBigAmountOfUsers(String typeOfUser) {

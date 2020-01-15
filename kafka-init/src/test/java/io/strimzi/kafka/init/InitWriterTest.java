@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
 import java.io.File;
@@ -24,9 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 
@@ -124,6 +122,18 @@ public class InitWriterTest {
     }
 
     @Test
+    public void testFindAddressWithType()   {
+        Map<String, String> envs = new HashMap<>(envVars);
+        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
+        InitWriterConfig config = InitWriterConfig.fromMap(envs);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+        InitWriter writer = new InitWriter(client, config);
+        String address = writer.findAddress(addresses);
+
+        assertThat(address, is("my.internal.address"));
+    }
+
+    @Test
     public void testFindAddress()   {
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
@@ -158,35 +168,6 @@ public class InitWriterTest {
         String address = writer.findAddress(addresses);
 
         assertThat(address, is(nullValue()));
-    }
-
-    @Test
-    public void testWriteExternalAdvertisedAddresses() throws IOException {
-        // create and configure (env vars) the path to the rack-id file
-        File kafkaFolder = new File(tempDir.getPath() + "opt/kafka");
-        String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
-        String advertisedHost = "0://www.test0.com:1000 1://www.test1.com:1001";
-        new File(addressFolder).mkdirs();
-
-        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
-        envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
-        envVars.put(InitWriterConfig.EXTERNAL_ADVERTISED_ADDRESSES, advertisedHost);
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
-
-        InitWriter writer = new InitWriter(client, config);
-        writer.writeExternalBrokerAddresses();
-
-        String host0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.host")), "UTF-8");
-        assertThat(host0, is("www.test0.com"));
-        String port0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.port")), "UTF-8");
-        assertThat(port0, is("1000"));
-        String host1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.host")), "UTF-8");
-        assertThat(host1, is("www.test1.com"));
-        String port1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.port")), "UTF-8");
-        assertThat(port1, is("1001"));
     }
 
     /**

@@ -24,6 +24,8 @@ include::../modules/con-customizing-pods.adoc[leveloffset=+1]
 
 include::../modules/con-customizing-containers.adoc[leveloffset=+1]
 
+include::../modules/con-customizing-external-services.adoc[leveloffset=+1]
+
 include::../modules/con-customizing-image-pull-policy.adoc[leveloffset=+1]
 
 include::../modules/con-customizing-pod-disruption-budgets.adoc[leveloffset=+1]

@@ -50,11 +50,10 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
             });
 
-        String expectedString1 = "spec.bootstrapServers in body is required";
-        String expectedString2 = "spec.bootstrapServers: Required value";
-
         assertThat(exception.getMessage(),
-                anyOf(containsStringIgnoringCase(expectedString1), containsStringIgnoringCase(expectedString2)));
+                anyOf(
+                        containsStringIgnoringCase("spec.bootstrapServers in body is required"),
+                        containsStringIgnoringCase("spec.bootstrapServers: Required value")));
     }
 
     @Test
@@ -75,15 +74,13 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
             });
 
-        String expectedMsg1a = "spec.authentication.certificateAndKey.certificate in body is required";
-        String expectedMsg1b = "spec.authentication.certificateAndKey.key in body is required";
-
-        String expectedMsg2a = "spec.authentication.certificateAndKey.certificate: Required value";
-        String expectedMsg2b = "spec.authentication.certificateAndKey.key: Required value";
-
         assertThat(exception.getMessage(), anyOf(
-                allOf(containsStringIgnoringCase(expectedMsg1a), containsStringIgnoringCase(expectedMsg1b)),
-                allOf(containsStringIgnoringCase(expectedMsg2a), containsStringIgnoringCase(expectedMsg2b))));
+                allOf(
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate in body is required"),
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key in body is required")),
+                allOf(
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate: Required value"),
+                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key: Required value"))));
     }
 
     @Test
@@ -109,10 +106,9 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
             });
 
-        String expectedMsg1 = "spec.tracing.type in body should be one of [jaeger]";
-        String expectedMsg2 = "spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"";
-
-        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger]"),
+                containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"")));
     }
 
     @Test
@@ -123,10 +119,9 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
             });
 
-        String expectedMsg1 = "spec.tracing.type in body is required";
-        String expectedMsg2 = "spec.tracing.type: Required value";
-
-        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.tracing.type in body is required"),
+                containsStringIgnoringCase("spec.tracing.type: Required value")));
     }
 
     @BeforeAll

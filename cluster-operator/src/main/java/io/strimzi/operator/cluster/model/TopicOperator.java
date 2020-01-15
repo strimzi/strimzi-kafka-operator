@@ -399,12 +399,15 @@ public class TopicOperator extends AbstractModel {
      * Generate the Secret containing CA self-signed certificates for internal communication
      * It also contains the private key-certificate (signed by internal CA) for communicating with Zookeeper and Kafka
      * @param clusterCa The cluster CA
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      * @return The generated Secret
      */
-    public Secret generateSecret(ClusterCa clusterCa) {
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
         // TO is using the keyCertName as "entity-operator". This is not typo.
-        return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), name, "entity-operator", labels, createOwnerReference());
+        return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), name,
+                "entity-operator", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {

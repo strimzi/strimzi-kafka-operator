@@ -1,0 +1,33 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+[id="configuration-points_{context}"]
+= Kafka configuration
+
+A deployment of Kafka components to a Kubernetes cluster using {ProductName} is highly configurable through the application of custom resources.
+Custom resources are created as instances of the APIs added by CRDs to extend Kubernetes resources.
+
+CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster, and are provided with {ProductName} for each Kafka component used in a deployment.
+CRDs and custom resources are defined as YAML files.
+Example YAML files are provided with the {ProductName} distribution.
+
+In this chapter we look at how Kafka components are configured through custom resources, starting with common configuration points and then important configuration considerations specific to components.
+
+//Intro to custom resources
+include::modules/con-configuration-points-resources.adoc[leveloffset=+1]
+
+//Common component configuration points
+include::modules/con-configuration-points-common.adoc[leveloffset=+1]
+
+//Kafka/broker configuration points
+include::modules/con-configuration-points-broker.adoc[leveloffset=+1]
+
+//MirrorMaker configuration points
+include::modules/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
+
+//Kafka Connect configuration points
+include::modules/con-configuration-points-connect.adoc[leveloffset=+1]
+
+//Kafka Bridge configuration points
+include::modules/con-configuration-points-bridge.adoc[leveloffset=+1]

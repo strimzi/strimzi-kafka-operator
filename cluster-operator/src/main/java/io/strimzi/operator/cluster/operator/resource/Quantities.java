@@ -109,7 +109,7 @@ class Quantities {
                 } else if (cpu.substring(i).startsWith(".")) {
                     return (int) (Double.parseDouble(cpu) * 1000L);
                 } else {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("Failed to parse CPU quantity \"" + cpu + "\"");
                 }
             }
         }

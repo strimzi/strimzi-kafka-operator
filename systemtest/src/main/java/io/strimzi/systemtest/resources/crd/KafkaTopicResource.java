@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaTopicResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicResource.class);
 
@@ -27,18 +29,22 @@ public class KafkaTopicResource {
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
+        return topic(defaultTopic(clusterName, topicName, 1, 1, 1).build());
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
-        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
+        return topic(defaultTopic(clusterName, topicName, partitions, 1, 1).build());
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
-        return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas, replicas).build());
     }
 
-    private static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+    public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas, minIsr).build());
+    }
+
+    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
         KafkaTopic kafkaTopic = getKafkaTopicFromYaml(PATH_TO_KAFKA_TOPIC_CONFIG);
         return new KafkaTopicBuilder(kafkaTopic)
             .withNewMetadata()
@@ -49,7 +55,7 @@ public class KafkaTopicResource {
             .editSpec()
                 .withPartitions(partitions)
                 .withReplicas(replicas)
-                .addToConfig("min.insync.replicas", replicas)
+                .addToConfig("min.insync.replicas", minIsr)
             .endSpec();
     }
 
@@ -59,6 +65,11 @@ public class KafkaTopicResource {
             LOGGER.info("Created KafkaTopic {}", kt.getMetadata().getName());
             return waitFor(deleteLater(kt));
         });
+    }
+
+    public static KafkaTopic topicWithoutWait(KafkaTopic kafkaTopic) {
+        kafkaTopicClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaTopic);
+        return kafkaTopic;
     }
 
     private static KafkaTopic getKafkaTopicFromYaml(String yamlPath) {
@@ -74,5 +85,9 @@ public class KafkaTopicResource {
 
     private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {
         return ResourceManager.deleteLater(kafkaTopicClient(), kafkaTopic);
+    }
+
+    public static void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
+        ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
     }
 }

@@ -54,7 +54,7 @@ the documentation for more details.
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
-| `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPresent`                                       |
+| `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`                                       |
 | `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
@@ -94,7 +94,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
-| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `latest`                                             |
+| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.15.0`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

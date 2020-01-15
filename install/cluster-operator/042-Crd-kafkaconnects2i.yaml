@@ -663,6 +663,8 @@ spec:
                   required:
                   - key
                   - secretName
+                accessTokenIsJwt:
+                  type: boolean
                 certificateAndKey:
                   type: object
                   properties:
@@ -690,6 +692,8 @@ spec:
                   - secretName
                 disableTlsHostnameVerification:
                   type: boolean
+                maxTokenExpirySeconds:
+                  type: integer
                 passwordSecret:
                   type: object
                   properties:

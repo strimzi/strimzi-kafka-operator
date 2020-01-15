@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
@@ -44,7 +46,7 @@ public class KafkaUserResource {
             .build());
     }
 
-    private static KafkaUserBuilder defaultUser(String clusterName, String name) {
+    public static KafkaUserBuilder defaultUser(String clusterName, String name) {
         KafkaUser kafkaUser = getKafkaUserFromYaml(PATH_TO_KAFKA_USER_CONFIG);
         return new KafkaUserBuilder(kafkaUser)
             .withNewMetadata()
@@ -61,6 +63,11 @@ public class KafkaUserResource {
             LOGGER.info("Created KafkaUser {}", ku.getMetadata().getName());
             return waitFor(deleteLater(ku));
         });
+    }
+
+    public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
+        kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
+        return user;
     }
 
     private static KafkaUser getKafkaUserFromYaml(String yamlPath) {
@@ -88,5 +95,9 @@ public class KafkaUserResource {
                     .endQuotas()
                 .endSpec()
                 .build());
+    }
+
+    public static void replaceUserResource(String resourceName, Consumer<KafkaUser> editor) {
+        ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, resourceName, editor);
     }
 }

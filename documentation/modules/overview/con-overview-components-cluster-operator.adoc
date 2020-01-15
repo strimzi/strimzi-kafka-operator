@@ -1,0 +1,33 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-overview-components.adoc
+// assembly-operators-cluster-operator.adoc
+// assembly-cluster-operator.adoc
+
+[id='overview-components-cluster-operator-{context}']
+= Cluster Operator
+
+{ProductName} uses the Cluster Operator to deploy and manage clusters for:
+
+* Kafka (including ZooKeeper, Entity Operator and Kafka Exporter)
+* Kafka Connect
+* Kafka Mirror Maker
+* Kafka Bridge
+
+Custom resources are used to deploy the clusters.
+
+For example, to deploy a Kafka cluster:
+
+* A `Kafka` resource with the cluster configuration is created within the Kubernetes cluster.
+* The Cluster Operator deploys a corresponding Kafka cluster, based on what is declared in the `Kafka` resource.
+
+The Cluster Operator can also deploy (through configuration of the `Kafka` resource):
+
+* A Topic Operator to provide operator-style topic management through `KafkaTopic` custom resources
+* A User Operator to provide operator-style user management through `KafkaUser` custom resources
+
+The Topic Operator and User Operator function within the Entity Operator on deployment.
+
+.Example architecture for the Cluster Operator
+
+image:cluster-operator.png[Cluster Operator]

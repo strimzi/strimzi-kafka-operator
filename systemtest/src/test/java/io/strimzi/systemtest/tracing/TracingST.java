@@ -11,8 +11,8 @@ import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -67,7 +67,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(REGRESSION)
 @Tag(TRACING)
 @ExtendWith(VertxExtension.class)
-public class TracingST extends AbstractST {
+public class TracingST extends MessagingBaseST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
@@ -79,7 +79,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
     private static final String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
-    private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-target-connect";
+    private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
@@ -100,7 +100,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -149,7 +149,7 @@ public class TracingST extends AbstractST {
         configOfKafka.put("transaction.state.log.replication.factor", "1");
         configOfKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -182,11 +182,12 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
-                .editSpec()
+                .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withReplicas(1)
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()
@@ -240,7 +241,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -322,7 +323,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -379,7 +380,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -457,7 +458,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -475,7 +476,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -566,6 +567,7 @@ public class TracingST extends AbstractST {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
@@ -575,7 +577,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
@@ -585,7 +587,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
@@ -654,11 +656,12 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
-                .editSpec()
+                .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+                    .withReplicas(1)
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()

@@ -431,7 +431,7 @@ class SecurityST extends MessagingBaseST {
 
     private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -445,7 +445,6 @@ class SecurityST extends MessagingBaseST {
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
-                        .withReplicas(3)
                         .withNewPersistentClaimStorage()
                             .withSize("2Gi")
                             .withDeleteClaim(true)
@@ -566,7 +565,7 @@ class SecurityST extends MessagingBaseST {
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -608,7 +607,7 @@ class SecurityST extends MessagingBaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testCertRegeneratedAfterInternalCAisDeleted() throws Exception {
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -777,7 +776,7 @@ class SecurityST extends MessagingBaseST {
 
         LOGGER.info("Kafka connect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -790,7 +789,7 @@ class SecurityST extends MessagingBaseST {
                     .endTls()
                     .withBootstrapServers(ipOfBootstrapService + ":9093")
                 .endSpec()
-                .done());
+                .build());
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
@@ -801,7 +800,7 @@ class SecurityST extends MessagingBaseST {
         assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses()
                 .get(0).getState().getWaiting().getReason()));
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
         });
 
@@ -835,7 +834,7 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("Mirror maker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
+        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
                 "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
                 .editMetadata()
                     .addToLabels("type", "kafka-mirror-maker")
@@ -860,7 +859,7 @@ class SecurityST extends MessagingBaseST {
                         .withBootstrapServers(ipOfTargetBootstrapService + ":9093")
                     .endProducer()
                 .endSpec()
-                .done());
+                .build());
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 
@@ -875,7 +874,7 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
         LOGGER.info("Adding configuration {} to the mirror maker...", "ssl.endpoint.identification.algorithm");
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> {
             mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
             mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
         });

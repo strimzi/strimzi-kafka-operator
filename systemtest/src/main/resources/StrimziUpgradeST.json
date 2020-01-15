@@ -27,8 +27,9 @@
       "logMessageVersion": "2.1"
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.8.2-kafka-2.0.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0"
+      "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
+      "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
+      "reason": "0.8.2 and 0.11.4 test clients images are not compatible with current client execution mechanism in system tests"
     },
     "supportedK8sVersion": {
       "version": "1.11",
@@ -193,8 +194,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.3.1",
-      "kafka": "strimzi/kafka:latest-kafka-2.3.1",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.4.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.4.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -203,12 +204,12 @@
       "logMessageVersion": ""
     },
     "proceduresAfter": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
+      "kafkaVersion": "2.4.0",
+      "logMessageVersion": "2.4"
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1",
-      "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.3.1"
+      "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.4.0"
     },
     "supportedK8sVersion": {
       "version": "latest",

@@ -21,7 +21,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,7 +59,7 @@ public class MirrorMakerST extends MessagingBaseST {
     void testMirrorMaker() throws Exception {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
-        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Deploy source kafka
@@ -105,7 +104,7 @@ public class MirrorMakerST extends MessagingBaseST {
         assertExpectedJavaOpts(podName, KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
-        TimeMeasuringSystem.stopOperation(getOperationID());
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -123,7 +122,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testMirrorMakerTlsAuthenticated() throws Exception {
-        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
         String kafkaUserTargetName = "my-user-target";
@@ -198,7 +197,7 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        TimeMeasuringSystem.stopOperation(getOperationID());
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -215,7 +214,7 @@ public class MirrorMakerST extends MessagingBaseST {
      */
     @Test
     void testMirrorMakerTlsScramSha() throws Exception {
-        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
@@ -301,7 +300,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
 
-        TimeMeasuringSystem.stopOperation(getOperationID());
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -446,10 +445,10 @@ public class MirrorMakerST extends MessagingBaseST {
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
-        StUtils.checkCOlogForUsedVariable(usedVariable);
+        StUtils.checkCologForUsedVariable(usedVariable);
 
         LOGGER.info("Updating values in MirrorMaker container");
-        replaceMirrorMakerResource(CLUSTER_NAME, kmm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, kmm -> {
             kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
             kmm.getSpec().getConsumer().setConfig(updatedConsumerConfig);

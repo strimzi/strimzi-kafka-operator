@@ -40,6 +40,20 @@ public class PodUtils {
                     pod -> pod.getMetadata().getUid()));
     }
 
+    public static String getFirstContainerImageNameFromPod(String podName) {
+        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
+    }
+
+    public static String getContainerImageNameFromPod(String podName, String containerName) {
+        return kubeClient().getPod(podName).getSpec().getContainers().stream()
+            .filter(c -> c.getName().equals(containerName))
+            .findFirst().get().getImage();
+    }
+
+    public static String getInitContainerImageName(String podName) {
+        return kubeClient().getPod(podName).getSpec().getInitContainers().get(0).getImage();
+    }
+
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
@@ -124,10 +138,12 @@ public class PodUtils {
                     return false;
                 }
             });
+
+        LOGGER.info("Pod {} deleted", name);
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
-        LOGGER.info("Waiting till pods with prefix {} count is present", podNamePrefix);
+        LOGGER.info("Waiting till {} pods with prefix {} are present", numberOfPods, podNamePrefix);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == numberOfPods);
         LOGGER.info("Pods with count {} are present", numberOfPods);

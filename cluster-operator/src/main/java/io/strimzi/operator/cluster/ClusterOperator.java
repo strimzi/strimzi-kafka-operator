@@ -21,6 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -46,6 +53,8 @@ public class ClusterOperator extends AbstractVerticle {
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
 
     private static final int HEALTH_SERVER_PORT = 8080;
+
+    private final PrometheusMeterRegistry metrics;
 
     private final KubernetesClient client;
     private final String namespace;
@@ -77,6 +86,9 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
+
+        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        setupMetrics();
     }
 
     @Override
@@ -112,10 +124,7 @@ public class ClusterOperator extends AbstractVerticle {
                     });
                     return startHealthServer().map((Void) null);
                 })
-                .compose(i -> {
-                    ((Promise<Void>) start).complete(i);
-                    return start;
-                });
+                .setHandler(start);
     }
 
 
@@ -161,6 +170,9 @@ public class ClusterOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        request.response().setStatusCode(200)
+                                .end(metrics.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {
@@ -172,6 +184,14 @@ public class ClusterOperator extends AbstractVerticle {
                     result.handle(ar);
                 });
         return result.future();
+    }
+
+    private void setupMetrics() {
+        new ClassLoaderMetrics().bindTo(metrics);
+        new JvmMemoryMetrics().bindTo(metrics);
+        new ProcessorMetrics().bindTo(metrics);
+        new JvmThreadMetrics().bindTo(metrics);
+        new JvmGcMetrics().bindTo(metrics);
     }
 
     public static String secretName(String cluster) {

@@ -9,14 +9,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -94,11 +99,12 @@ public class ModelUtils {
 
     /**
      * @param sts The StatefulSet
+     * @param containerName The name of the container whoes environment variables are to be retrieved
      * @return The environment of the Kafka container in the sts.
      */
-    public static Map<String, String> getKafkaContainerEnv(StatefulSet sts) {
+    public static Map<String, String> getContainerEnv(StatefulSet sts, String containerName) {
         for (Container container : sts.getSpec().getTemplate().getSpec().getContainers()) {
-            if ("kafka".equals(container.getName())) {
+            if (containerName.equals(container.getName())) {
                 LinkedHashMap<String, String> map = new LinkedHashMap<>(container.getEnv() == null ? 2 : container.getEnv().size());
                 if (container.getEnv() != null) {
                     for (EnvVar envVar : container.getEnv()) {
@@ -108,7 +114,7 @@ public class ModelUtils {
                 return map;
             }
         }
-        throw new KafkaUpgradeException("Could not find 'kafka' container in StatefulSet " + sts.getMetadata().getName());
+        throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
     }
 
     public static List<EnvVar> envAsList(Map<String, String> env) {
@@ -188,25 +194,38 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String commonName, String keyCertName, Labels labels, OwnerReference ownerReference) {
+    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
+            String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>();
         CertAndKey certAndKey = null;
-        if (secret == null || clusterCa.certRenewed()) {
-            log.debug("Generating certificates");
+        boolean shouldBeRegenerated = false;
+        List<String> reasons = new ArrayList<>(2);
+
+        if (secret == null) {
+            reasons.add("certificate doesn't exist yet");
+            shouldBeRegenerated = true;
+        } else {
+            if (clusterCa.certRenewed() || (clusterCa.isExpiring(secret, keyCertName + ".crt") && isMaintenanceTimeWindowsSatisfied)) {
+                reasons.add("certificate needs to be renewed");
+                shouldBeRegenerated = true;
+            }
+        }
+
+        if (shouldBeRegenerated) {
+            log.debug("Certificate for pod {} need to be regenerated because:", keyCertName, String.join(", ", reasons));
+
             try {
-                log.debug(keyCertName + " certificate to generate");
                 certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
                 log.warn("Error while generating certificates", e);
             }
+
             log.debug("End generating certificates");
         } else {
-
             if (secret.getData().get(keyCertName + ".p12") != null &&
                     !secret.getData().get(keyCertName + ".p12").isEmpty() &&
                     secret.getData().get(keyCertName + ".password") != null &&
                     !secret.getData().get(keyCertName + ".password").isEmpty()) {
-
                 certAndKey = new CertAndKey(
                         decodeFromSecret(secret, keyCertName + ".key"),
                         decodeFromSecret(secret, keyCertName + ".crt"),
@@ -225,12 +244,14 @@ public class ModelUtils {
                 }
             }
         }
+
         if (certAndKey != null) {
             data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
             data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
             data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
         }
+
         return createSecret(secretName, namespace, labels, ownerReference, data);
     }
 
@@ -350,5 +371,106 @@ public class ModelUtils {
 
     private static byte[] decodeFromSecret(Secret secret, String key) {
         return Base64.getDecoder().decode(secret.getData().get(key));
+    }
+
+    /**
+     * Compares two Secrets with certificates and checks whether any value for a key which exists in both Secrets
+     * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
+     * certificates change. It separates changes for existing certificates with other changes to the secret such as
+     * added or removed certificates (scale-up or scale-down).
+     *
+     * @param current   Existing secret
+     * @param desired   Desired secret
+     *
+     * @return  True if there is a key which exists in the data sections of both secrets and which changed.
+     */
+    public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
+        Map<String, String> currentData = current.getData();
+        Map<String, String> desiredData = desired.getData();
+
+        for (Map.Entry<String, String> entry : currentData.entrySet()) {
+            String desiredValue = desiredData.get(entry.getKey());
+            if (entry.getValue() != null
+                    && desiredValue != null
+                    && !entry.getValue().equals(desiredValue)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static List<VolumeMount> getDataVolumeMountPaths(Storage storage, String mountPath)   {
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    volumeMounts.addAll(getDataVolumeMountPaths(volume, mountPath));
+                }
+            } else {
+                Integer id;
+
+                if (storage instanceof EphemeralStorage) {
+                    id = ((EphemeralStorage) storage).getId();
+                } else if (storage instanceof PersistentClaimStorage) {
+                    id = ((PersistentClaimStorage) storage).getId();
+                } else {
+                    throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
+                }
+
+                String name = getVolumePrefix(id);
+                String namedMountPath = mountPath + "/" + name;
+                volumeMounts.add(AbstractModel.createVolumeMount(name, namedMountPath));
+            }
+        }
+
+        return volumeMounts;
+    }
+
+    public static List<PersistentVolumeClaim> getDataPersistentVolumeClaims(Storage storage)   {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(getDataPersistentVolumeClaims(volume));
+                }
+            } else if (storage instanceof PersistentClaimStorage) {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String name = getVolumePrefix(id);
+                pvcs.add(AbstractModel.createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
+            }
+        }
+
+        return pvcs;
+    }
+
+    public static List<Volume> getDataVolumes(Storage storage)   {
+        List<Volume> volumes = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    volumes.addAll(getDataVolumes(volume));
+                }
+            } else if (storage instanceof EphemeralStorage) {
+                Integer id = ((EphemeralStorage) storage).getId();
+                String name = getVolumePrefix(id);
+                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
+                volumes.add(AbstractModel.createEmptyDirVolume(name, sizeLimit));
+            }
+        }
+
+        return volumes;
     }
 }

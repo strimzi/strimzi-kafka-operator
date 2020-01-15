@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -18,10 +19,21 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -30,27 +42,24 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.StringContains.containsString;
 
 @Tag(REGRESSION)
-class CustomResourceStatusST extends AbstractST {
+class CustomResourceStatusST extends MessagingBaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String TOPIC_NAME = "status-topic";
@@ -64,7 +73,7 @@ class CustomResourceStatusST extends AbstractST {
         waitForClusterAvailability(NAMESPACE, TOPIC_NAME);
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
@@ -74,7 +83,7 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaStatus("NotReady");
 
         LOGGER.info("Recovery cluster to Ready state ...");
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("10m"))
                     .build());
@@ -100,7 +109,7 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaUserStatusNotReady() {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
         String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
@@ -122,12 +131,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pod
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaMirrorMakerStatus("Ready");
@@ -140,10 +149,10 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)));
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)));
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(3);
     }
@@ -155,12 +164,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaBridgeStatus("Ready");
         assertKafkaBridgeStatus(1, bridgeUrl);
 
-        replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaBridgeStatus("NotReady");
 
-        replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaBridgeStatus("Ready");
@@ -168,38 +177,73 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
-    void testKafkaConnectStatus() {
+    void testKafkaConnectAndConnectorStatus() {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectStatus(1, connectUrl);
+        assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaConnectStatus("NotReady");
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
         assertKafkaConnectStatus(3, connectUrl);
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+        assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
+
+        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getClassName();
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> kc.getSpec().setClassName("non-existing-class"));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> {
+                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME));
+                kc.getSpec().setClassName(defaultClass);
+            });
+
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
+        assertKafkaConnectorStatus(CLUSTER_NAME, 3, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
     }
 
     @Test
-    void testKafkaConnectS2IStatus() {
+    void testKafkaConnectS2IStatus() throws InterruptedException {
         String connectS2IUrl = "http://my-cluster-s2i-connect-api.status-cluster-test.svc:8083";
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
-        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1).done();
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
 
-        replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaConnectS2IStatus("NotReady");
 
-        replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
@@ -209,13 +253,14 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     void testKafkaTopicStatus() {
         waitForKafkaTopic("Ready", TOPIC_NAME);
-        assertKafkaTopicStatus(1, TOPIC_NAME);
+        // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
+        assertKafkaTopicStatus(2, TOPIC_NAME);
     }
 
     @Test
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 10).done();
+        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
     }
@@ -224,10 +269,6 @@ class CustomResourceStatusST extends AbstractST {
     void setup() {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
 
         deployTestSpecificResources();
     }
@@ -239,6 +280,10 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     void deployTestSpecificResources() {
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -310,6 +355,16 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("Kafka ConnectS2I cluster is in desired state: {}", status);
     }
 
+    void waitForKafkaConnectorStatus(String connectorName, String status) {
+        LOGGER.info("Wait until Kafka Connector is in desired state: {}", status);
+        TestUtils.waitFor("Kafka Connector status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(connectorName).get().getStatus().getConditions().get(0);
+            logCurrentStatus(kafkaCondition, KafkaConnector.RESOURCE_KIND);
+            return kafkaCondition.getType().equals(status);
+        });
+        LOGGER.info("Kafka Connector is in desired state: {}", status);
+    }
+
     void waitForKafkaTopic(String status, String topicName) {
         LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
         TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
@@ -368,6 +423,18 @@ class CustomResourceStatusST extends AbstractST {
         assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
+    }
+
+    @SuppressWarnings("unchecked")
+    void assertKafkaConnectorStatus(String clusterName, long expectedObservedGeneration, String connectorStates, int taskId, String taskState, String type) {
+        KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        assertThat(kafkaConnectorStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
+        String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
+        assertThat(connectorStates, containsString(currentState));
+        assertThat(connectorStatus.get("name"), is(clusterName));
+        assertThat(connectorStatus.get("type"), is(type));
+        assertThat(connectorStatus.get("tasks"), notNullValue());
     }
 
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {

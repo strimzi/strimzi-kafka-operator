@@ -11,7 +11,7 @@
 
 The User Operator manages Kafka users through custom resources.
 
-include::../modules/con-what-the-user-operator-does.adoc[leveloffset=+1]
+include::../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
 
 include::../modules/con-user-operator-cluster-label.adoc[leveloffset=+1]
 

@@ -29,6 +29,8 @@ public class KafkaAuthorizationSimple extends KafkaAuthorization {
 
     public static final String TYPE_SIMPLE = "simple";
 
+    public static final String AUTHORIZER_CLASS_NAME = "kafka.security.auth.SimpleAclAuthorizer";
+
     private List<String> superUsers;
 
     @Description("Must be `" + TYPE_SIMPLE + "`")

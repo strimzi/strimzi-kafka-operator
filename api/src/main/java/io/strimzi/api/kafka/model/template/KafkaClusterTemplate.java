@@ -36,8 +36,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private PodTemplate pod;
     private ResourceTemplate bootstrapService;
     private ResourceTemplate brokersService;
-    private ResourceTemplate externalBootstrapService;
-    private ResourceTemplate perPodService;
+    private ExternalServiceTemplate externalBootstrapService;
+    private ExternalServiceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
     private ResourceTemplate externalBootstrapIngress;
@@ -91,21 +91,21 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     @Description("Template for Kafka external bootstrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getExternalBootstrapService() {
+    public ExternalServiceTemplate getExternalBootstrapService() {
         return externalBootstrapService;
     }
 
-    public void setExternalBootstrapService(ResourceTemplate externalBootstrapService) {
+    public void setExternalBootstrapService(ExternalServiceTemplate externalBootstrapService) {
         this.externalBootstrapService = externalBootstrapService;
     }
 
     @Description("Template for Kafka per-pod `Services` used for access from outside of Kubernetes.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getPerPodService() {
+    public ExternalServiceTemplate getPerPodService() {
         return perPodService;
     }
 
-    public void setPerPodService(ResourceTemplate perPodService) {
+    public void setPerPodService(ExternalServiceTemplate perPodService) {
         this.perPodService = perPodService;
     }
 

@@ -67,6 +67,7 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -110,6 +111,7 @@ import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -397,6 +399,7 @@ public class KafkaAssemblyOperatorTest {
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         RouteOperator mockRotueOps = supplier.routeOperations;
+        NodeOperator mockNodeOps = supplier.nodeOperator;
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -425,6 +428,10 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock pod readiness
         when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock node ops
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(clusterCmNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
             (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperPodName(clusterCmName, replica));
@@ -519,10 +526,10 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 secrets
         );
-        // Getting JMX Secret
-        when(mockSecretOps.getAsync(anyString(), eq(kafkaCluster.jmxSecretName(clusterCmName)))).thenReturn(
+        when(mockSecretOps.getAsync(anyString(), any())).thenReturn(
                 Future.succeededFuture(null)
         );
+
         Set<String> createdOrUpdatedSecrets = new HashSet<>();
         when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             Secret desired = invocation.getArgument(2);
@@ -539,6 +546,9 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<ConfigMap> logCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
+        ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet());
+        when(mockCmOps.getAsync(clusterCmNamespace, KafkaCluster.metricAndLogConfigsName(clusterCmName))).thenReturn(Future.succeededFuture(metricsCm));
 
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -832,6 +842,7 @@ public class KafkaAssemblyOperatorTest {
         RoleBindingOperator mockRbo = supplier.roleBindingOperations;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         RouteOperator mockRouteOps = supplier.routeOperations;
+        NodeOperator mockNodeOps = supplier.nodeOperator;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -893,13 +904,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
         when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
         when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
-        ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
-                    .withNamespace(clusterNamespace)
-                .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
-                .build();
+        ConfigMap metricsCm = originalKafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet());
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
+        when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsCm));
 
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
@@ -927,8 +934,12 @@ public class KafkaAssemblyOperatorTest {
                 .build();
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
 
-        // Mock pod readiness
+        // Mock pod ops
         when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock node ops
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock Service gets
         when(mockServiceOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
@@ -953,6 +964,18 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, EntityOperator.secretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
+                Future.succeededFuture()
         );
 
         // Mock NetworkPolicy get
@@ -1047,7 +1070,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
 
-        when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.getAsync(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
+                Future.succeededFuture(originalZookeeperCluster.generateStatefulSet(openShift, null, null))
+        );
         when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
@@ -1112,9 +1137,12 @@ public class KafkaAssemblyOperatorTest {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
 
+            // Check that ZK scale-up happens when it should
+            verify(mockZsOps, times(updatedAssembly.getSpec().getZookeeper().getReplicas() > originalAssembly.getSpec().getZookeeper().getReplicas() ? 1 : 0)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
+
             // No metrics config  => no CMs created
-            verify(mockZsOps, times(1)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
             verify(mockCmOps, never()).createOrUpdate(any());
+
             async.flag();
         });
     }

@@ -81,6 +81,16 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
             deployment.setStatus(new DeploymentStatusBuilder().withObservedGeneration(Long.valueOf(0)).build());
             LOGGER.debug("patched {} {} -> {}", resourceType, resourceName, deployment);
             db.put(resourceName, copyResource(deployment));
+
+            // Handle case where patch reduces replicas
+            int podsToDelete = podsForDeployments.get(deployment.getMetadata().getName()).size() - deployment.getSpec().getReplicas();
+            if (podsToDelete > 0) {
+                for (int i = 0; i < podsToDelete; i++) {
+                    String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
+                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
+                }
+            }
+
             List<String> newPodNames = new ArrayList<>();
             for (int i = 0; i < deployment.getSpec().getReplicas(); i++) {
                 // create a "new" Pod
@@ -98,9 +108,12 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
                 mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(newPodName).create(newPod);
                 newPodNames.add(newPodName);
 
-                // delete the first one "old" Pod
-                String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
-                mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
+                // delete the first "old" Pod if there is one still remaining
+                if (podsForDeployments.get(deployment.getMetadata().getName()).size() > 0) {
+                    String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
+                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
+                }
+
             }
             podsForDeployments.get(deployment.getMetadata().getName()).addAll(newPodNames);
 

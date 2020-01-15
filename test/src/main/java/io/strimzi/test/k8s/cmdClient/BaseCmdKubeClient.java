@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     private static final String CREATE = "create";
     private static final String APPLY = "apply";
     private static final String DELETE = "delete";
+    private static final String REPLACE = "replace";
 
     public static final String STATEFUL_SET = "statefulset";
     public static final String CM = "cm";
@@ -98,9 +101,12 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K create(File... files) {
         try (Context context = defaultContext()) {
-            KubeClusterException error = execRecursive(CREATE, files, Comparator.comparing(File::getName));
-            if (error != null) {
-                throw error;
+            Map<File, ExecResult> execResults = execRecursive(CREATE, files, Comparator.comparing(File::getName).reversed());
+            for (Map.Entry<File, ExecResult> entry : execResults.entrySet()) {
+                if (!entry.getValue().exitStatus()) {
+                    LOGGER.warn("Failed to create {}!", entry.getKey().getAbsolutePath());
+                    LOGGER.debug(entry.getValue().err());
+                }
             }
             return (K) this;
         }
@@ -110,9 +116,12 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K apply(File... files) {
         try (Context context = defaultContext()) {
-            KubeClusterException error = execRecursive(APPLY, files, Comparator.comparing(File::getName));
-            if (error != null) {
-                throw error;
+            Map<File, ExecResult> execResults = execRecursive(APPLY, files, Comparator.comparing(File::getName).reversed());
+            for (Map.Entry<File, ExecResult> entry : execResults.entrySet()) {
+                if (!entry.getValue().exitStatus()) {
+                    LOGGER.warn("Failed to apply {}!", entry.getKey().getAbsolutePath());
+                    LOGGER.debug(entry.getValue().err());
+                }
             }
             return (K) this;
         }
@@ -122,48 +131,48 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K delete(File... files) {
         try (Context context = defaultContext()) {
-            KubeClusterException error = execRecursive(DELETE, files, Comparator.comparing(File::getName).reversed());
-            if (error != null) {
-                throw error;
+            Map<File, ExecResult> execResults = execRecursive(DELETE, files, Comparator.comparing(File::getName).reversed());
+            for (Map.Entry<File, ExecResult> entry : execResults.entrySet()) {
+                if (!entry.getValue().exitStatus()) {
+                    LOGGER.warn("Failed to delete {}!", entry.getKey().getAbsolutePath());
+                    LOGGER.debug(entry.getValue().err());
+                }
             }
             return (K) this;
         }
     }
 
-    private KubeClusterException execRecursive(String subcommand, File[] files, Comparator<File> cmp) {
-        KubeClusterException error = null;
+    private Map<File, ExecResult> execRecursive(String subcommand, File[] files, Comparator<File> cmp) {
+        Map<File, ExecResult> execResults = new HashMap<>(25);
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    try {
-                        Exec.exec(namespacedCommand(subcommand, "-f", f.getAbsolutePath()));
-                    } catch (KubeClusterException e) {
-                        if (error == null) {
-                            error = e;
-                        }
-                    }
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, false, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
                 if (children != null) {
                     Arrays.sort(children, cmp);
-                    KubeClusterException e = execRecursive(subcommand, children, cmp);
-                    if (error == null) {
-                        error = e;
-                    }
+                    execResults.putAll(execRecursive(subcommand, children, cmp));
                 }
             } else if (!f.exists()) {
                 throw new RuntimeException(new NoSuchFileException(f.getPath()));
             }
         }
-        return error;
+        return execResults;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public K replace(File... files) {
         try (Context context = defaultContext()) {
-            execRecursive("replace", files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+            Map<File, ExecResult> execResults = execRecursive(REPLACE, files, Comparator.comparing(File::getName));
+            for (Map.Entry<File, ExecResult> entry : execResults.entrySet()) {
+                if (!entry.getValue().exitStatus()) {
+                    LOGGER.warn("Failed to replace {}!", entry.getKey().getAbsolutePath());
+                    LOGGER.debug(entry.getValue().err());
+                }
+            }
             return (K) this;
         }
     }
@@ -224,8 +233,8 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public List<String> execInCurrentNamespace(String... commands) {
-        return namespacedCommand(commands);
+    public ExecResult execInCurrentNamespace(String... commands) {
+        return Exec.exec(namespacedCommand(commands));
     }
 
     enum ExType {

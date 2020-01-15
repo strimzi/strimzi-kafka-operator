@@ -20,11 +20,14 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import okhttp3.OkHttpClient;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -51,8 +54,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
-
-    private Vertx vertx;
+    private static Vertx vertx;
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -65,13 +67,17 @@ public class ClusterOperatorTest {
         return env;
     }
 
-    @BeforeEach
-    public void createClient() {
-        vertx = Vertx.vertx();
+    @BeforeAll
+    public static void createClient() {
+        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true)
+        ));
     }
 
-    @AfterEach
-    public void closeClient() {
+    @AfterAll
+    public static void closeClient() {
         vertx.close();
     }
 
@@ -161,10 +167,11 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.countDown();
-        });
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
+                    ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
+                        context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+                        async.countDown();
+                    });
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
@@ -241,10 +248,11 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.countDown();
-        });
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
+                ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
+                    context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+                    async.countDown();
+                });
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }

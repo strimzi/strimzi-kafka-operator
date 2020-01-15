@@ -1,0 +1,95 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='configuring-internal-clients-to-trust-cluster-ca-{context}']
+= Configuring internal clients to trust the cluster CA
+
+This procedure describes how to configure a Kafka client that resides inside the Kubernetes cluster — connecting to the `tls` listener on port 9093 — to trust the cluster CA certificate.
+
+The easiest way to achieve this for an internal client is to use a volume mount to access the `Secrets` containing the necessary certificates and keys.
+
+Follow the steps to configure trust certificates that are signed by the cluster CA for Java-based Kafka Producer, Consumer, and Streams APIs.
+
+Choose the steps to follow according to the certificate format of the cluster CA: PKCS #12 (`.p12`) or PEM (`.crt`).
+
+The steps describe how to mount the Cluster Secret that verifies the identity of the Kafka cluster to the client pod.
+
+.Prerequisites
+
+* The Cluster Operator must be running.
+* There needs to be a `Kafka` resource within the Kubernetes cluster.
+* You need a Kafka client application outside the Kubernetes cluster that will connect using TLS, and needs to trust the cluster CA certificate.
+* The client application must be running in the same namespace as the `Kafka` resource.
+
+.Using PKCS #12 format (.p12)
+
+. Mount the cluster Secret as a volume when defining the client pod.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kind: Pod
+apiVersion: {API_Version}
+metadata:
+  name: client-pod
+spec:
+  containers:
+  - name: client-name
+    image: client-name
+    volumeMounts:
+    - name: secret-volume
+      mountPath: /data/p12
+    env:
+    - name: SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: my-secret
+          key: my-password
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: my-cluster-cluster-cert
+----
++
+Here we're mounting:
++
+* The PKCS #12 file into an exact path, which can be configured
+* The password into an environment variable, where it can be used for Java configuration
+
+. Configure the Kafka client with the following properties:
++
+* A security protocol option:
+** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication).
+** `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
+* `ssl.truststore.location` with the truststore location where the certificates were imported.
+* `ssl.truststore.password` with the password for accessing the truststore.
+* `ssl.truststore.type=PKCS12` to identify the truststore type.
+
+.Using PEM format (.crt)
+
+. Mount the cluster Secret as a volume when defining the client pod.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kind: Pod
+apiVersion: {API_Version}
+metadata:
+  name: client-pod
+spec:
+  containers:
+  - name: client-name
+    image: client-name
+    volumeMounts:
+    - name: secret-volume
+      mountPath: /data/crt
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: my-cluster-cluster-cert
+----
+
+. Use the certificate with clients that use certificates in X.509 format.

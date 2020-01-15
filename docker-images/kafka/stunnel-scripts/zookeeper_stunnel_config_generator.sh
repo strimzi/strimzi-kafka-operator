@@ -17,7 +17,7 @@ CURRENT=${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1))
 for port in "${PORTS[@]}"
 do
 	NODE=1
-	while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]
+	while [[ $NODE -le $ZOOKEEPER_NODE_COUNT ]]
 	do
 		# current node configuration is not needed
 		if [ $NODE -ne $ZOOKEEPER_ID ]; then

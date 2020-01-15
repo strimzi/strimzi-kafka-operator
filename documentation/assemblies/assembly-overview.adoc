@@ -9,20 +9,17 @@
 [id='overview-{context}']
 = Overview of {ProductName}
 
-{ProductName} is based on Apache Kafka, a popular platform for streaming data delivery and processing. {ProductName} makes it easy to run Apache Kafka on Kubernetes.
+//standard intro
+include::../shared/snip-intro-text.adoc[leveloffset=+1]
 
-{ProductName} provides three operators:
+//description of Kafka features
+include::../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
 
-Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within a Kubernetes cluster.
-Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within a Kubernetes cluster.
-User Operator:: Responsible for managing Kafka users within a Kafka cluster running within a Kubernetes cluster.
+//description of product features
+include::../modules/overview/con-key-features-product.adoc[leveloffset=+1]
 
-NOTE: The Cluster Operator can deploy the Topic Operator and User Operator (as part of an Entity Operator configuration) at the same time as a Kafka cluster.
+//description of operators
+include::../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
 
-.Operators within the {ProductName} architecture
-
-image:operators.png[Operators]
-
-include::../modules/ref-key-features.adoc[leveloffset=+1]
-
-include::../modules/ref-document-conventions.adoc[leveloffset=+1]
+//formatting conventions used in guide
+include::../shared/ref-document-conventions.adoc[leveloffset=+1]

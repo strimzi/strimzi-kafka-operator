@@ -55,9 +55,9 @@ public class PlatformFeaturesAvailability {
             return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "image.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setImages(supported);
-            pfaPromise.complete(pfa);
-            return pfaPromise.future();
-        });
+            return Future.succeededFuture(pfa);
+        })
+        .setHandler(pfaPromise);
 
         return pfaPromise.future();
     }

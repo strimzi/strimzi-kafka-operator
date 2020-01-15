@@ -1,0 +1,29 @@
+// This module is included in:
+//
+// overview/assembly-key-features.adoc
+
+[id="key-features-kafka_{context}"]
+= Kafka capabilities
+
+The underlying data stream-processing capabilities and component architecture of Kafka can deliver:
+
+* Microservices and other applications to share data with extremely high throughput and low latency
+* Message ordering guarantees
+* Message rewind/replay from data storage to reconstruct an application state
+* Message compaction to remove old records when using a key-value log
+* Horizontal scalability in a cluster configuration
+* Replication of data to control fault tolerance
+* Retention of high volumes of data for immediate access
+
+= Kafka use cases
+
+Kafka's capabilities make it suitable for:
+
+* Event-driven architectures
+* Event sourcing to capture changes to the state of an application as a log of events
+* Message brokering
+* Website activity tracking
+* Operational monitoring through metrics
+* Log collection and aggregation
+* Commit logs for distributed systems
+* Stream processing so that applications can respond to data in real time
