@@ -1,0 +1,83 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='proc-installing-certs-per-listener-{context}']
+= Installing certificates for TLS and external listeners
+
+You can install your own certificates and private keys for Kafka brokers on a per-listener basis. This allows you to use certificates that are signed and managed by an external Certificate Authority (CA), such as your company's internal CA, or a public CA. Per-listener certificates are supported for the following interactions:
+
+* Inter-cluster communication through TLS listeners
+
+* External communication between Kafka clients and Kafka brokers through external listeners (including `route`, `loadbalancer`, and `nodeport` types).
+
+Installing your own certificates and keys for plain listeners is not supported.
+
+.Prerequisites
+
+* A Kubernetes cluster.
+* The Cluster Operator is running.
+* Public key of your CA.  
+* Your own certificate in CRT or PEM format.
+
+.Procedure
+
+. Create a `Secret` containing your key and certificate:
++
+[source,shell,subs="+quotes"]
+----
+oc create secret generic _my-secret_ --from-file=_my-listener-key.key_ --from-file=_my-listener-certificate.crt_
+----
+
+. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and key file in the `configuration.brokerCertChainAndKey` property.
++
+.Example configuration for a `loadbalancer` external listener with TLS authentication
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+  external:
+    type: loadbalancer
+    configuration:
+      brokerCertChainAndKey:
+        secretName: my-listener-secret
+        certificate: my-listener-certificate.crt
+        key: my-listener-key.key
+    tls: true
+    authentication:
+      type: tls
+# ...
+----
++
+.Example configuration for a TLS listener
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+  tls:
+    configuration:
+      brokerCertChainAndKey:
+        secretName: my-listener-secret
+        certificate: my-listener-certificate.pem
+        key: my-listener-key.key
+    authentication:
+      type: tls
+# ...
+----
+
+. Apply the new configuration to create or update the resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f _kafka.yaml_
+----
++
+The Cluster Operator starts a rolling update of the Kafka cluster, which updates the configuration of the listener.
++
+NOTE: A rolling update is also started if you update a certificate in a `Secret` that is used by a TLS or external listener.
+
+.Additional resources
+
+* For more information about, see .

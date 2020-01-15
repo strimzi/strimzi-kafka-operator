@@ -28,6 +28,8 @@ include::modules/ref-certificates-and-secrets.adoc[leveloffset=+1]
 
 include::modules/proc-installing-your-own-ca-certificates.adoc[leveloffset=+1]
 
+include::modules/security/proc-installing-certs-per-listener.adoc[leveloffset=+1]
+
 include::modules/con-certificate-renewal.adoc[leveloffset=+1]
 
 include::modules/proc-renewing-ca-certs-manually.adoc[leveloffset=+1]

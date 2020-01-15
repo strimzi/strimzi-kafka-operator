@@ -47,9 +47,9 @@ spec:
           type: tls
         configuration: 
           brokerCertChainAndKey: <9>
-            certificate: my-broker-certificate-file
-            key: my-private-key
             secretName: my-secret
+            certificate: my-certificate.crt
+            key: my-key.key
     authorization: <10>
       type: simple
     config: <11>
