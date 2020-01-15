@@ -1223,36 +1223,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> getZookeeperDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        StatefulSet sts = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-                        Storage oldStorage = getOldStorage(sts);
+            Future<StatefulSet> stsFut = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
 
-                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage);
+            Future<ConfigMap> cmFut = Future.succeededFuture();
+            if (zkCluster != null && zkCluster.getLogging() instanceof ExternalLogging) {
+                cmFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName());
+            }
 
-                        ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(zkCluster.getLogging() instanceof ExternalLogging ?
-                                configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName()) :
-                                null);
-
-                        this.zkService = zkCluster.generateService();
-                        this.zkHeadlessService = zkCluster.generateHeadlessService();
-                        this.zkMetricsAndLogsConfigMap = zkCluster.generateMetricsAndLogConfigMap(logAndMetricsConfigMap);
-
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        promise.complete((ReconciliationState) res.result());
-                    } else {
-                        promise.fail(res.cause());
-                    }
+            CompositeFuture.join(stsFut, cmFut).compose(ar -> {
+                if (ar.failed()) {
+                    return Future.failedFuture(ar.cause());
                 }
-            );
+                Storage oldStorage = getOldStorage(ar.resultAt(0));
 
+                this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage);
+
+                ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(zkCluster.getLogging() instanceof ExternalLogging ?
+                        ar.resultAt(1) : null);
+
+                this.zkService = zkCluster.generateService();
+                this.zkHeadlessService = zkCluster.generateHeadlessService();
+                this.zkMetricsAndLogsConfigMap = zkCluster.generateMetricsAndLogConfigMap(logAndMetricsConfigMap);
+
+                promise.complete(this);
+                return promise.future();
+            });
             return promise.future();
         }
 
@@ -1417,31 +1412,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
-
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                future -> {
-                    try {
-                        StatefulSet sts = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
-                        Storage oldStorage = getOldStorage(sts);
-
-                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage);
-
-                        this.kafkaService = kafkaCluster.generateService();
-                        this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
-
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        promise.complete(res.result());
-                    } else {
-                        promise.fail(res.cause());
-                    }
+            kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)).setHandler(sts -> {
+                if (sts.succeeded()) {
+                    Storage oldStorage = getOldStorage(sts.result());
+                    this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage);
+                    this.kafkaService = kafkaCluster.generateService();
+                    this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
+                    promise.complete(this);
+                } else {
+                    promise.fail(sts.cause());
                 }
-            );
+            });
             return promise.future();
         }
 
@@ -2570,40 +2551,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         @SuppressWarnings("deprecation")
         private final Future<ReconciliationState> getTopicOperatorDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
-
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                future -> {
-                    try {
-                        this.topicOperator = io.strimzi.operator.cluster.model.TopicOperator.fromCrd(kafkaAssembly, versions);
-
-                        if (topicOperator != null) {
-                            ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
-                                    topicOperator.getLogging() instanceof ExternalLogging ?
-                                            configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
-                                            null);
-                            this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-                            this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
-                            Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
-                                    io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING,
-                                    this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
-                        } else {
-                            this.toDeployment = null;
-                            this.toMetricsAndLogsConfigMap = null;
-                        }
-
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        promise.complete(res.result());
-                    } else {
-                        promise.fail(res.cause());
-                    }
+            this.topicOperator = io.strimzi.operator.cluster.model.TopicOperator.fromCrd(kafkaAssembly, versions);
+            Future<ConfigMap> cmFut = Future.succeededFuture();
+            if (topicOperator != null) {
+                if (topicOperator.getLogging() instanceof ExternalLogging) {
+                    cmFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName());
                 }
-            );
+                cmFut.compose(
+                    cm -> {
+                        ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
+                                topicOperator.getLogging() instanceof ExternalLogging ?
+                                        cm : null);
+                        this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                        this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
+                        Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
+                                io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING,
+                                this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
+                        promise.complete(this);
+                        return promise.future();
+                    }
+                );
+            } else {
+                this.toDeployment = null;
+                this.toMetricsAndLogsConfigMap = null;
+                promise.complete(this);
+            }
             return promise.future();
         }
 
@@ -2661,58 +2633,56 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         @SuppressWarnings("deprecation")
         private final Future<ReconciliationState> getEntityOperatorDescription() {
             Future<ReconciliationState> fut = Future.future();
-
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                future -> {
-                    try {
-                        EntityOperator entityOperator = EntityOperator.fromCrd(kafkaAssembly, versions);
-
-                        if (entityOperator != null) {
-                            EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
-                            EntityUserOperator userOperator = entityOperator.getUserOperator();
-
-                            ConfigMap topicOperatorLogAndMetricsConfigMap = topicOperator != null ?
-                                    topicOperator.generateMetricsAndLogConfigMap(topicOperator.getLogging() instanceof ExternalLogging ?
-                                            configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
-                                            null) : null;
-
-                            ConfigMap userOperatorLogAndMetricsConfigMap = userOperator != null ?
-                                    userOperator.generateMetricsAndLogConfigMap(userOperator.getLogging() instanceof ExternalLogging ?
-                                            configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
-                                            null) : null;
-
-                            String configAnnotation = "";
-
-                            if (topicOperatorLogAndMetricsConfigMap != null)    {
-                                configAnnotation += topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
-                            }
-
-                            if (userOperatorLogAndMetricsConfigMap != null)    {
-                                configAnnotation += userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
-                            }
-
-                            Map<String, String> annotations = new HashMap<>();
-                            annotations.put(io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING, configAnnotation);
-
-                            this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
-                            this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
-                            this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
-                        }
-
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        fut.complete(res.result());
-                    } else {
-                        fut.fail(res.cause());
-                    }
+            EntityOperator entityOperator = EntityOperator.fromCrd(kafkaAssembly, versions);
+            if (entityOperator != null) {
+                EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
+                EntityUserOperator userOperator = entityOperator.getUserOperator();
+                Future<ConfigMap> topicOperatorLogAndMetricsConfigMapFut = Future.succeededFuture();
+                if (topicOperator.getLogging() instanceof ExternalLogging) {
+                    topicOperatorLogAndMetricsConfigMapFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName());
                 }
-            );
+                Future<ConfigMap> userOperatorLogAndMetricsConfigMapFut = Future.succeededFuture();
+                if (userOperator.getLogging() instanceof ExternalLogging) {
+                    userOperatorLogAndMetricsConfigMapFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName());
+                }
+
+                CompositeFuture.join(topicOperatorLogAndMetricsConfigMapFut, userOperatorLogAndMetricsConfigMapFut).compose(res -> {
+                    if (res.failed())   {
+                        return Future.failedFuture(res.cause());
+                    }
+
+                    ConfigMap topicOperatorLogAndMetricsConfigMap = res.resultAt(0);
+                    ConfigMap userOperatorLogAndMetricsConfigMap = res.resultAt(1);
+
+                    topicOperatorLogAndMetricsConfigMap = topicOperator != null ?
+                            topicOperator.generateMetricsAndLogConfigMap(topicOperator.getLogging() instanceof ExternalLogging ?
+                                    topicOperatorLogAndMetricsConfigMap : null) : null;
+
+                    userOperatorLogAndMetricsConfigMap = userOperator != null ?
+                            userOperator.generateMetricsAndLogConfigMap(userOperator.getLogging() instanceof ExternalLogging ?
+                                    userOperatorLogAndMetricsConfigMap : null) : null;
+                    String configAnnotation = "";
+
+                    if (topicOperatorLogAndMetricsConfigMap != null)    {
+                        configAnnotation += topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
+                    }
+
+                    if (userOperatorLogAndMetricsConfigMap != null)    {
+                        configAnnotation += userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
+                    }
+
+                    Map<String, String> annotations = new HashMap<>();
+                    annotations.put(io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING, configAnnotation);
+
+                    this.entityOperator = entityOperator;
+                    this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+                    this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
+                    this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
+
+                    fut.complete(this);
+                    return fut;
+                });
+            }
             return fut;
         }
 
@@ -3077,26 +3047,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
+            this.kafkaExporter = KafkaExporter.fromCrd(kafkaAssembly, versions);
+            this.exporterDeployment = kafkaExporter.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                future -> {
-                    try {
-                        this.kafkaExporter = KafkaExporter.fromCrd(kafkaAssembly, versions);
-                        this.exporterDeployment = kafkaExporter.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            promise.complete(this);
 
-                        future.complete(this);
-                    } catch (Throwable e) {
-                        future.fail(e);
-                    }
-                }, true,
-                res -> {
-                    if (res.succeeded()) {
-                        promise.complete(res.result());
-                    } else {
-                        promise.fail(res.cause());
-                    }
-                }
-            );
             return promise.future();
         }
 
