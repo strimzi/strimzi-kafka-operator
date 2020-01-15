@@ -66,9 +66,6 @@ class RollingUpdateST extends MessagingBaseST {
     void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-
-        String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)  + ".*'";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
@@ -86,27 +83,19 @@ class RollingUpdateST extends MessagingBaseST {
                         .build());
         });
 
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, timeMeasuringSystem.getOperationID());
-
-        assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        // first part
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(received, is(sent));
 
+        // second part
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Second part
-        String rollingUpdateOperation = timeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
-
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(received, is(sent));
-
-        timeMeasuringSystem.stopOperation(rollingUpdateOperation);
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
@@ -126,9 +115,6 @@ class RollingUpdateST extends MessagingBaseST {
     void testRecoveryDuringKafkaRollingUpdate() throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-
-        String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + KafkaResources.kafkaStatefulSetName(CLUSTER_NAME) + ".*'";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
@@ -147,31 +133,22 @@ class RollingUpdateST extends MessagingBaseST {
             k.getSpec()
                 .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
-                        .addToRequests("cpu", new Quantity("100000m"))
-                        .build());
+                    .addToRequests("cpu", new Quantity("100000m"))
+                    .build());
         });
 
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, timeMeasuringSystem.getOperationID());
-
-        assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        // Wait for first reconciliation
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        // Wait for second reconciliation and check that pods are not rolled
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(received, is(sent));
-
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Second part
-        String rollingUpdateOperation = timeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
-
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
         received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(received, is(sent));
-
-        timeMeasuringSystem.stopOperation(rollingUpdateOperation);
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
