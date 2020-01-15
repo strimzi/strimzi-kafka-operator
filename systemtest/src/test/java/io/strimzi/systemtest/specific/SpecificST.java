@@ -113,21 +113,19 @@ public class SpecificST extends MessagingBaseST {
 
     @Test
     @Tag(REGRESSION)
-    void testDeployUnsupportedKafka() {
+    void testDeployUnsupportedKafka() throws InterruptedException {
         String nonExistingVersion = "6.6.6";
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withVersion(nonExistingVersion)
                     .endKafka()
-                .endSpec()
-                .build());
+                .endSpec().build());
 
-        LOGGER.info("Wait until Zookeeper stateful set is ready");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
+        KafkaUtils.waitUntilKafkaStatusConditionIsNotReady(CLUSTER_NAME);
 
-        KafkaUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
         Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+
         verifyCRStatusCondition(
                 condition,
                 "Version " + nonExistingVersion + " is not supported.",
