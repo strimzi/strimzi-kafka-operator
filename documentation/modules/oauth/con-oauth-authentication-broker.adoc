@@ -17,7 +17,7 @@ NOTE: In relation to the authorization server, Kafka brokers and Kafka clients a
 To configure a Kafka broker to validate the token received during session initiation,
 the recommended approach is to create an {oauth} _client_ definition in an authorization server, configured as _confidential_, with client credentials enabled:
 
-* Client ID of `Kafka`
+* Client ID of `kafka` (for example)
 * Client ID and Secret as the authentication mechanism
 
 NOTE: You only need to use a client ID and secret when using a non-public introspection endpoint of the authorization server.
