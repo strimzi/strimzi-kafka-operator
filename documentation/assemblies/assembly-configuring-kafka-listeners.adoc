@@ -10,7 +10,7 @@
 = Kafka broker listeners
 
 You can configure the listeners enabled in Kafka brokers.
-The following types of listener are supported:
+The following types of listeners are supported:
 
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)
