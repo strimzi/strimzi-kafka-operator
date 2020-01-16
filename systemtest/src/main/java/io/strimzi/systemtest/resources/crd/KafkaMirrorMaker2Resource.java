@@ -36,46 +36,49 @@ public class KafkaMirrorMaker2Resource {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2(String name, int kafkaMirrorMaker2Replicas) {
-        return kafkaMirrorMaker2(name, name, name, kafkaMirrorMaker2Replicas);
-    }
-
-    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
+    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
-        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas).build());
-    }
-
-    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2WithMetrics(String name, int kafkaMirrorMaker2Replicas) {
-        return kafkaMirrorMaker2WithMetrics(name, name, name, kafkaMirrorMaker2Replicas);
+        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener).build());
     }
 
     public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
-        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas).build());
+        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false).build());
     }
 
-    public static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
+    public static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas);
+        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener);
     }
 
-    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas) {
+    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
 
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaTargetClusterName)
-            .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName))
-            .withNewTls()
-                .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaTargetClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
-            .endTls()
+            .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
             .build();
-
+        
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaSourceClusterName)
-            .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName))
-            .withNewTls()
-                .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaSourceClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
-            .endTls()
+            .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
             .build();
+
+        if (tlsListener) {
+            targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName))
+                .withNewTls()
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
+                .endTls()
+                .build();
+            
+            sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(sourceClusterSpec)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName))
+                .withNewTls()
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
+                .endTls()
+                .build();
+        }
+    
 
         return new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
             .withNewMetadata()
