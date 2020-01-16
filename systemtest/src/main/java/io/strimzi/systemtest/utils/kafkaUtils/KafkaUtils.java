@@ -37,8 +37,8 @@ public class KafkaUtils {
     public static void waitUntilKafkaStatusConditionIsNotReady(String clusterName) throws InterruptedException {
         LOGGER.info("Waiting till kafka resource status is present");
         TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () ->  Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals("NotReady") &&
-                        Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getStatus().equals("True")
+            () ->  Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals("NotReady") &&
+                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getStatus().equals("True")
         );
         Thread.sleep(1000);
         LOGGER.info("Kafka resource status is present");

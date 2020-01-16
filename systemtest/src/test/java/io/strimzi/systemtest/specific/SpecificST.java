@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBui
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
