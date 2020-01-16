@@ -20,6 +20,10 @@ The following types of listeners are supported:
 If you are using {oauth} token based authentication, you can configure the listeners to connect to your authorization server.
 For more information, see xref:assembly-oauth-str[Using {oauth} token based authentication].
 
+.External certificates
+If you want to use certificates issued by an external Certificate Authority (CA), you can install your own certificates for Kafka brokers on a per-listener basis.
+For more information, see xref:proc-installing-certs-per-listener-str[].
+
 include::../modules/con-kafka-listeners.adoc[leveloffset=+1]
 
 include::../modules/proc-configuring-kafka-listeners.adoc[leveloffset=+1]

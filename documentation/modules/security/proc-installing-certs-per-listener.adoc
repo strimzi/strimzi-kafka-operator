@@ -3,13 +3,13 @@
 // assembly-security.adoc
 
 [id='proc-installing-certs-per-listener-{context}']
-= Installing certificates for TLS and external listeners
+= Installing your own CA certificates for listeners
 
-You can install your own certificates and private keys for Kafka brokers on a per-listener basis. This allows you to use certificates that are signed and managed by an external Certificate Authority (CA), such as your company's internal CA, or a public CA. Per-listener certificates are supported for the following interactions:
+You can install your own certificates and public keys for Kafka brokers on a per-listener basis. These certificates can be signed by an external Certificate Authority (CA), such as your company's internal CA or a public CA, rather than the cluster or clients CAs (which are internal to Strimzi). Installing per-listener certificates is supported for two types of listeners:
 
-* Inter-cluster communication through TLS listeners
+* TLS listeners for inter-cluster communication
 
-* External communication between Kafka clients and Kafka brokers through external listeners (including `route`, `loadbalancer`, and `nodeport` types).
+* External listeners (including `route`, `loadbalancer`, and `nodeport` types) for communication between Kafka clients and Kafka brokers
 
 Installing your own certificates and keys for plain listeners is not supported.
 
@@ -17,19 +17,19 @@ Installing your own certificates and keys for plain listeners is not supported.
 
 * A Kubernetes cluster.
 * The Cluster Operator is running.
-* Public key of your CA.  
-* Your own certificate in CRT or PEM format.
+* Public key of the external CA.  
+* Your own X.509 certificate in CRT or PEM format.
 
 .Procedure
 
-. Create a `Secret` containing your key and certificate:
+. Create a `Secret` containing your public key and certificate:
 +
 [source,shell,subs="+quotes"]
 ----
-oc create secret generic _my-secret_ --from-file=_my-listener-key.key_ --from-file=_my-listener-certificate.crt_
+kubectl create secret generic _my-secret_ --from-file=_my-listener-key.key_ --from-file=_my-listener-certificate.crt_
 ----
 
-. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and key file in the `configuration.brokerCertChainAndKey` property.
+. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and public key file in the `configuration.brokerCertChainAndKey` property.
 +
 .Example configuration for a `loadbalancer` external listener with TLS authentication
 [source,yaml,subs="attributes+"]
@@ -41,7 +41,7 @@ listeners:
     type: loadbalancer
     configuration:
       brokerCertChainAndKey:
-        secretName: my-listener-secret
+        secretName: my-secret
         certificate: my-listener-certificate.crt
         key: my-listener-key.key
     tls: true
@@ -59,7 +59,7 @@ listeners:
   tls:
     configuration:
       brokerCertChainAndKey:
-        secretName: my-listener-secret
+        secretName: my-secret
         certificate: my-listener-certificate.pem
         key: my-listener-key.key
     authentication:
@@ -80,4 +80,4 @@ NOTE: A rolling update is also started if you update a certificate in a `Secret`
 
 .Additional resources
 
-* For more information about, see .
+* xref:installing-your-own-ca-certificates-{context}[] 

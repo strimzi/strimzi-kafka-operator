@@ -14,7 +14,7 @@
 You can specify and configure most of the options listed in the "Broker Configs" section of the {ApacheKafkaBrokerConfig}. You cannot configure options that are related to the following areas:
 
 * Security (Encryption, Authentication, and Authorization)
-* Listener configuration
+* Listener configuration (apart from installing per-broker certificates)
 * Broker ID configuration
 * Configuration of log data directories
 * Inter-broker communication
