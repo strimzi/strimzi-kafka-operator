@@ -91,6 +91,14 @@ if [ -n "$KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE" ]; then
     abort_on_send_failure="--abort.on.send.failure $KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE"
 fi
 
+if [ -n "$KAFKA_MIRRORMAKER_MESSAGE_HANDLER" ]; then
+    message_handler="--message.handler $KAFKA_MIRRORMAKER_MESSAGE_HANDLER"
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS" ]; then
+    message_handler_args="--message.handler.args \""${$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS}"\""
+fi
+
 . ./set_kafka_gc_options.sh
 
 # starting Kafka Mirror Maker with final configuration
@@ -100,4 +108,6 @@ exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 $whitelist \
 $numstreams \
 $offset_commit_interval \
-$abort_on_send_failure
+$abort_on_send_failure \
+$message_handler \
+$message_handler_args
