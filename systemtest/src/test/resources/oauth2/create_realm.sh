@@ -102,6 +102,12 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             "serviceAccountClientId": "kafka-mirror-maker"
         },
         {
+            "username": "service-account-kafka-mirror-maker-2",
+            "enabled": true,
+            "email": "service-account-kafka-mirror-maker-2@placeholder.org",
+            "serviceAccountClientId": "kafka-mirror-maker-2"
+        },
+        {
             "username": "service-account-hello-world-producer",
             "enabled": true,
             "email": "service-account-hello-world-producer@placeholder.org",
@@ -335,6 +341,23 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             "enabled": true,
             "clientAuthenticatorType": "client-secret",
             "secret": "kafka-mirror-maker-secret",
+            "publicClient": false,
+            "bearerOnly": false,
+            "standardFlowEnabled": false,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "consentRequired": false,
+            "fullScopeAllowed": false,
+            "attributes": {
+                "access.token.lifespan": "32140800"
+            }
+        },
+        {
+            "clientId": "kafka-mirror-maker-2",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "kafka-mirror-maker-2-secret",
             "publicClient": false,
             "bearerOnly": false,
             "standardFlowEnabled": false,

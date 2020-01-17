@@ -84,6 +84,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
+    private static final String OAUTH_TRUSTSTORE_SUFFIX = "-oauth.truststore.p12";
     private static final String KEYSTORE_SUFFIX = ".keystore.p12";
     private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
@@ -307,27 +308,36 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 saslMechanism = "SCRAM-SHA-512";
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";
             } else if (KafkaClientAuthenticationOAuth.TYPE_OAUTH.equals(clientAuthType)) {
+                KafkaClientAuthenticationOAuth oauth  = (KafkaClientAuthenticationOAuth) cluster.getAuthentication();
+
+                StringBuilder oauthJaasConfig = new StringBuilder();
+                oauthJaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ");
+
+                if (authProperties.containsKey("OAUTH_CONFIG")) {
+                    oauthJaasConfig.append(authProperties.get("OAUTH_CONFIG"));
+                }
+
+                if (oauth.getClientSecret() != null) {
+                    oauthJaasConfig.append(" oauth.client.secret=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.client.secret}\"");
+                }
+
+                if (oauth.getAccessToken() != null) {
+                    oauthJaasConfig.append(" oauth.access.token=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.access.token}\"");
+                }
+
+                if (oauth.getRefreshToken() != null) {
+                    oauthJaasConfig.append(" oauth.refresh.token=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.refresh.token}\"");
+                }
+
+                if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                    oauthJaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/kafka/clusters/" + cluster.getAlias() + "-oauth.truststore.p12\" oauth.ssl.truststore.password=\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\" oauth.ssl.truststore.type=\"PKCS12\"");
+                }
+
+                oauthJaasConfig.append(";");
+
                 saslMechanism = "OAUTHBEARER";
-                String oauthConfig = authProperties.containsKey("OAUTH_CONFIG") ? authProperties.get("OAUTH_CONFIG") : "";
-
-
-                // if [ ! -z  ]; then
-                //     OAUTH_ACCESS_TOKEN="oauth.access.token=\"$KAFKA_CONNECT_OAUTH_ACCESS_TOKEN\""
-                // fi
-
-                // if [ ! -z "$KAFKA_CONNECT_OAUTH_REFRESH_TOKEN" ]; then
-                //     OAUTH_REFRESH_TOKEN="oauth.refresh.token=\"$KAFKA_CONNECT_OAUTH_REFRESH_TOKEN\""
-                // fi
-
-                // if [ ! -z "$KAFKA_CONNECT_OAUTH_CLIENT_SECRET" ]; then
-                //     OAUTH_CLIENT_SECRET="oauth.client.secret=\"$KAFKA_CONNECT_OAUTH_CLIENT_SECRET\""
-                // fi
-
-                // if [ -f "/tmp/kafka/oauth.truststore.p12" ]; then
-                //     OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
-                // fi
-
-                jaasConfig = "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + oauthConfig + " ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_TRUSTSTORE};";
+                jaasConfig = oauthJaasConfig.toString();
+                config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
             }
 
             if (saslMechanism != null) {

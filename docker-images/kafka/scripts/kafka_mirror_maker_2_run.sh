@@ -49,8 +49,8 @@ do
         "/tmp/kafka/clusters/${clusterAlias}.truststore.p12" \
         "/tmp/kafka/clusters/${clusterAlias}.keystore.p12" \
         "/opt/kafka/connect-certs" \
-        "/opt/kafka/oauth-certs" \
-        "/tmp/kafka/clusters/${clusterAlias}-oauth.keystore.p12"
+        "/opt/kafka/oauth-certs/${clusterAlias}" \
+        "/tmp/kafka/clusters/${clusterAlias}-oauth.truststore.p12"
 done
 echo "Preparing MirrorMaker 2.0 cluster truststores is complete"
 

@@ -57,6 +57,7 @@ public class OauthBaseST extends BaseST {
     private static final String STREAMS_OAUTH_SECRET = "hello-world-streams-oauth";
     static final String CONNECT_OAUTH_SECRET = "my-connect-oauth";
     static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
+    static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
     static final String OAUTH_KEY = "clientSecret";
 
@@ -188,6 +189,7 @@ public class OauthBaseST extends BaseST {
         SecretUtils.createSecret(STREAMS_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
+        SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
         SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
     }
 }

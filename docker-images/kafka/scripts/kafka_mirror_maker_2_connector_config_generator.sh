@@ -38,10 +38,81 @@ EOF
     done
 fi
 
+if [ "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS" ]; then
+    OAUTH_TRUSTED_CERTS_CONFIGURATION=$(cat <<EOF
+# OAuth trusted certs
+oauth.ssl.truststore.password=${CERTS_STORE_PASSWORD}
+EOF
+)
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS" ]; then
+
+    OAUTH_CLIENT_SECRETS_CONFIGURATION="# OAuth client secrets"
+
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS"
+    for cluster in "${CLUSTERS[@]}"
+    do
+        IFS='=' read -ra CLIENT_SECRET_CLUSTER <<< "${cluster}"
+        export clusterAlias="${CLIENT_SECRET_CLUSTER[0]}"
+        export clientSecretFile="${CLIENT_SECRET_CLUSTER[1]}"
+
+        OAUTH_CLIENT_SECRET=$(cat /opt/kafka/oauth/$clientSecretFile)
+        OAUTH_CLIENT_SECRETS_CONFIGURATION=$(cat <<EOF
+${OAUTH_CLIENT_SECRETS_CONFIGURATION}
+${clusterAlias}.oauth.client.secret=${OAUTH_CLIENT_SECRET}
+EOF
+)
+    done
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS" ]; then
+
+    OAUTH_ACCESS_TOKENS_CONFIGURATION="# OAuth access tokens"
+
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS"
+    for cluster in "${CLUSTERS[@]}"
+    do
+        IFS='=' read -ra ACCESS_TOKEN_CLUSTER <<< "${cluster}"
+        export clusterAlias="${ACCESS_TOKEN_CLUSTER[0]}"
+        export accessTokenFile="${ACCESS_TOKEN_CLUSTER[1]}"
+
+        OAUTH_ACCESS_TOKEN=$(cat /opt/kafka/oauth/$accessTokenFile)
+        OAUTH_ACCESS_TOKENS_CONFIGURATION=$(cat <<EOF
+${OAUTH_ACCESS_TOKENS_CONFIGURATION}
+${clusterAlias}.oauth.access.token=${OAUTH_ACCESS_TOKEN}
+EOF
+)
+    done
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS" ]; then
+
+    OAUTH_REFRESH_TOKENS_CONFIGURATION="# OAuth refresh tokens"
+
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS"
+    for cluster in "${CLUSTERS[@]}"
+    do
+        IFS='=' read -ra REFRESH_TOKEN_CLUSTER <<< "${cluster}"
+        export clusterAlias="${REFRESH_TOKEN_CLUSTER[0]}"
+        export refreshTokenFile="${REFRESH_TOKEN_CLUSTER[1]}"
+
+        OAUTH_REFRESH_TOKEN=$(cat /opt/kafka/oauth/$refreshTokenFile)
+        OAUTH_REFRESH_TOKENS_CONFIGURATION=$(cat <<EOF
+${OAUTH_REFRESH_TOKENS_CONFIGURATION}
+${clusterAlias}.oauth.refresh.token=${OAUTH_REFRESH_TOKEN}
+EOF
+)
+    done
+fi
 
 # Write the config file
 cat <<EOF
 ${TLS_CONFIGURATION}
 ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
+${OAUTH_TRUSTED_CERTS_CONFIGURATION}
+${OAUTH_CLIENT_SECRETS_CONFIGURATION}
+${OAUTH_ACCESS_TOKENS_CONFIGURATION}
+${OAUTH_REFRESH_TOKENS_CONFIGURATION}
 EOF
