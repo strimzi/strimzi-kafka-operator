@@ -5,7 +5,7 @@
 [id='proc-installing-certs-per-listener-{context}']
 = Installing your own CA certificates for listeners
 
-You can install your own certificates and public keys for Kafka brokers on a per-listener basis. These certificates can be signed by an external Certificate Authority (CA), such as your company's internal CA or a public CA, rather than the cluster or clients CAs (which are internal to Strimzi). Installing per-listener certificates is supported for two types of listeners:
+You can install your own certificates and public keys for Kafka brokers on a per-listener basis. These certificates can be signed by an external Certificate Authority (CA), such as your company's internal CA or a public CA, rather than the cluster or clients CAs (which are internal to {ProductName}). Installing per-listener certificates is supported for two types of listeners:
 
 * TLS listeners for inter-cluster communication
 
