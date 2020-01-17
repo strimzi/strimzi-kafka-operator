@@ -11,6 +11,7 @@ pipeline {
     parameters {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
+        string(name: 'EXCLUDE', defaultValue: 'networkpolicies', description: 'maven parameter for exclude specific test tag')
     }
     options {
         timeout(time: 22, unit: 'HOURS')
@@ -39,12 +40,18 @@ pipeline {
                     echo "Comment body: ${env.ghprbCommentBody}"
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
+                    env.EXCLUDE_GROUPS = params.EXCLUDE
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     echo "TEST_CASE: ${env.TEST_CASE}"
                     if (env.ghprbCommentBody.contains('profile=')) {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
+                    }
+                    echo "EXCLUDE_GROUPS: ${env.EXCLUDE_GROUPS}"
+                    if (env.ghprbCommentBody.contains('exclude=')) {
+                        env.EXCLUDE_GROUPS = env.ghprbCommentBody.split('exclude=')[1].split(/\s/)[0]
+                        env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",networkpolicies"
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                     if (env.ghprbCommentBody.contains('test_only')) {
@@ -98,7 +105,7 @@ pipeline {
             steps {
                 script {
                     catchError {
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE)
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
             }
