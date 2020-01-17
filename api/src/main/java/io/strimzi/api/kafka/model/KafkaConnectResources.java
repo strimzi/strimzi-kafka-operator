@@ -48,6 +48,17 @@ public class KafkaConnectResources {
     }
 
     /**
+     * Returns qualified name of the service which works across different namespaces.
+     *
+     * @param clusterName   Name of the Connect CR
+     * @param namespace     Namespace of the Connect dpeloyment
+     * @return              quaified namespace in the format "&lt;service-name&gt;.&lt;namespace&gt;.svc"
+     */
+    public static String qualifiedServiceName(String clusterName, String namespace) {
+        return serviceName(clusterName) + "." + namespace + ".svc";
+    }
+
+    /**
      * Returns the URL of the Kafka Connect REST API for a {@code KafkaConnect} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @param namespace The namespace where {@code KafkaConnect} cluster is running.
@@ -55,6 +66,6 @@ public class KafkaConnectResources {
      * @return The base URL of the {@code KafkaConnect} REST API.
      */
     public static String url(String clusterName, String namespace, int port) {
-        return "http://" + serviceName(clusterName) + "." + namespace + ".svc:" + port;
+        return "http://" + qualifiedServiceName(clusterName, namespace) + ":" + port;
     }
 }
