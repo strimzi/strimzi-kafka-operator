@@ -5,13 +5,13 @@
 [id="cluster-recovery-volume_{context}"]
 = Recovering a cluster from persistent volumes
 
-This procedure describes how to recover a deleted cluster from persistent volumes.
+This procedure describes how to recover a deleted cluster from persistent volumes (PVs).
 
 The procedure assumes that the Topic Operator is deployed.
 In situations such as these, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
 The `KafkaTopic` resources must be recovered before a cluster is started so that the topics are not deleted by the Topic Operator.
 
-If you do not use the the Topic Operator, you just need to recover the `PersistentVolumeClaim` (PVC) resources.
+If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
 
 .Before you begin
 
@@ -174,7 +174,7 @@ Follow the steps depending on whether or not you have all the `KafkaTopic` resou
 
 . Recreate all `KafkaTopic` resources.
 +
-You must recreate the resources before deploying the clusters or the Topic Operator will delete the topics.
+It is essential that you recreate the resources before deploying the cluster, or the Topic Operator will delete the topics.
 
 . Deploy the Kafka cluster.
 +
@@ -201,7 +201,7 @@ For example, where _my-cluster-kafka-0_ is the name of the broker pod:
 ----
 kubectl exec _my-cluster-kafka-0_ bin/zookeeper-shell.sh localhost:2181
 ----
-. Delete the whole `/strimzi` path to remove the Topic Operator storage.
+. Delete the whole `/strimzi` path to remove the Topic Operator storage:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -210,7 +210,7 @@ delete /strimzi
 . Enable the Topic Operator by redeploying the Kafka cluster with `topicOperator: {}` to recreate the `KafkaTopic` resources.
 --
 
-. Verify the recovery by listing the `KafkaTopic` resources.
+. Verify the recovery by listing the `KafkaTopic` resources:
 +
 [source,shell,subs="+quotes,attributes"]
 ----

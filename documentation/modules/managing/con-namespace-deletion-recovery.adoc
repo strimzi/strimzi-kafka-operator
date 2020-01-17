@@ -3,7 +3,7 @@
 // assembly-cluster-recovery-volume.adoc
 
 [id="namespace-deletion_{context}"]
-= Namespace deletion
+= Cluster recovery from namespace deletion
 
 Recovery from namespace deletion is possible because of the relationship between persistent volumes and namespaces.
 A `PersistentVolume` (PV) is a storage resource that lives outside of a namespace.
@@ -18,4 +18,4 @@ To ensure that PVs are not deleted when a namespace is deleted, the policy must 
 You can also configure the `StorageClass` property used for dynamic volume allocation so that it creates the volumes with the appropriate reclaim policy.
 
 NOTE: If you are using _Retain_ as the reclaim policy, but you want to delete an entire cluster, you need to delete the PVs manually.
-Otherwise they will not be deleted, and may cause unnecessary expenditure.
+Otherwise they will not be deleted, and may cause unnecessary expenditure on resources.

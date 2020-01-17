@@ -5,12 +5,12 @@
 [id="cluster-recovery_{context}"]
 = Recovering a cluster from persistent volumes
 
-You can recover a cluster from persistent volumes if they are still present.
+You can recover a Kafka cluster from persistent volumes (PVs) if they are still present.
 
-You may want to do this, for example, after:
+You might want to do this, for example, after:
 
 * A namespace was deleted unintentionally
-* A whole cluster is lost, but the volumes remain in the infrastructure
+* A whole cluster is lost, but the PVs remain in the infrastructure
 
 //namespace deletion explained
 include::modules/con-namespace-deletion-recovery.adoc[leveloffset=+1]
