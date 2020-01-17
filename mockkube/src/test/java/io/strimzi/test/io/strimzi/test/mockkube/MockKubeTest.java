@@ -243,7 +243,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // TODO assertNull(gotResource);
 
         // Delete
-        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).delete(), is(true));
+        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).cascading(true).delete(), is(true));
         assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
         RT resource = (RT) w.lastEvent().resource;
         resource.getMetadata().setResourceVersion(null);
@@ -256,7 +256,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
         assertThat(gotResource, is(nullValue()));
 
-        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).delete(), is(false));
+        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).cascading(true).delete(), is(false));
 
         // TODO Delete off a withLabels query, delete off a inNamespace
         // TODO inAnyNamespace()

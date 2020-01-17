@@ -334,7 +334,7 @@ public class KafkaAssemblyOperatorMockTest {
     private void updateClusterWithoutSecrets(Params params, VertxTestContext context, String... secrets) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaAssemblyOperator kco = createCluster(params, context);
         for (String secret: secrets) {
-            mockClient.secrets().inNamespace(NAMESPACE).withName(secret).delete();
+            mockClient.secrets().inNamespace(NAMESPACE).withName(secret).cascading(true).delete();
             assertThat("Expected secret " + secret + " to be not exist",
                     mockClient.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(nullValue()));
         }
@@ -359,7 +359,7 @@ public class KafkaAssemblyOperatorMockTest {
         setFields(params);
         KafkaAssemblyOperator kco = createCluster(params, context);
         for (String service: services) {
-            mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
+            mockClient.services().inNamespace(NAMESPACE).withName(service).cascading(true).delete();
             assertThat("Expected service " + service + " to be not exist",
                     mockClient.services().inNamespace(NAMESPACE).withName(service).get(), is(nullValue()));
         }
@@ -410,7 +410,7 @@ public class KafkaAssemblyOperatorMockTest {
     private void updateClusterWithoutStatefulSet(Params params, VertxTestContext context, String statefulSet) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaAssemblyOperator kco = createCluster(params, context);
 
-        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).delete();
+        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).cascading(true).delete();
         assertThat("Expected sts " + statefulSet + " to be not exist",
                 mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
 
@@ -608,7 +608,7 @@ public class KafkaAssemblyOperatorMockTest {
 
 
         LOGGER.info("Reconciling again -> delete");
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).cascading(true).delete();
         Checkpoint deleteAsync = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();

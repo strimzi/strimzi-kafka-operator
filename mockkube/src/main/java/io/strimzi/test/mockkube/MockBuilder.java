@@ -343,7 +343,7 @@ class MockBuilder<T extends HasMetadata,
     }
 
     protected void mockDelete(String resourceName, R resource) {
-        when(resource.delete()).thenAnswer(i -> {
+        when(resource.cascading(true).delete()).thenAnswer(i -> {
             return doDelete(resourceName);
         });
     }

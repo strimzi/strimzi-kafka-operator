@@ -72,7 +72,7 @@ public class MockKubeRegressionTest {
 
             }
         });
-        client.pods().inNamespace("ns").withName(ns.get(0).getMetadata().getName()).delete();
+        client.pods().inNamespace("ns").withName(ns.get(0).getMetadata().getName()).cascading(true).delete();
 
         assertThat(deleted.get(), is(true));
         assertThat(recreated.get(), is(true));
@@ -81,7 +81,7 @@ public class MockKubeRegressionTest {
         ns = client.pods().inNamespace("ns").list().getItems();
         assertThat(ns.size(), is(3));
 
-        client.apps().statefulSets().inNamespace("ns").withName("foo").delete();
+        client.apps().statefulSets().inNamespace("ns").withName("foo").cascading(true).delete();
 
     }
 }

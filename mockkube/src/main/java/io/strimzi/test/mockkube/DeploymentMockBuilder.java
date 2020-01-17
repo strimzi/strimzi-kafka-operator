@@ -111,7 +111,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
                 // delete the first "old" Pod if there is one still remaining
                 if (podsForDeployments.get(deployment.getMetadata().getName()).size() > 0) {
                     String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
-                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
+                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).cascading(true).delete();
                 }
 
             }
