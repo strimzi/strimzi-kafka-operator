@@ -19,10 +19,10 @@ Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: kafka.strimzi.io/v1alpha1
-kind: `KafkaConnector`
+kind: KafkaConnector
 metadata:
   name: my-source-connector <1>
-  labels:   
+  labels:
     strimzi.io/cluster: my-connect-cluster <2>
 spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
