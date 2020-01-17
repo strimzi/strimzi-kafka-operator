@@ -40,6 +40,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -265,7 +266,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 Promise<Void> promise = Promise.promise();
                 apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
                         connectorName, asJson(connector.getSpec()))
-                        .compose(ignored -> apiClient.status(host, KafkaConnectCluster.REST_API_PORT,
+                        .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT,
                                 connectorName))
                         .compose(status -> {
                             Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
