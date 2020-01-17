@@ -44,7 +44,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 
 @Tag(REGRESSION)
-class MirrorMaker2ST extends MessagingBaseST {
+class MirrorMaker2ST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMaker2ST.class);
     public static final String NAMESPACE = "mirrormaker2-cluster-test";
@@ -52,8 +52,8 @@ class MirrorMaker2ST extends MessagingBaseST {
     private static final String MIRRORMAKER2_TOPIC_NAME = "mirrormaker2-topic-example";
     private final int messagesCount = 200;
 
-    private String kafkaSourceClusterName = CLUSTER_NAME + "-source";
-    private String kafkaTargetClusterName = CLUSTER_NAME + "-target";
+    private String kafkaClusterSourceName = CLUSTER_NAME + "-source";
+    private String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
     @Test
     void testMirrorMaker2() throws Exception {
@@ -68,46 +68,59 @@ class MirrorMaker2ST extends MessagingBaseST {
                 "offset.storage.replication.factor=1\n");
 
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String topicTargetName = kafkaSourceClusterName + "." + topicSourceName;
+        String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
 
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaSourceClusterName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Deploy Topic
-        KafkaTopicResource.topic(kafkaSourceClusterName, topicSourceName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaSourceClusterName);
-        availabilityTest(messagesCount, kafkaTargetClusterName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages("topic-for-test-broker-1", NAMESPACE, kafkaClusterSourceName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-for-test-broker-1", NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages("topic-for-test-broker-2", NAMESPACE, kafkaClusterTargetName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-for-test-broker-2", NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
         
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaTargetClusterName, kafkaSourceClusterName, 1, false).done();
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
-                hasItem(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))));
+                hasItem(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))));
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(expectedConfig));
         testDockerImagesForKafkaMirrorMaker2();
 
         verifyLabelsOnPods(CLUSTER_NAME, "mirrormaker2", null, "KafkaMirrorMaker2");
         verifyLabelsForService(CLUSTER_NAME, "mirrormaker2-api", "KafkaMirrorMaker2");
 
-        verifyLabelsForConfigMaps(kafkaSourceClusterName, null, kafkaTargetClusterName);
-        verifyLabelsForServiceAccounts(kafkaSourceClusterName, null);
+        verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
+        verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
 
-        final String kafkaClientsPodName = PodUtils.getPodNameByPrefix(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        int sent = externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
-        int sent = sendMessages(messagesCount,  kafkaSourceClusterName, false, topicSourceName, null, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaSourceClusterName, false, topicSourceName, null, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaTargetClusterName, false, topicTargetName, null, kafkaClientsPodName);
-
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicTargetName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
@@ -117,7 +130,7 @@ class MirrorMaker2ST extends MessagingBaseST {
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth() throws Exception {
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String topicTargetName = kafkaSourceClusterName + "." + topicSourceName;
+        String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
         String kafkaUserSourceName = "my-user-source";
         String kafkaUserTargetName = "my-user-target";
 
@@ -126,7 +139,7 @@ class MirrorMaker2ST extends MessagingBaseST {
         listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
-        KafkaResource.kafkaEphemeral(kafkaSourceClusterName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -138,7 +151,7 @@ class MirrorMaker2ST extends MessagingBaseST {
             .endSpec().done();
 
         // Deploy target kafka with tls listener and mutual tls auth
-        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -150,35 +163,46 @@ class MirrorMaker2ST extends MessagingBaseST {
             .endSpec().done();
 
         // Deploy topic
-        KafkaTopicResource.topic(kafkaSourceClusterName, topicSourceName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
         // Create Kafka user
-        KafkaUser userSource = KafkaUserResource.tlsUser(kafkaSourceClusterName, kafkaUserSourceName).done();
+        KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).done();
         SecretUtils.waitForSecretReady(kafkaUserSourceName);
 
-        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaTargetClusterName, kafkaUserTargetName).done();
+        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
         SecretUtils.waitForSecretReady(kafkaUserTargetName);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaSourceClusterName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, kafkaTargetClusterName, true, "my-topic-test-2", userTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName));
+        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for target
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName));
+        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy Mirror Maker 2.0 with tls listener and mutual tls auth
         KafkaMirrorMaker2ClusterSpec sourceClusterWithTlsAuth = new KafkaMirrorMaker2ClusterSpecBuilder()
-                .withAlias(kafkaSourceClusterName)
-                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName))
+                .withAlias(kafkaClusterSourceName)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
                 .withNewKafkaClientAuthenticationTls()
                     .withNewCertificateAndKey()
                         .withSecretName(kafkaUserSourceName)
@@ -192,8 +216,8 @@ class MirrorMaker2ST extends MessagingBaseST {
                 .build();
 
         KafkaMirrorMaker2ClusterSpec targetClusterWithTlsAuth = new KafkaMirrorMaker2ClusterSpecBuilder()
-                .withAlias(kafkaTargetClusterName)
-                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName))
+                .withAlias(kafkaClusterTargetName)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
                 .withNewKafkaClientAuthenticationTls()
                     .withNewCertificateAndKey()
                         .withSecretName(kafkaUserTargetName)
@@ -205,20 +229,23 @@ class MirrorMaker2ST extends MessagingBaseST {
                     .withTrustedCertificates(certSecretTarget)
                 .endTls()
                 .build();
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaTargetClusterName, kafkaSourceClusterName, 1, true)
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
                 .withClusters(sourceClusterWithTlsAuth, targetClusterWithTlsAuth)
             .endSpec()
             .done();
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        int sent = externalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
-        int sent = sendMessages(messagesCount,  kafkaSourceClusterName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaSourceClusterName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaTargetClusterName, true, topicTargetName, userTarget, kafkaClientsPodName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
     }
 
     private void testDockerImagesForKafkaMirrorMaker2() {
@@ -243,12 +270,12 @@ class MirrorMaker2ST extends MessagingBaseST {
     @Test
     void testMirrorMaker2TlsAndScramSha512Auth() throws Exception {
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String topicTargetName = kafkaSourceClusterName + "." + topicSourceName;
+        String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        KafkaResource.kafkaEphemeral(kafkaSourceClusterName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -258,7 +285,7 @@ class MirrorMaker2ST extends MessagingBaseST {
             .endSpec().done();
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -268,11 +295,11 @@ class MirrorMaker2ST extends MessagingBaseST {
             .endSpec().done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaSourceClusterName, kafkaUserSource).done();
+        KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
         SecretUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaTargetClusterName, kafkaUserTarget).done();
+        KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
         SecretUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker2 spec
@@ -288,24 +315,35 @@ class MirrorMaker2ST extends MessagingBaseST {
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName));
+        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for target
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName));
+        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaSourceClusterName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, kafkaTargetClusterName, true, "my-topic-test-2", userTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         // Deploy Mirror Maker with TLS and ScramSha512
         KafkaMirrorMaker2ClusterSpec sourceClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder()
-                .withAlias(kafkaSourceClusterName)
-                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName))
+                .withAlias(kafkaClusterSourceName)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
                 .withNewKafkaClientAuthenticationScramSha512()
                     .withUsername(kafkaUserSource)
                     .withPasswordSecret(passwordSecretSource)
@@ -316,8 +354,8 @@ class MirrorMaker2ST extends MessagingBaseST {
                 .build();
 
         KafkaMirrorMaker2ClusterSpec targetClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder()
-                .withAlias(kafkaTargetClusterName)
-                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName))
+                .withAlias(kafkaClusterTargetName)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
                 .withNewKafkaClientAuthenticationScramSha512()
                     .withUsername(kafkaUserTarget)
                     .withPasswordSecret(passwordSecretTarget)
@@ -327,22 +365,25 @@ class MirrorMaker2ST extends MessagingBaseST {
                 .endTls()
                 .build();
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaTargetClusterName, kafkaSourceClusterName, 1, true)
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
                 .withClusters(targetClusterWithScramSha512Auth, sourceClusterWithScramSha512Auth)
             .endSpec().done();
 
         // Deploy topic
-        KafkaTopicResource.topic(kafkaSourceClusterName, topicSourceName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        int sent = externalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
-        int sent = sendMessages(messagesCount, kafkaSourceClusterName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaSourceClusterName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaTargetClusterName, true, topicTargetName, userTarget, kafkaClientsPodName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
     }
 
 

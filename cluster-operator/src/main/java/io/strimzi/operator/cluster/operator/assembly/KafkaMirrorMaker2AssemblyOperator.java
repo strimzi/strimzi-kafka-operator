@@ -265,7 +265,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         addClusterToMirrorMaker2ConnectorConfig(config, sourceCluster, SOURCE_CLUSTER_PREFIX);
 
         config.put("topics", mirror.getTopics());
-        config.put("groups", mirror.getGroups());
+        if (mirror.getGroups() != null) {
+            config.put("groups", mirror.getGroups());
+        }
         config.putAll(mirror.getAdditionalProperties());
         return connectorSpec;
     }
