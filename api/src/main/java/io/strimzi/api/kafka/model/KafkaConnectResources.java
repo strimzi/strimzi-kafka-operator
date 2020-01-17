@@ -51,8 +51,8 @@ public class KafkaConnectResources {
      * Returns qualified name of the service which works across different namespaces.
      *
      * @param clusterName   Name of the Connect CR
-     * @param namespace     Namespace of the Connect dpeloyment
-     * @return              quaified namespace in the format "&lt;service-name&gt;.&lt;namespace&gt;.svc"
+     * @param namespace     Namespace of the Connect deployment
+     * @return              qualified namespace in the format "&lt;service-name&gt;.&lt;namespace&gt;.svc"
      */
     public static String qualifiedServiceName(String clusterName, String namespace) {
         return serviceName(clusterName) + "." + namespace + ".svc";
