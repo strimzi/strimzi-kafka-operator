@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients.lib;
+package io.strimzi.systemtest.kafkaclients.internalclients;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.kafkaclients.EClientType;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -45,8 +46,18 @@ class KafkaClientProperties {
      * @param clusterName kafka cluster name
      * @return producer properties
      */
-    static Properties createProducerProperties(String namespace, String clusterName) {
-        return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
+    static Properties createBasicProducerProperties(String namespace, String clusterName) {
+        return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.BASIC, null);
+    }
+
+    /**
+     * Create producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return producer properties
+     */
+    static Properties createTracingProducerProperties(String namespace, String clusterName, String serviceName) {
+        return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.TRACING, serviceName);
     }
 
     /**
@@ -57,10 +68,10 @@ class KafkaClientProperties {
      * @param securityProtocol security protocol
      * @return producer configuration
      */
-    static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol, EClientType clientType, String serviceName) {
         Properties producerProperties = new Properties();
-        producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                getExternalBootstrapConnect(namespace, clusterName));
+
+        producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getExternalBootstrapConnect(namespace, clusterName));
         producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
@@ -68,6 +79,8 @@ class KafkaClientProperties {
         producerProperties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
 
         producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
+
+        // TODO: create Tracing client properties if (clientType == EClientType.TRACING) { setTracingProperties().... serviceName} same with Oauth
 
         return producerProperties;
     }

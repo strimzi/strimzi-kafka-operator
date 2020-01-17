@@ -5,8 +5,11 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.kafkaclients.ClientFactory;
+import io.strimzi.systemtest.kafkaclients.EClientType;
+import io.strimzi.systemtest.kafkaclients.internalclients.KafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -35,9 +38,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Base for test classes where HTTP Bridge is used.
  */
-public class HttpBridgeBaseST extends MessagingBaseST {
+public class HttpBridgeBaseST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
+
     protected WebClient client;
+    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
 
     protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
@@ -96,7 +101,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
 
         // Create node port service for expose bridge outside openshift
-        Service service = KubernetesResource.getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
+        Service service = KubernetesResource.getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace(), "TCP")
                 .editSpec()
                 .withType("NodePort")
                 .withSelector(map)

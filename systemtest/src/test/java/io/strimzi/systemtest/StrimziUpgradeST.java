@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
-public class StrimziUpgradeST extends MessagingBaseST {
+public class StrimziUpgradeST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
@@ -218,8 +218,12 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         final String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        int sent = sendMessages(produceMessagesCount, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(consumeMessagesCount, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        Integer sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
+            produceMessagesCount, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
+            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME);
 
         makeSnapshots();
         logPodImages();
@@ -254,7 +258,8 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         final String afterUpgradeKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        received = receiveMessages(consumeMessagesCount, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
+            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);

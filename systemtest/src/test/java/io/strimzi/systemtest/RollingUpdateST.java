@@ -53,14 +53,13 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
-class RollingUpdateST extends MessagingBaseST {
+class RollingUpdateST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
     static final String NAMESPACE = "rolling-update-cluster-test";
-    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
-    private String defaultKafkaClientsPodName = "";
+    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
@@ -73,7 +72,7 @@ class RollingUpdateST extends MessagingBaseST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
-        int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");
@@ -90,7 +89,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
@@ -102,7 +101,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         timeMeasuringSystem.stopOperation(rollingUpdateOperation);
@@ -118,7 +117,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
     }
 
@@ -138,7 +137,7 @@ class RollingUpdateST extends MessagingBaseST {
             .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3, 1).done();
 
-        int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");
@@ -155,7 +154,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
@@ -167,7 +166,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         timeMeasuringSystem.stopOperation(rollingUpdateOperation);
@@ -183,7 +182,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
     }
 
@@ -219,8 +218,8 @@ class RollingUpdateST extends MessagingBaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, initialReplicas).done();
 
-        sendMessagesExternal(NAMESPACE, topicName, messageCount);
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.sendMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
 
         // scale up
         final int scaleTo = initialReplicas + 4;
@@ -239,7 +238,7 @@ class RollingUpdateST extends MessagingBaseST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
@@ -261,7 +260,7 @@ class RollingUpdateST extends MessagingBaseST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
     }
 
     /**
@@ -338,7 +337,7 @@ class RollingUpdateST extends MessagingBaseST {
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(initialZkReplicas, is(3));
 
-        int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
         assertThat(sent, is(messageCount));
 
         Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
@@ -352,7 +351,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         LOGGER.info("Scaling up to {}", scaleZkTo);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
-        int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        int received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
@@ -363,7 +362,7 @@ class RollingUpdateST extends MessagingBaseST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         // scale down
@@ -377,7 +376,7 @@ class RollingUpdateST extends MessagingBaseST {
 
         // Wait for one zk pods will became leader and others follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2);
-        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
         //Test that the second pod has event 'Killing'
@@ -411,7 +410,7 @@ class RollingUpdateST extends MessagingBaseST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        sendMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.sendMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
 
         // rolling update for kafka
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
@@ -437,7 +436,7 @@ class RollingUpdateST extends MessagingBaseST {
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
 
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zkName).cascading(false).edit()
             .editMetadata()
@@ -454,7 +453,7 @@ class RollingUpdateST extends MessagingBaseST {
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
         StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
     }
 
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
@@ -483,7 +482,7 @@ class RollingUpdateST extends MessagingBaseST {
     }
 
     void deployTestSpecificResources() {
-        KafkaClientsResource.deployKafkaClients(Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
     }
 
     @Override
@@ -495,8 +494,7 @@ class RollingUpdateST extends MessagingBaseST {
     @BeforeEach
     void setKafkaClientsPodName() {
         // Get clients pod name
-        defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
     }
 
     @BeforeAll

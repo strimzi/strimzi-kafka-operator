@@ -59,7 +59,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        receiveMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
+        kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
     }
 
     @Test
@@ -87,7 +87,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Subscribe
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Send messages to Kafka
-        sendMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
+        kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {

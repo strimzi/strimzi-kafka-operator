@@ -41,7 +41,7 @@ public class KafkaBridgeUtils {
         map.put("strimzi.io/name", clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
+        return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)

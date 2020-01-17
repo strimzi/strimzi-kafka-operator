@@ -6,7 +6,7 @@ package io.strimzi.systemtest.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.executor.Exec;
@@ -37,7 +37,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @ExtendWith(VertxExtension.class)
-public class OauthBaseST extends MessagingBaseST {
+public class OauthBaseST extends BaseST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";
     protected static final Logger LOGGER = LogManager.getLogger(OauthBaseST.class);

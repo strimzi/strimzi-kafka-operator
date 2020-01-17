@@ -51,7 +51,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
-class ConnectS2IST extends MessagingBaseST {
+class ConnectS2IST extends BaseST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
@@ -183,7 +183,7 @@ class ConnectS2IST extends MessagingBaseST {
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
 
-        waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME, 2);
+        kafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME, 2);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
 

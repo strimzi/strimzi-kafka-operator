@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(SPECIFIC)
-public class SpecificST extends MessagingBaseST {
+public class SpecificST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
     public static final String NAMESPACE = "specific-cluster-test";
@@ -70,7 +70,7 @@ public class SpecificST extends MessagingBaseST {
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
 
@@ -108,7 +108,7 @@ public class SpecificST extends MessagingBaseST {
         assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
         assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(CLUSTER_NAME, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test

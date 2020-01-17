@@ -6,8 +6,11 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.kafkaclients.ClientFactory;
+import io.strimzi.systemtest.kafkaclients.EClientType;
+import io.strimzi.systemtest.kafkaclients.externalclient.ExternalKafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.executor.Exec;
@@ -42,9 +45,11 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-public class MetricsST extends MessagingBaseST {
+public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
+
+    protected ExternalKafkaClient externalKafkaClient = (ExternalKafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
 
     public static final String NAMESPACE = "metrics-cluster-test";
     private final Object lock = new Object();
@@ -124,10 +129,17 @@ public class MetricsST extends MessagingBaseST {
     }
 
     @Test
-    void testKafkaExporterDataAfterExchange() throws Exception {
+    void testKafkaExporterDataAfterExchange() throws InterruptedException {
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        availabilityTest(5000, CLUSTER_NAME, TEST_TOPIC_NAME);
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 5000),
+            externalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 5000, CONSUMER_GROUP_NAME)
+        );
 
         kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);

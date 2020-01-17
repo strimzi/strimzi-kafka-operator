@@ -53,6 +53,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     private String userName = "bob";
 
+
     @Test
     void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
@@ -63,7 +64,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        receiveMessagesExternalScramSha(NAMESPACE, topicName, messageCount, userName);
+
+        kafkaClient.receiveMessagesExternalScramSha(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
     }
 
     @Test
@@ -73,7 +75,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // Send messages to Kafka
-        sendMessagesExternalScramSha(NAMESPACE, topicName, messageCount, userName);
+        kafkaClient.sendMessagesExternalScramSha(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
 
         String name = "kafka-consumer-simple-receive";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
