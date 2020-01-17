@@ -10,6 +10,9 @@ get_kafka_versions
 # Get the default_kafka_version
 get_default_kafka_version
 
+# Get the features that are not supported by the kafka versions
+get_kafka_does_not_support
+
 # Set the default images
 entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
 kafka_tls_sidecar_version="{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
@@ -28,8 +31,10 @@ ${version}={{ default .Values.kafkaConnects2i.image.repository .Values.imageRepo
 ${version}={{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_exporter_versions="${kafka_exporter_versions}
 ${version}={{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
-    kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
+    if [[ ${version_does_not_support[${version}]} != *"kafkaMirrorMaker2"* ]] ; then
+      kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
 ${version}={{ default .Values.kafkaMirrorMaker2.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.kafkaMirrorMaker2.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    fi
 done
 
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')
