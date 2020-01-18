@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.vertx.core.Future;
@@ -19,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -231,7 +231,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             ObjectMapper mapper = new ObjectMapper();
 
                             try {
-                                result.complete(mapper.readValue(buffer.getBytes(), new TypeReference<List<ConnectorPlugin>>() { }));
+                                result.complete(Arrays.asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
                             } catch (IOException e)  {
                                 log.warn("Failed to parse list of connector plugins");
                                 result.fail(e);
