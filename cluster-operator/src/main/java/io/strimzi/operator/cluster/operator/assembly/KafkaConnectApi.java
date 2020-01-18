@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -27,6 +29,7 @@ public interface KafkaConnectApi {
     Future<Void> pause(String host, int port, String connectorName);
     Future<Void> resume(String host, int port, String connectorName);
     Future<List<String>> list(String host, int port);
+    Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {
@@ -200,6 +203,39 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 }
                             }
                             result.complete(list);
+                        });
+                    } else {
+                        result.fail("Unexpected status code " + response.statusCode()
+                                + " for GET request to " + host + ":" + port + path);
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .setFollowRedirects(true)
+                .putHeader("Accept", "application/json")
+                .end();
+        return result;
+    }
+
+    @Override
+    public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
+        Future<List<ConnectorPlugin>> result = Future.future();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        String path = "/connector-plugins";
+        vertx.createHttpClient(options)
+                .get(port, host, path, response -> {
+                    response.exceptionHandler(error -> {
+                        result.fail(error);
+                    });
+                    if (response.statusCode() == 200) {
+                        response.bodyHandler(buffer -> {
+                            ObjectMapper mapper = new ObjectMapper();
+
+                            try {
+                                result.complete(mapper.readValue(buffer.getBytes(), new TypeReference<List<ConnectorPlugin>>() { }));
+                            } catch (IOException e)  {
+                                log.warn("Failed to parse list of connector plugins");
+                                result.fail(e);
+                            }
                         });
                     } else {
                         result.fail("Unexpected status code " + response.statusCode()

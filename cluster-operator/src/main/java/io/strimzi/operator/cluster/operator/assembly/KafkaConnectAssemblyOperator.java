@@ -42,7 +42,7 @@ import java.util.function.Function;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> {
+public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>, KafkaConnectStatus> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
@@ -109,7 +109,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
                     kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));

@@ -1706,6 +1706,25 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |integer
 |url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
+|connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
+|xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
+|====
+
+[id='type-ConnectorPlugin-{context}']
+### `ConnectorPlugin` schema reference
+
+Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
+
+
+[options="header"]
+|====
+|Property        |Description
+|type     1.2+<.<|The type of the connector plugin. The available types are `sink` and `source`.
+|string
+|version  1.2+<.<|The version of the connector plugin.
+|string
+|class    1.2+<.<|The class of the connector plugin.
+|string
 |====
 
 [id='type-KafkaConnectS2I-{context}']
@@ -1793,6 +1812,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |string
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
+|connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
+|xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |====
 
 [id='type-KafkaTopic-{context}']
