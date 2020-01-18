@@ -1810,10 +1810,10 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |integer
 |url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
-|buildConfigName     1.2+<.<|The name of the build configuration.
-|string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
+|buildConfigName     1.2+<.<|The name of the build configuration.
+|string
 |====
 
 [id='type-KafkaTopic-{context}']

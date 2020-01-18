@@ -905,8 +905,6 @@ spec:
               type: integer
             url:
               type: string
-            buildConfigName:
-              type: string
             connectorPlugins:
               type: array
               items:
@@ -918,4 +916,6 @@ spec:
                     type: string
                   class:
                     type: string
+            buildConfigName:
+              type: string
 {{- end -}}
