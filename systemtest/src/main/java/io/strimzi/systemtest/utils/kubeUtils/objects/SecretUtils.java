@@ -101,7 +101,7 @@ public class SecretUtils {
         LOGGER.info("Kafka cluster {} secrets deleted", clusterName);
     }
 
-    public static void createCustomSecret(String clusterName, String namespace, String certPath, String keyPath) {
+    public static void createCustomSecret(String name, String clusterName, String namespace, String certPath, String keyPath) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put("strimzi.io/cluster", clusterName);
         secretLabels.put("strimzi.io/kind", "Kafka");
@@ -110,6 +110,6 @@ public class SecretUtils {
         certsPaths.put("ca.crt", certPath);
         certsPaths.put("ca.key", keyPath);
 
-        SecretUtils.createSecretFromFile(certsPaths, "custom-certificate", namespace, secretLabels);
+        SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
     }
 }

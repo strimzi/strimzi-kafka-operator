@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -26,29 +27,28 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitUntilKafkaStatusConditionIsReady(String clusterName) {
-        LOGGER.info("Waiting till Kafka CR will be ready");
-
-        TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->  {
-                Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
-                return condition.getType().equals("Ready") && condition.getStatus().equals("True");
-            }
-        );
-        LOGGER.info("Kafka CR will be ready");
+    public static void waitUntilKafkaCRIsReady(String clusterName) {
+        waitUntilKafkaStatus(clusterName, "Ready");
     }
 
-    public static void waitUntilKafkaStatusConditionIsNotReady(String clusterName, String message) {
-        LOGGER.info("Waiting till kafka resource status is not ready with message:{}", message);
+    public static void waitUntilKafkaCRIsNotReady(String clusterName) {
+        waitUntilKafkaStatus(clusterName, "NotReady");
+    }
 
-        TestUtils.waitFor("Waiting for Kafka resource status is not ready with message:" + message, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->  {
-                Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
-                LOGGER.info("Type:{}, Status:{}, Message:{}", condition.getType(), condition.getStatus(), condition.getMessage());
-                return condition.getType().equals("NotReady") && condition.getStatus().equals("True") && condition.getMessage().contains(message);
-            }
+    private static void waitUntilKafkaStatus(String clusterName, String state) {
+        LOGGER.info("Waiting till Kafka CR will be in state: {}", state);
+        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
         );
-        LOGGER.info("Kafka resource status is not ready with message:{}", message);
+        LOGGER.info("Kafka CR is in state: {}", state);
+    }
+
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+        TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+                Condition condition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0);
+                return condition.getMessage().matches(message);
+            });
     }
 
     public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {

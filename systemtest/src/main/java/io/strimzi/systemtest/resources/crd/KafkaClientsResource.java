@@ -18,11 +18,13 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.Environment;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SslConfigs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
@@ -43,6 +45,10 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, true, kafkaUsers);
+    }
+
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
@@ -56,7 +62,7 @@ public class KafkaClientsResource {
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -64,7 +70,7 @@ public class KafkaClientsResource {
         return KubernetesResource.deployNewDeployment(kafkaClient);
     }
 
-    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
@@ -73,10 +79,10 @@ public class KafkaClientsResource {
             .withArgs("infinity")
             .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
 
-        if (kafkaUsers == null) {
-            String producerConfiguration = "acks=all\n";
-            String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
+        String producerConfiguration = ProducerConfig.ACKS_CONFIG + "=all\n";
+        String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
 
+        if (kafkaUsers == null) {
             containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
             containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
@@ -86,8 +92,6 @@ public class KafkaClientsResource {
                 boolean tlsUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
                 boolean scramShaUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
 
-                String producerConfiguration = "acks=all\n";
-                String consumerConfiguration = "auto.offset.reset=earliest\n";
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
                 containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
@@ -105,14 +109,14 @@ public class KafkaClientsResource {
                         consumerConfiguration += "security.protocol=SSL\n";
                     }
                     producerConfiguration +=
-                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
-                                    "ssl.truststore.type=pkcs12\n";
-                    consumerConfiguration += ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n" +
-                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
+                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
+                    consumerConfiguration +=
+                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
                 } else {
                     if (scramShaUser) {
-                        producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        producerConfiguration +=  "security.protocol=SASL_PLAINTEXT\n";
                         producerConfiguration += saslConfigs(kafkaUser);
                         consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
                         consumerConfiguration += saslConfigs(kafkaUser);
@@ -124,11 +128,11 @@ public class KafkaClientsResource {
 
                 if (tlsUser) {
                     producerConfiguration +=
-                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
-                                    "ssl.keystore.type=pkcs12\n";
-                    consumerConfiguration += "auto.offset.reset=earliest\n" +
-                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
-                            "ssl.keystore.type=pkcs12\n";
+                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                            SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
+                    consumerConfiguration +=
+                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                            SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
 
                     containerBuilder.addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
                             .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
@@ -179,6 +183,12 @@ public class KafkaClientsResource {
                         .endVolume();
                 }
 
+                if (!hostnameVerification) {
+                    producerConfiguration += SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG + "=";
+                    consumerConfiguration += SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG + "=";
+                }
+
+
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
                 containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION"  + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
 
@@ -192,7 +202,7 @@ public class KafkaClientsResource {
 
 
     static String clusterCaCertSecretName(String cluster) {
-        return cluster + "-cluster-ca-cert";
+        return KafkaResource.kafkaClient().inNamespace("custom-certs-cluster-test").withName(cluster).get().getSpec().getKafka().getListeners().getTls().getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     static String saslConfigs(KafkaUser kafkaUser) {
