@@ -686,7 +686,6 @@ class SecurityST extends BaseST {
                 internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
                 internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
         );
-
     }
 
     @Test
