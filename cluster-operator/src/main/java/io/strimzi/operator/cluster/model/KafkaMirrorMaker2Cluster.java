@@ -46,7 +46,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth/";
 
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
-    private KafkaMirrorMaker2ClusterSpec connectCluster;
 
     /**
      * Constructor
@@ -89,7 +88,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .filter(clustersListItem -> connectClusterAlias.equals(clustersListItem.getAlias()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));     
-            cluster.setConnectCluster(connectCluster);
 
             spec.setBootstrapServers(connectCluster.getBootstrapServers());
             spec.setAuthentication(connectCluster.getAuthentication());
@@ -309,15 +307,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     protected void setClusters(List<KafkaMirrorMaker2ClusterSpec> clusters) {
         this.clusters = clusters;
-    }
-
-    /**
-     * Sets the configured cluster for Kafka Connect
-     *
-     * @param connectCluster The cluster configuration used for Kafka Connect
-     */
-    protected void setConnectCluster(KafkaMirrorMaker2ClusterSpec connectCluster) {
-        this.connectCluster = connectCluster;
     }
 
     @Override
