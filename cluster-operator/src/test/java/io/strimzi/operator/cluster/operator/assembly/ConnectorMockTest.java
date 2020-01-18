@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +105,14 @@ public class ConnectorMockTest {
         runningConnectors = new HashMap<>();
         when(api.list(any(), anyInt())).thenAnswer(i -> {
             return Future.succeededFuture(new ArrayList<>(runningConnectors.keySet()));
+        });
+        when(api.listConnectorPlugins(any(), anyInt())).thenAnswer(i -> {
+            ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
+                    .withConnectorClass("io.strimzi.MyClass")
+                    .withType("sink")
+                    .withVersion("1.0.0")
+                    .build();
+            return Future.succeededFuture(Collections.singletonList(plugin1));
         });
         when(api.createOrUpdatePutRequest(any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
             String connectorName = invocation.getArgument(2);
