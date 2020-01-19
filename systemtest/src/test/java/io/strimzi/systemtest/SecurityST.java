@@ -201,7 +201,6 @@ class SecurityST extends BaseST {
             boolean kafkaShouldRoll,
             boolean eoShouldRoll) throws Exception {
         String userName = "alice";
-        int received = 0;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         createKafkaCluster();
@@ -212,7 +211,16 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(userName);
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
@@ -258,12 +266,11 @@ class SecurityST extends BaseST {
                     value, is(not(initialCaCerts.get(secretName))));
         }
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
-//
-//        kafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount);
-//        received = receiveMessages(messagesCount, CLUSTER_NAME, true, topicName, user, defaultKafkaClientsPodName);
-//        assertSentAndReceivedMessages(messagesCount, received);
-
+        LOGGER.info("Checking consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                messagesCount,
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+        );
 
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -271,10 +278,16 @@ class SecurityST extends BaseST {
         SecretUtils.waitForSecretReady(bobUserName);
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
-        kafkaClient.sendAndRecvMessagesTls(bobUserName, NAMESPACE, CLUSTER_NAME);
+        defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-//        received = receiveMessages(messagesCount, CLUSTER_NAME, true, topicName, user, defaultKafkaClientsPodName);
-//        assertSentAndReceivedMessages(messagesCount, received);
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                messagesCount,
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+        );
 
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
@@ -328,9 +341,6 @@ class SecurityST extends BaseST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) throws Exception {
-
-        int received = 0;
-
         createKafkaCluster();
 
         String aliceUserName = "alice";
@@ -340,14 +350,18 @@ class SecurityST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
         SecretUtils.waitForSecretReady(aliceUserName);
 
-        kafkaClient.sendAndRecvMessagesTls(aliceUserName, NAMESPACE, CLUSTER_NAME);
-//        LOGGER.info("Actual default clients pod name: {}", defaultKafkaClientsPodName);
-//        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
@@ -407,20 +421,29 @@ class SecurityST extends BaseST {
                     value, is(not(initialCaKeys.get(secretName))));
         }
 
-        kafkaClient.sendAndRecvMessagesTls(aliceUserName, NAMESPACE, CLUSTER_NAME);
+        LOGGER.info("Checking consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                messagesCount,
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+        );
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         user = KafkaUserResource.tlsUser(CLUSTER_NAME, bobUserName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
-        kafkaClient.sendAndRecvMessagesTls(bobUserName, NAMESPACE, CLUSTER_NAME);
+        defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                messagesCount,
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+        );
 
         SecretUtils.waitForSecretReady(bobUserName);
-
-//        LOGGER.info("Actual default clients pod name: {}", defaultKafkaClientsPodName);
-//        received = receiveMessages(messagesCount, CLUSTER_NAME, true, topicName, user, defaultKafkaClientsPodName);
-//        assertSentAndReceivedMessages(messagesCount, received);
 
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
@@ -505,11 +528,19 @@ class SecurityST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
         // Check if user exists
         SecretUtils.waitForSecretReady(userName);
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
-//        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -517,7 +548,11 @@ class SecurityST extends BaseST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
     }
 
@@ -617,6 +652,11 @@ class SecurityST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Annotate secret {} with secret force-renew annotation", secretName);
@@ -641,7 +681,11 @@ class SecurityST extends BaseST {
 
         assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
     }
 
@@ -654,8 +698,18 @@ class SecurityST extends BaseST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         String userName = "user-example";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         SecretUtils.waitForSecretReady(userName);
+
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         List<Secret> secrets = kubeClient().listSecrets().stream()
                 .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
@@ -686,7 +740,11 @@ class SecurityST extends BaseST {
             assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
         }
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        LOGGER.info("Checking produced and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+                externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
     }
 
