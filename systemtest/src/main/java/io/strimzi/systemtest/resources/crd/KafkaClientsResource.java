@@ -156,7 +156,7 @@ public class KafkaClientsResource {
 
                 if (tlsListener) {
                     String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
-                    String clusterCaSecretName = clusterCaCertSecretName(clusterName);
+                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName("custom-certs-cluster-test", clusterName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
 
@@ -198,11 +198,6 @@ public class KafkaClientsResource {
             }
         }
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
-    }
-
-
-    static String clusterCaCertSecretName(String cluster) {
-        return KafkaResource.kafkaClient().inNamespace("custom-certs-cluster-test").withName(cluster).get().getSpec().getKafka().getListeners().getTls().getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     static String saslConfigs(KafkaUser kafkaUser) {

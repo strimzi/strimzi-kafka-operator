@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalclients;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,6 +55,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
+        vertx.close();
         return resultPromise;
     }
 
@@ -68,17 +71,21 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
     @Override
     public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) {
         String clientName = "sender-ssl" + clusterName;
+        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, kafkaUsername, securityProtocol, EClientType.BASIC, null), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
+                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName), kafkaUsername, securityProtocol, EClientType.BASIC, null),
+                resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
+        vertx.close();
         return resultPromise;
     }
 
@@ -129,7 +136,9 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, securityProtocol, EClientType.BASIC, serviceName), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
+                KafkaResources.clusterCaCertificateSecretName(clusterName), userName, securityProtocol, EClientType.BASIC, serviceName),
+                resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }
@@ -145,6 +154,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
     @Override
     public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
         String clientName = "receiver-plain-" + clusterName;
+        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
@@ -156,6 +166,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
+        vertx.close();
         return resultPromise;
     }
 
@@ -196,17 +207,21 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
     @Override
     public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup) {
         String clientName = "receiver-ssl-" + clusterName;
+        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, kafkaUsername, securityProtocol, consumerGroup), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName,
+                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName), kafkaUsername, securityProtocol, consumerGroup),
+                resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
+        vertx.close();
         return resultPromise;
     }
 

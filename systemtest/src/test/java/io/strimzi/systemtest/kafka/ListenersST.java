@@ -8,8 +8,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -32,11 +32,11 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-public class ListenersST extends MessagingBaseST {
+public class ListenersST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     public static final String NAMESPACE = "custom-certs-cluster-test";
@@ -79,17 +79,16 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-1", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -132,8 +131,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -141,8 +140,10 @@ public class ListenersST extends MessagingBaseST {
         String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
+
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -185,8 +186,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-3", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -194,8 +195,10 @@ public class ListenersST extends MessagingBaseST {
         String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
+
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -238,8 +241,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-4", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -247,8 +250,10 @@ public class ListenersST extends MessagingBaseST {
         String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
+
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -291,8 +296,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-5", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -300,8 +305,10 @@ public class ListenersST extends MessagingBaseST {
         String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
+
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -345,17 +352,16 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName, "custom-certificate");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-6", "custom-certificate");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(20, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
         assertThat(sent, is(10));
         assertThat(received, is(20));
     }
@@ -388,8 +394,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -417,19 +423,18 @@ public class ListenersST extends MessagingBaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 20, aliceUser.getMetadata().getName(), "custom-certificate-1");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 30, aliceUser.getMetadata().getName(), "consumer-group-certs-68", "custom-certificate-1");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-1");
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(40, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
         assertThat(sent, is(10));
-        assertThat(received, is(40));
+        assertThat(received, is(30));
 
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
@@ -441,16 +446,16 @@ public class ListenersST extends MessagingBaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 50, userName, "consumer-group-certs-92");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        received = receiveMessages(50, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        assertThat(received, is(50));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-12");
+        assertThat(received, is(40));
     }
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testCustomCertLoadBalancerRollingUpdate() throws Exception {
+    void testCustomCertLoadBalancerAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         SecretUtils.createCustomSecret("custom-certificate-1", CLUSTER_NAME, NAMESPACE,
@@ -475,8 +480,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -504,17 +509,16 @@ public class ListenersST extends MessagingBaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, aliceUser.getMetadata().getName(), "custom-certificate-1");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 20, aliceUser.getMetadata().getName(), "consumer-group-certs-66", "custom-certificate-1");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-1");
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(30, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
         assertThat(sent, is(10));
         assertThat(received, is(30));
 
@@ -527,16 +531,16 @@ public class ListenersST extends MessagingBaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        received = receiveMessages(40, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-1");
         assertThat(received, is(40));
     }
 
     @Test
     @OpenShiftOnly
-    void testCustomCertRouteRollingUpdate() throws Exception {
+    void testCustomCertRouteAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         SecretUtils.createCustomSecret("custom-certificate-1", CLUSTER_NAME, NAMESPACE,
@@ -561,8 +565,8 @@ public class ListenersST extends MessagingBaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 10, userName, "consumer-group-certs-2");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -590,17 +594,16 @@ public class ListenersST extends MessagingBaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, aliceUser.getMetadata().getName(), "custom-certificate-1");
-        receiveMessagesExternalTls(NAMESPACE, topicName, 20, aliceUser.getMetadata().getName(), "consumer-group-certs-66", "custom-certificate-1");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-1");
 
-        int sent = sendMessages(10, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(30, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
         assertThat(sent, is(10));
         assertThat(received, is(30));
 
@@ -613,10 +616,10 @@ public class ListenersST extends MessagingBaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        sendMessagesExternalTls(NAMESPACE, topicName, 10, userName);
-        receiveMessagesExternalTls(NAMESPACE, topicName, 40, userName, "consumer-group-certs-92");
+        kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        received = receiveMessages(40, CLUSTER_NAME, true, topicName, aliceUser, defaultKafkaClientsPodName);
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-12");
         assertThat(received, is(40));
     }
 

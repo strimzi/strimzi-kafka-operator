@@ -51,7 +51,7 @@ class KafkaClientProperties {
      * @param clusterName kafka cluster name
      * @return producer properties
      */
-    static Properties createProducerProperties(String namespace, String clusterName) {
+    static Properties createBasicProducerProperties(String namespace, String clusterName) {
         return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.BASIC, null);
     }
 
