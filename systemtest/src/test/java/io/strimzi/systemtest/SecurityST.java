@@ -341,7 +341,6 @@ class SecurityST extends BaseST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) throws Exception {
-
         createKafkaCluster();
 
         String aliceUserName = "alice";
