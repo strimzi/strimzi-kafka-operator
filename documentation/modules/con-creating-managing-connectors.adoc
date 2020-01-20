@@ -8,6 +8,7 @@
 
 When you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster.
 You can then configure, monitor, and manage a running connector instance.
+
 {ProductName} provides two APIs for creating and managing connectors:
 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
