@@ -23,6 +23,7 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
 
@@ -128,6 +129,9 @@ public class Session extends AbstractVerticle {
     public void start(Future<Void> startupFuture) {
         LOGGER.info("Starting");
         Properties adminClientProps = new Properties();
+
+        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
+        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
 
         if (Boolean.valueOf(config.get(Config.TLS_ENABLED))) {
