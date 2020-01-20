@@ -30,7 +30,10 @@ public class KafkaConnectResources {
     }
 
     /**
-     * Returns the name of the HTTP REST {@code Service} for a {@code KafkaConnect} cluster of the given name.
+     * Returns the name of the HTTP REST {@code Service} for a {@code KafkaConnect} cluster of the given name. This
+     * returns only the name of the service without any namespace. Therefore it cannot be used to connect to the Connect
+     * REST API. USe the {@code qualifiedServiceName} or {@code url} methods instead.
+     *
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding {@code Service}.
      */
