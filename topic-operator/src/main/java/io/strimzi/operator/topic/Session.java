@@ -26,6 +26,14 @@ import org.apache.logging.log4j.Logger;
 import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.vertx.micrometer.backends.BackendRegistries;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+
 
 public class Session extends AbstractVerticle {
 
@@ -49,6 +57,7 @@ public class Session extends AbstractVerticle {
     private volatile boolean stopped = false;
     private Zk zk;
     private volatile HttpServer healthServer;
+    private final PrometheusMeterRegistry metrics;
 
     public Session(KubernetesClient kubeClient, Config config) {
         this.kubeClient = kubeClient;
@@ -58,6 +67,8 @@ public class Session extends AbstractVerticle {
             sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
+        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        setupMetrics();
     }
 
     /**
@@ -225,6 +236,14 @@ public class Session extends AbstractVerticle {
             });
     }
 
+    public void setupMetrics() {
+        new ClassLoaderMetrics().bindTo(metrics);
+        new JvmMemoryMetrics().bindTo(metrics);
+        new ProcessorMetrics().bindTo(metrics);
+        new JvmThreadMetrics().bindTo(metrics);
+        new JvmGcMetrics().bindTo(metrics);
+    }
+
     /**
      * Start an HTTP health server
      */
@@ -237,6 +256,8 @@ public class Session extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        request.response().setStatusCode(200).end(metrics.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);

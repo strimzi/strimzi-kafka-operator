@@ -13,6 +13,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 
 /**
  * The entry-point to the topic operator.
@@ -39,7 +42,11 @@ public class Main {
     private void deploy(Config config) {
         DefaultKubernetesClient kubeClient = new DefaultKubernetesClient();
         Crds.registerCustomKinds();
-        Vertx vertx = Vertx.vertx();
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        Vertx vertx = Vertx.vertx(options);
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
