@@ -14,7 +14,7 @@ If the authorization server is using certificates signed by the trusted CA and m
 Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
 
 . <<example-1, Configuring fast local JWT token validation>>
-. <<example-2, Configuring token validation using introspection endpoint>>
+. <<example-2, Configuring token validation using an introspection endpoint>>
 
 .Before you start
 
@@ -46,7 +46,7 @@ The examples here show the configuration options as configured for external list
 +
 --
 [[example-1]]
-.Example 1: Configuring external client access for {oauth} with Kafka broker using secure connection to authorization server
+.Example 1: Configuring fast local JWT token validation
 [source,yaml,subs="+quotes,attributes"]
 ----
 external:
@@ -73,7 +73,7 @@ external:
 <8> The period between refreshes of JWKs certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
 
 [[example-2]]
-.Example 2: External connection to the authorization server using an introspection endpoint
+.Example 2: Configuring token validation using an introspection endpoint
 [source,yaml,subs="+quotes,attributes"]
 ----
 external:
