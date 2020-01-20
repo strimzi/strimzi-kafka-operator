@@ -429,15 +429,16 @@ public class ConnectorMockTest {
 
         // triggered twice (creation+status update)
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
                     .withName(connectorName)
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
@@ -446,9 +447,9 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), set(connectorName));
         
@@ -458,7 +459,7 @@ public class ConnectorMockTest {
             return runningConnectors.isEmpty();
         });
         verify(api).delete(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
@@ -484,9 +485,9 @@ public class ConnectorMockTest {
             "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), emptySet());
 
@@ -503,9 +504,9 @@ public class ConnectorMockTest {
         waitForConnectReady(connectName);
         // (connect crt, connector status, connect status)
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
@@ -515,7 +516,7 @@ public class ConnectorMockTest {
             return runningConnectors.isEmpty();
         });
         verify(api).delete(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
@@ -540,9 +541,9 @@ public class ConnectorMockTest {
         waitForConnectReady(connectName);
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         // Create KafkaConnect cluster and wait till it's ready
@@ -558,9 +559,9 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
@@ -570,7 +571,7 @@ public class ConnectorMockTest {
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
         verify(api, never()).delete(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }
 
@@ -594,9 +595,9 @@ public class ConnectorMockTest {
                 "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), emptySet());
 
@@ -613,9 +614,9 @@ public class ConnectorMockTest {
         waitForConnectReady(connectName);
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
@@ -625,7 +626,7 @@ public class ConnectorMockTest {
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
         verify(api, never()).delete(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }
 
@@ -662,6 +663,7 @@ public class ConnectorMockTest {
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
                     .withName(connectorName)
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connect1Name)
                 .endMetadata()
                 .withNewSpec()
@@ -670,15 +672,16 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connect1Name)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connect1Name, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connect2Name)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connect2Name, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).patch(new KafkaConnectorBuilder()
                 .withNewMetadata()
                     .withName(connectorName)
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connect2Name)
                 .endMetadata()
                 .withNewSpec()
@@ -688,10 +691,10 @@ public class ConnectorMockTest {
         // Note: The connector does not get deleted immediately from cluster 1, only on the next timed reconciliation
 
         verify(api, never()).delete(
-                eq(KafkaConnectResources.serviceName(connect1Name)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connect1Name, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connect2Name)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connect2Name, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         CountDownLatch async = new CountDownLatch(1);
@@ -700,7 +703,7 @@ public class ConnectorMockTest {
         });
         async.await(30, TimeUnit.SECONDS);
         verify(api, atLeastOnce()).delete(
-                eq(KafkaConnectResources.serviceName(connect1Name)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connect1Name, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }
 
@@ -727,16 +730,17 @@ public class ConnectorMockTest {
 
         // triggered twice (creation+status update)
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -745,9 +749,9 @@ public class ConnectorMockTest {
                 "ConnectRestException", "GET /foo returned 500 (Internal server error): Bad stuff happened");
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), emptySet());
     }
@@ -772,16 +776,17 @@ public class ConnectorMockTest {
 
         // triggered twice (creation+status update)
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -790,17 +795,17 @@ public class ConnectorMockTest {
         waitForConnectorState(connectorName, "RUNNING");
 
         verify(api, atLeastOnce()).list(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertEquals(runningConnectors.keySet(), singleton(connectorName));
 
         verify(api, never()).pause(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
         verify(api, never()).resume(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).edit()
@@ -812,10 +817,10 @@ public class ConnectorMockTest {
         waitForConnectorState(connectorName, "PAUSED");
 
         verify(api, atLeastOnce()).pause(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
         verify(api, never()).resume(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).edit()
@@ -827,10 +832,10 @@ public class ConnectorMockTest {
         waitForConnectorState(connectorName, "RUNNING");
 
         verify(api, atLeastOnce()).pause(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
         verify(api, atLeastOnce()).resume(
-                eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }
 

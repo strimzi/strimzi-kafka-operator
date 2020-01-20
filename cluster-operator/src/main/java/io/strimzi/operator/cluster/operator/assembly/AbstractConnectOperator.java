@@ -169,7 +169,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                         }
                                         return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                             () -> connectOperator.reconcileConnector(reconciliation,
-                                                    KafkaConnectResources.serviceName(connectName), apiClient,
+                                                    KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                     isUseResources(connect),
                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector));
                                     } else {
@@ -179,7 +179,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 kafkaConnector.getMetadata().getNamespace(), connectName);
                                         return connectS2IOperator.withLock(r, LOCK_TIMEOUT_MS,
                                             () -> connectS2IOperator.reconcileConnector(r,
-                                                    KafkaConnectResources.serviceName(connectName), apiClient,
+                                                    KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                     isUseResources(connectS2i),
                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector));
                                     }
@@ -222,7 +222,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect) {
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
-        String host = KafkaConnectResources.serviceName(connectName);
+        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         boolean useResources = isUseResources(connect);
         return CompositeFuture.join(apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
