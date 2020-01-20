@@ -15,8 +15,10 @@ A second internal CA, named the _clients CA_, is used to sign certificates for t
 
 Both the cluster CA and the clients CA have a self-signed public key certificate.
 
-Kafka brokers are configured to trust certificates signed by either the clients CA or the cluster CA. Components that clients do not need to connect to, such as ZooKeeper, only trust certificates signed by the cluster CA.
-Client applications that perform mutual TLS authentication must trust the certificates signed by the cluster CA.
+Kafka brokers are configured to trust certificates signed by either the clients CA or the cluster CA.
+Components that clients do not need to connect to, such as ZooKeeper, only trust certificates signed by the cluster CA.
+Unless TLS encryption for external listeners is disabled, client applications must trust certificates signed by the cluster CA.
+This is also true for client applications that perform xref:con-mutual-tls-authentication-using-uo[mutual TLS authentication]. 
 
 By default, {ProductName} generates and renews CA certificates automatically.
 You can configure the management of CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.

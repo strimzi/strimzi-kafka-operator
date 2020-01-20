@@ -43,12 +43,12 @@ spec:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl apply -f examples/connector/source-connector.yaml
+oc apply -f examples/connector/source-connector.yaml
 ----
 
 . Check that the resource was created:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get all --selector strimzi.io/cluster: my-connect-cluster -o name
+oc get all --selector strimzi.io/cluster: my-connect-cluster -o name
 ----

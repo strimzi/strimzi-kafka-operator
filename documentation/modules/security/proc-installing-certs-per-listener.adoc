@@ -11,14 +11,12 @@ You can install your own certificates and public keys for Kafka brokers on a per
 
 * External listeners (including `route`, `loadbalancer`, and `nodeport` types) for communication between Kafka clients and Kafka brokers
 
-Installing your own certificates and keys for plain listeners is not supported.
-
 .Prerequisites
 
 * A Kubernetes cluster.
 * The Cluster Operator is running.
 * Public key of the external CA.  
-* Your own X.509 certificate in CRT or PEM format.
+* Your own X.509 certificate in PEM format.
 
 .Procedure
 
