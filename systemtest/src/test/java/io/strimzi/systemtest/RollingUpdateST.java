@@ -459,7 +459,7 @@ class RollingUpdateST extends BaseST {
     }
 
     void deployTestSpecificResources() {
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
     }
 
     @Override

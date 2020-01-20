@@ -785,7 +785,7 @@ class SecurityST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, kafkaUser).done();
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -798,7 +798,7 @@ class SecurityST extends BaseST {
             externalKafkaClient.receiveMessages(topic0, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
         );
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", CLUSTER_NAME, NAMESPACE, kafkaUser).done();
 
         String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
 
@@ -857,7 +857,7 @@ class SecurityST extends BaseST {
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
         SecretUtils.waitForSecretReady(userName);
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, kafkaUser).done();
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -870,7 +870,7 @@ class SecurityST extends BaseST {
             externalKafkaClient.receiveMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, "TLS", CONSUMER_GROUP_NAME)
         );
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-kafka-clients-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", CLUSTER_NAME, NAMESPACE, kafkaUser).done();
 
         String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
 
