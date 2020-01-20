@@ -17,9 +17,11 @@ You can then configure, monitor, and manage a running connector instance.
 Using the APIs, you can:
 
 * Check the status of a connector instance
+* Reconfigure a running connector
 * Increase or decrease the number of tasks for a connector instance
 * Restart failed tasks (not supported by `KafkaConnector` resource)
 * Pause a connector instance
+* Resume a previously paused connector instance
 * Delete a connector instance
 
 == `KafkaConnector` resources
