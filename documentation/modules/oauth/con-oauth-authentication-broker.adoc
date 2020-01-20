@@ -15,7 +15,7 @@ NOTE: In relation to the authorization server, Kafka brokers and Kafka clients a
 == {oauth} client configuration on an authorization server
 
 To configure a Kafka broker to validate the token received during session initiation,
-the recommended approach is to create an {oauth} _client_ definition in an authorization server, configured as _confidential_, with client credentials enabled:
+the recommended approach is to create an {oauth} _client_ definition in an authorization server, configured as _confidential_, with the following client credentials enabled:
 
 * Client ID of `kafka` (for example)
 * Client ID and Secret as the authentication mechanism
@@ -120,7 +120,7 @@ The Kafka broker sends an access token to the introspection endpoint, which resp
 Importantly, it returns up-to-date information if the specific access token is valid, and also information about when the token expires.
 
 To configure {oauth} introspection-based validation, you specify an `introspectionEndpointUri` attribute rather than the `jwksEndpointUri` attribute specified for fast local JWT token validation.
-Depending on the authorization server, you typically have to specify a `clientId` and `clientSecret`, as the introspection endpoint is usually protected.
+Depending on the authorization server, you typically have to specify a `clientId` and `clientSecret`, because the introspection endpoint is usually protected.
 
 .Example configuration for an introspection endpoint
 [source,yaml,subs="+quotes, attributes"]
