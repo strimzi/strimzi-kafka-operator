@@ -13,15 +13,30 @@ A second internal CA, named the _clients CA_, is used to sign certificates for t
 
 == CA certificates
 
-Both the cluster CA and the clients CA have a self-signed public key certificate.
+Both the cluster CA and clients CA have a self-signed public key certificate.
 
-Kafka brokers are configured to trust certificates signed by either the clients CA or the cluster CA.
-Components that clients do not need to connect to, such as ZooKeeper, only trust certificates signed by the cluster CA.
-Unless TLS encryption for external listeners is disabled, client applications must trust certificates signed by the cluster CA.
+Kafka brokers are configured to trust CA certificates signed by either the cluster CA or clients CA.
+Components that clients do not need to connect to, such as ZooKeeper, only trust CA certificates signed by the cluster CA.
+Unless TLS encryption for external listeners is disabled, client applications must trust CA certificates signed by the cluster CA.
 This is also true for client applications that perform xref:con-mutual-tls-authentication-using-uo[mutual TLS authentication]. 
 
-By default, {ProductName} generates and renews CA certificates automatically.
-You can configure the management of CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.
+By default, {ProductName} automatically generates and renews CA certificates issued by the cluster CA or clients CA.
+You can configure the management of these CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.
+
+You can provide your own CA certificates for the cluster CA or clients CA.
+For more information, see xref:installing-your-own-ca-certificates-{context}[].
+If you provide your own certificates, you must manually renew them when needed.
+
+.Kafka listener certificates
+
+In order to connect to external systems, your client applications might need to trust server certificates that were issued by an external CA, such as your company's private CA, or a public CA.
+To support this requirement, {ProductName} allows you to provide your own _Kafka listener certificates_ for external listeners which have TLS encryption enabled.
+Your Kafka client applications will connect to Kafka brokers using these server certificates rather than certificates signed by the cluster CA or clients CAs.
+You can also provide your own Kafka listener certificates for TLS listeners.
+
+For more information, see xref:proc-installing-certs-per-listener-{context}[].
+
+You must manually renew Kafka listener certificates when needed.
 
 == Validity periods
 
@@ -30,17 +45,3 @@ You can configure the validity period of:
 
 * Cluster CA certificates in `Kafka.spec.clusterCa.validityDays`
 * Client CA certificates in `Kafka.spec.clientsCa.validityDays`
-
-== Options for installing your own CA certificates
-
-In order to connect to external systems, your client applications might need to trust certificates that were issued by an external CA, such as your company's internal CA or a public CA.
-To support this requirement, {ProductName} provides two methods for configuring your Kafka client applications to connect to the brokers in your Kafka cluster using your own certificates.
-
-You can install your own certificates at two levels:
-
-* At the cluster level--see xref:installing-your-own-ca-certificates-{context}[].
-
-* For each listener (TLS or external listener, or both) in a Kafka broker--see xref:proc-installing-certs-per-listener-{context}[].
-
-If you install your own certificates, they are not automatically renewed by the Cluster Operator.
-In this case, you must manually renew certificates when needed.
