@@ -34,6 +34,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
@@ -105,12 +106,14 @@ public class KafkaConnectApiTest {
                 ConnectorPlugin fileSink = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
                 assertNotNull(fileSink);
                 assertEquals(fileSink.getType(), "sink");
-                assertEquals(fileSink.getVersion(), "2.3.1");
+                assertNotNull(fileSink.getVersion());
+                assertFalse(fileSink.getVersion().isEmpty());
 
                 ConnectorPlugin fileSource = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSourceConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
                 assertNotNull(fileSource);
                 assertEquals(fileSource.getType(), "source");
-                assertEquals(fileSource.getVersion(), "2.3.1");
+                assertNotNull(fileSource.getVersion());
+                assertFalse(fileSource.getVersion().isEmpty());
 
                 return client.list("localhost", PORT);
             })

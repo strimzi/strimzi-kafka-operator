@@ -36,8 +36,17 @@ class ConnectRestException extends RuntimeException {
     ConnectRestException(String method, String path, int statusCode, String statusMessage, String message) {
         super(method + " " + path + " returned " + statusCode + " (" + statusMessage + "): " + message);
     }
+
     public ConnectRestException(HttpClientResponse response, String message) {
         this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message);
+    }
+
+    ConnectRestException(String method, String path, int statusCode, String statusMessage, String message, Throwable cause) {
+        super(method + " " + path + " returned " + statusCode + " (" + statusMessage + "): " + message, cause);
+    }
+
+    public ConnectRestException(HttpClientResponse response, String message, Throwable cause) {
+        this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message, cause);
     }
 }
 
@@ -205,8 +214,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             result.complete(list);
                         });
                     } else {
-                        result.fail("Unexpected status code " + response.statusCode()
-                                + " for GET request to " + host + ":" + port + path);
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
                 .exceptionHandler(result::fail)
@@ -233,13 +241,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             try {
                                 result.complete(Arrays.asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
                             } catch (IOException e)  {
-                                log.warn("Failed to parse list of connector plugins");
-                                result.fail(e);
+                                log.warn("Failed to parse list of connector plugins", e);
+                                result.fail(new ConnectRestException(response, "Failed to parse list of connector plugins", e));
                             }
                         });
                     } else {
-                        result.fail("Unexpected status code " + response.statusCode()
-                                + " for GET request to " + host + ":" + port + path);
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
                 .exceptionHandler(result::fail)
