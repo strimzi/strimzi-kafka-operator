@@ -83,6 +83,24 @@ public class ConnectorMockTest {
     private KafkaConnectS2IAssemblyOperator kafkaConnectS2iOperator;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
 
+    private Future<Map<String, Object>> kafkaConnectApiStatusMock(String host, int port, String connectorName)   {
+        Boolean paused = runningConnectors.get(connectorName);
+        Map<String, Object> statusNode = new HashMap<>();
+        statusNode.put("name", connectorName);
+        Map<String, Object> connector = new HashMap<>();
+        statusNode.put("connector", connector);
+        connector.put("state", paused ? "PAUSED" : "RUNNING");
+        connector.put("worker_id", "somehost0:8083");
+        Map<String, Object> task = new HashMap<>();
+        task.put("id", 0);
+        task.put("state", paused ? "PAUSED" : "RUNNING");
+        task.put("worker_id", "somehost2:8083");
+        List<Map> tasks = singletonList(task);
+        statusNode.put("tasks", tasks);
+
+        return paused != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
+    }
+
     @BeforeEach
     public void setup(VertxTestContext testContext) throws InterruptedException {
         vertx = Vertx.vertx();
@@ -113,23 +131,11 @@ public class ConnectorMockTest {
             Boolean remove = runningConnectors.remove(connectorName);
             return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
         });
+        when(api.statusWithBackOff(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
+            return kafkaConnectApiStatusMock(invocation.getArgument(1), invocation.getArgument(2), invocation.getArgument(3));
+        });
         when(api.status(any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String connectorName = invocation.getArgument(2);
-            Boolean paused = runningConnectors.get(connectorName);
-            Map<String, Object> statusNode = new HashMap<>();
-            statusNode.put("name", connectorName);
-            Map<String, Object> connector = new HashMap<>();
-            statusNode.put("connector", connector);
-            connector.put("state", paused ? "PAUSED" : "RUNNING");
-            connector.put("worker_id", "somehost0:8083");
-            Map<String, Object> task = new HashMap<>();
-            task.put("id", 0);
-            task.put("state", paused ? "PAUSED" : "RUNNING");
-            task.put("worker_id", "somehost2:8083");
-            List<Map> tasks = singletonList(task);
-            statusNode.put("tasks", tasks);
-
-            return paused != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
+            return kafkaConnectApiStatusMock(invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2));
         });
         when(api.pause(any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String connectorName = invocation.getArgument(2);
