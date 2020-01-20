@@ -154,7 +154,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnectS2I connects2i, KafkaConnectS2Istatus connects2istatus) {
         return connectOperations.getAsync(connects2i.getMetadata().getNamespace(), connects2i.getMetadata().getName()).compose(connect -> {
             // If there's a non-s2i of the same name then do nothing, since that takes precedence
-            if (connect == null) {
+            if (connect != null) {
                 return Future.succeededFuture();
             } else {
                 return super.reconcileConnectors(reconciliation, connects2i, connects2istatus);
