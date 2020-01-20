@@ -50,5 +50,5 @@ kubectl apply -f examples/connector/source-connector.yaml
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get all --selector strimzi.io/cluster=my-connect-cluster -o name
+kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
 ----
