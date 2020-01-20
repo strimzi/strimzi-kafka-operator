@@ -1,5 +1,7 @@
 
 # CHANGELOG
+## 0.17.0
+* Add Jmxtrans deployment
 
 ## 0.17.0
 
@@ -14,7 +16,6 @@
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
 * Expose JMX port on Kafka brokers via an internal service
-* Add Jmxtrans deployment
 * Add support for `externalTrafficPolicy` and `loadBalancerSourceRanges` properties on loadbalancer and nodeport type services
 * Add support for user quotas
 * Add support for Istio protocol selection in service port names  

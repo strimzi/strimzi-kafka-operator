@@ -114,8 +114,8 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
         return maintenanceTimeWindows;
     }
 
-    @Description("Configuration for JmxTrans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. " +
-            "For more information, go to https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]")
+    @Description("Configuration for JmxTrans. When the property is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. " +
+            "For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]")
     public JmxTransSpec getJmxTrans() {
         return jmxTrans;
     }

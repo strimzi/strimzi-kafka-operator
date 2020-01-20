@@ -6,10 +6,9 @@ source $(dirname $(realpath $0))/../multi-platform-support.sh
 
 # Image directories
 base_images="base"
-java_images="operator"
+java_images="operator jmxtrans"
 kafka_image="kafka"
 kafka_images="kafka test-client"
-jmxtrans_image="jmxtrans"
 
 function dependency_check { 
 
@@ -184,10 +183,6 @@ function build {
                 THIRD_PARTY_LIBS="${lib_directory}"
         done
     done
-
-    echo "building jmxtrans image"
-    # jmx image
-    make -C "$jmxtrans_image" "$targets"
 }
 
 dependency_check

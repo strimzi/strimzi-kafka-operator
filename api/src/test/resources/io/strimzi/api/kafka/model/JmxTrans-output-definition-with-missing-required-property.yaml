@@ -16,7 +16,7 @@ spec:
     outputDefinitions:
       - host: "wont matter about the host"
         port: 123
-        flushDelay: 321
+        flushDelayInSeconds: 321
     kafkaQueries:
       - targetMBean: "MBean"
         attributes:  ["attribute1"]

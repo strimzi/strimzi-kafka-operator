@@ -29,7 +29,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"outputDefinitions", "queries", "resources"})
+@JsonPropertyOrder({"image", "outputDefinitions", "loggingLevel", "kafkaQueries", "resources"})
 @EqualsAndHashCode
 public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -37,6 +37,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
     protected String image;
+    private String logLevel;
     private List<JmxTransOutputDefinitionTemplate> outputDefinitions = null;
     private List<JmxTransQueryTemplate> kafkaQueries = null;
 
@@ -51,6 +52,16 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    @Description("Sets the logging level of the JmxTrans deployment." +
+            "For more information see, https://github.com/jmxtrans/jmxtrans-agent/wiki/Troubleshooting[JmxTrans Logging Level]")
+    public String getLogLevel() {
+        return logLevel;
+    }
+
+    public void setLogLevel(String logLevel) {
+        this.logLevel = logLevel;
     }
 
     @JsonProperty(required = true)
