@@ -268,7 +268,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        return singletonList(ModelUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
     public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {

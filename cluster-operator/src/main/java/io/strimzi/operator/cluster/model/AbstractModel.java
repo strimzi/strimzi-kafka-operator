@@ -12,15 +12,11 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KeyToPath;
-import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -33,8 +29,6 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
-import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
@@ -44,8 +38,6 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -72,7 +64,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -564,15 +555,6 @@ public abstract class AbstractModel {
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected static VolumeMount createVolumeMount(String name, String path) {
-        VolumeMount volumeMount = new VolumeMountBuilder()
-                .withName(name)
-                .withMountPath(path)
-                .build();
-        log.trace("Created volume mount {}", volumeMount);
-        return volumeMount;
-    }
-
     protected ContainerPort createContainerPort(String name, int port, String protocol) {
         ContainerPort containerPort = new ContainerPortBuilder()
                 .withName(name)
@@ -601,32 +583,6 @@ public abstract class AbstractModel {
         ServicePort servicePort = builder.build();
         log.trace("Created service port {}", servicePort);
         return servicePort;
-    }
-
-    protected static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
-        requests.put("storage", new Quantity(storage.getSize(), null));
-
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
-        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
-                    .withNewResources()
-                        .withRequests(requests)
-                    .endResources()
-                    .withStorageClassName(storage.getStorageClass())
-                    .withSelector(selector)
-                .endSpec()
-                .build();
-
-        return pvc;
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
@@ -670,20 +626,6 @@ public abstract class AbstractModel {
         return pvc;
     }
 
-    protected static Volume createEmptyDirVolume(String name, String sizeLimit) {
-        EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
-        if (sizeLimit != null && !sizeLimit.isEmpty()) {
-            emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
-        }
-
-        Volume volume = new VolumeBuilder()
-            .withName(name)
-                .withEmptyDir(emptyDirVolumeSource)
-            .build();
-        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
-        return volume;
-    }
-
     protected Volume createConfigMapVolume(String name, String configMapName) {
 
         ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
@@ -709,56 +651,6 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withData(data)
                 .build();
-    }
-
-    protected static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
-        int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
-
-        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
-                .withDefaultMode(mode)
-                .withSecretName(secretName)
-                .build();
-
-        Volume volume = new VolumeBuilder()
-                .withName(name)
-                .withSecret(secretVolumeSource)
-                .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
-        return volume;
-    }
-
-    protected static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
-        int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
-
-        List<KeyToPath> keysPaths = new ArrayList<>();
-
-        for (Map.Entry<String, String> item : items.entrySet()) {
-            KeyToPath keyPath = new KeyToPathBuilder()
-                    .withNewKey(item.getKey())
-                    .withNewPath(item.getValue())
-                    .build();
-
-            keysPaths.add(keyPath);
-        }
-
-        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
-                .withDefaultMode(mode)
-                .withSecretName(secretName)
-                .withItems(keysPaths)
-                .build();
-
-        Volume volume = new VolumeBuilder()
-                .withName(name)
-                .withSecret(secretVolumeSource)
-                .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
-        return volume;
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {

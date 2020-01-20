@@ -7,15 +7,26 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.KeyToPath;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
@@ -44,6 +55,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class ModelUtils {
 
     public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
@@ -162,7 +174,7 @@ public class ModelUtils {
                 .withCommand(command)
                 .endExec()
                 .build();
-        AbstractModel.log.trace("Created exec probe {}", probe);
+        log.trace("Created exec probe {}", probe);
         return probe;
     }
 
@@ -424,7 +436,7 @@ public class ModelUtils {
 
                 String name = getVolumePrefix(id);
                 String namedMountPath = mountPath + "/" + name;
-                volumeMounts.add(AbstractModel.createVolumeMount(name, namedMountPath));
+                volumeMounts.add(createVolumeMount(name, namedMountPath));
             }
         }
 
@@ -445,7 +457,7 @@ public class ModelUtils {
             } else if (storage instanceof PersistentClaimStorage) {
                 Integer id = ((PersistentClaimStorage) storage).getId();
                 String name = getVolumePrefix(id);
-                pvcs.add(AbstractModel.createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
+                pvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
             }
         }
 
@@ -467,10 +479,109 @@ public class ModelUtils {
                 Integer id = ((EphemeralStorage) storage).getId();
                 String name = getVolumePrefix(id);
                 String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(AbstractModel.createEmptyDirVolume(name, sizeLimit));
+                volumes.add(createEmptyDirVolume(name, sizeLimit));
             }
         }
 
         return volumes;
+    }
+
+    public static VolumeMount createVolumeMount(String name, String path) {
+        VolumeMount volumeMount = new VolumeMountBuilder()
+                .withName(name)
+                .withMountPath(path)
+                .build();
+        log.trace("Created volume mount {}", volumeMount);
+        return volumeMount;
+    }
+
+    public static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
+        Map<String, Quantity> requests = new HashMap<>();
+        requests.put("storage", new Quantity(storage.getSize(), null));
+
+        LabelSelector selector = null;
+        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
+            selector = new LabelSelector(null, storage.getSelector());
+        }
+
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                    .withAccessModes("ReadWriteOnce")
+                    .withNewResources()
+                        .withRequests(requests)
+                    .endResources()
+                    .withStorageClassName(storage.getStorageClass())
+                    .withSelector(selector)
+                .endSpec()
+                .build();
+
+        return pvc;
+    }
+
+    public static Volume createEmptyDirVolume(String name, String sizeLimit) {
+        EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
+        if (sizeLimit != null && !sizeLimit.isEmpty()) {
+            emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
+        }
+
+        Volume volume = new VolumeBuilder()
+            .withName(name)
+                .withEmptyDir(emptyDirVolumeSource)
+            .build();
+        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
+        return volume;
+    }
+
+    public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+        int mode = 0444;
+        if (isOpenshift) {
+            mode = 0440;
+        }
+
+        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
+                .withDefaultMode(mode)
+                .withSecretName(secretName)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(name)
+                .withSecret(secretVolumeSource)
+                .build();
+        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        return volume;
+    }
+
+    public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+        int mode = 0444;
+        if (isOpenshift) {
+            mode = 0440;
+        }
+
+        List<KeyToPath> keysPaths = new ArrayList<>();
+
+        for (Map.Entry<String, String> item : items.entrySet()) {
+            KeyToPath keyPath = new KeyToPathBuilder()
+                    .withNewKey(item.getKey())
+                    .withNewPath(item.getValue())
+                    .build();
+
+            keysPaths.add(keyPath);
+        }
+
+        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
+                .withDefaultMode(mode)
+                .withSecretName(secretName)
+                .withItems(keysPaths)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(name)
+                .withSecret(secretVolumeSource)
+                .build();
+        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        return volume;
     }
 }
