@@ -43,7 +43,7 @@ public class JmxTransTest {
                         "\"outputType\": \"targetOutputType\"," +
                         "\"host\": \"targetHost\"," +
                         "\"port\": 9999," +
-                        "\"flushDelaySeconds\": 1," +
+                        "\"flushDelayInSeconds\": 1," +
                         "\"typeNames\": [\"typeName0\", \"typeName1\"]," +
                         "\"name\": \"targetName\"" +
                     "}, {" +
@@ -56,7 +56,7 @@ public class JmxTransTest {
         assertThat(opts.getOutputDefinitions().size(),  is(2));
         assertThat(opts.getOutputDefinitions().get(0).getHost(),  is("targetHost"));
         assertThat(opts.getOutputDefinitions().get(0).getOutputType(),  is("targetOutputType"));
-        assertThat(opts.getOutputDefinitions().get(0).getFlushDelaySeconds(),  is(1));
+        assertThat(opts.getOutputDefinitions().get(0).getFlushDelayInSeconds(),  is(1));
         assertThat(opts.getOutputDefinitions().get(0).getTypeNames().get(0),  is("typeName0"));
         assertThat(opts.getOutputDefinitions().get(0).getTypeNames().get(1),  is("typeName1"));
         assertThat(opts.getOutputDefinitions().get(0).getName(),  is("targetName"));

@@ -2,9 +2,9 @@ FROM strimzi/base:latest
 
 ENV JMXTRANS_HOME /usr/share/jmxtrans
 ENV PATH $JMXTRANS_HOME/bin:$PATH
-ENV JAR_FILE $JMXTRANS_HOME/lib/jmxtrans-all.jar
+ENV JAR_FILE $JMXTRANS_HOME/lib/jmxtrans.jar
 ENV JMXTRANS_VERSION 271
-ENV JMXTRANS_CHECKSUM="94a7430cb1c602cc16de8579b1f5ab94a6c064ece1f132c6c64d6452a70db07b1c1cd7d4dfe76c44869c89ca2050bccbe27d9d10779aef483eec7a172d767132  jmxtrans-${JMXTRANS_VERSION}-all.jar"
+ENV JMXTRANS_CHECKSUM="9c9116b628be912a723fae8ab65853908cc0872139340827b4af3dbdb7274bc88956af7f33dc927a43ea291c721701fb52368ccd414218ef33e7de3060baf849  jmxtrans-${JMXTRANS_VERSION}-all.jar"
 ENV HEAP_SIZE 512
 ENV PERM_SIZE 384
 ENV MAX_PERM_SIZE 384
@@ -15,14 +15,12 @@ ENV JSON_DIR /var/lib/jmxtrans
 WORKDIR ${JMXTRANS_HOME}
 RUN mkdir -p ${JMXTRANS_HOME}/conf
 
-COPY logback.xml ${JMXTRANS_HOME}/conf/logback.xml
-
 #####
 # Add JmxTrans Jar
 #####
 RUN mkdir -p /usr/share/jmxtrans/lib/ \
     && mkdir -p /var/log/jmxtrans \
-    && curl http://central.maven.org/maven2/org/jmxtrans/jmxtrans/${JMXTRANS_VERSION}/jmxtrans-${JMXTRANS_VERSION}-all.jar --output jmxtrans-${JMXTRANS_VERSION}-all.jar \
+    && curl -k https://repo1.maven.org/maven2/org/jmxtrans/jmxtrans/${JMXTRANS_VERSION}/jmxtrans-${JMXTRANS_VERSION}-all.jar --output jmxtrans-${JMXTRANS_VERSION}-all.jar \
     && echo $JMXTRANS_CHECKSUM > jmxtrans-${JMXTRANS_VERSION}-all.jar.sha512 \
     && sha512sum --check jmxtrans-${JMXTRANS_VERSION}-all.jar.sha512 \
     && rm jmxtrans-${JMXTRANS_VERSION}-all.jar.sha512 \

@@ -26,7 +26,7 @@ spec:
       - outputType: "com.googlecode.jmxtrans.model.output.GraphiteOutputWriter"
         host: "mylogstash.com"
         port: 31028
-        flushDelaySeconds: 5
+        flushDelayInSeconds: 5
         name: "logstash"
     kafkaQueries:
       - targetMBean: "kafka.server:type=BrokerTopicMetrics,name=*"

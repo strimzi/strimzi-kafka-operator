@@ -3270,6 +3270,8 @@ spec:
             jmxTrans:
               type: object
               properties:
+                image:
+                  type: string
                 outputDefinitions:
                   type: array
                   items:
@@ -3281,7 +3283,7 @@ spec:
                         type: string
                       port:
                         type: integer
-                      flushDelaySeconds:
+                      flushDelayInSeconds:
                         type: integer
                       typeNames:
                         type: array
@@ -3292,15 +3294,6 @@ spec:
                     required:
                     - outputType
                     - name
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                image:
-                  type: string
                 kafkaQueries:
                   type: array
                   items:
@@ -3320,6 +3313,15 @@ spec:
                     - targetMBean
                     - attributes
                     - outputs
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                logLevel:
+                  type: string
               required:
               - outputDefinitions
               - kafkaQueries

@@ -65,8 +65,8 @@ import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -80,7 +80,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
@@ -106,8 +105,8 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -153,7 +152,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ZookeeperSetOperator zkSetOperations;
     private final KafkaSetOperator kafkaSetOperations;
     private final RouteOperator routeOperations;
-    private final ConfigMapOperator configMapOperator;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
     private final RoleBindingOperator roleBindingOperations;
@@ -180,7 +178,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.routeOperations = supplier.routeOperations;
         this.zkSetOperations = supplier.zkSetOperations;
-        this.configMapOperator = supplier.configMapOperations;
         this.kafkaSetOperations = supplier.kafkaSetOperations;
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
@@ -1068,7 +1065,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String stsName = KafkaCluster.kafkaClusterName(this.name);
             String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperator.reconcile(namespace, cmName, newCm))
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return true;
@@ -3175,14 +3172,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getJmxTransDescription() {
-            int numOfBrokers = kafkaCluster.getReplicas();
-            this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
-            if (this.jmxTrans != null) {
-                this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
-                this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
-            }
+            try {
+                int numOfBrokers = kafkaCluster.getReplicas();
+                this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
+                if (this.jmxTrans != null) {
+                    this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
+                    this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
+                }
 
-            return Future.succeededFuture(this);
+                return Future.succeededFuture(this);
+            } catch (Throwable e) {
+                return Future.failedFuture(e);
+            }
         }
 
         Future<ReconciliationState> jmxTransConfigMap() {

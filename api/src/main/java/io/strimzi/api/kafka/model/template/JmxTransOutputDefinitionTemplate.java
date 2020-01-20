@@ -26,7 +26,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"outputType", "host", "port", "flushDelaySeconds", "typeNames", "name"})
+@JsonPropertyOrder({"outputType", "host", "port", "flushDelayInSeconds", "typeNames", "name"})
 @EqualsAndHashCode
 public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPropertyPreserving {
 
@@ -35,7 +35,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
     private String outputType;
     private String host;
     private Integer port;
-    private Integer flushDelaySeconds;
+    private Integer flushDelayInSeconds;
     private String name;
     private List<String> typeNames;
 
@@ -43,7 +43,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
 
     @JsonProperty(value = "outputType", required = true)
     @Description("Template for setting the format of the data that will be pushed." +
-            "For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans OutputWriters]")
+            "For more information see https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans OutputWriters]")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getOutputType() {
         return outputType;
@@ -75,16 +75,16 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
 
     @Description("How many seconds the JmxTransSpec waits before pushing a new set of data out.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getFlushDelaySeconds() {
-        return flushDelaySeconds;
+    public Integer getFlushDelayInSeconds() {
+        return flushDelayInSeconds;
     }
 
-    public void setFlushDelaySeconds(Integer flushDelaySeconds) {
-        this.flushDelaySeconds = flushDelaySeconds;
+    public void setFlushDelayInSeconds(Integer flushDelayInSeconds) {
+        this.flushDelayInSeconds = flushDelayInSeconds;
     }
 
-    @Description("Template for filtering data you want when a wildcard query is sent. " +
-            "For more information, go to https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries]")
+    @Description("Template for filtering data to be included in response to a wildcard query. " +
+            "For more information see https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries]")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public List<String> getTypeNames() {
         return typeNames;
@@ -94,8 +94,8 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.typeNames = typeNames;
     }
 
-    @Description("Template for setting the name of the output definition, which is used to identify where to send " +
-            "the data of the queries to.")
+    @Description("Template for setting the name of the output definition. This is used to identify where to send " +
+            "the results of queries should be sent.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getName() {
