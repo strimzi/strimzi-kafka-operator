@@ -341,7 +341,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         });
     }
 
-    @SuppressWarnings("checkstyle:JavaNCSS")
+    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:MethodLength"})
     @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
