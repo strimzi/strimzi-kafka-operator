@@ -548,14 +548,35 @@ spec:
                 authorization:
                   type: object
                   properties:
+                    clientId:
+                      type: string
+                    delegateToKafkaAcls:
+                      type: boolean
+                    disableTlsHostnameVerification:
+                      type: boolean
                     superUsers:
                       type: array
                       items:
                         type: string
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                          secretName:
+                            type: string
+                        required:
+                        - certificate
+                        - secretName
+                    tokenEndpointUri:
+                      type: string
                     type:
                       type: string
                       enum:
                       - simple
+                      - keycloak
                   required:
                   - type
                 config:
