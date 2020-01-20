@@ -900,5 +900,16 @@ spec:
               type: integer
             url:
               type: string
+            connectorPlugins:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  version:
+                    type: string
+                  class:
+                    type: string
             buildConfigName:
               type: string

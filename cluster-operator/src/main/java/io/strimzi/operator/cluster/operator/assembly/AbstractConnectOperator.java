@@ -27,7 +27,10 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.HasStatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -72,7 +75,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyMap;
 
 public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource,
-        L extends CustomResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>>
+        L extends CustomResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>, S extends KafkaConnectStatus>
         extends AbstractOperator<T, CrdOperator<C, T, L, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
@@ -123,7 +126,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Create a watch on {@code KafkaConnector} in the given {@code namespace}.
      * The watcher will:
      * <ul>
-     * <li>{@link #reconcileConnectors(Reconciliation, CustomResource)} on the KafkaConnect or KafkaConnectS2I
+     * <li>{@link #reconcileConnectors(Reconciliation, CustomResource, KafkaConnectStatus)} on the KafkaConnect or KafkaConnectS2I
      * identified by {@code KafkaConnector.metadata.labels[strimzi.io/cluster]}.</li>
      * <li>If there is a Connect and ConnectS2I cluster with the given name then the plain Connect one is used
      * (and an error is logged about the ambiguity).</li>
@@ -134,8 +137,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param watchNamespaceOrWildcard The namespace to watch.
      * @return A future which completes when the watch has been set up.
      */
-    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> connectOperator,
-            AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> connectS2IOperator,
+    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>, KafkaConnectStatus> connectOperator,
+            AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2Istatus> connectS2IOperator,
             String watchNamespaceOrWildcard) {
         return Util.async(connectOperator.vertx, () -> {
             connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
@@ -247,18 +250,24 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connect The connector
      * @return A future, failed if any of the connectors' statuses could not be updated.
      */
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect) {
+    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect, S connectStatus) {
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
         String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         boolean useResources = isUseResources(connect);
-        return CompositeFuture.join(apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
-                connectorOperator.listAsync(namespace,
-                        Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+        return CompositeFuture.join(
+                apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
+                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
+                apiClient.listConnectorPlugins(host, KafkaConnectCluster.REST_API_PORT)
         ).compose(cf -> {
             List<String> runningConnectorNames = cf.resultAt(0);
             List<KafkaConnector> desiredConnectors = cf.resultAt(1);
+            List<ConnectorPlugin> connectorPlugins = cf.resultAt(2);
+
+            log.debug("{}: Setting list of connector plugins in Kafka Connect status", reconciliation);
+            connectStatus.setConnectorPlugins(connectorPlugins);
+
             log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));

@@ -52,7 +52,7 @@ import java.util.function.Function;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2Istatus> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
@@ -125,7 +125,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                     .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                    .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I))
+                    .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus))
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
@@ -151,13 +151,13 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     }
 
     @Override
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnectS2I connects2i) {
+    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnectS2I connects2i, KafkaConnectS2Istatus connects2istatus) {
         return connectOperations.getAsync(connects2i.getMetadata().getNamespace(), connects2i.getMetadata().getName()).compose(connect -> {
             // If there's a non-s2i of the same name then do nothing, since that takes precedence
             if (connect != null) {
                 return Future.succeededFuture();
             } else {
-                return super.reconcileConnectors(reconciliation, connects2i);
+                return super.reconcileConnectors(reconciliation, connects2i, connects2istatus);
             }
         });
     }

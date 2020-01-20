@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.debezium.kafka.KafkaCluster;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -33,6 +34,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -96,7 +99,24 @@ public class KafkaConnectApiTest {
     public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         CountDownLatch async = new CountDownLatch(1);
-        client.list("localhost", PORT)
+        client.listConnectorPlugins("localhost", PORT)
+            .compose(connectorPlugins -> {
+                assertEquals(connectorPlugins.size(), 2);
+
+                ConnectorPlugin fileSink = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
+                assertNotNull(fileSink);
+                assertEquals(fileSink.getType(), "sink");
+                assertNotNull(fileSink.getVersion());
+                assertFalse(fileSink.getVersion().isEmpty());
+
+                ConnectorPlugin fileSource = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSourceConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
+                assertNotNull(fileSource);
+                assertEquals(fileSource.getType(), "source");
+                assertNotNull(fileSource.getVersion());
+                assertFalse(fileSource.getVersion().isEmpty());
+
+                return client.list("localhost", PORT);
+            })
             .compose(connectorNames -> {
                 assertEquals(emptyList(), connectorNames);
                 JsonObject o = new JsonObject()

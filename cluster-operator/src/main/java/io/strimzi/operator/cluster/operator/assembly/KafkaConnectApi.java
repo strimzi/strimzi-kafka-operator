@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,7 @@ public interface KafkaConnectApi {
     Future<Void> pause(String host, int port, String connectorName);
     Future<Void> resume(String host, int port, String connectorName);
     Future<List<String>> list(String host, int port);
+    Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {
@@ -45,6 +48,15 @@ class ConnectRestException extends RuntimeException {
         this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message);
     }
 
+    ConnectRestException(String method, String path, int statusCode, String statusMessage, String message, Throwable cause) {
+        super(method + " " + path + " returned " + statusCode + " (" + statusMessage + "): " + message, cause);
+        this.statusCode = statusCode;
+    }
+
+    public ConnectRestException(HttpClientResponse response, String message, Throwable cause) {
+        this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message, cause);
+    }
+  
     public int getStatusCode() {
         return statusCode;
     }
@@ -266,8 +278,39 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             result.complete(list);
                         });
                     } else {
-                        result.fail("Unexpected status code " + response.statusCode()
-                                + " for GET request to " + host + ":" + port + path);
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .setFollowRedirects(true)
+                .putHeader("Accept", "application/json")
+                .end();
+        return result;
+    }
+
+    @Override
+    public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
+        Future<List<ConnectorPlugin>> result = Future.future();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        String path = "/connector-plugins";
+        vertx.createHttpClient(options)
+                .get(port, host, path, response -> {
+                    response.exceptionHandler(error -> {
+                        result.fail(error);
+                    });
+                    if (response.statusCode() == 200) {
+                        response.bodyHandler(buffer -> {
+                            ObjectMapper mapper = new ObjectMapper();
+
+                            try {
+                                result.complete(Arrays.asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
+                            } catch (IOException e)  {
+                                log.warn("Failed to parse list of connector plugins", e);
+                                result.fail(new ConnectRestException(response, "Failed to parse list of connector plugins", e));
+                            }
+                        });
+                    } else {
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
                 .exceptionHandler(result::fail)

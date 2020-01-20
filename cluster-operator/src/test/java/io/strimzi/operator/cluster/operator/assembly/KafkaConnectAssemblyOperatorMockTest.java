@@ -140,6 +140,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
             .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         KafkaConnectAssemblyOperator kco = createConnectCluster(context,
                 mock);
         LOGGER.info("Reconciling again -> update");
