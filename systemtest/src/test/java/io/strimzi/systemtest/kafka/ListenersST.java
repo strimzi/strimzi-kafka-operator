@@ -22,6 +22,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,6 @@ import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -41,16 +41,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ListenersST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
-    public static final String NAMESPACE = "custom-certs-cluster-test";
+    public static final String NAMESPACE = "kafka-listeners-cluster-test";
+
+    private String customCertChain1 = "custom-certificate-chain-1";
+    private String customCertChain2 = "custom-certificate-chain-2";
+    private String customCertServer1 = "custom-certificate-server-1";
+    private String customCertServer2 = "custom-certificate-server-2";
+    private String customRootCA1 = "custom-certificate-root-1";
+    private String customRootCA2 = "custom-certificate-root-2";
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testCustomSoloCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -59,7 +62,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -68,7 +71,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalNodePort()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -81,6 +84,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customCertServer1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -102,10 +106,6 @@ public class ListenersST extends BaseST {
     void testCustomChainCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -113,7 +113,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -122,7 +122,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalNodePort()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -135,6 +135,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customRootCA1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -156,10 +157,6 @@ public class ListenersST extends BaseST {
     void testCustomSoloCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -167,7 +164,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -176,7 +173,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalLoadBalancer()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -189,6 +186,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customCertServer1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -210,10 +208,6 @@ public class ListenersST extends BaseST {
     void testCustomChainCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -221,7 +215,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -230,7 +224,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalLoadBalancer()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -243,6 +237,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customRootCA1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -264,10 +259,6 @@ public class ListenersST extends BaseST {
     void testCustomSoloCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -275,7 +266,7 @@ public class ListenersST extends BaseST {
                          .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -284,7 +275,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalRoute()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -297,6 +288,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customCertServer1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -319,10 +311,6 @@ public class ListenersST extends BaseST {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         LOGGER.info(kubeClient().getClient().getConfiguration());
 
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -330,7 +318,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -339,7 +327,7 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalRoute()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName("custom-certificate")
+                                    .withSecretName(customCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -352,6 +340,7 @@ public class ListenersST extends BaseST {
         String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
+        kafkaClient.setCaCertName(customRootCA1);
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
@@ -374,14 +363,6 @@ public class ListenersST extends BaseST {
     void testCustomCertNodePortAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
-        SecretUtils.createCustomSecret("custom-certificate-1", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
-        SecretUtils.createCustomSecret("custom-certificate-2", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
-
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -389,7 +370,6 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalNodePort()
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
-                .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec().done();
 
@@ -408,7 +388,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-1")
+                        .withSecretName(customCertServer1)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -417,7 +397,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-2")
+                        .withSecretName(customCertServer2)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -428,6 +408,7 @@ public class ListenersST extends BaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(customCertServer1);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
@@ -440,9 +421,30 @@ public class ListenersST extends BaseST {
         externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
         int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-7");
+        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-71");
         assertThat(received, is(30));
 
+        SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key").getFile());
+
+        SecretUtils.createCustomSecret(customCertServer2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+
+        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+
+        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        assertThat(sent, is(10));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-72");
+        assertThat(received, is(50));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
@@ -453,28 +455,21 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(null);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-72");
-        assertThat(received, is(40));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-73");
+        assertThat(received, is(60));
     }
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomCertLoadBalancerAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-
-        SecretUtils.createCustomSecret("custom-certificate-1", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
-        SecretUtils.createCustomSecret("custom-certificate-2", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -483,7 +478,6 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalLoadBalancer()
                         .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec().done();
 
@@ -502,7 +496,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-1")
+                        .withSecretName(customCertServer1)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -511,7 +505,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-2")
+                        .withSecretName(customCertServer2)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -522,6 +516,7 @@ public class ListenersST extends BaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(customCertServer1);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
@@ -537,6 +532,28 @@ public class ListenersST extends BaseST {
         int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-81");
         assertThat(received, is(30));
 
+        SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key").getFile());
+
+        SecretUtils.createCustomSecret(customCertServer2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+
+        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+
+        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        assertThat(sent, is(10));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-82");
+        assertThat(received, is(50));
+
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
                 .withTls(true)
@@ -547,27 +564,19 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-82");
-        assertThat(received, is(40));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-83");
+        assertThat(received, is(60));
     }
 
     @Test
     @OpenShiftOnly
     void testCustomCertRouteAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-
-        SecretUtils.createCustomSecret("custom-certificate-1", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key.pem").getFile());
-
-        SecretUtils.createCustomSecret("custom-certificate-2", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi-bundle-2.crt").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi-key-2.pem").getFile());
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -576,7 +585,6 @@ public class ListenersST extends BaseST {
                         .withNewKafkaListenerExternalNodePort()
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec().done();
 
@@ -595,7 +603,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-1")
+                        .withSecretName(customCertServer1)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -604,7 +612,7 @@ public class ListenersST extends BaseST {
             kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withSecretName("custom-certificate-2")
+                        .withSecretName(customCertServer2)
                         .withKey("ca.key")
                         .withCertificate("ca.crt")
                     .endBrokerCertChainAndKey()
@@ -615,6 +623,7 @@ public class ListenersST extends BaseST {
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(customCertServer1);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
@@ -630,6 +639,28 @@ public class ListenersST extends BaseST {
         int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-91");
         assertThat(received, is(30));
 
+        SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key").getFile());
+
+        SecretUtils.createCustomSecret(customCertServer2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key").getFile());
+
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+
+        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+
+        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        assertThat(sent, is(10));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-92");
+        assertThat(received, is(50));
+
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
                 .withTls(true)
@@ -639,22 +670,20 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(null);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
+        consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "TLS", "consumer-group-certs-92");
-        assertThat(received, is(40));
+        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-93");
+        assertThat(received, is(60));
     }
 
     @Test
     void testNonExistingCustomCertificate() {
         String nonExistingCertName = "non-existing-certificate";
-        SecretUtils.createCustomSecret("custom-certificate", CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -678,11 +707,7 @@ public class ListenersST extends BaseST {
 
     @Test
     void testCertificateWithNonExistingDataCrt() {
-        String certName = "custom-certificate";
         String nonExistingCertName = "non-existing-crt";
-        SecretUtils.createCustomSecret(certName, CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -691,7 +716,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(certName)
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate(nonExistingCertName)
                                 .endBrokerCertChainAndKey()
@@ -702,16 +727,12 @@ public class ListenersST extends BaseST {
             .endSpec().build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
-                "Secret " + certName + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
+                "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
     }
 
     @Test
     void testCertificateWithNonExistingDataKey() {
-        String certName = "custom-certificate";
         String nonExistingCertKey = "non-existing-key";
-        SecretUtils.createCustomSecret(certName, CLUSTER_NAME, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/strimzi.key").getFile());
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -720,7 +741,7 @@ public class ListenersST extends BaseST {
                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(certName)
+                                    .withSecretName(customCertServer1)
                                     .withKey(nonExistingCertKey)
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -731,7 +752,34 @@ public class ListenersST extends BaseST {
             .endSpec().build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
-                "Secret " + certName + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
+                "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
+    }
+
+    @BeforeEach
+    void setupCertificates() {
+        SecretUtils.createCustomSecret(customCertChain1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-key.pem").getFile());
+
+        SecretUtils.createCustomSecret(customCertChain2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/chain/strimzi-bundle.crt").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/chain/strimzi-key.pem").getFile());
+
+        SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key").getFile());
+
+        SecretUtils.createCustomSecret(customCertServer2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key").getFile());
+
+        SecretUtils.createCustomSecret(customRootCA1, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/root/ca.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/root/ca.key").getFile());
+
+        SecretUtils.createCustomSecret(customRootCA2, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.key").getFile());
     }
 
     @BeforeAll

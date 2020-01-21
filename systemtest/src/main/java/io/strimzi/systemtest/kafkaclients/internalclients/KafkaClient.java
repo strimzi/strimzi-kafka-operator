@@ -28,6 +28,8 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
     private Vertx vertx = Vertx.vertx();
 
+    private String caCertName;
+
     @Override
     public void close() {
         vertx.close();
@@ -76,8 +78,10 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
+        String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
+
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
-                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName), kafkaUsername, securityProtocol, EClientType.BASIC, null),
+                clientSecretName, kafkaUsername, securityProtocol, EClientType.BASIC, null),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
@@ -212,8 +216,10 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
+        String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
+
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName,
-                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName), kafkaUsername, securityProtocol, consumerGroup),
+                clientSecretName, kafkaUsername, securityProtocol, consumerGroup),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
@@ -435,5 +441,13 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    public String getCaCertName() {
+        return caCertName;
+    }
+
+    public void setCaCertName(String caCertName) {
+        this.caCertName = caCertName;
     }
 }
