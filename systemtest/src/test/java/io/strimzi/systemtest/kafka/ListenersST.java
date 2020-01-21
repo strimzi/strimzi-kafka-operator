@@ -6,7 +6,9 @@ package io.strimzi.systemtest.kafka;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+git import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRouteBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
@@ -493,7 +495,7 @@ public class ListenersST extends BaseST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalLoadBalancerBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
                         .withSecretName(customCertServer1)
@@ -563,6 +565,7 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
+        kafkaClient.setCaCertName(null);
         producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
@@ -600,7 +603,7 @@ public class ListenersST extends BaseST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalRouteBuilder()
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
                         .withSecretName(customCertServer1)
