@@ -6,20 +6,23 @@
 
 = Creating and managing connectors
 
-When you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster. You can then configure, monitor, and manage a running connector instance. For example, you can:
-
-* Check the status of a connector instance
-* Increase or decrease the number of tasks for a connector instance
-* Restart failed tasks
-* Pause a connector instance
-* Delete a connector instance
+When you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster.
+You can then configure, monitor, and manage a running connector instance.
 
 {ProductName} provides two APIs for creating and managing connectors:
 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
 * Kafka Connect REST API
 
-NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks. You need to use the Kafka Connect REST API to do this.
+Using the APIs, you can:
+
+* Check the status of a connector instance
+* Reconfigure a running connector
+* Increase or decrease the number of tasks for a connector instance
+* Restart failed tasks (not supported by `KafkaConnector` resource)
+* Pause a connector instance
+* Resume a previously paused connector instance
+* Delete a connector instance
 
 == `KafkaConnector` resources
 
