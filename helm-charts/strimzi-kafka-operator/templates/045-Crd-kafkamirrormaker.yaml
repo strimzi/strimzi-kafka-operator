@@ -27,6 +27,8 @@ spec:
     plural: kafkamirrormakers
     shortNames:
     - kmm
+    categories:
+    - strimzi
   additionalPrinterColumns:
   - name: Desired replicas
     description: The desired number of Kafka Mirror Maker replicas

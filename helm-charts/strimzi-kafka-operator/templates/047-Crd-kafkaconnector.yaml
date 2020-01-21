@@ -24,6 +24,8 @@ spec:
     plural: kafkaconnectors
     shortNames:
     - kctr
+    categories:
+    - strimzi
   subresources:
     status: {}
   validation:

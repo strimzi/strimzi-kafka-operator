@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.CRD_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -37,7 +38,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaMirrorMaker.RESOURCE_KIND,
                         plural = KafkaMirrorMaker.RESOURCE_PLURAL,
-                        shortNames = {KafkaMirrorMaker.SHORT_NAME}
+                        shortNames = {KafkaMirrorMaker.SHORT_NAME},
+                        categories = {CRD_CATEGORY}
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,

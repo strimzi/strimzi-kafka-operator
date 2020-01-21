@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.CRD_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -40,7 +41,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaConnectS2I.RESOURCE_KIND,
                         plural = KafkaConnectS2I.RESOURCE_PLURAL,
-                        shortNames = {KafkaConnectS2I.SHORT_NAME}
+                        shortNames = {KafkaConnectS2I.SHORT_NAME},
+                        categories = {CRD_CATEGORY}
                 ),
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
