@@ -43,7 +43,7 @@ import static java.util.Collections.singletonList;
 public class Crds {
 
     public static final String CRD_KIND = "CustomResourceDefinition";
-    public static final String CRD_CATEGORY = "strimzi";
+    public static final String STRIMZI_CATEGORY = "strimzi";
 
     @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
