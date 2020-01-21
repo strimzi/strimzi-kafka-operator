@@ -13,8 +13,8 @@ Plain listeners are not recommended.
 If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection works using the default settings.
 Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
 
-. <<example-1, Configuring fast local JWT token validation>>
-. <<example-2, Configuring token validation using an introspection endpoint>>
+* xref:example-1[Configuring fast local JWT token validation]
+* xref:example-2[Configuring token validation using an introspection endpoint]
 
 .Before you start
 
