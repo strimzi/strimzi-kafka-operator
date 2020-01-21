@@ -48,15 +48,9 @@ public class StUtils {
         LOGGER.info("Waiting for reconciliation");
         String reconciliation = timeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
         TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 30000,
-            () -> {
-                LOGGER.info("Logging reconciliation for time {}", timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation));
-                LOGGER.info("Reconciliation log:\n{}", cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
-                        timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                        "'Triggering periodic reconciliation for namespace " + namespace + "'"));
-                return !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
                 timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty();
-            });
+                "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
         timeMeasuringSystem.stopOperation(reconciliation);
     }
 
