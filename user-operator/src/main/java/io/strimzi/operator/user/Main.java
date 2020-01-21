@@ -26,6 +26,7 @@ import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,6 +69,9 @@ public class Main {
 
     static Future<String> run(Vertx vertx, KubernetesClient client, SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
         printEnvInfo();
+        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
+        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
+
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
