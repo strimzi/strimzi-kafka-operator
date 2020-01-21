@@ -6,7 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-git import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRouteBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
