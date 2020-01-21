@@ -6,31 +6,31 @@
 = Configuring your own Kafka listener certificates
 
 You can provide and configure your own Kafka listener certificates and public keys.
-These server certificates can be signed by an external Certificate Authority (CA), such as your company's internal CA or a public CA, rather than the internal cluster CA or clients CA.
-Configuring Kafka listener certificates is supported for two types of listeners:
+This is supported for two types of listeners:
 
 * TLS listeners for inter-cluster communication
 
-* External listeners (including `route`, `loadbalancer`, `ingress`, and `nodeport` types), which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
+* External listeners (`route`, `loadbalancer`, `ingress`, and `nodeport` types) which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
 
 .Prerequisites
 
-* A Kubernetes cluster.
-* The Cluster Operator is running.
-* Public key of the external CA.  
-* Your own X.509 certificate in PEM format signed by the external CA.
+* A Kubernetes cluster
+* The Cluster Operator is running
+* Public key of the external CA
+* Your own X.509 server certificate in PEM format signed by an external CA, such as your company's private CA or a public CA
 
 .Procedure
 
-. Create a `Secret` containing your public key and certificate:
+. Create a `Secret` containing your public key and server certificate:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl create secret generic _my-secret_ --from-file=_my-listener-key.key_ --from-file=_my-listener-certificate.crt_
 ----
-Installinge file, and public key file in the `configuration.brokerCertChainAndKey` property.
+
+. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and public key file in the `configuration.brokerCertChainAndKey` property.
 +
-.Example configuration for a `loadbalancer` external listener with TLS authentication
+.Example configuration for a `loadbalancer` external listener with TLS encryption enabled
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -73,10 +73,14 @@ listeners:
 kubectl apply -f _kafka.yaml_
 ----
 +
-The Cluster Operator starts a rolling update of the Kafka cluster, which updates the configuration of the listener.
+The Cluster Operator starts a rolling update of the Kafka cluster, which updates the configuration of the listeners.
 +
-NOTE: A rolling update is also started if you update a certificate in a `Secret` that is used by a TLS or external listener.
+NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a TLS or external listener.
 
 .Additional resources
+
+* xref:kafka-listener-certificates-{context}[] 
+
+* xref:type-KafkaListeners-reference[]
 
 * xref:installing-your-own-ca-certificates-{context}[] 

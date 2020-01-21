@@ -27,18 +27,7 @@ You can provide your own CA certificates for the cluster CA or clients CA.
 For more information, see xref:installing-your-own-ca-certificates-{context}[].
 If you provide your own certificates, you must manually renew them when needed.
 
-.Kafka listener certificates
-
-In order to connect to external systems, your client applications might need to trust server certificates that were issued by an external CA, such as your company's private CA, or a public CA.
-To support this requirement, {ProductName} allows you to provide your own _Kafka listener certificates_ for external listeners which have TLS encryption enabled.
-Your Kafka client applications will connect to Kafka brokers using these server certificates rather than certificates signed by the cluster CA or clients CAs.
-You can also provide your own Kafka listener certificates for TLS listeners.
-
-For more information, see xref:proc-installing-certs-per-listener-{context}[].
-
-You must manually renew Kafka listener certificates when needed.
-
-== Validity periods
+== Validity periods of CA certificates
 
 CA certificate validity periods are expressed as a number of days after certificate generation.
 You can configure the validity period of:

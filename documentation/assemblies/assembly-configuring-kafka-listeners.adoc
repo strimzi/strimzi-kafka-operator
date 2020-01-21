@@ -12,17 +12,17 @@
 You can configure the listeners enabled in Kafka brokers.
 The following types of listeners are supported:
 
-* Plain listener on port 9092 (without encryption)
-* TLS listener on port 9093 (with encryption)
+* Plain listener on port 9092 (without TLS encryption)
+* TLS listener on port 9093 (with TLS encryption)
 * External listener on port 9094 for access from outside of Kubernetes
 
 .{oauth}
 If you are using {oauth} token based authentication, you can configure the listeners to connect to your authorization server.
 For more information, see xref:assembly-oauth-str[Using {oauth} token based authentication].
 
-.External certificates
-You can install your own Kafka listener certificates issued by an external Certificate Authority (CA).
-For more information, see xref:proc-installing-certs-per-listener-str[].
+.Listener certificates
+You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled. 
+For more information, see xref:kafka-listener-certificates-str[].
 
 include::../modules/con-kafka-listeners.adoc[leveloffset=+1]
 
