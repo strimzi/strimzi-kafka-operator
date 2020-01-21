@@ -375,7 +375,7 @@ public class KafkaUserOperatorTest {
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
-        op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME)).setHandler(res -> {
+        op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), Optional.ofNullable(ResourceUtils.createKafkaUserTls())).setHandler(res -> {
             context.verify(() -> assertThat(res.succeeded(), is(true)));
 
             List<String> capturedNames = secretNameCaptor.getAllValues();
@@ -668,7 +668,7 @@ public class KafkaUserOperatorTest {
                 return h;
             }
             @Override
-            public Future<Boolean> delete(Reconciliation reconciliation) {
+            public Future<Boolean> delete(Reconciliation reconciliation, Optional<KafkaUser> resource) {
                 deleted.add(reconciliation.name());
                 async.countDown();
                 return Future.succeededFuture(Boolean.TRUE);

@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -25,7 +24,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.model.KafkaUserModel;
-import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -36,12 +34,14 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static io.strimzi.operator.user.model.KafkaUserModel.FINALIZER;
 
 /**
  * Operator for a Kafka Users.
@@ -82,7 +82,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              KafkaUserQuotasOperator kafkaUserQuotasOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
-        super(vertx, "User", crdOperator);
+        super(vertx, "User", crdOperator, Optional.of(FINALIZER));
         this.certManager = certManager;
         Map<String, String> matchLabels = labels.toMap();
         this.selector = matchLabels.isEmpty() ? Optional.empty() : Optional.of(new LabelSelector(null, matchLabels));
@@ -103,11 +103,9 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return CompositeFuture.join(super.allResourceNames(namespace),
-                invokeAsync(aclOperations::getUsersWithAcls),
                 invokeAsync(scramShaCredentialOperator::list)).map(compositeFuture -> {
                     Set<NamespaceAndName> names = compositeFuture.resultAt(0);
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
-                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));
                     return names;
                 });
     }
@@ -149,7 +147,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String userName = reconciliation.name();
+        String userName = KafkaUserModel.getUserName(reconciliation.name(), resource.getSpec().getAuthentication());
         KafkaUserModel user;
         KafkaUserStatus userStatus = new KafkaUserStatus();
         try {
@@ -169,29 +167,11 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
             password = new String(Base64.getDecoder().decode(desired.getData().get("password")), StandardCharsets.US_ASCII);
         }
 
-        Set<SimpleAclRule> tlsAcls = null;
-        Set<SimpleAclRule> scramOrNoneAcls = null;
-        KafkaUserQuotas newQuotasTls = null;
-        KafkaUserQuotas newQuotasPlain = null;
-
-        if (user.isTlsUser())   {
-            tlsAcls = user.getSimpleAclRules();
-            newQuotasTls = user.getQuotas();
-            newQuotasPlain = null;
-        } else if (user.isScramUser() || user.isNoneUser())  {
-            scramOrNoneAcls = user.getSimpleAclRules();
-            newQuotasTls = null;
-            newQuotasPlain = user.getQuotas();
-        }
-
-
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), newQuotasTls),
-                kafkaUserQuotasOperator.reconcile(user.getName(), newQuotasPlain),
+                kafkaUserQuotasOperator.reconcile(userName, user.getQuotas()),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
-                aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
-                aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
+                aclOperations.reconcile(userName, user.getSimpleAclRules()))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getUserName());
@@ -283,17 +263,18 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      * @reutrn A Future
      */
     @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String user = reconciliation.name();
-        log.debug("{}: Deleting User", reconciliation, user, namespace);
-        return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
-                aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
-                aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(user), null),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(user), null),
-                scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null))
-            .map(Boolean.TRUE);
+    protected Future<Boolean> delete(Reconciliation reconciliation, Optional<KafkaUser> resource) {
+        if (resource.isPresent()) {
+            String namespace = reconciliation.namespace();
+            String userName = KafkaUserModel.getUserName(reconciliation.name(), resource.get().getSpec().getAuthentication());
+            log.debug("{}: Deleting User", reconciliation, userName, namespace);
+            return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(userName), null),
+                    aclOperations.reconcile(userName, null),
+                    kafkaUserQuotasOperator.reconcile(userName, null),
+                    scramShaCredentialOperator.reconcile(userName, null))
+                    .map(Boolean.TRUE);
+        } else {
+            return Future.succeededFuture(Boolean.TRUE);
+        }
     }
-
 }

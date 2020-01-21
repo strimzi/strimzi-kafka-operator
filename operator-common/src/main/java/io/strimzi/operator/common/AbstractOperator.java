@@ -13,6 +13,7 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -22,6 +23,8 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -36,7 +39,7 @@ import static io.strimzi.operator.common.Util.async;
  * <ul>
  * <li>uses the Fabric8 kubernetes API and implements
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, HasMetadata)}
- * and {@link #delete(Reconciliation)} methods for subclasses to implement.
+ * and {@link #delete(Reconciliation, Optional)} methods for subclasses to implement.
  * 
  * <li>add support for operator-side {@linkplain #validate(HasMetadata) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
@@ -58,11 +61,20 @@ public abstract class AbstractOperator<
     protected final Vertx vertx;
     protected final S resourceOperator;
     private final String kind;
+    private final Optional<String> finalizerName;
+
+    public AbstractOperator(Vertx vertx, String kind, S resourceOperator, Optional<String> finalizerName) {
+        this.vertx = vertx;
+        this.kind = kind;
+        this.resourceOperator = resourceOperator;
+        this.finalizerName =  finalizerName;
+    }
 
     public AbstractOperator(Vertx vertx, String kind, S resourceOperator) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
+        this.finalizerName =  Optional.empty();
     }
 
     @Override
@@ -99,9 +111,10 @@ public abstract class AbstractOperator<
      * Such operators should return a Future which completes with {@code false}.
      * Operators which handle deletion themselves should return a Future which completes with {@code true}.
      * @param reconciliation
+     * @param resource
      * @return
      */
-    protected abstract Future<Boolean> delete(Reconciliation reconciliation);
+    protected abstract Future<Boolean> delete(Reconciliation reconciliation, Optional<T> resource);
 
     /**
      * Reconcile assembly resources in the given namespace having the given {@code name}.
@@ -119,24 +132,25 @@ public abstract class AbstractOperator<
             T cr = resourceOperator.get(namespace, name);
             if (cr != null) {
                 validate(cr);
-                log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
-                return createOrUpdate(reconciliation, cr).recover(createResult -> {
-                    log.error("{}: createOrUpdate failed", reconciliation, createResult);
-                    return Future.failedFuture(createResult);
+                String deletionTimestamp = Optional.ofNullable(cr.getMetadata().getDeletionTimestamp()).orElse("");
+                List<String> finalizers = Optional.ofNullable(cr.getMetadata().getFinalizers()).orElse(new ArrayList<String>());
+
+                return mayAddFinalizer(deletionTimestamp, finalizers, reconciliation, cr).compose(r -> {
+                    if (deletionTimestamp.isEmpty()) {
+                        log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
+                        return createOrUpdate(reconciliation, cr).recover(createResult -> {
+                            log.error("{}: createOrUpdate failed", reconciliation, createResult);
+                            return Future.failedFuture(createResult);
+                        });
+                    } else {
+                        return deleteOperation(reconciliation, cr, kind).compose(result -> {
+                            cr.getMetadata().getFinalizers().remove(finalizerName.orElse(""));
+                            return resourceOperator.createOrUpdate(cr).mapEmpty();
+                        });
+                    }
                 });
             } else {
-                log.info("{}: {} {} should be deleted", reconciliation, kind, name);
-                return delete(reconciliation).map(deleteResult -> {
-                    if (deleteResult) {
-                        log.info("{}: {} {} deleted", reconciliation, kind, name);
-                    } else {
-                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
-                    }
-                    return (Void) null;
-                }).recover(deleteResult -> {
-                    log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
-                    return Future.failedFuture(deleteResult);
-                });
+                return deleteOperation(reconciliation, cr, kind);
             }
         });
         Promise<Void> result = Promise.promise();
@@ -145,6 +159,32 @@ public abstract class AbstractOperator<
             result.handle(reconcileResult);
         });
         return result.future();
+    }
+
+    protected final Future<ReconcileResult<T>> mayAddFinalizer(String deletionTimestamp, List<String> finalizers, Reconciliation reconciliation, T cr) {
+        if (deletionTimestamp.isEmpty() && finalizerName.isPresent() && !finalizers.contains(finalizerName.orElse(""))) {
+            log.info("add Finalizer {} to {}: {} {}", finalizerName, reconciliation, kind, reconciliation.name());
+            cr.getMetadata().getFinalizers().add(finalizerName.get());
+            return resourceOperator.createOrUpdate(cr);
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    protected final Future<Void> deleteOperation(Reconciliation reconciliation, T cr, String kind) {
+        String name = reconciliation.name();
+        log.info("{}: {} {} should be deleted", reconciliation, kind, name);
+        return delete(reconciliation, Optional.ofNullable(cr)).map(deleteResult -> {
+            if (deleteResult) {
+                log.info("{}: {} {} deleted", reconciliation, kind, name);
+            } else {
+                log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
+            }
+            return (Void) null;
+        }).recover(deleteResult -> {
+            log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
+            return Future.failedFuture(deleteResult);
+        });
     }
 
     /**

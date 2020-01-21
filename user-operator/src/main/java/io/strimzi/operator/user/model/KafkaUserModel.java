@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthenticationExternalCa;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
@@ -44,6 +45,7 @@ public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
     public static final String KEY_PASSWORD = "password";
+    public static final String FINALIZER = "io.strimzi.api.kafka.model.kafka_user";
 
     protected final String namespace;
     protected final String name;
@@ -305,6 +307,26 @@ public class KafkaUserModel {
     }
 
     /**
+     * Generates the name of the User secret based on the username
+     *
+     * @param username The username.
+     * @return The TLS user name.
+     */
+//    public static String getTlsUserName(String username)    {
+//        return "CN=" + username;
+//    }
+
+    /**
+     * Generates the name of the User secret based on the username
+     *
+     * @param username The username.
+     * @return The TLS user name.
+     */
+    public static String getTlsUserName(String username)    {
+        return "CN=" + username;
+    }
+
+    /**
      * Decodes the name of the User secret based on the username
      *
      * @param username The username.
@@ -328,22 +350,28 @@ public class KafkaUserModel {
      * Generates the name of the User secret based on the username
      *
      * @param username The username.
-     * @return The TLS user name.
-     */
-    public static String getTlsUserName(String username)    {
-        return "CN=" + username;
-    }
-
-    /**
-     * Generates the name of the User secret based on the username
-     *
-     * @param username The username.
      * @return The SCRAM user name.
      */
     public static String getScramUserName(String username)    {
         return username;
     }
 
+    /**
+     * Gets the Username
+     *
+     * @param username The username.
+     * @param authentication KafkaUserAuthentication.
+     * @return The user name.
+     */
+    public static String getUserName(String username, KafkaUserAuthentication authentication)    {
+        if (authentication instanceof KafkaUserTlsClientAuthenticationExternalCa) {
+            return ((KafkaUserTlsClientAuthenticationExternalCa) authentication).getName();
+        } else if (authentication instanceof KafkaUserTlsClientAuthentication) {
+            return "CN=" + username;
+        } else {
+            return username;
+        }
+    }
     /**
      * Gets the Username
      *
@@ -357,6 +385,15 @@ public class KafkaUserModel {
         } else {
             return getName();
         }
+    }
+    /**
+     * Generates the name of the User secret based on the username
+     *
+     * @param username The username.
+     * @return The SCRAM user name.
+     */
+    public static String getTlsUserNameFromExeternalCa(String username)    {
+        return username;
     }
 
     /**

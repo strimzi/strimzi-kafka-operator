@@ -31,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -92,7 +93,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
+    protected Future<Boolean> delete(Reconciliation reconciliation, Optional<T> resource) {
         return Future.succeededFuture(Boolean.FALSE);
     }
 

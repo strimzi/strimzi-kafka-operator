@@ -42,11 +42,14 @@ spec:
             authentication:
               type: object
               properties:
+                name:
+                  type: string
                 type:
                   type: string
                   enum:
                   - tls
                   - scram-sha-512
+                  - tls-external-ca
               required:
               - type
             authorization:

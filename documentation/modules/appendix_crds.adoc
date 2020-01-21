@@ -1885,8 +1885,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Property               |Description
-|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
+|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, tls-external-ca].
+|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`], xref:type-KafkaUserTlsClientAuthenticationExternalCa-{context}[`KafkaUserTlsClientAuthenticationExternalCa`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |quotas          1.2+<.<|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
@@ -1899,7 +1899,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`], xref:type-KafkaUserTlsClientAuthenticationExternalCa-{context}[`KafkaUserTlsClientAuthenticationExternalCa`].
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 [options="header"]
 |====
@@ -1914,12 +1914,29 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaUserScramSha512ClientAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserScramSha512ClientAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsClientAuthenticationExternalCa-{context}[`KafkaUserTlsClientAuthenticationExternalCa`].
 It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
 [options="header"]
 |====
 |Property     |Description
 |type  1.2+<.<|Must be `scram-sha-512`.
+|string
+|====
+
+[id='type-KafkaUserTlsClientAuthenticationExternalCa-{context}']
+### `KafkaUserTlsClientAuthenticationExternalCa` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthenticationExternalCa` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+It must have the value `tls-external-ca` for the type `KafkaUserTlsClientAuthenticationExternalCa`.
+[options="header"]
+|====
+|Property     |Description
+|name  1.2+<.<|Authentication CN name.
+|string
+|type  1.2+<.<|Must be `tls-external-ca`.
 |string
 |====
 
