@@ -1424,6 +1424,11 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (authorization instanceof KafkaAuthorizationKeycloak) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
+        }
+
         return volumeList;
     }
 
