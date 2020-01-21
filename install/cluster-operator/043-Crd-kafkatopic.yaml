@@ -22,6 +22,8 @@ spec:
     plural: kafkatopics
     shortNames:
     - kt
+    categories:
+    - strimzi
   additionalPrinterColumns:
   - name: Partitions
     description: The desired number of partitions in the topic

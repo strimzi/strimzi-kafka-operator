@@ -16,7 +16,7 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 
-@Crd(apiVersion = "v1beta1", spec = @Crd.Spec(group = "strimzi.io", names = @Crd.Spec.Names(kind = "Topic", plural = "topics"), scope = "Namespaced", version = "v1alpha1"))
+@Crd(apiVersion = "v1beta1", spec = @Crd.Spec(group = "strimzi.io", names = @Crd.Spec.Names(kind = "Topic", plural = "topics", categories = "strimzi"), scope = "Namespaced", version = "v1alpha1"))
 public class TopicCrd extends CustomResource {
 
     public String name;

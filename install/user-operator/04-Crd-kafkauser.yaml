@@ -22,6 +22,8 @@ spec:
     plural: kafkausers
     shortNames:
     - ku
+    categories:
+    - strimzi
   additionalPrinterColumns:
   - name: Authentication
     description: How the user is authenticated

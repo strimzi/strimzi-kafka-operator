@@ -283,6 +283,10 @@ public class CrdGenerator {
         if (names.shortNames().length > 0) {
             result.set("shortNames", stringArray(asList(names.shortNames())));
         }
+
+        if (names.categories().length > 0) {
+            result.set("categories", stringArray(asList(names.categories())));
+        }
         return result;
     }
 

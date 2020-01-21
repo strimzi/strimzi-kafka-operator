@@ -27,7 +27,8 @@ import java.util.Map;
         group = "crdgenerator.strimzi.io",
         names = @Crd.Spec.Names(
             kind = "Example",
-            plural = "examples"),
+            plural = "examples",
+            categories = {"strimzi"}),
         scope = "Namespaced",
         version = "v1alpha1",
     versions = {

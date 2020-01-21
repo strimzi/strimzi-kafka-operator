@@ -24,6 +24,8 @@ spec:
     listKind: "ExampleList"
     singular: "example"
     plural: "examples"
+    categories:
+    - "strimzi"
   additionalPrinterColumns:
   - name: "Foo"
     description: "The foo"

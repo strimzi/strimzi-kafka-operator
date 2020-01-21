@@ -24,6 +24,8 @@ spec:
     plural: kafkabridges
     shortNames:
     - kb
+    categories:
+    - strimzi
   additionalPrinterColumns:
   - name: Desired replicas
     description: The desired number of Kafka Bridge replicas

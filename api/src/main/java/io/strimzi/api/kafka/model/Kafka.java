@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -37,7 +38,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = Kafka.RESOURCE_KIND,
                         plural = Kafka.RESOURCE_PLURAL,
-                        shortNames = {Kafka.SHORT_NAME}
+                        shortNames = {Kafka.SHORT_NAME},
+                        categories = {STRIMZI_CATEGORY}
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
