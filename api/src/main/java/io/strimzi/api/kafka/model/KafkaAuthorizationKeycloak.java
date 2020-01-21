@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -48,7 +49,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     }
 
     @Description("OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public String getClientId() {
         return clientId;
     }
@@ -58,7 +59,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     }
 
     @Description("Authorization server token endpoint URI.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public String getTokenEndpointUri() {
         return tokenEndpointUri;
     }
