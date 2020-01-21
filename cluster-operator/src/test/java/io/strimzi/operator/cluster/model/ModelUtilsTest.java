@@ -24,7 +24,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -279,51 +278,18 @@ public class ModelUtilsTest {
 
     @Test
     public void testCreateEmptyDirVolumeWithSizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
         Volume volume = ModelUtils.createEmptyDirVolume("bar", "1Gi");
         assertThat(volume.getEmptyDir().getSizeLimit().getAmount(), is("1Gi"));
     }
 
     @Test
     public void testCreateEmptyDirVolumeWithNullSizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
         Volume volume = ModelUtils.createEmptyDirVolume("bar", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
     @Test
     public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
         Volume volume = ModelUtils.createEmptyDirVolume("bar", "");
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
