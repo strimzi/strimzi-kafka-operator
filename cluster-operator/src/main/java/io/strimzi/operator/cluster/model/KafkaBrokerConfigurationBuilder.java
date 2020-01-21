@@ -411,9 +411,9 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authz.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {
-                writer.println("strimzi.authz.ssl.truststore.location=\"/tmp/kafka/authz-keycloak.truststore.p12\"");
-                writer.println("strimzi.authz.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\"");
-                writer.println("strimzi.authz.ssl.truststore.type=\"PKCS12\"");
+                writer.println("strimzi.authz.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
+                writer.println("strimzi.authz.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+                writer.println("strimzi.authz.ssl.truststore.type=PKCS12");
                 writer.println("strimzi.authz.ssl.secure.random.implementation=SHA1PRNG");
                 String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
                 if (keycloakAuthz.isDisableTlsHostnameVerification()) {

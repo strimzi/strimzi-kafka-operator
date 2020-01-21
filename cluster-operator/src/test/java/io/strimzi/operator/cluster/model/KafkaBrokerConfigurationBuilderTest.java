@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
@@ -97,7 +98,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testAuthorizationWithSuperUsers()  {
+    public void testSimpleAuthorizationWithSuperUsers()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
@@ -111,7 +112,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testAuthorizationWithoutSuperUsers()  {
+    public void testSimpleAuthorizationWithoutSuperUsers()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .build();
 
@@ -121,6 +122,40 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi"));
+    }
+
+    @Test
+    public void testKeycloakAuthorization() {
+        CertSecretSource cert = new CertSecretSourceBuilder()
+                .withNewSecretName("my-secret")
+                .withNewCertificate("my.crt")
+                .build();
+
+        KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
+                .withTokenEndpointUri("http://token-endpoint-uri")
+                .withClientId("my-client-id")
+                .withDelegateToKafkaAcls(false)
+                .withTlsTrustedCertificates(cert)
+                .withDisableTlsHostnameVerification(true)
+                .addToSuperUsers("giada", "CN=paccu")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
+                "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
+                "strimzi.authz.token.endpoint.uri=http://token-endpoint-uri\n" +
+                "strimzi.authz.client.id=my-client-id\n" +
+                "strimzi.authz.delegate.to.kafka.acl=false\n" +
+                "strimzi.authz.kafka.cluster.name=my-cluster\n" +
+                "strimzi.authz.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
+                "strimzi.authz.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "strimzi.authz.ssl.truststore.type=PKCS12\n" +
+                "strimzi.authz.ssl.secure.random.implementation=SHA1PRNG\n" +
+                "strimzi.authz.ssl.endpoint.identification.algorithm=\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 
     @Test

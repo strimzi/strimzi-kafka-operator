@@ -33,6 +33,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
@@ -3221,5 +3222,84 @@ public class KafkaClusterTest {
         assertThat(k.getSecretSourceTls().getSecretName(), is(secret));
         assertThat(k.getSecretSourceTls().getKey(), is(key));
         assertThat(k.getSecretSourceTls().getCertificate(), is(cert));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                    image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                    .editSpec()
+                    .editKafka()
+                    .withAuthorization(
+                            new KafkaAuthorizationKeycloakBuilder()
+                                    .build())
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testGenerateDeploymentWithKeycloakAuthorization() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                    .withNewPlain()
+                        .withAuth(
+                                new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withIntrospectionEndpointUri("http://introspection")
+                                        .withNewClientSecret()
+                                            .withSecretName("my-secret-secret")
+                                            .withKey("my-secret-key")
+                                        .endClientSecret()
+                                        .withDisableTlsHostnameVerification(true)
+                                        .withTlsTrustedCertificates(cert1, cert2)
+                                        .build())
+                    .endPlain()
+                .endListeners()
+                .withAuthorization(
+                        new KafkaAuthorizationKeycloakBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://token-endpoint-uri")
+                                .withDisableTlsHostnameVerification(true)
+                                .withDelegateToKafkaAcls(false)
+                                .withTlsTrustedCertificates(cert1, cert2)
+                                .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        // Volume mounts
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-0".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate-0"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-1".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate-1"));
+
+        // Volumes
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca.crt"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
     }
 }
