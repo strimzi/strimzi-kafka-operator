@@ -450,7 +450,7 @@ class KafkaST extends MessagingBaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionIsReady(CLUSTER_NAME);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -713,7 +713,7 @@ class KafkaST extends MessagingBaseST {
         //Updating first topic using pod CLI
         KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, "my-topic", 2);
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionIsReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
@@ -727,7 +727,7 @@ class KafkaST extends MessagingBaseST {
             topic.getSpec().setPartitions(2);
         });
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionIsReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
@@ -1784,7 +1784,7 @@ class KafkaST extends MessagingBaseST {
 
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionIsReady(CLUSTER_NAME);
 
         pvcs = kubeClient().listPersistentVolumeClaims();
 

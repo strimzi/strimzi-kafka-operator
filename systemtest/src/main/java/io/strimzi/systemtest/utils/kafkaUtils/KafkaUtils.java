@@ -26,24 +26,28 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitUntilKafkaCRIsReady(String clusterName) {
+    public static void waitUntilKafkaStatusConditionIsReady(String clusterName) {
         LOGGER.info("Waiting till Kafka CR will be ready");
-        Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
 
         TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->   condition.getType().equals("Ready") && condition.getStatus().equals("True")
+            () ->  {
+                Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
+                return condition.getType().equals("Ready") && condition.getStatus().equals("True");
+            }
         );
         LOGGER.info("Kafka CR will be ready");
     }
 
     public static void waitUntilKafkaStatusConditionIsNotReady(String clusterName) throws InterruptedException {
         LOGGER.info("Waiting till kafka resource status is not ready");
-        Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
 
         TestUtils.waitFor("Waiting for Kafka resource status is not ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->  condition.getType().equals("NotReady") && condition.getStatus().equals("True")
+            () ->  {
+                Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
+                return condition.getType().equals("NotReady") && condition.getStatus().equals("True");
+            }
         );
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         LOGGER.info("Kafka resource status is not ready");
     }
 
