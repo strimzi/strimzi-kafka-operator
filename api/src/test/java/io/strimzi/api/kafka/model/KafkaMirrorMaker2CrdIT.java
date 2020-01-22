@@ -6,14 +6,13 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -49,22 +48,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-missing-required-property.yaml");
             });
 
-
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                    containsStringIgnoringCase("spec.connectCluster in body is required"),
-                    containsStringIgnoringCase("spec.clusters.alias in body is required"),
-                    containsStringIgnoringCase("spec.mirrors.topics in body is required"),
-                    containsStringIgnoringCase("spec.mirrors.sourceCluster in body is required"),
-                    containsStringIgnoringCase("spec.mirrors.targetCluster in body is required")
-                ),
-                allOf(
-                    containsStringIgnoringCase("spec.connectCluster: Required value"),
-                    containsStringIgnoringCase("spec.clusters.alias: Required value"),
-                    containsStringIgnoringCase("spec.mirrors.topics: Required value"),
-                    containsStringIgnoringCase("spec.mirrors.sourceCluster: Required value"),
-                    containsStringIgnoringCase("spec.mirrors.targetCluster: Required value")
-                )));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.connectCluster", "spec.clusters.alias", "spec.mirrors.sourceCluster", "spec.mirrors.targetCluster");
     }
 
     @Test
@@ -96,14 +80,8 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
             () -> {
                 createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-tls-auth-with-missing-required.yaml");
             });
-
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.clusters.authentication.certificateAndKey.certificate in body is required"),
-                        containsStringIgnoringCase("spec.clusters.authentication.certificateAndKey.key in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.clusters.authentication.certificateAndKey.certificate: Required value"),
-                        containsStringIgnoringCase("spec.clusters.authentication.certificateAndKey.key: Required value"))));
+        
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.clusters.authentication.certificateAndKey", "spec.clusters.authentication.certificateAndKey");
     }
 
     @Test
@@ -129,9 +107,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-invalid-external-configuration.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom in body is required"),
-                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom: Required value")));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.externalConfiguration.env.valueFrom");
     }
 
     @BeforeAll

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -43,6 +44,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
 
     @Description("Alias used to reference the Kafka cluster.")
     @JsonProperty(required = true)
+    @Pattern("^[a-zA-Z0-9\\._\\-]{1,100}$")
     public String getAlias() {
         return alias;
     }

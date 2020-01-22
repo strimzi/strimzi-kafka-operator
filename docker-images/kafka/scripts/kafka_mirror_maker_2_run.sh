@@ -59,7 +59,4 @@ echo "Creating connector configuration:"
 ./kafka_mirror_maker_2_connector_config_generator.sh | tee /tmp/strimzi-mirrormaker2-connector.properties | sed -e 's/password=.*/password=[hidden]/g'
 echo ""
 
-# Include the file config provider in the Kafka Connect config
-export KAFKA_CONNECT_FILE_CONFIG_PROVIDER="true"
-
 ./kafka_connect_run.sh

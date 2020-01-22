@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
@@ -231,9 +232,10 @@ public class AuthenticationUtils {
     public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
         if (authentication != null) {
 
-            getClientAuthenticationProperties(authentication).entrySet().stream()
-                .forEach(entry -> varList.add(AbstractModel.buildEnvVar(envVarNamer.apply(entry.getKey()), entry.getValue())));
-
+            for (Entry<String, String> entry: getClientAuthenticationProperties(authentication).entrySet()) {
+                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply(entry.getKey()), entry.getValue()));
+            }
+            
             if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
 

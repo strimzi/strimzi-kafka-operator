@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +42,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -61,8 +60,7 @@ import io.vertx.core.Vertx;
  *     <li>A set of MirrorMaker 2.0 connectors</li>
  * </ul>
  */
-public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> {
-
+public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Status> {
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
@@ -84,7 +82,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
-    private static final String OAUTH_TRUSTSTORE_SUFFIX = "-oauth.truststore.p12";
     private static final String KEYSTORE_SUFFIX = ".keystore.p12";
     private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
@@ -176,8 +173,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     @Override
-    protected String getServiceName(String name) {
-        return KafkaMirrorMaker2Resources.serviceName(name);
+    protected String qualifiedServiceName(String name, String namespace) {
+        return KafkaMirrorMaker2Resources.qualifiedServiceName(name, namespace);
     }
 
     /**
@@ -192,9 +189,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             return maybeUpdateMirrorMaker2Status(reconciliation, kafkaMirrorMaker2,
                     new InvalidResourceException("spec property is required"));
         }
-        List<KafkaMirrorMaker2MirrorSpec> mirrors = Optional.ofNullable(kafkaMirrorMaker2.getSpec().getMirrors())
-                .orElse(Collections.emptyList());
-        String host = getServiceName(mirrorMaker2Name);
+        List<KafkaMirrorMaker2MirrorSpec> mirrors = ModelUtils.asListOrEmptyList(kafkaMirrorMaker2.getSpec().getMirrors());
+        String host = qualifiedServiceName(mirrorMaker2Name, reconciliation.namespace());
         KafkaConnectApi apiClient = getKafkaConnectApi();
         return apiClient.list(host, KafkaConnectCluster.REST_API_PORT).compose(deleteMirrorMaker2ConnectorNames -> {
 
@@ -223,8 +219,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             return maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2,
                     new InvalidResourceException("sourceCluster property is required"));
         }
-        List<KafkaMirrorMaker2ClusterSpec> clusters = Optional.ofNullable(mirrorMaker2.getSpec().getClusters())
-            .orElse(Collections.emptyList());
+        List<KafkaMirrorMaker2ClusterSpec> clusters = ModelUtils.asListOrEmptyList(mirrorMaker2.getSpec().getClusters());
         Map<String, KafkaMirrorMaker2ClusterSpec> clusterMap = clusters.stream()
             .filter(cluster -> targetClusterAlias.equals(cluster.getAlias()) || sourceClusterAlias.equals(cluster.getAlias()))
             .collect(Collectors.toMap(KafkaMirrorMaker2ClusterSpec::getAlias, Function.identity()));
@@ -264,9 +259,17 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         addClusterToMirrorMaker2ConnectorConfig(config, targetCluster, TARGET_CLUSTER_PREFIX);
         addClusterToMirrorMaker2ConnectorConfig(config, sourceCluster, SOURCE_CLUSTER_PREFIX);
 
-        config.put("topics", mirror.getTopics());
-        if (mirror.getGroups() != null) {
-            config.put("groups", mirror.getGroups());
+        if (mirror.getTopicsPattern() != null) {
+            config.put("topics", mirror.getTopicsPattern());
+        }
+        if (mirror.getTopicsBlacklistPattern() != null) {
+            config.put("topics.blacklist", mirror.getTopicsBlacklistPattern());
+        }
+        if (mirror.getGroupsPattern() != null) {
+            config.put("groups", mirror.getGroupsPattern());
+        }
+        if (mirror.getGroupsBlacklistPattern() != null) {
+            config.put("groups.blacklist", mirror.getGroupsBlacklistPattern());
         }
         config.putAll(mirror.getAdditionalProperties());
         return connectorSpec;

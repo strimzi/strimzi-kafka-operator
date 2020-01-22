@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2SpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Tls;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
@@ -78,10 +79,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion()));
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(spec.getConfig().entrySet())); 
 
-        List<KafkaMirrorMaker2ClusterSpec> clustersList = Optional.ofNullable(spec.getClusters())
-                .orElse(Collections.emptyList());
+        List<KafkaMirrorMaker2ClusterSpec> clustersList = ModelUtils.asListOrEmptyList(spec.getClusters());
         cluster.setClusters(clustersList);
 
+        KafkaMirrorMaker2SpecBuilder specBuilder = new KafkaMirrorMaker2SpecBuilder(spec);
         String connectClusterAlias = spec.getConnectCluster();
         if (connectClusterAlias != null) {
             KafkaMirrorMaker2ClusterSpec connectCluster = clustersList.stream()
@@ -89,8 +90,17 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));     
 
-            spec.setBootstrapServers(connectCluster.getBootstrapServers());
-            spec.setAuthentication(connectCluster.getAuthentication());
+            Map<String, Object> connectConfig = new HashMap<>();
+            if (spec.getConfig() != null) {
+                connectConfig.putAll(spec.getConfig());
+            }
+            // Add the file config provider to allow the connectors to access the data from mounted secrets
+            connectConfig.put("config.providers", "file");
+            connectConfig.put("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+
+            specBuilder.withBootstrapServers(connectCluster.getBootstrapServers())
+                    .withAuthentication(connectCluster.getAuthentication())
+                    .withConfig(connectConfig);
 
             KafkaMirrorMaker2Tls mirrorMaker2ConnectClusterTls = connectCluster.getTls();
             if (mirrorMaker2ConnectClusterTls != null) {
@@ -98,11 +108,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 connectTls.setTrustedCertificates(mirrorMaker2ConnectClusterTls.getTrustedCertificates());
                 mirrorMaker2ConnectClusterTls.getAdditionalProperties().entrySet().stream()
                         .forEach(entry -> connectTls.setAdditionalProperty(entry.getKey(), entry.getValue()));
-                spec.setTls(connectTls);
+                specBuilder.withTls(connectTls);
             }
         }
 
-        return fromSpec(spec, versions, cluster);
+        return fromSpec(specBuilder.build(), versions, cluster);
     }
 
     @Override
@@ -272,7 +282,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     if (separator) {
                         clustersTrustedCerts.append(";");
                     }
-                    clustersTrustedCerts.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                    clustersTrustedCerts.append(certSecretSource.getSecretName());
+                    clustersTrustedCerts.append("/");
+                    clustersTrustedCerts.append(certSecretSource.getCertificate());
                     separator = true;
                 }
             }

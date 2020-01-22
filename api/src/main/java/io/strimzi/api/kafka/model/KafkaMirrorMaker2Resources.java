@@ -47,6 +47,17 @@ public class KafkaMirrorMaker2Resources {
     }
 
     /**
+     * Returns qualified name of the service which works across different namespaces.
+     *
+     * @param clusterName   The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
+     * @param namespace     Namespace of the Connect deployment
+     * @return              qualified namespace in the format "&lt;service-name&gt;.&lt;namespace&gt;.svc"
+     */
+    public static String qualifiedServiceName(String clusterName, String namespace) {
+        return serviceName(clusterName) + "." + namespace + ".svc";
+    }
+
+    /**
      * Returns the URL of the Kafka MirrorMaker 2.0 REST API for a {@code KafkaMirrorMaker2} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
      * @param namespace The namespace where {@code KafkaMirrorMaker2} cluster is running.

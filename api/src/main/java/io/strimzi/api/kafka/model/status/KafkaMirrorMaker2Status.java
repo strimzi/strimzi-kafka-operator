@@ -23,12 +23,12 @@ import lombok.ToString;
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
-public class KafkaMirrorMaker2Status extends Status {
+public class KafkaMirrorMaker2Status extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
 
     private String url;
 
-    @Description("The URL of the REST API endpoint for managing and monitoring the Kafka MirrorMaker 2.0 connectors.")
+    @Description("The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.")
     public String getUrl() {
         return url;
     }

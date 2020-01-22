@@ -1778,7 +1778,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-ConnectorPlugin-{context}']
 ### `ConnectorPlugin` schema reference
 
-Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
+Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
 
 
 [options="header"]
@@ -2506,7 +2506,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Property                      |Description
 |replicas               1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
-|connectCluster         1.2+<.<|The cluster alias used for Kafka Connect.
+|connectCluster         1.2+<.<|The cluster alias used for Kafka Connect. The alias must match a cluster in the list at spec.clusters.
 |string
 |config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
@@ -2594,20 +2594,24 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 [options="header"]
 |====
-|Property                    |Description
-|sourceCluster        1.2+<.<|The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.
+|Property                       |Description
+|sourceCluster           1.2+<.<|The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.
 |string
-|targetCluster        1.2+<.<|The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.
+|targetCluster           1.2+<.<|The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.
 |string
-|sourceConnector      1.2+<.<|The specification of the Kafka MirrorMaker 2.0 source connector. The connector class name is automatically set to `org.apache.kafka.connect.mirror.MirrorSourceConnector`.
+|sourceConnector         1.2+<.<|The specification of the Kafka MirrorMaker 2.0 source connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorSourceConnector`.
 |xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
-|checkpointConnector  1.2+<.<|The specification of the Kafka MirrorMaker 2.0 checkpoint connector. The connector class name is automatically set to `org.apache.kafka.connect.mirror.MirrorCheckpointConnector`.
+|checkpointConnector     1.2+<.<|The specification of the Kafka MirrorMaker 2.0 checkpoint connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorCheckpointConnector`.
 |xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
-|heartbeatConnector   1.2+<.<|The specification of the Kafka MirrorMaker 2.0 heartbeat connector. The connector class name is automatically set to `org.apache.kafka.connect.mirror.MirrorHeartbeatConnector`.
+|heartbeatConnector      1.2+<.<|The specification of the Kafka MirrorMaker 2.0 heartbeat connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorHeartbeatConnector`.
 |xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
-|topics               1.2+<.<|A regular expression matching the topics to be mirrored.
+|groupsBlacklistPattern  1.2+<.<|A regular expression matching the consumer groups to exclude from mirroring.
 |string
-|groups               1.2+<.<|A regular expression matching the consumer groups to be mirrored.
+|groupsPattern           1.2+<.<|A regular expression matching the consumer groups to be mirrored.
+|string
+|topicsBlacklistPattern  1.2+<.<|A regular expression matching the topics to exclude from mirroring.
+|string
+|topicsPattern           1.2+<.<|A regular expression matching the topics to be mirrored, e.g. "topic1\|topic2\|topic3". Comma-separated lists are also supported.
 |string
 |====
 
@@ -2624,7 +2628,9 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring the Kafka MirrorMaker 2.0 connectors.
+|url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
+|connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
+|xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |====
 

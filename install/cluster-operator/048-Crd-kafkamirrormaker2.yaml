@@ -675,6 +675,7 @@ spec:
                 properties:
                   alias:
                     type: string
+                    pattern: ^[a-zA-Z0-9\._\-]{1,100}$
                   bootstrapServers:
                     type: string
                   config:
@@ -831,14 +832,17 @@ spec:
                         type: object
                       pause:
                         type: boolean
-                  topics:
+                  groupsBlacklistPattern:
                     type: string
-                  groups:
+                  groupsPattern:
+                    type: string
+                  topicsBlacklistPattern:
+                    type: string
+                  topicsPattern:
                     type: string
                 required:
                 - sourceCluster
                 - targetCluster
-                - topics
             authentication:
               type: object
               properties:
@@ -1061,3 +1065,14 @@ spec:
               type: integer
             url:
               type: string
+            connectorPlugins:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  version:
+                    type: string
+                  class:
+                    type: string

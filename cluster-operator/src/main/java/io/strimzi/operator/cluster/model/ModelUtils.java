@@ -34,10 +34,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ModelUtils {
 
@@ -383,5 +385,10 @@ public class ModelUtils {
         }
 
         return false;
+    }
+
+    public static <T> List<T> asListOrEmptyList(List<T> list) {
+        return Optional.ofNullable(list)
+                .orElse(Collections.emptyList());
     }
 }

@@ -104,15 +104,6 @@ EOF
 )
 fi
 
-if [ "$KAFKA_CONNECT_FILE_CONFIG_PROVIDER" = "true" ]; then
-    FILE_CONFIG_PROVIDER=$(cat <<EOF
-# File config provider
-config.providers=file
-config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider
-EOF
-)
-fi
-
 # Write the config file
 cat <<EOF
 # Bootstrap servers
@@ -123,7 +114,6 @@ rest.advertised.host.name=$(hostname -I)
 rest.advertised.port=8083
 # Plugins
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}
-${FILE_CONFIG_PROVIDER}
 # Provided configuration
 ${KAFKA_CONNECT_CONFIGURATION}
 
