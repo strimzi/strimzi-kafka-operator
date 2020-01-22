@@ -21,7 +21,7 @@ And roles are used to match users based on their function.
 With {oauth-server}, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
 Storage and access to user data may be a factor in how you choose to configure authorization policies.
 
-NOTE: xref:ref-kafka-authorization-super-user[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on Kafka broker.
+NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on Kafka broker.
 
 .Prerequisites
 

@@ -28,7 +28,7 @@ authorization:
   type: simple
 # ...
 ----
-[id='ref-kafka-authorization-super-user']
+[id='ref-kafka-authorization-super-user-{context}']
 == Super users
 
 Super users can access all resources in your Kafka cluster regardless of any access restrictions defined in ACLs.
