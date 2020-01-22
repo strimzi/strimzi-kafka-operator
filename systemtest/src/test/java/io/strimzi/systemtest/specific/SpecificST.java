@@ -112,8 +112,10 @@ public class SpecificST extends MessagingBaseST {
 
     @Test
     @Tag(REGRESSION)
-    void testDeployUnsupportedKafka() throws InterruptedException {
+    void testDeployUnsupportedKafka() {
         String nonExistingVersion = "6.6.6";
+        String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported.";
+
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
@@ -121,13 +123,15 @@ public class SpecificST extends MessagingBaseST {
                     .endKafka()
                 .endSpec().build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionIsNotReady(CLUSTER_NAME);
+        LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
+
+        KafkaUtils.waitUntilKafkaStatusConditionIsNotReady(CLUSTER_NAME, nonExistingVersionMessage);
 
         Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(
                 condition,
-                "Version " + nonExistingVersion + " is not supported.",
+                nonExistingVersionMessage,
                 "InvalidResourceException",
                 "True",
                 "NotReady");
