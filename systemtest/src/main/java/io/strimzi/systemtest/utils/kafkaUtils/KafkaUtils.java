@@ -39,16 +39,16 @@ public class KafkaUtils {
     }
 
     public static void waitUntilKafkaStatusConditionIsNotReady(String clusterName, String message) {
-        LOGGER.info("Waiting till kafka resource status is not ready");
+        LOGGER.info("Waiting till kafka resource status is not ready with message:{}", message);
 
-        TestUtils.waitFor("Waiting for Kafka resource status is not ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Waiting for Kafka resource status is not ready with message:" + message, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () ->  {
                 Condition condition = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
                 LOGGER.info("Type:{}, Status:{}, Message:{}", condition.getType(), condition.getStatus(), condition.getMessage());
                 return condition.getType().equals("NotReady") && condition.getStatus().equals("True") && condition.getMessage().contains(message);
             }
         );
-        LOGGER.info("Kafka resource status is not ready");
+        LOGGER.info("Kafka resource status is not ready with message:{}", message);
     }
 
     public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
