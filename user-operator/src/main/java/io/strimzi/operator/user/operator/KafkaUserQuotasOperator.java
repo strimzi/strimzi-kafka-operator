@@ -195,9 +195,7 @@ public class KafkaUserQuotasOperator {
         return false;
     }
 
-    private boolean jsonConfigEmpty(byte[] data) {
-        String jsonString = new String(data, StandardCharsets.UTF_8);
-        JsonObject json = new JsonObject(jsonString);
+    private boolean configJsonIsEmpty(JsonObject json) {
         validateJsonVersion(json);
         JsonObject config = json.getJsonObject("config");
         return config.isEmpty();
@@ -214,8 +212,8 @@ public class KafkaUserQuotasOperator {
 
         if (data != null)   {
             log.debug("Deleting quotas for user {}", username);
-            byte[] deleteJson = removeQuotasFromJsonUser(data);
-            if (jsonConfigEmpty(deleteJson)) {
+            JsonObject deleteJson = removeQuotasFromJsonUser(data);
+            if (configJsonIsEmpty(deleteJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
                 log.debug("User {} deleted from ZK store", username);
             } else {
@@ -232,9 +230,9 @@ public class KafkaUserQuotasOperator {
      *
      * @param user JSON string with existing user configuration as byte[]
      *
-     * @return  Returns the updated JSON without the quotas as byte array
+     * @return  Returns the updated JSON without the quotas
      */
-    protected byte[] removeQuotasFromJsonUser(byte[] user)   {
+    protected JsonObject removeQuotasFromJsonUser(byte[] user)   {
         JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
 
         validateJsonVersion(json);
@@ -252,8 +250,7 @@ public class KafkaUserQuotasOperator {
                 config.remove("request_percentage");
             }
         }
-
-        return json.encode().getBytes(StandardCharsets.UTF_8);
+        return json;
     }
 
     protected void validateJsonVersion(JsonObject json) {

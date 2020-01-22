@@ -57,9 +57,7 @@ public class ScramShaCredentials {
         notifyChanges(username);
     }
 
-    private boolean jsonConfigEmpty(byte[] data) {
-        String jsonString = new String(data, StandardCharsets.UTF_8);
-        JsonObject json = new JsonObject(jsonString);
+    private boolean configJsonIsEmpty(JsonObject json) {
         validateJsonVersion(json);
         JsonObject config = json.getJsonObject("config");
         return config.isEmpty();
@@ -76,8 +74,8 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
-            byte[] deletedJson = deleteUserJson(data);
-            if (jsonConfigEmpty(deletedJson)) {
+            JsonObject deletedJson = deleteUserJson(data);
+            if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
             } else {
                 zkClient.writeData("/config/users/" + username, deletedJson);
@@ -223,9 +221,9 @@ public class ScramShaCredentials {
      *
      * @param user JSON string with existing user configuration as byte[]
      *
-     * @return  Returns the updated JSON without the SCRAM credentials as byte array
+     * @return  Returns the updated JSON without the SCRAM credentials
      */
-    protected byte[] deleteUserJson(byte[] user)   {
+    protected JsonObject deleteUserJson(byte[] user)   {
         JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
 
         validateJsonVersion(json);
@@ -238,7 +236,7 @@ public class ScramShaCredentials {
             json.getJsonObject("config").remove(mechanism.mechanismName());
         }
 
-        return json.encode().getBytes(Charset.defaultCharset());
+        return json;
     }
 
     protected void validateJsonVersion(JsonObject json)   {

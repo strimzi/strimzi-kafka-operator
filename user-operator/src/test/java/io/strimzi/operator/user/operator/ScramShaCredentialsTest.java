@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -124,20 +125,22 @@ public class ScramShaCredentialsTest {
     @Test
     public void testDeletion()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials"));
-        JsonObject updated = new JsonObject(new String(scramShaCred.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        original.getJsonObject("config").put("persist", 42);
+        JsonObject updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getInteger("persist"), is(42));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials").put("SCRAM-SHA-256", "somecredentials"));
-        updated = new JsonObject(new String(scramShaCred.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = new JsonObject(new String(scramShaCred.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-256", "somecredentials"));
-        updated = new JsonObject(new String(scramShaCred.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
     }
@@ -145,20 +148,20 @@ public class ScramShaCredentialsTest {
     @Test
     public void testUpdate()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials"));
-        JsonObject updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), "password"), Charset.defaultCharset()));
+        JsonObject updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), "password"), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(notNullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials").put("SCRAM-SHA-256", "somecredentials"));
-        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), "password"), Charset.defaultCharset()));
+        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), "password"), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), "password"), Charset.defaultCharset()));
+        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), "password"), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(notNullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-256", "somecredentials"));
-        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), "password"), Charset.defaultCharset()));
+        updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), "password"), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
     }

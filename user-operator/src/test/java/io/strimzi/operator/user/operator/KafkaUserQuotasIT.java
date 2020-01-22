@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -141,23 +142,26 @@ public class KafkaUserQuotasIT {
     @Test
     public void testDeletion()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", kuq.quotasToJson(defaultQuotas));
-        JsonObject updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        original.getJsonObject("config").put("persist", 42);
+        JsonObject updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getInteger("persist"), is(42));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("producer_byte_rate", "1000").put("consumer_byte_rate", "2000"));
-        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
-        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
+
     }
 
     @Test
@@ -165,14 +169,14 @@ public class KafkaUserQuotasIT {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2000);
-        JsonObject updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), quotas), Charset.defaultCharset()));
+        JsonObject updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
 
         quotas.setConsumerByteRate(3000);
         quotas.setProducerByteRate(4000);
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000").put("producer_byte_rate", "2000"));
-        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), quotas), Charset.defaultCharset()));
+        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
@@ -181,7 +185,7 @@ public class KafkaUserQuotasIT {
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
         quotas.setProducerByteRate(null);
         quotas.setConsumerByteRate(1000);
-        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), quotas), Charset.defaultCharset()));
+        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
     }
 }
