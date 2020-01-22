@@ -1,0 +1,77 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='ref-formats-kafka-listener-certificates-{context}']
+
+= SAN certificates for Kafka listeners
+
+If you provide your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use a Subject Alternative Name (SAN) certificate for each listener. The SAN certificate must specify hostnames for:
+
+* All of the Kafka brokers in your cluster
+
+* The Kafka cluster bootstrap service
+
+The Kafka broker hostnames can contain wildcard names.
+
+Using SAN certificates is required for TLS hostname verification.
+
+== TLS listener SAN certificate examples
+
+Use the following examples to help you specify hostnames in SAN certificates for TLS listeners.
+
+.Wildcards example
+
+[source,shell,subs="+quotes,attributes+"]
+----
+//Kafka brokers
+*._<cluster-name>_-kafka-brokers
+*._<cluster-name>_-kafka-brokers._<namespace>_.svc
+
+// Bootstrap service
+_<cluster-name>_-kafka-bootstrap
+_<cluster-name>_-kafka-bootstrap._<namespace>_.svc
+----
+
+.Non-wildcards example
+
+[source,shell,subs="+quotes,attributes+"]
+----
+// Kafka brokers
+_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers
+_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc
+_<cluster-name>_-kafka-1._<cluster-name>_-kafka-brokers
+_<cluster-name>_-kafka-1._<cluster-name>_-kafka-brokers._<namespace>_.svc
+# ...
+
+// Bootstrap service
+_<cluster-name>_-kafka-bootstrap
+_<cluster-name>_-kafka-bootstrap._<namespace>_.svc
+----
+
+== External listener SAN certificate examples
+
+For external listeners which have TLS encryption enabled, the hostnames you need to specify in SAN certificates depends on the external listener `type`.
+
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
+
+¦External listener type
+¦In the SAN certificate, specify...
+
+m¦Route
+¦Addresses of all Kafka broker `Routes` and the address of the bootstrap service `Route`.
+
+You can use a matching wildcard name.
+
+m¦loadbalancer
+¦Addresses of all Kafka broker `loadbalancers` and the `loadbalancer` bootstrap address.
+
+You can use a matching wildcard name.
+
+m¦NodePort
+¦Addresses of all Kubernetes worker nodes that the Kafka broker pods might be scheduled to. 
+
+You can use a matching wildcard name.
+
+|===

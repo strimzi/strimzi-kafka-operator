@@ -5,8 +5,7 @@
 [id='proc-installing-certs-per-listener-{context}']
 = Configuring your own Kafka listener certificates
 
-You can provide and configure your own Kafka listener certificates and public keys.
-This is supported for two types of listeners:
+You can provide and configure your own Kafka listener certificates and public keys for two types of listeners:
 
 * TLS listeners for inter-cluster communication
 
@@ -14,10 +13,12 @@ This is supported for two types of listeners:
 
 .Prerequisites
 
-* A Kubernetes cluster
-* The Cluster Operator is running
-* Public key of the external CA
-* Your own X.509 server certificate in PEM format signed by an external CA, such as your company's private CA or a public CA
+* A Kubernetes cluster.
+* The Cluster Operator is running.
+* Public key of the external CA.
+* For each listener, a compatible server certificate signed by an external CA.
+** Provide an X.509 certificate in PEM format.
+** Use a SAN certificate that specifies the hostnames of the Kafka brokers. For more information, see xref:ref-formats-kafka-listener-certificates-{context}[].
 
 .Procedure
 
@@ -83,4 +84,4 @@ NOTE: A rolling update is also started if you update a Kafka listener certificat
 
 * xref:type-KafkaListeners-reference[]
 
-* xref:installing-your-own-ca-certificates-{context}[] 
+* xref:ref-formats-kafka-listener-certificates-{context}[]

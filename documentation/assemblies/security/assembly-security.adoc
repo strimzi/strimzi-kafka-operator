@@ -46,3 +46,5 @@ include::modules/proc-configuring-external-clients-to-trust-cluster-ca.adoc[leve
 include::modules/con-kafka-listener-certificates.adoc[leveloffset=+1]
 
 include::modules/proc-installing-certs-per-listener.adoc[leveloffset=+2]
+
+include::modules/ref-formats-kafka-listener-certificates.adoc[leveloffset=+2]
