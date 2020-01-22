@@ -25,4 +25,4 @@ Now prepare the authorization server to work with {ProductName}.
 . Configure clients for each Kafka client component of your application.
 
 .What to do next
-After deploying and configuring the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].
+After deploying and configuring the authorization server, xref:proc-oauth-authentication-broker-config-{context}[configure the Kafka brokers to use {oauth}].
