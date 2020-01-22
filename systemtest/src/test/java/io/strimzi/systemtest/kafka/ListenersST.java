@@ -783,6 +783,8 @@ public class ListenersST extends BaseST {
         SecretUtils.createCustomSecret(customRootCA2, CLUSTER_NAME, NAMESPACE,
                 getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.pem").getFile(),
                 getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.key").getFile());
+
+        kafkaClient.setCaCertName(null);
     }
 
     @BeforeAll
