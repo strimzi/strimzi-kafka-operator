@@ -7,16 +7,17 @@
 
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs).
 
+In this situation, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
+
 When you get to the step to recreate your cluster, you have two options:
 
 . Use _Option 1_ when you can recover all `KafkaTopic` resources.
 +
-In this situation, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
 The `KafkaTopic` resources must therefore be recovered before the cluster is started so that the corresponding topics are not deleted by the Topic Operator.
 
 . Use _Option 2_ when you are unable to recover all `KafkaTopic` resources.
 +
-This time you deploy your cluster without the Topic Operator and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
+This time you deploy your cluster without the Topic Operator, delete the Topic Operator data in ZooKeeper, and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
 
 NOTE: If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
 
@@ -31,6 +32,7 @@ For more information, see:
 * xref:ref-jbod-storage-{context}#jbod-pvc[JBOD and Persistent Volume Claims]
 
 NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
+If passwords and certificates need to be retained, secrets myst be recreated before creating the `KafkaUser` resources.
 
 .Procedure
 
@@ -48,7 +50,7 @@ Example output showing columns important to this procedure:
 [source,shell,subs="+quotes,attributes"]
 ----
 NAME                                         RECLAIM    POLICY CLAIM
-pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ... Retain ... myproject/data-my-cluster-zookeeper-1 ...
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ... Retain ... myproject/data-my-cluster-zookeeper-1
 pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ... Retain ... myproject/data-my-cluster-zookeeper-0
 pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ... Retain ... myproject/data-my-cluster-zookeeper-2
 pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ... Retain ... myproject/data-0-my-cluster-kafka-0
@@ -59,7 +61,6 @@ pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ... Retain ... myproject/data-0-my-clus
 * _NAME_ shows the name of each PV.
 * _RECLAIM POLICY_ shows that PVs are _retained_.
 * _CLAIM_ shows the link to the original PVCs.
-* _STORAGECLASS_ shows the name of the storage class used for dynamic volume allocation.
 
 . Recreate the original namespace:
 +
@@ -204,7 +205,7 @@ kubectl exec _my-cluster-kafka-0_ bin/zookeeper-shell.sh localhost:2181
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-delete /strimzi
+deleteall /strimzi
 ----
 . Enable the Topic Operator by redeploying the Kafka cluster with `topicOperator: {}` to recreate the `KafkaTopic` resources.
 +
