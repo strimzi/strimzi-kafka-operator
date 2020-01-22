@@ -16,6 +16,8 @@ spec:
       log.message.format.version: "2.4"
     storage:
       type: ephemeral
+    jvmOptions:
+      tlsDebugEnabled: true
   zookeeper:
     replicas: 3
     storage:

@@ -841,6 +841,8 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
+                    tlsDebugEnabled:
+                      type: boolean
                 jmxOptions:
                   type: object
                   properties:
@@ -1702,6 +1704,8 @@ spec:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
+                      type: boolean
+                    tlsDebugEnabled:
                       type: boolean
                 resources:
                   type: object

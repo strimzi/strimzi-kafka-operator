@@ -40,6 +40,10 @@ EOF
   fi
 fi
 
+if [ "$STRIMZI_TLS_DEBUG_ENABLED" = "true" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} -Djavax.net.debug=ssl"
+fi
+
 KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
 
 # enabling Prometheus JMX exporter as Java agent

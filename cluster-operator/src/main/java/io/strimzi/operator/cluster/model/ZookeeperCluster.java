@@ -201,6 +201,8 @@ public class ZookeeperCluster extends AbstractModel {
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        zk.setTlsDebugEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_TLS_DEBUG_ENABLED : zookeeperClusterSpec.getJvmOptions().isTlsDebugEnabled());
+
 
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
@@ -535,6 +537,7 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_TLS_DEBUG_ENABLED, String.valueOf(tlsDebugEnabled)));
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);

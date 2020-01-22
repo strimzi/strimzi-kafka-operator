@@ -33,6 +33,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
+    private boolean tlsDebugEnabled = false;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -75,6 +76,15 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    @Description("Allows TLS debugging loging.")
+    public boolean isTlsDebugEnabled() {
+        return tlsDebugEnabled;
+    }
+
+    public void setTlsDebugEnabled(boolean tlsDebugEnabled) {
+        this.tlsDebugEnabled = tlsDebugEnabled;
     }
 
     @JsonProperty("-XX")
