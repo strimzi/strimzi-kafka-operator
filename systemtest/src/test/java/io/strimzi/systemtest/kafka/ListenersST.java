@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -311,7 +312,6 @@ public class ListenersST extends BaseST {
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
-        LOGGER.info(kubeClient().getClient().getConfiguration());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -687,8 +687,9 @@ public class ListenersST extends BaseST {
     @Test
     void testNonExistingCustomCertificate() {
         String nonExistingCertName = "non-existing-certificate";
+        String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -705,14 +706,17 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
+
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
     }
 
     @Test
     void testCertificateWithNonExistingDataCrt() {
         String nonExistingCertName = "non-existing-crt";
+        String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -729,15 +733,18 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
+
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
     }
 
     @Test
     void testCertificateWithNonExistingDataKey() {
         String nonExistingCertKey = "non-existing-key";
+        String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -754,12 +761,21 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
+
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
     }
 
     @BeforeEach
     void setupCertificates() {
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA2).delete();
+
         SecretUtils.createCustomSecret(customCertChain1, CLUSTER_NAME, NAMESPACE,
                 getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt").getFile(),
                 getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-key.pem").getFile());

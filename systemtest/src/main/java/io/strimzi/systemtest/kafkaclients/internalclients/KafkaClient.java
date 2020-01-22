@@ -79,6 +79,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
+        LOGGER.info("Going to use the following CA certificate: {}", clientSecretName);
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
                 clientSecretName, kafkaUsername, securityProtocol, EClientType.BASIC, null),
@@ -217,6 +218,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
+        LOGGER.info("Going to use the following CA certificate: {}", clientSecretName);
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName,
                 clientSecretName, kafkaUsername, securityProtocol, consumerGroup),
