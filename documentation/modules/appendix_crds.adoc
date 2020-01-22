@@ -775,7 +775,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |string
 |gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
-|tlsDebugEnabled   1.2+<.<|Allows TLS debugging loging.
+|tlsDebugEnabled   1.2+<.<|Allows TLS debugging logging.
 |boolean
 |====
 

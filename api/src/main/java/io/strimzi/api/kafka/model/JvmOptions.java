@@ -78,7 +78,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    @Description("Allows TLS debugging loging.")
+    @Description("Allows TLS debugging logging.")
     public boolean isTlsDebugEnabled() {
         return tlsDebugEnabled;
     }
