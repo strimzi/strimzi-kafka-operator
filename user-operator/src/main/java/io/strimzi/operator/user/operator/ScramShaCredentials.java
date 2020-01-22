@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,14 @@ public class ScramShaCredentials {
         notifyChanges(username);
     }
 
+    private boolean jsonConfigEmpty(byte[] data) {
+        String jsonString = new String(data, StandardCharsets.UTF_8);
+        JsonObject json = new JsonObject(jsonString);
+        validateJsonVersion(json);
+        JsonObject config = json.getJsonObject("config");
+        return config.isEmpty();
+    }
+
     /**
      * Delete the SCRAM-SHA credentials for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any SCRAM-SHA credentials.
@@ -67,7 +76,12 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
-            zkClient.writeData("/config/users/" + username, deleteUserJson(data));
+            byte[] deletedJson = deleteUserJson(data);
+            if (jsonConfigEmpty(deletedJson)) {
+                zkClient.deleteRecursive("/config/users/" + username);
+            } else {
+                zkClient.writeData("/config/users/" + username, deletedJson);
+            }
             notifyChanges(username);
         } else {
             log.warn("Credentials for user {} already don't exist", username);

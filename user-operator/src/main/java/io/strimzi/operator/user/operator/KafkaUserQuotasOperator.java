@@ -195,6 +195,14 @@ public class KafkaUserQuotasOperator {
         return false;
     }
 
+    private boolean jsonConfigEmpty(byte[] data) {
+        String jsonString = new String(data, StandardCharsets.UTF_8);
+        JsonObject json = new JsonObject(jsonString);
+        validateJsonVersion(json);
+        JsonObject config = json.getJsonObject("config");
+        return config.isEmpty();
+    }
+
     /**
      * Delete the quotas for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any quotas.
@@ -206,7 +214,13 @@ public class KafkaUserQuotasOperator {
 
         if (data != null)   {
             log.debug("Deleting quotas for user {}", username);
-            zkClient.writeData("/config/users/" + username, removeQuotasFromJsonUser(data));
+            byte[] deleteJson = removeQuotasFromJsonUser(data);
+            if (jsonConfigEmpty(deleteJson)) {
+                zkClient.deleteRecursive("/config/users/" + username);
+                log.debug("User {} deleted from ZK store", username);
+            } else {
+                zkClient.writeData("/config/users/" + username, deleteJson);
+            }
             notifyChanges(username);
         } else {
             log.warn("Quotas for user {} already don't exist", username);
