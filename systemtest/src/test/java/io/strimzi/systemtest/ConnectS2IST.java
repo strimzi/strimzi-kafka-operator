@@ -12,6 +12,8 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -39,11 +41,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -81,6 +86,8 @@ class ConnectS2IST extends BaseST {
         // TODO remove this sleep when ENTMQST-1613 will be fixed
         Thread.sleep(10_000);
 
+        checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
+
         String createConnectorOutput = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
                 "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
         LOGGER.info("Create Connector result: {}", createConnectorOutput);
@@ -115,6 +122,8 @@ class ConnectS2IST extends BaseST {
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         KafkaConnectUtils.waitForConnectorReady(kafkaConnectS2IName);
+
+        checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
         String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
@@ -334,6 +343,19 @@ class ConnectS2IST extends BaseST {
         assertThat(kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).list().getItems().size(), is(2));
 
         return podForExecName;
+    }
+
+    private void checkConnectorInStatus(String namespace, String kafkaConnectS2IName) {
+        KafkaConnectS2Istatus kafkaConnectS2Istatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespace).withName(kafkaConnectS2IName).get().getStatus();
+        List<ConnectorPlugin> pluginsList = kafkaConnectS2Istatus.getConnectorPlugins();
+        assertThat(pluginsList, notNullValue());
+        List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
+        assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
+                "org.apache.kafka.connect.file.FileStreamSourceConnector",
+                "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
+                "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
+                "org.apache.kafka.connect.mirror.MirrorSourceConnector",
+                "io.debezium.connector.mongodb.MongoDbConnector"));
     }
 
     @BeforeAll
