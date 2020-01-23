@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
@@ -47,11 +48,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -251,6 +254,20 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    void testKafkaConnectorWithoutClusterConfig() {
+        // This test check NPE when connect cluster is not specified in labels
+        // Check for NPE in CO logs is performed after every test in BaseST
+        KafkaConnectorResource.kafkaConnectorWithoutWait(KafkaConnectorResource.defaultKafkaConnector(CLUSTER_NAME, CLUSTER_NAME, 2)
+            .withNewMetadata()
+                .withName(CLUSTER_NAME)
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+            .endMetadata()
+            .build());
+
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+    }
+
+    @Test
     void testKafkaTopicStatus() {
         waitForKafkaTopic("Ready", TOPIC_NAME);
         // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
@@ -416,6 +433,15 @@ class CustomResourceStatusST extends BaseST {
         KafkaConnectStatus kafkaConnectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("Kafka Connect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
+
+        List<ConnectorPlugin> pluginsList = kafkaConnectStatus.getConnectorPlugins();
+        assertThat(pluginsList, notNullValue());
+        List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
+        assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
+                "org.apache.kafka.connect.file.FileStreamSourceConnector",
+                "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
+                "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
+                "org.apache.kafka.connect.mirror.MirrorSourceConnector"));
     }
 
     void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
