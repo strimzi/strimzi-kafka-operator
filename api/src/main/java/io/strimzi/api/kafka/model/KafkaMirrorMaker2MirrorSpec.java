@@ -40,7 +40,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
     private String groupsBlacklistPattern;
     private Map<String, Object> additionalProperties;
 
-    @Description("A regular expression matching the topics to be mirrored, e.g. \"topic1|topic2|topic3\". Comma-separated lists are also supported.")
+    @Description("A regular expression matching the topics to be mirrored, for example, \"topic1|topic2|topic3\". Comma-separated lists are also supported.")
     public String getTopicsPattern() {
         return topicsPattern;
     }
