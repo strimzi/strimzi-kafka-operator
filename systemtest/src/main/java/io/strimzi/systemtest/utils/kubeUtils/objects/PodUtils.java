@@ -178,7 +178,7 @@ public class PodUtils {
         LOGGER.info("Waiting till pod {} will have {} replicas", podNamePrefix, exceptedPods);
         TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == exceptedPods);
+            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods);
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
     }
 

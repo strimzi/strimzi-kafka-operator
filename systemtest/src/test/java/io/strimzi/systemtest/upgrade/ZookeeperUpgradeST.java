@@ -11,14 +11,15 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,26 +39,26 @@ public class ZookeeperUpgradeST extends BaseST {
     public static final String NAMESPACE = "zookeeper-upgrade-test";
 
     @Test
-    void testKafkaClusterUpgrade() throws IOException, InterruptedException {
+    void testKafkaClusterUpgrade(TestInfo testinfo) throws IOException, InterruptedException {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
 
-        runVersionChange(initialVersion, newVersion, 3, 3);
+        runVersionChange(initialVersion, newVersion, 3, 3, testinfo);
     }
 
     @Test
-    void testKafkaClusterDowngrade() throws IOException, InterruptedException {
+    void testKafkaClusterDowngrade(TestInfo testInfo) throws IOException, InterruptedException {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);
 
-        runVersionChange(initialVersion, newVersion, 3, 3);
+        runVersionChange(initialVersion, newVersion, 3, 3, testInfo);
     }
 
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas) throws InterruptedException {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas, TestInfo testInfo) throws InterruptedException {
         String logMsgFormat;
         if (initialVersion.compareTo(newVersion) < 0) {
             // If it is an upgrade test we keep the message format as the lower version number
@@ -121,22 +122,22 @@ public class ZookeeperUpgradeST extends BaseST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
         LOGGER.info("Kafka roll (image change) is complete");
 
-        PodUtils.waitUntilPodReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2);
-
-        // Wait for the zk rolling update
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.info("2nd Kafka roll (update) is complete");
-
-        PodUtils.waitUntilPodReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2);
-
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
-        LOGGER.info("2nd Zookeeper roll (update) is complete");
-
-        PodUtils.waitUntilPodReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2);
-
-        // Wait for the kafka broker version change roll
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.info("3rd Kafka roll (update) is complete");
+        if (testInfo.getDisplayName().contains("Downgrade")) {
+            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+            // Wait for the zk rolling update
+            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
+            LOGGER.info("2nd Kafka roll (update) is complete");
+            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+            LOGGER.info("3rd Kafka roll (update) is complete");
+            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+            LOGGER.info("4th Kafka roll (update) is complete");
+        } else {
+            // Wait for the zk rolling update
+            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
+            LOGGER.info("2nd Zookeeper roll (update) is complete");
+        }
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
