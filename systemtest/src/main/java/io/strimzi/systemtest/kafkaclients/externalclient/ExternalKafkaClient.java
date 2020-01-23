@@ -80,7 +80,7 @@ public class ExternalKafkaClient implements IKafkaClient {
      */
     @Override
     public Integer sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) throws InterruptedException {
-        LOGGER.info("Sending messages to pod:{}", this.podName);
+        LOGGER.info("Sending messages to pod: {}", this.podName);
         return sendMessages(topicName, namespace, clusterName, kafkaUsername, messageCount, securityProtocol, this.podName);
     }
 

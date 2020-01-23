@@ -222,8 +222,10 @@ public class StrimziUpgradeST extends BaseST {
         externalKafkaClient.setPodName(defaultKafkaClientsPodName);
         Integer sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
             produceMessagesCount, "TLS");
+        assertThat(sent, is(produceMessagesCount));
         int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME);
+            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(consumeMessagesCount));
 
         makeSnapshots();
         logPodImages();
@@ -258,8 +260,11 @@ public class StrimziUpgradeST extends BaseST {
 
         final String afterUpgradeKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
         received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME);
+            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(consumeMessagesCount));
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -419,7 +424,7 @@ public class StrimziUpgradeST extends BaseST {
 
     void deployClients(String image, KafkaUser kafkaUser) {
         // Deploy new clients
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, kafkaUser)
             .editSpec()
                 .editTemplate()
                     .editSpec()

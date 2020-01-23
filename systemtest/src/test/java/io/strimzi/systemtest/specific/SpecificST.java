@@ -125,7 +125,8 @@ public class SpecificST extends BaseST {
 
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
-        KafkaUtils.waitUntilKafkaStatusConditionIsNotReady(CLUSTER_NAME, nonExistingVersionMessage);
+        KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
 
         Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 

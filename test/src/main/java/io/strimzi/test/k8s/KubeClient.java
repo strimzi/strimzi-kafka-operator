@@ -347,7 +347,7 @@ public class KubeClient {
     }
 
     public Secret createSecret(Secret secret) {
-        return client.secrets().inNamespace(getNamespace()).create(secret);
+        return client.secrets().inNamespace(getNamespace()).createOrReplace(secret);
     }
 
     public Secret patchSecret(String secretName, Secret secret) {

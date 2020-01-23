@@ -102,7 +102,7 @@ public abstract class BaseST implements TestSeparator {
     protected String testClass;
     protected String testName;
 
-    Random rng = new Random();
+    protected Random rng = new Random();
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
