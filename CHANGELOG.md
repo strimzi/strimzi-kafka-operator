@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.16.1
+
+* Fix connector operator when Kafka Connect runs in a different namespace
+
 ## 0.16.0
 
 * Add support for Kafka 2.4.0 and upgrade from Zookeeper 3.4.x to 3.5.x
