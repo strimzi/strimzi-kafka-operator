@@ -18,6 +18,7 @@ This chapter describes how to configure different aspects of the supported deplo
 * Kafka Mirror Maker
 * Kafka Bridge
 * {oauth} token-based authentication
+* {oauth} token-based authorization
 
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 
