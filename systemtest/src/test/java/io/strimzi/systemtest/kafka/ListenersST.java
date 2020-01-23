@@ -52,6 +52,8 @@ public class ListenersST extends BaseST {
     private String customRootCA1 = "custom-certificate-root-1";
     private String customRootCA2 = "custom-certificate-root-2";
 
+    private String userName = "alice";
+
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testCustomSoloCertificatesForNodePort() throws Exception {
@@ -83,7 +85,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customCertServer1);
@@ -134,7 +135,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customRootCA1);
@@ -185,7 +185,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customCertServer1);
@@ -236,7 +235,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customRootCA1);
@@ -287,7 +285,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customCertServer1);
@@ -338,7 +335,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         kafkaClient.setCaCertName(customRootCA1);
@@ -374,7 +370,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
@@ -482,7 +477,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
@@ -590,7 +584,6 @@ public class ListenersST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        String userName = "alice";
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         Future producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");

@@ -231,8 +231,6 @@ public class KafkaResource {
             case KafkaListenerExternalIngress.TYPE_INGRESS:
                 kafkaListenerExternalConfiguration = ((KafkaListenerExternalIngress) kafkaListenerExternal).getConfiguration();
                 break;
-            default:
-                break;
         }
 
         return kafkaListenerExternalConfiguration == null ?

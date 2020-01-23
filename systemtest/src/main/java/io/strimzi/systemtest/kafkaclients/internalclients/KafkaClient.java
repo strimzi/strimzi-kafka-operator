@@ -78,11 +78,11 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
-        LOGGER.info("Going to use the following CA certificate: {}", clientSecretName);
+        String caCertName = this.caCertName == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
+        LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
-                clientSecretName, kafkaUsername, securityProtocol, EClientType.BASIC, null),
+                caCertName, kafkaUsername, securityProtocol, EClientType.BASIC, null),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
@@ -217,11 +217,11 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String clientSecretName = getCaCertName() == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : getCaCertName();
-        LOGGER.info("Going to use the following CA certificate: {}", clientSecretName);
+        String caCertName = this.caCertName == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
+        LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName,
-                clientSecretName, kafkaUsername, securityProtocol, consumerGroup),
+                caCertName, kafkaUsername, securityProtocol, consumerGroup),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {

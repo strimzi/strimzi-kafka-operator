@@ -86,6 +86,7 @@ public class PodUtils {
             LOGGER.debug("Pods {} are ready",
                 pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
             int c = count.getAndIncrement();
+            // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
             return c > 10;
         });
     }
