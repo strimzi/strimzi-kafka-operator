@@ -343,7 +343,6 @@ public class KafkaMirrorMaker2CrdOperatorIT {
                 .endSpec()
                 .build();
 
-        //Async updateAsync = context.async();
         kafkaMirrorMaker2Operator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
 
         log.info("Updating resource status");

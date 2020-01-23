@@ -15,7 +15,7 @@
 #   <checksum> is the SHA512 checksum of the Kafka binary which is specified in the 'url' field.
 #   <zookeeper> is the version of zookeeper required by this version of Kafka.
 #   <third-party-libs> is the version string for the third party libraries
-#   <does-not-support> is a list of Strimzi features that are not supported by this Kafka version
+#   <unsupported-features> is a list of Strimzi features that are not supported by this Kafka version
 
 #- version: 2.3.0
   #format: 2.3     
@@ -25,7 +25,7 @@
   #zookeeper: 3.4.14
   #third-party-libs: 2.3.x
   #default: false
-  #does-not-support: kafkaMirrorMaker2
+  #unsupported-features: kafkaMirrorMaker2
 - version: 2.3.1
   format: 2.3
   protocol: 2.3
@@ -34,7 +34,7 @@
   zookeeper: 3.4.14
   third-party-libs: 2.3.x
   default: false
-  does-not-support: kafkaMirrorMaker2
+  unsupported-features: kafkaMirrorMaker2
 - version: 2.4.0
   format: 2.4
   protocol: 2.4

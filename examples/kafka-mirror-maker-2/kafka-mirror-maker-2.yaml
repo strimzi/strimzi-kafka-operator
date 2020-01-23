@@ -29,5 +29,5 @@ spec:
     checkpointConnector:
       config:
         checkpoints.topic.replication.factor: 1
-    topics: ".*"
-    groups: ".*"
+    topicsPattern: ".*"
+    groupsPattern: ".*"

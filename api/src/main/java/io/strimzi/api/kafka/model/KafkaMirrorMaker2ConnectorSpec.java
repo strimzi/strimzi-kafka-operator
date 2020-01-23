@@ -5,9 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -17,20 +15,8 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"class", "tasksMax", "config"})
+@JsonPropertyOrder({"tasksMax", "config"})
 @EqualsAndHashCode(callSuper = true)
-public class KafkaConnectorSpec extends AbstractConnectorSpec {
+public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec {
     private static final long serialVersionUID = 1L;
-
-    private String className;
-
-    @Description("The Class for the Kafka Connector")
-    @JsonProperty("class")
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
 }

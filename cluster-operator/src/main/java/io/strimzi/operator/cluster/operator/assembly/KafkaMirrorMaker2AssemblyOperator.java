@@ -25,9 +25,11 @@ import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.KafkaConnectorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
@@ -69,7 +71,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
     public static final String MIRRORMAKER2_CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
     public static final String MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
-    private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>();
+    private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>();
 
     static {
         MIRRORMAKER2_CONNECTORS.put(MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getSourceConnector);
@@ -194,7 +196,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaConnectApi apiClient = getKafkaConnectApi();
         return apiClient.list(host, KafkaConnectCluster.REST_API_PORT).compose(deleteMirrorMaker2ConnectorNames -> {
 
-            for (Map.Entry<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaConnectorSpec>> connectorEntry : MIRRORMAKER2_CONNECTORS.entrySet()) {
+            for (Map.Entry<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> connectorEntry : MIRRORMAKER2_CONNECTORS.entrySet()) {
                 deleteMirrorMaker2ConnectorNames.removeAll(mirrors.stream()
                         .filter(mirror -> connectorEntry.getValue().apply(mirror) != null) // filter out non-existent connectors
                         .map(mirror -> mirror.getSourceCluster() + "->" + mirror.getTargetCluster() + connectorEntry.getKey())
@@ -238,15 +240,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         String connectorName = sourceClusterAlias + "->" + targetClusterAlias + entry.getKey();
                         String className = MIRRORMAKER2_CONNECTOR_PACKAGE + entry.getKey();
                         
-                        KafkaConnectorSpec connectorSpec = entry.getValue().apply(mirror);                        
-                        if (connectorSpec.getClassName() != null && !className.equals(connectorSpec.getClassName())) {
-                            return maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2,
-                                    new InvalidResourceException("MirrorMaker 2.0 connector class name " + connectorSpec.getClassName() + " is invalid. The connector class can be unset or must be " + className));        
-                        } else {
-                            connectorSpec.setClassName(className);
-                        }
+                        KafkaMirrorMaker2ConnectorSpec mm2ConnectorSpec = entry.getValue().apply(mirror);
+                        KafkaConnectorSpec connectorSpec = new KafkaConnectorSpecBuilder()
+                                .withClassName(className)
+                                .withConfig(mm2ConnectorSpec.getConfig())
+                                .withPause(mm2ConnectorSpec.getPause())
+                                .withTasksMax(mm2ConnectorSpec.getTasksMax())
+                                .build();                      
 
-                        connectorSpec = prepareMirrorMaker2ConnectorConfig(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
+                        prepareMirrorMaker2ConnectorConfig(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
                         log.debug("{}: {}} cluster: creating/updating connector {} config: {}", reconciliation, kind(), connectorName, asJson(connectorSpec).toString());
                         return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT, connectorName, asJson(connectorSpec));
                     })                            
@@ -254,7 +256,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .map((Void) null);
     }
 
-    private static KafkaConnectorSpec prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
+    private static void prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Map<String, Object> config = connectorSpec.getConfig();
         addClusterToMirrorMaker2ConnectorConfig(config, targetCluster, TARGET_CLUSTER_PREFIX);
         addClusterToMirrorMaker2ConnectorConfig(config, sourceCluster, SOURCE_CLUSTER_PREFIX);
@@ -272,7 +274,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             config.put("groups.blacklist", mirror.getGroupsBlacklistPattern());
         }
         config.putAll(mirror.getAdditionalProperties());
-        return connectorSpec;
     }
 
     private static void addClusterToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {

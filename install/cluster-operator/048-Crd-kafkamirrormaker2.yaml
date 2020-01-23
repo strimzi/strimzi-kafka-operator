@@ -799,8 +799,6 @@ spec:
                   sourceConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -811,8 +809,6 @@ spec:
                   checkpointConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -823,8 +819,6 @@ spec:
                   heartbeatConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -832,13 +826,13 @@ spec:
                         type: object
                       pause:
                         type: boolean
-                  groupsBlacklistPattern:
-                    type: string
-                  groupsPattern:
+                  topicsPattern:
                     type: string
                   topicsBlacklistPattern:
                     type: string
-                  topicsPattern:
+                  groupsPattern:
+                    type: string
+                  groupsBlacklistPattern:
                     type: string
                 required:
                 - sourceCluster

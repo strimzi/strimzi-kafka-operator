@@ -1234,4 +1234,17 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-2".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca2.crt"));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-2".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
     }
+
+    @Test
+    public void testGenerateDeploymentWithOldVersion() {
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                    .editSpec()
+                        .withVersion("2.3.1")  
+                    .endSpec()
+                    .build();
+
+            KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+        });
+    }
 }

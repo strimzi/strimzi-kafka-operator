@@ -199,7 +199,7 @@ public class ClusterOperatorConfig {
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
             lookup.validateKafkaConnectS2IImages(lookup.supportedVersions());
             lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
-            lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersions());
+            lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersionsForFeature("kafkaMirrorMaker2"));
         } catch (NoImageException e) {
             throw new InvalidConfigurationException(e);
         }

@@ -72,7 +72,7 @@ function get_kafka_formats {
 }
 
 function get_kafka_does_not_support {
-    eval does_not_support="$(yq read $VERSIONS_FILE '*.does-not-support' -j | tr '[],' '() ')"
+    eval does_not_support="$(yq read $VERSIONS_FILE '*.unsupported-features' -j | tr '[],' '() ')"
 
     get_kafka_versions
 

@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Represents a Kafka version that's supported by this CO
@@ -137,6 +139,13 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
         public Set<String> supportedVersions() {
             return new TreeSet<>(map.keySet());
+        }
+
+        public Set<String> supportedVersionsForFeature(String feature) {
+            return map.entrySet().stream()
+                    .filter(entry -> entry.getValue().unsupportedFeatures() == null || !entry.getValue().unsupportedFeatures().contains(feature))
+                    .map(Entry::getKey)
+                    .collect(Collectors.toSet());
         }
 
         private String image(final String crImage, final String crVersion, Map<String, String> images, String envVar)
@@ -344,19 +353,22 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String messageVersion;
     private final String zookeeperVersion;
     private final boolean isDefault;
+    private final String unsupportedFeatures;
 
     @JsonCreator
     public KafkaVersion(@JsonProperty("version") String version,
                         @JsonProperty("protocol") String protocolVersion,
                         @JsonProperty("format") String messageVersion,
                         @JsonProperty("zookeeper") String zookeeperVersion,
-                        @JsonProperty("default") boolean isDefault) {
+                        @JsonProperty("default") boolean isDefault,
+                        @JsonProperty("unsupported-features") String unsupportedFeatures) {
 
         this.version = version;
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
         this.zookeeperVersion = zookeeperVersion;
         this.isDefault = isDefault;
+        this.unsupportedFeatures = unsupportedFeatures;
     }
 
     @Override
@@ -367,6 +379,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 ", messageVersion='" + messageVersion + '\'' +
                 ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", isDefault=" + isDefault +
+                ", unsupportedFeatures='" + unsupportedFeatures  + '\'' +
                 '}';
     }
 
@@ -388,6 +401,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public String unsupportedFeatures() {
+        return unsupportedFeatures;
     }
 
     @Override

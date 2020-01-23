@@ -5,9 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 /**
- * The purpose of this test is to ensure:
- *
- * 1. we get a correct tree of POJOs when reading a JSON/YAML `KafkaMirrorMaker2` resource.
+ * This test ensures we get a correct tree of POJOs when reading a JSON/YAML `KafkaMirrorMaker2` resource.
  */
 public class KafkaMirrorMaker2Test extends AbstractCrdTest<KafkaMirrorMaker2> {
 

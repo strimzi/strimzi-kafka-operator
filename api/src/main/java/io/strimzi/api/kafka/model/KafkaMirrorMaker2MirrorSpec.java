@@ -24,16 +24,16 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "checkpointConnector", "heartbeatConnector", "topics", "groups"})
+@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "checkpointConnector", "heartbeatConnector", "topicsPattern", "topicsBlacklistPattern", "groupsPattern", "groupsBlacklistPattern"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private String sourceCluster;
     private String targetCluster;
-    private KafkaConnectorSpec sourceConnector;
-    private KafkaConnectorSpec checkpointConnector;
-    private KafkaConnectorSpec heartbeatConnector;
+    private KafkaMirrorMaker2ConnectorSpec sourceConnector;
+    private KafkaMirrorMaker2ConnectorSpec checkpointConnector;
+    private KafkaMirrorMaker2ConnectorSpec heartbeatConnector;
     private String topicsPattern;
     private String topicsBlacklistPattern;
     private String groupsPattern;
@@ -49,7 +49,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.topicsPattern = topicsPattern;
     }
 
-    @Description("A regular expression matching the topics to exclude from mirroring.")
+    @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
     public String getTopicsBlacklistPattern() {
         return topicsBlacklistPattern;
     }
@@ -58,7 +58,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.topicsBlacklistPattern = topicsBlacklistPattern;
     }
 
-    @Description("A regular expression matching the consumer groups to be mirrored.")
+    @Description("A regular expression matching the consumer groups to be mirrored. Comma-separated lists are also supported.")
     public String getGroupsPattern() {
         return groupsPattern;
     }
@@ -67,7 +67,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.groupsPattern = groupsPattern;
     }
 
-    @Description("A regular expression matching the consumer groups to exclude from mirroring.")
+    @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
     public String getGroupsBlacklistPattern() {
         return groupsBlacklistPattern;
     }
@@ -76,7 +76,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.groupsBlacklistPattern = groupsBlacklistPattern;
     }
 
-    @Description("The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.")
+    @Description("The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @JsonProperty(required = true)
     public String getSourceCluster() {
         return sourceCluster;
@@ -86,7 +86,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.sourceCluster = sourceCluster;
     }
 
-    @Description("The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at spec.clusters.")
+    @Description("The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @JsonProperty(required = true)
     public String getTargetCluster() {
         return targetCluster;
@@ -96,30 +96,30 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.targetCluster = targetCluster;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 source connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorSourceConnector`.")
-    public KafkaConnectorSpec getSourceConnector() {
+    @Description("The specification of the Kafka MirrorMaker 2.0 source connector.")
+    public KafkaMirrorMaker2ConnectorSpec getSourceConnector() {
         return sourceConnector;
     }
 
-    public void setSourceConnector(KafkaConnectorSpec sourceConnector) {        
+    public void setSourceConnector(KafkaMirrorMaker2ConnectorSpec sourceConnector) {        
         this.sourceConnector = sourceConnector;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 checkpoint connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorCheckpointConnector`.")
-    public KafkaConnectorSpec getCheckpointConnector() {
+    @Description("The specification of the Kafka MirrorMaker 2.0 checkpoint connector.")
+    public KafkaMirrorMaker2ConnectorSpec getCheckpointConnector() {
         return checkpointConnector;
     }
 
-    public void setCheckpointConnector(KafkaConnectorSpec checkpointConnector) {
+    public void setCheckpointConnector(KafkaMirrorMaker2ConnectorSpec checkpointConnector) {
         this.checkpointConnector = checkpointConnector;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 heartbeat connector. The connector class name is set to `org.apache.kafka.connect.mirror.MirrorHeartbeatConnector`.")
-    public KafkaConnectorSpec getHeartbeatConnector() {
+    @Description("The specification of the Kafka MirrorMaker 2.0 heartbeat connector.")
+    public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
         return heartbeatConnector;
     }
 
-    public void setHeartbeatConnector(KafkaConnectorSpec heartbeatConnector) {
+    public void setHeartbeatConnector(KafkaMirrorMaker2ConnectorSpec heartbeatConnector) {
         this.heartbeatConnector = heartbeatConnector;
     }
 

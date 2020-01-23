@@ -44,7 +44,7 @@ public class KafkaMirrorMaker2Spec extends KafkaConnectSpec {
         this.clusters = clusters;
     }
 
-    @Description("The cluster alias used for Kafka Connect. The alias must match a cluster in the list at spec.clusters.")
+    @Description("The cluster alias used for Kafka Connect. The alias must match a cluster in the list at `spec.clusters`.")
     @JsonProperty(required = true)
     public String getConnectCluster() {
         return connectCluster;
