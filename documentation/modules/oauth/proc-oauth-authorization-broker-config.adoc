@@ -7,9 +7,8 @@
 
 This procedure describes how to configure Kafka brokers to use {oauth} authorization using {oauth-server} Authorization Services.
 
-Some of the properties used to configure authorization for Kafka brokers might already be configured for xref:proc-oauth-authentication-broker-config-{context}[{oauth} authentication].
+The properties used to configure authorization for Kafka brokers might already be configured for xref:proc-oauth-authentication-broker-config-{context}[{oauth} authentication].
 If so, they are also used for authorization if specific authorization properties are not defined.
-The properties are highlighted in this procedure.
 
 .Before you begin
 Consider the access you require or want to limit for certain users.
@@ -27,7 +26,7 @@ NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Sup
 
 * {ProductName} must be configured to use {oauth} with {oauth-server} for xref:assembly-oauth-authentication_str[token-based authentication].
 You use the same {oauth-server} server endpoint when you set up authorization.
-* You need to understand how to manage policies and permissions for Keycloak Authorization Services, as described in the {oauth-keycloak-doc}.
+* You need to understand how to manage policies and permissions for {oauth-server} Authorization Services, as described in the {oauth-keycloak-doc}.
 
 
 .Procedure
@@ -35,76 +34,62 @@ You use the same {oauth-server} server endpoint when you set up authorization.
 . Access the {oauth-server} Admin Console or use the {oauth-server} Admin CLI to enable Authorization Services for the Kafka broker client you created when setting up {oauth} authentication.
 . Use Authorization Services to define resources, authorization scopes, policies and permissions for the client.
 . Bind the permissions to users and clients by assigning them roles and groups.
-. Configure the Kafka brokers to use the `{oauth-server}RBACAuthorizer`.
-. Add the following to the Kafka `server.properties` configuration file to install the authorizer in Kafka:
+. Configure the Kafka brokers to use the {oauth-server} authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
 +
-[source,env,subs="+quotes,attributes"]
+[source,shell]
 ----
-authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer
-principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder
+kubectl edit kafka my-cluster
 ----
 
-. Add configuration for the Kafka brokers to access the authorization server and Authorization Services.
-+
-Here we show example configuration added as additional properties to `server.properties`, but you can also define them as environment variables using capitalized or upper-case naming conventions.
-+
-[source,env,subs="+quotes,attributes"]
-----
-strimzi.authz.token.endpoint.uri="https://_<auth-server-address>_/token" <1>
-strimzi.authz.client.id="kafka" <2>
-----
-<1> The {oauth} token endpoint URL to Keycloak. For production, always use HTTPs.
-For example, _\https://keycloak:8443/auth/realms/master/protocol/openid-connect/token_.
-<2> The client ID of the {oauth} client definition in Keycloak that has Authorization Services enabled. Typically, `kafka` is used as the ID.
-+
-If either of these properties are not added, the equivalent token endpoint and client ID properties configured for {oauth} authentication are used.
-
-. (Optional) Add configuration for specific Kafka clusters.
+. Configure the Kafka broker `kafka` configuration to use `keycloak` authorization, and to be able to access the authorization server and Authorization Services.
 +
 For example:
 +
-[source,env,subs="+quotes,attributes"]
+[source,yaml,subs="+quotes,attributes"]
 ----
-strimzi.authz.kafka.cluster.name="kafka-cluster" <1>
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka
+  # ...
+  authorization:
+    type: *keycloak* <1>
+    tokenEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__> <2>
+    clientId: kafka <3>
+    delegateToKafkaAcls: false <4>
+    disableTlsHostnameVerification: false <5>
+    superUsers: <6>
+      - CN=fred
+      - sam
+      - CN=edward
+    tlsTrustedCertificates: <7>
+    - secretName: oauth-server-cert
+      certificate: ca.crt
+  #...
 ----
-<1> The name of a specific Kafka cluster.
-Names are used to target permissions,
-making it possible to manage multiple clusters within the same Keycloak realm.
-The default value is `kafka-cluster`.
-
-. (Optional) Delegate to simple authorization.
-+
-For example:
-+
-[source,env,subs="+quotes,attributes"]
-----
-strimzi.authz.delegate.to.kafka.acl="false" <1>
-----
-<1> Flag to delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by Keycloak Authorization Services policies.
+<1> Type `keycloak` enables {oauth-server} authorization.
+<2> URI of the {oauth-server} token introspection endpoint. For production, always use HTTPs.
+<3> The client ID of the {oauth} client definition in {oauth-server} that has Authorization Services enabled. Typically, `kafka` is used as the ID.
+<4> Delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by {oauth-server} Authorization Services policies.
 The default is `false`.
+<5> (Optional) Disable TLS hostname verification. Default is `false`.
+<6> Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
+<7> (Optional) Trusted certificates for TLS connection to the authorization server.
++
+If the properties are not added, the equivalent properties configured for {oauth} authentication are used.
 
-. (Optional) Add TLS configuration for inter-broker communication.
+. Save and exit the editor, then wait for rolling updates to complete.
+
+. Check the update in the logs or by watching the pod state transitions:
 +
-For example:
-+
-[source,env,subs="+quotes,attributes"]
+[source,shell,subs="+quotes,attributes"]
 ----
-strimzi.authz.ssl.truststore.location=_<path-to-truststore>_ <1>
-strimzi.authz.ssl.truststore.password=_<my-truststore-password>_ <2>
-strimzi.authz.ssl.truststore.type=JKS <3>
-strimzi.authz.ssl.secure.random.implementation=SHA1PRNG <4>
-strimzi.authz.ssl.endpoint.identification.algorithm=HTTPS <5>
+kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
+kubectl get po -w
 ----
-<1> The path to the truststore that contain the certificates.
-<2> The password for the truststore.
-<3> The truststore type.
-If not set, the default Java keystore type is used.
-<4> Random number generator implementation.
-If not set, the Java platform SDK default is used.
-<5> Hostname verification.
-If set to an empty string, the hostname verification is turned off.
-If not set, the default value is `HTTPS`, which enforces hostname verification for server certificates.
 +
-If any of the TLS properties are not added, the equivalent properties used for {oauth} authentication are used.
+The rolling update configures the brokers to use {oauth} authorization.
 
 . Verify the configured permissions by accessing Kafka brokers as clients or  users with specific roles, making sure they have the necessary access, or do not have the access they are not supposed to have.

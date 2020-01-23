@@ -10,10 +10,11 @@ and providing a list of permissions granted on different resources for that user
 Policies use roles and groups to match permissions to users.
 {oauth} authorization enforces permissions locally based on the received list of grants for the user from {oauth-server} Authorization Services.
 
-== Kafka broker custom _authorizer_
+== Kafka broker custom authorizer
 
-To be able to use the {oauth-server} REST endpoints for Authorization Services,
-a custom _authorizer_ configuration is required on the Kafka Broker.
+A {oauth-server} _authorizer_ (`KeycloakRBACAuthorizer`) is provided with {ProductName}.
+To be able to use the {oauth-server} REST endpoints for Authorization Services provided by {oauth-server},
+a custom authorizer configuration is required on the Kafka Broker.
 
 The authorizer fetches a list of granted permissions from the authorization server one-time-only,
 and enforces authorization locally on the Kafka Broker, making rapid authorization decisions for each user session.
