@@ -202,6 +202,7 @@ All environment variables can be seen in [Environment](systemtest/src/main/java/
 | TEST_CLUSTER_USER         | Default user which will be used for command line admin operations                    | developer                                        |
 | SKIP_TEARDOWN             | Variable for skip teardown phase for more debug if needed                            | false                                            |
 | IMAGE_PULL_POLICY         | Image Pull Policy                                                                    | IfNotPresent                                     |
+| STRIMZI_TEST_LOG_LEVEL    | Log level for system tests                                                           | INFO                                             |
 
 If you want to use your own images with a different tag or from a different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
