@@ -2,23 +2,21 @@
 //
 // assembly-security.adoc
 
-[id='ref-formats-kafka-listener-certificates-{context}']
+[id='ref-alternative-subjects-certs-for-listeners-{context}']
 
-= SAN certificates for Kafka listeners
+= Alternative subjects in server certificates for Kafka listeners
 
-If you provide your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use a Subject Alternative Name (SAN) certificate for each listener. The SAN certificate must specify hostnames for:
+In order to use TLS hostname verification with your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for:
 
 * All of the Kafka brokers in your cluster
 
 * The Kafka cluster bootstrap service
 
-The Kafka broker hostnames can contain wildcard names.
+You can use wildcard certificates if they are supported by your CA.
 
-Using SAN certificates is required for TLS hostname verification.
+== TLS listener SAN examples
 
-== TLS listener SAN certificate examples
-
-Use the following examples to help you specify hostnames in SAN certificates for TLS listeners.
+Use the following examples to help you specify hostnames of the SANs in your certificates for TLS listeners.
 
 .Wildcards example
 
@@ -49,23 +47,23 @@ _<cluster-name>_-kafka-bootstrap
 _<cluster-name>_-kafka-bootstrap._<namespace>_.svc
 ----
 
-== External listener SAN certificate examples
+== External listener SAN examples
 
-For external listeners which have TLS encryption enabled, the hostnames you need to specify in SAN certificates depends on the external listener `type`.
+For external listeners which have TLS encryption enabled, the hostnames you need to specify in certificates depends on the external listener `type`.
 
 [cols="2*",options="header",stripes="none",separator=¦]
 |===
 
 ¦External listener type
-¦In the SAN certificate, specify...
+¦In the SANs, specify...
 
 m¦Route
-¦Addresses of all Kafka broker `Routes` and the address of the bootstrap service `Route`.
+¦Addresses of all Kafka broker `Routes` and the address of the bootstrap `Route`.
 
 You can use a matching wildcard name.
 
 m¦loadbalancer
-¦Addresses of all Kafka broker `loadbalancers` and the `loadbalancer` bootstrap address.
+¦Addresses of all Kafka broker `loadbalancers` and the bootstrap `loadbalancer` address.
 
 You can use a matching wildcard name.
 

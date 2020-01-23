@@ -6,7 +6,7 @@
 
 = Kafka listener certificates
 
-In order to connect to external systems such as {ProductName}, your client applications might need to trust server certificates that were issued by an external CA, such as your company's private CA or a public CA.
+Sometimes you might want to leverage your existing security infrastructure, such as your company's private CA or a public CA, when integrating your client applications with {ProductName}. 
 To support this requirement, {ProductName} allows you to provide your own _Kafka listener certificates_ and public keys for external listeners which have TLS encryption enabled.
 Your Kafka client applications will connect to Kafka brokers using Kafka listener certificates rather than CA certificates signed by the cluster CA or clients CA.
 

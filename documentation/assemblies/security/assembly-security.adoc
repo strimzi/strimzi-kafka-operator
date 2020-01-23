@@ -12,6 +12,7 @@ For the Kafka and {ProductName} components, TLS certificates are also used for a
 
 The Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
 It also sets up other TLS certificates if you want to enable encryption or TLS authentication between Kafka brokers and clients.
+Certificates provided by users are not renewed.
 
 You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled. 
 For more information, see xref:kafka-listener-certificates-str[].
@@ -47,4 +48,4 @@ include::modules/con-kafka-listener-certificates.adoc[leveloffset=+1]
 
 include::modules/proc-installing-certs-per-listener.adoc[leveloffset=+2]
 
-include::modules/ref-formats-kafka-listener-certificates.adoc[leveloffset=+2]
+include::modules/ref-alternative-subjects-certs-for-listeners.adoc[leveloffset=+2]
