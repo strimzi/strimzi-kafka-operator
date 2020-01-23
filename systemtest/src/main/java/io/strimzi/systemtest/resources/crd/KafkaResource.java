@@ -216,7 +216,7 @@ public class KafkaResource {
     public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName) {
         KafkaListenerExternal kafkaListenerExternal = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getExternal();
 
-        KafkaListenerExternalConfiguration kafkaListenerExternalConfiguration = null;
+        KafkaListenerExternalConfiguration kafkaListenerExternalConfiguration;
 
         switch (kafkaListenerExternal.getType()) {
             case KafkaListenerExternalRoute.TYPE_ROUTE:
@@ -230,6 +230,9 @@ public class KafkaResource {
                 break;
             case KafkaListenerExternalIngress.TYPE_INGRESS:
                 kafkaListenerExternalConfiguration = ((KafkaListenerExternalIngress) kafkaListenerExternal).getConfiguration();
+                break;
+            default:
+                kafkaListenerExternalConfiguration = null;
                 break;
         }
 
