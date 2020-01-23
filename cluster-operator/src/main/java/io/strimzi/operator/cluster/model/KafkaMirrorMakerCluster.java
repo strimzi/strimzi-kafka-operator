@@ -158,7 +158,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setLogging(spec.getLogging());
             kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-            kafkaMirrorMakerCluster.setTlsDebugEnabled(spec.getJvmOptions() == null ? DEFAULT_TLS_DEBUG_ENABLED : spec.getJvmOptions().isTlsDebugEnabled());
+            kafkaMirrorMakerCluster.setTlsDebugOptions(spec.getJvmOptions() == null ? DEFAULT_TLS_DEBUG_OPTIONS : spec.getJvmOptions().getJavaxNetDebug());
             kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
             Map<String, Object> metrics = spec.getMetrics();
@@ -391,7 +391,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE, Boolean.toString(producer.getAbortOnSendFailure())));
         }
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_TLS_DEBUG_ENABLED, String.valueOf(tlsDebugEnabled)));
+        if (tlsDebugOptions != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TLS_DEBUG_OPTIONS, tlsDebugOptions));
+        }
 
         if (tracing != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));

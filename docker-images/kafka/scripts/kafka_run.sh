@@ -40,8 +40,8 @@ EOF
   fi
 fi
 
-if [ "$STRIMZI_TLS_DEBUG_ENABLED" = "true" ]; then
-    export KAFKA_OPTS="${KAFKA_OPTS} -Djavax.net.debug=ssl"
+if [ -n "$STRIMZI_TLS_DEBUG_OPTIONS" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} -Djavax.net.debug=${STRIMZI_TLS_DEBUG_OPTIONS}"
 fi
 
 KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"

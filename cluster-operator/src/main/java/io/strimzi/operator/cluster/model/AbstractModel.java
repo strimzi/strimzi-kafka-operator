@@ -81,7 +81,7 @@ public abstract class AbstractModel {
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
-    protected static final boolean DEFAULT_TLS_DEBUG_ENABLED = false;
+    protected static final String DEFAULT_TLS_DEBUG_OPTIONS = null;
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
@@ -93,7 +93,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
-    public static final String ENV_VAR_STRIMZI_TLS_DEBUG_ENABLED = "STRIMZI_TLS_DEBUG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_TLS_DEBUG_OPTIONS = "STRIMZI_TLS_DEBUG_OPTIONS";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
@@ -145,7 +145,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
-    protected boolean tlsDebugEnabled = false;
+    protected String tlsDebugOptions;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -289,8 +289,8 @@ public abstract class AbstractModel {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    protected void setTlsDebugEnabled(boolean tlsDebugEnabled) {
-        this.tlsDebugEnabled = tlsDebugEnabled;
+    protected void setTlsDebugOptions(String tlsDebugOptions) {
+        this.tlsDebugOptions = tlsDebugOptions;
     }
 
     protected abstract String getDefaultLogConfigFileName();

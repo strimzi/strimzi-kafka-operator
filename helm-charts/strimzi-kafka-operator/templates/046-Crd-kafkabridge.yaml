@@ -191,8 +191,8 @@ spec:
                   pattern: '[0-9]+[mMgG]?'
                 gcLoggingEnabled:
                   type: boolean
-                tlsDebugEnabled:
-                  type: boolean
+                javaxNetDebug:
+                  type: string
             logging:
               type: object
               properties:
