@@ -19,7 +19,8 @@ Your client applications should use the CA public key as a trusted certificate i
 * The Cluster Operator is running.
 * For each listener, a compatible server certificate signed by an external CA.
 ** Provide an X.509 certificate in PEM format.
-** Use a SAN certificate that specifies the hostnames of the Kafka brokers. For more information, see xref:ref-alternative-subjects-certs-for-listeners-{context}[].
+** Specify the correct Subject Alternative Names (SANs) for each listener.
+For more information, see xref:ref-alternative-subjects-certs-for-listeners-{context}[].
 ** You can provide a certificate that includes the whole CA chain in the certificate file.
 
 .Procedure
