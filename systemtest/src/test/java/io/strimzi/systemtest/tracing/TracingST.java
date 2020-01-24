@@ -791,11 +791,11 @@ public class TracingST extends BaseST {
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect in Pod:{}", kafkaConnectS2IPodName);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME);
 
         kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_S2I_SERVICE);
