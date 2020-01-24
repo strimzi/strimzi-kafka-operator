@@ -451,6 +451,11 @@
                 <artifactId>kafka-oauth-client</artifactId>
                 <version>${strimzi-oauth-callback.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
+                <version>${strimzi-oauth-callback.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
