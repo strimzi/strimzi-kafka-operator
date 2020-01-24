@@ -73,3 +73,7 @@ m¦NodePort
 You can use a matching wildcard name.
 
 |===
+
+.Additional resources
+
+* xref:proc-installing-certs-per-listener-{context}[]
