@@ -189,7 +189,7 @@ kubectl apply -f _kafka.yaml_
 --
 *_Option 2_*: If you do not have all the `KafkaTopic` resources that existed before you lost your cluster:
 
-. Deploy the Kafka cluster, as with the first option, but without the Topic Operator by removing `topicOperator: {}` from the Kafka resource before deploying.
+. Deploy the Kafka cluster, as with the first option, but without the Topic Operator by removing the `topicOperator` property from the Kafka resource before deploying.
 +
 If you include the Topic Operator in the deployment, the Topic Operator will delete all the topics.
 
@@ -207,7 +207,7 @@ kubectl exec _my-cluster-kafka-0_ bin/zookeeper-shell.sh localhost:2181
 ----
 deleteall /strimzi
 ----
-. Enable the Topic Operator by redeploying the Kafka cluster with `topicOperator: {}` to recreate the `KafkaTopic` resources.
+. Enable the Topic Operator by redeploying the Kafka cluster with the `topicOperator` property to recreate the `KafkaTopic` resources.
 +
 For example:
 +
@@ -220,10 +220,12 @@ metadata:
 spec:
   #...
   entityOperator:
-    *topicOperator: {}*
+    *topicOperator: {}* <1>
     #...
 ----
 --
+<1> Here we show the default configuration, which has no additional properties.
+You specify the required configuration using the properties described in xref:type-EntityTopicOperatorSpec-reference[].
 
 . Verify the recovery by listing the `KafkaTopic` resources:
 +

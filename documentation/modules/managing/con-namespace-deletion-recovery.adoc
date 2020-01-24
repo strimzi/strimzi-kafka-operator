@@ -12,7 +12,7 @@ A PV is mounted into a Kafka pod using a `PersistentVolumeClaim` (PVC), which li
 The reclaim policy for a PV tells a cluster how to act when a namespace is deleted.
 If the reclaim policy is set as:
 
-*  _Delete_ (default), PVs are deleted when PVCs are deleted with a namespace
+*  _Delete_ (default), PVs are deleted when PVCs are deleted within a namespace
 * _Retain_, PVs are not deleted when a namespace is deleted
 
 To ensure that you can recover from a PV if a namespace is deleted unintentionally, the policy must be reset from _Delete_ to _Retain_.
