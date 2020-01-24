@@ -434,14 +434,7 @@ class CustomResourceStatusST extends BaseST {
         assertThat("Kafka Connect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
 
-        List<ConnectorPlugin> pluginsList = kafkaConnectStatus.getConnectorPlugins();
-        assertThat(pluginsList, notNullValue());
-        List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
-        assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
-                "org.apache.kafka.connect.file.FileStreamSourceConnector",
-                "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
-                "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
-                "org.apache.kafka.connect.mirror.MirrorSourceConnector"));
+        validateConnectPlugins(kafkaConnectStatus.getConnectorPlugins());
     }
 
     void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
@@ -450,7 +443,10 @@ class CustomResourceStatusST extends BaseST {
         assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
 
-        List<ConnectorPlugin> pluginsList = kafkaConnectS2IStatus.getConnectorPlugins();
+        validateConnectPlugins(kafkaConnectS2IStatus.getConnectorPlugins());
+    }
+
+    void validateConnectPlugins(List<ConnectorPlugin> pluginsList) {
         assertThat(pluginsList, notNullValue());
         List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
         assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
