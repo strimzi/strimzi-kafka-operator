@@ -327,16 +327,6 @@ public class ModelUtils {
         return isPersistentClaimStorage;
     }
 
-    /**
-     * Returns the prefix used for volumes and persistent volume claims
-     *
-     * @param id identification number of the persistent storage
-     * @return The volume prefix.
-     */
-    public static String getVolumePrefix(Integer id) {
-        return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
-    }
-
     public static Storage decodeStorageFromJson(String json) {
         try {
             return new ObjectMapper().readValue(json, Storage.class);

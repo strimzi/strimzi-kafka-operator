@@ -50,8 +50,8 @@ import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
+import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -438,7 +438,7 @@ public class KafkaAssemblyOperatorTest {
 
         Map<String, PersistentVolumeClaim> kafkaPvcs = createPvcs(clusterCmNamespace, kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
             (replica, storageId) -> {
-                String name = ModelUtils.getVolumePrefix(storageId);
+                String name = VolumeUtils.getVolumePrefix(storageId);
                 return name + "-" + KafkaCluster.kafkaPodName(clusterCmName, replica);
             });
 
@@ -856,12 +856,12 @@ public class KafkaAssemblyOperatorTest {
         Map<String, PersistentVolumeClaim> kafkaPvcs =
                 createPvcs(clusterNamespace, originalKafkaCluster.getStorage(), originalKafkaCluster.getReplicas(),
                     (replica, storageId) -> {
-                        String name = ModelUtils.getVolumePrefix(storageId);
+                        String name = VolumeUtils.getVolumePrefix(storageId);
                         return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
                     });
         kafkaPvcs.putAll(createPvcs(clusterNamespace, updatedKafkaCluster.getStorage(), updatedKafkaCluster.getReplicas(),
             (replica, storageId) -> {
-                String name = ModelUtils.getVolumePrefix(storageId);
+                String name = VolumeUtils.getVolumePrefix(storageId);
                 return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
             }));
 

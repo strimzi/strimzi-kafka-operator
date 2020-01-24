@@ -182,7 +182,7 @@ public class VolumeUtils {
                 }
             } else if (storage instanceof EphemeralStorage) {
                 Integer id = ((EphemeralStorage) storage).getId();
-                String name = ModelUtils.getVolumePrefix(id);
+                String name = getVolumePrefix(id);
                 String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
                 volumes.add(createEmptyDirVolume(name, sizeLimit));
             }
@@ -204,7 +204,7 @@ public class VolumeUtils {
                 }
             } else if (storage instanceof PersistentClaimStorage) {
                 Integer id = ((PersistentClaimStorage) storage).getId();
-                String name = ModelUtils.getVolumePrefix(id);
+                String name = getVolumePrefix(id);
                 pvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
             }
         }
@@ -234,12 +234,22 @@ public class VolumeUtils {
                     throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
                 }
 
-                String name = ModelUtils.getVolumePrefix(id);
+                String name = getVolumePrefix(id);
                 String namedMountPath = mountPath + "/" + name;
                 volumeMounts.add(createVolumeMount(name, namedMountPath));
             }
         }
 
         return volumeMounts;
+    }
+
+    /**
+     * Returns the prefix used for volumes and persistent volume claims
+     *
+     * @param id identification number of the persistent storage
+     * @return The volume prefix.
+     */
+    public static String getVolumePrefix(Integer id) {
+        return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
     }
 }
