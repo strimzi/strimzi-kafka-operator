@@ -4,7 +4,11 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -38,7 +42,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -403,18 +415,18 @@ public abstract class BaseST implements TestSeparator {
         return validLines;
     }
 
-    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName){
+    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
         LOGGER.info("Checking kafka configuration");
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
-        Properties properties= configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
+        Properties properties = configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
 
         config.forEach((key, val) -> {
             assertThat(properties.keySet().contains(key), is(true));
             assertThat(properties.getProperty(key), is(val));
         });
 
-        for(Pod pod: pods){
+        for (Pod pod: pods) {
             ExecResult result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
             Properties execProperties = stringToProperties(result.out());
 
