@@ -11,6 +11,14 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.kafkaclients.internalclients.KafkaClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -23,18 +31,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -516,6 +518,39 @@ class ConnectST extends BaseST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarUpdated);
         checkComponentConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), "KAFKA_CONNECT_CONFIGURATION", connectConfig);
+    }
+
+    @Test
+    void testKafkaConnectorWithConnectAndConnectS2I() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
+
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", topicName)
+                .addToConfig("file", "/tmp/test-file-sink.txt")
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+            .endSpec().done();
+        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+
+        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
     }
 
     @BeforeAll
