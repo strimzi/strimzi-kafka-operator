@@ -17,13 +17,17 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
+/**
+ * Abstracts connector config. Connectors for MM2 do not have the {@code className} property
+ * while {@code KafkaConnectors} must have it.
+ */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"tasksMax", "config"})
+@JsonPropertyOrder({"pause", "tasksMax", "config"})
 @EqualsAndHashCode
 public abstract class AbstractConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

@@ -77,7 +77,7 @@ class MirrorMaker2ST extends BaseST {
         // Deploy Topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, NAMESPACE).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -172,7 +172,7 @@ class MirrorMaker2ST extends BaseST {
         KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
         SecretUtils.waitForSecretReady(kafkaUserTargetName);
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -323,7 +323,7 @@ class MirrorMaker2ST extends BaseST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 

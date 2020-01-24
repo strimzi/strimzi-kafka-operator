@@ -680,6 +680,7 @@ spec:
                 properties:
                   alias:
                     type: string
+                    pattern: ^[a-zA-Z0-9\._\-]{1,100}$
                   bootstrapServers:
                     type: string
                   config:
@@ -803,8 +804,6 @@ spec:
                   sourceConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -815,8 +814,6 @@ spec:
                   checkpointConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -827,8 +824,6 @@ spec:
                   heartbeatConnector:
                     type: object
                     properties:
-                      class:
-                        type: string
                       tasksMax:
                         type: integer
                         minimum: 1
@@ -836,14 +831,17 @@ spec:
                         type: object
                       pause:
                         type: boolean
-                  topics:
+                  topicsPattern:
                     type: string
-                  groups:
+                  topicsBlacklistPattern:
+                    type: string
+                  groupsPattern:
+                    type: string
+                  groupsBlacklistPattern:
                     type: string
                 required:
                 - sourceCluster
                 - targetCluster
-                - topics
             authentication:
               type: object
               properties:
@@ -1066,4 +1064,15 @@ spec:
               type: integer
             url:
               type: string
+            connectorPlugins:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  version:
+                    type: string
+                  class:
+                    type: string
 {{- end -}}
