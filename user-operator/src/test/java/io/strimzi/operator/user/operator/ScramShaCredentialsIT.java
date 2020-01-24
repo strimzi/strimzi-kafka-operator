@@ -21,7 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-public class ScramShaCredentialsTest {
+public class ScramShaCredentialsIT {
 
     private static EmbeddedZooKeeper zkServer;
 
@@ -57,6 +57,7 @@ public class ScramShaCredentialsTest {
     public void normalDelete() {
         scramShaCred.createOrUpdate("normalDelete", "foo-password");
         scramShaCred.delete("normalDelete");
+        assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(false));
     }
 
     @Test
@@ -64,6 +65,7 @@ public class ScramShaCredentialsTest {
         scramShaCred.createOrUpdate("doubleDelete", "foo-password");
         scramShaCred.delete("doubleDelete");
         scramShaCred.delete("doubleDelete");
+        assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(false));
     }
 
     @Test
@@ -76,7 +78,6 @@ public class ScramShaCredentialsTest {
     public void userExists() {
         scramShaCred.createOrUpdate("userExists", "foo-password");
         assertThat(scramShaCred.exists("userExists"), is(true));
-
     }
 
     @Test

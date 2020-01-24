@@ -217,7 +217,7 @@ public class KafkaUserQuotasOperator {
                 zkClient.deleteRecursive("/config/users/" + username);
                 log.debug("User {} deleted from ZK store", username);
             } else {
-                zkClient.writeData("/config/users/" + username, deleteJson);
+                zkClient.writeData("/config/users/" + username, deleteJson.toBuffer().getBytes());
             }
             notifyChanges(username);
         } else {

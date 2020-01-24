@@ -84,6 +84,7 @@ public class KafkaUserQuotasIT {
         assertThat(kuq.exists("normalDelete"), is(true));
         kuq.delete("normalDelete");
         assertThat(kuq.exists("normalDelete"), is(false));
+        assertThat(kuq.isPathExist("/config/users/normalDelete"), is(false));
     }
 
     @Test
@@ -94,6 +95,7 @@ public class KafkaUserQuotasIT {
         kuq.delete("doubleDelete");
         kuq.delete("doubleDelete");
         assertThat(kuq.exists("doubleDelete"), is(false));
+        assertThat(kuq.isPathExist("/config/users/doubleDelete"), is(false));
     }
 
     @Test

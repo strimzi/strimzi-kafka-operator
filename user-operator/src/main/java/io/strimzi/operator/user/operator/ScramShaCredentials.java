@@ -77,7 +77,7 @@ public class ScramShaCredentials {
             if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
             } else {
-                zkClient.writeData("/config/users/" + username, deletedJson);
+                zkClient.writeData("/config/users/" + username, deletedJson.toBuffer().getBytes());
             }
             notifyChanges(username);
         } else {
@@ -163,6 +163,11 @@ public class ScramShaCredentials {
         if (!zkClient.exists(path))   {
             zkClient.createPersistent(path, true);
         }
+    }
+
+    /* test */
+    boolean isPathExist(String path)    {
+        return zkClient.exists(path);
     }
 
     /**
