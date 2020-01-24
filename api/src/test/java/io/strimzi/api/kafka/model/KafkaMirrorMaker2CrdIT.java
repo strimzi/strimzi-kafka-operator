@@ -81,7 +81,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-tls-auth-with-missing-required.yaml");
             });
         
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.clusters.authentication.certificateAndKey", "spec.clusters.authentication.certificateAndKey");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.clusters.authentication.certificateAndKey.certificate", "spec.clusters.authentication.certificateAndKey.key");
     }
 
     @Test
