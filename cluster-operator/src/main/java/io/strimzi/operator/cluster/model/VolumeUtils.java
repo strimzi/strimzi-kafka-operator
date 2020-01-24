@@ -46,6 +46,7 @@ public class VolumeUtils {
      * @param secretName  Name of the Secret
      * @param items       contents of the Secret
      * @param isOpenshift true if underlying cluster OpenShift
+     * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
         int mode = 0444;
@@ -84,6 +85,7 @@ public class VolumeUtils {
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
      * @param isOpenshift true if underlying cluster OpenShift
+     * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
         int mode = 0444;
@@ -109,6 +111,7 @@ public class VolumeUtils {
      *
      * @param name      Name of the Volume
      * @param sizeLimit Volume size
+     * @return The Volume created
      */
     public static Volume createEmptyDirVolume(String name, String sizeLimit) {
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
@@ -129,6 +132,7 @@ public class VolumeUtils {
      *
      * @param name    Name of the PVC template
      * @param storage Storage definition
+     * @return The PVC created
      */
     public static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>();
@@ -159,6 +163,7 @@ public class VolumeUtils {
      *
      * @param name Name of the Volume mount
      * @param path volume mount path
+     * @return The Volume mount created
      */
     public static VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
