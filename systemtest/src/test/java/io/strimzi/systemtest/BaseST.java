@@ -4,10 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.*;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -23,6 +20,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -40,14 +38,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -379,6 +370,58 @@ public abstract class BaseST implements TestSeparator {
             assertThat(actual.entrySet().containsAll(config.entrySet()), is(true));
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    private Properties stringToProperties(String str) {
+        Properties result = new Properties();
+        List<String> list = getLinesWithoutCommentsAndEmptyLines(str);
+        for (String line: list) {
+            String[] split = line.split("=");
+            if (split.length == 1) {
+                result.put(split[0], "");
+            } else {
+                result.put(split[0], split[1]);
+            }
+        }
+        return result;
+    }
+
+    private Properties configMap2Properties(ConfigMap cm) {
+        return stringToProperties(cm.getData().get("server.config"));
+    }
+
+    private List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
+        List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
+        List<String> validLines = new ArrayList<>();
+
+        for (String line : allLines)    {
+            if (!line.replace(" ", "").startsWith("#") && !line.isEmpty())   {
+                validLines.add(line.replace(" ", ""));
+            }
+        }
+        return validLines;
+    }
+
+    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName){
+        LOGGER.info("Checking kafka configuration");
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        Properties properties= configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
+
+        config.forEach((key, val) -> {
+            assertThat(properties.keySet().contains(key), is(true));
+            assertThat(properties.getProperty(key), is(val));
+        });
+
+        for(Pod pod: pods){
+            ExecResult result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
+            Properties execProperties = stringToProperties(result.out());
+
+            config.forEach((key, val) -> {
+                assertThat(execProperties.keySet().contains(key), is(true));
+                assertThat(execProperties.getProperty(key), is(val));
+            });
         }
     }
 
