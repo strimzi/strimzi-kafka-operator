@@ -1319,9 +1319,9 @@ public class KafkaCluster extends AbstractModel {
      *                related volume mount paths
      */
     private void setDataVolumesClaimsAndMountPaths(Storage storage) {
-        dataVolumeMountPaths = ModelUtils.getDataVolumeMountPaths(storage, mountPath);
-        dataPvcs = ModelUtils.getDataPersistentVolumeClaims(storage);
-        dataVolumes = ModelUtils.getDataVolumes(storage);
+        dataVolumeMountPaths = VolumeUtils.getDataVolumeMountPaths(storage, mountPath);
+        dataPvcs = VolumeUtils.getDataPersistentVolumeClaims(storage);
+        dataVolumes = VolumeUtils.getDataVolumes(storage);
     }
 
     /**
@@ -1361,19 +1361,19 @@ public class KafkaCluster extends AbstractModel {
         volumeList.addAll(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(ModelUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
         }
 
-        volumeList.add(ModelUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(ModelUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(ModelUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
 
         if (secretSourceExternal != null) {
             Map<String, String> items = new HashMap<>(2);
             items.put(secretSourceExternal.getKey(), "tls.key");
             items.put(secretSourceExternal.getCertificate(), "tls.crt");
 
-            volumeList.add(ModelUtils.createSecretVolume("custom-external-9094-certs", this.secretSourceExternal.getSecretName(), items, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume("custom-external-9094-certs", this.secretSourceExternal.getSecretName(), items, isOpenShift));
         }
 
         if (secretSourceTls != null) {
@@ -1381,7 +1381,7 @@ public class KafkaCluster extends AbstractModel {
             items.put(secretSourceTls.getKey(), "tls.key");
             items.put(secretSourceTls.getCertificate(), "tls.crt");
 
-            volumeList.add(ModelUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
@@ -1428,22 +1428,22 @@ public class KafkaCluster extends AbstractModel {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.addAll(dataVolumeMountPaths);
 
-        volumeMountList.add(ModelUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(ModelUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(ModelUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(ModelUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(ModelUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (secretSourceExternal != null) {
-            volumeMountList.add(ModelUtils.createVolumeMount("custom-external-9094-certs", "/opt/kafka/certificates/custom-external-9094-certs"));
+            volumeMountList.add(VolumeUtils.createVolumeMount("custom-external-9094-certs", "/opt/kafka/certificates/custom-external-9094-certs"));
         }
 
         if (secretSourceTls != null) {
-            volumeMountList.add(ModelUtils.createVolumeMount("custom-tls-9093-certs", "/opt/kafka/certificates/custom-tls-9093-certs"));
+            volumeMountList.add(VolumeUtils.createVolumeMount("custom-tls-9093-certs", "/opt/kafka/certificates/custom-tls-9093-certs"));
         }
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeMountList.add(ModelUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
         if (listeners != null) {
@@ -1558,7 +1558,7 @@ public class KafkaCluster extends AbstractModel {
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(ModelUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .build();
 
@@ -1606,8 +1606,8 @@ public class KafkaCluster extends AbstractModel {
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidevarEnvVars())
-                .withVolumeMounts(ModelUtils.createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
-                        ModelUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
+                        VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop()
                         .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
@@ -2328,7 +2328,7 @@ public class KafkaCluster extends AbstractModel {
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper()
-                .withLogDirs(ModelUtils.getDataVolumeMountPaths(storage, mountPath))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
                 .withUserConfiguration(configuration)

@@ -270,7 +270,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(ModelUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
@@ -283,7 +283,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
-        volumeMountList.add(ModelUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -292,7 +292,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume mount with same Secret name was already added
                     if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(ModelUtils.createVolumeMount(certSecretSource.getSecretName(),
+                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
                                 TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                     }
                 }

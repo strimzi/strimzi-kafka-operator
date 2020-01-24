@@ -91,14 +91,14 @@ public class AuthenticationUtils {
 
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeList.add(ModelUtils.createSecretVolume(tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
+                    volumeList.add(VolumeUtils.createSecretVolume(tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeList.add(ModelUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeList.add(ModelUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
@@ -123,15 +123,15 @@ public class AuthenticationUtils {
 
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(ModelUtils.createVolumeMount(tlsAuth.getCertificateAndKey().getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeMountList.add(ModelUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeMountList.add(ModelUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthVolumeMount));
@@ -211,7 +211,7 @@ public class AuthenticationUtils {
                 Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
 
-                Volume vol = ModelUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
+                Volume vol = VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
 
                 newVolumes.add(vol);
                 i++;
@@ -239,7 +239,7 @@ public class AuthenticationUtils {
 
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                newVolumeMounts.add(ModelUtils.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
+                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
                 i++;
             }
         }

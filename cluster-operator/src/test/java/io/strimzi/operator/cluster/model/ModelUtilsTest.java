@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -274,23 +273,5 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithSizeLimit() {
-        Volume volume = ModelUtils.createEmptyDirVolume("bar", "1Gi");
-        assertThat(volume.getEmptyDir().getSizeLimit().getAmount(), is("1Gi"));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithNullSizeLimit() {
-        Volume volume = ModelUtils.createEmptyDirVolume("bar", null);
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
-        Volume volume = ModelUtils.createEmptyDirVolume("bar", "");
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 }
