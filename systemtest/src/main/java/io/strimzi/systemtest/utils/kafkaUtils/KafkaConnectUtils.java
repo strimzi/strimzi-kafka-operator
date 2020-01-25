@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,13 +20,20 @@ public class KafkaConnectUtils {
 
     private KafkaConnectUtils() {}
 
-    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName) {
+    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
         cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
                 "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
                 "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
-                "http://localhost:8083/connectors"
+                    apiUrl + "/connectors"
         );
+    }
+
+    public static void waitForConnectStatus(String name, String status) {
+        LOGGER.info("Waiting for Kafka Connect {} state: {}", name, status);
+        TestUtils.waitFor("Kafka Connect " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
+        LOGGER.info("Kafka Connect {} is in desired state: {}", name, status);
     }
 
     public static void waitForConnectorReady(String name) {
@@ -51,5 +59,11 @@ public class KafkaConnectUtils {
 
     public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName) {
         waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName, "0\n1\n");
+    }
+
+    public static String getCreatedConnectors(String connectPodName) {
+        return cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c",
+                "curl -X GET http://localhost:8083/connectors"
+        ).out();
     }
 }

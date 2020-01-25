@@ -20,6 +20,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -523,20 +524,22 @@ class ConnectST extends BaseST {
     @Test
     void testKafkaConnectorWithConnectAndConnectS2I() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String connectClusterName = "connect-cluster";
+        String connectS2IClusterName = "connect-s2i-cluster";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
+        // Crate connect cluster with default connect image
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .addToAnnotations("strimzi.io/use-connector-resources", "true")
-            .endMetadata().done();
-
-        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
-            .endMetadata().done();
+            .endMetadata()
+            .editSpec()
+                .addToConfig("group.id", connectClusterName)
+                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectClusterName + "-config")
+                .addToConfig("status.storage.topic", connectClusterName + "-status")
+            .endSpec().done();
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
@@ -548,9 +551,59 @@ class ConnectST extends BaseST {
             .endSpec().done();
         KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
 
-        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
+        // Wait for first reconciliation
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnect contains created connector
+        String connectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        assertThat(availableConnectors, containsString(CLUSTER_NAME));
+
+        // Create different connect cluster via S2I resources
+        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata()
+            .editSpec()
+                .addToConfig("group.id", connectS2IClusterName)
+                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
+                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
+            .endSpec().build());
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
+
+        // Check that KafkaConnect contains created connector
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        assertThat(availableConnectors, containsString(CLUSTER_NAME));
+
+        // Now delete KafkaConnector resource and create connector manually
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+            kc.getMetadata().getAnnotations().remove("strimzi.io/use-connector-resources");
+        });
+
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
+        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnect contains created connector
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        assertThat(availableConnectors, containsString("sink-test"));
+
+        // Wait for second reconciliation and check that pods are not rolled
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnect contains created connector
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        assertThat(availableConnectors, containsString("sink-test"));
+
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
     @BeforeAll
@@ -561,6 +614,6 @@ class ConnectST extends BaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         cluster.setNamespace(NAMESPACE);
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
     }
 }
