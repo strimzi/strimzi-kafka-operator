@@ -11,7 +11,7 @@ The `release` target will not build the Docker images - they should be built and
 The release process should normally look like this:
 1. Create a release branch
 2. Export the desired version into the environment variable `RELEASE_VERSION`
-3. Run `make clean release`
+3. Run `make release`
 4. Commit the changes to the existing files (do not add the newly created top level TAR.GZ, ZIP archives or .yaml files into Git)
 5. Push the changes to the release branch on GitHub
 6. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git tag name has to be the same as the `RELEASE_VERSION`, i.e. `git tag ${RELEASE_VERSION}`,
