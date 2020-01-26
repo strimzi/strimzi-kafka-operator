@@ -34,6 +34,7 @@ The ids cannot be changed once the JBOD volumes are created.
 
 Users can add or remove volumes from the JBOD configuration.
 
+[[jbod-pvc]]
 == JBOD and Persistent Volume Claims
 
 When persistent storage is used to declare JBOD volumes, the naming scheme of the resulting Persistent Volume Claims is as follows:

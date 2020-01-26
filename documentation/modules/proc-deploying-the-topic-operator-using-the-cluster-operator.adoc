@@ -6,7 +6,7 @@
 [id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
 = Deploying the Topic Operator using the Cluster Operator
 
-This procedure describes how to deploy the Topic Operator using the Cluster Operator. 
+This procedure describes how to deploy the Topic Operator using the Cluster Operator.
 If you want to use the Topic Operator with a Kafka cluster that is not managed by {ProductName}, you must deploy the Topic Operator as a standalone component. For more information, see xref:deploying-the-topic-operator-standalone-deploying[].
 
 .Prerequisites
@@ -30,7 +30,7 @@ spec:
     *topicOperator: {}*
     userOperator: {}
 ----
-. Configure the Topic Operator using the fields described in xref:type-EntityTopicOperatorSpec-reference[].
+. Configure the Topic Operator using the properties described in xref:type-EntityTopicOperatorSpec-reference[].
 . Create or update the Kafka resource in Kubernetes.
 +
 Use `kubectl apply`:

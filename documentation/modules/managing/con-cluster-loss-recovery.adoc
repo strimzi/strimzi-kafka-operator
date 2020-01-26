@@ -1,0 +1,9 @@
+// Module included in the following assembly:
+//
+// assembly-cluster-recovery-volume.adoc
+
+[id="cluster-loss_{context}"]
+= Recovery from loss of a Kubernetes cluster
+
+When a cluster is lost, you can use the data from disks/volumes to recover the cluster if they were preserved within the infrastructure.
+The recovery procedure is the same as with namespace deletion, assuming PVs can be recovered and they were created manually.

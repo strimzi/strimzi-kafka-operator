@@ -1,6 +1,6 @@
-// This module is included in the following assemblies:
+// Module included in the following assembly:
 //
-// master.adoc
+// assembly-management-tasks.adoc
 
 [id='uninstalling-{context}']
 = Uninstalling {ProductName}
