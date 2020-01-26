@@ -195,6 +195,12 @@ public class KafkaUserQuotasOperator {
         return false;
     }
 
+    private boolean configJsonIsEmpty(JsonObject json) {
+        validateJsonVersion(json);
+        JsonObject config = json.getJsonObject("config");
+        return config.isEmpty();
+    }
+
     /**
      * Delete the quotas for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any quotas.
@@ -206,7 +212,13 @@ public class KafkaUserQuotasOperator {
 
         if (data != null)   {
             log.debug("Deleting quotas for user {}", username);
-            zkClient.writeData("/config/users/" + username, removeQuotasFromJsonUser(data));
+            JsonObject deleteJson = removeQuotasFromJsonUser(data);
+            if (configJsonIsEmpty(deleteJson)) {
+                zkClient.deleteRecursive("/config/users/" + username);
+                log.debug("User {} deleted from ZK store", username);
+            } else {
+                zkClient.writeData("/config/users/" + username, deleteJson.toBuffer().getBytes());
+            }
             notifyChanges(username);
         } else {
             log.warn("Quotas for user {} already don't exist", username);
@@ -218,9 +230,9 @@ public class KafkaUserQuotasOperator {
      *
      * @param user JSON string with existing user configuration as byte[]
      *
-     * @return  Returns the updated JSON without the quotas as byte array
+     * @return  Returns the updated JSON without the quotas
      */
-    protected byte[] removeQuotasFromJsonUser(byte[] user)   {
+    protected JsonObject removeQuotasFromJsonUser(byte[] user)   {
         JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
 
         validateJsonVersion(json);
@@ -238,8 +250,7 @@ public class KafkaUserQuotasOperator {
                 config.remove("request_percentage");
             }
         }
-
-        return json.encode().getBytes(StandardCharsets.UTF_8);
+        return json;
     }
 
     protected void validateJsonVersion(JsonObject json) {

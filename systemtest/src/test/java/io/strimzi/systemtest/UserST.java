@@ -171,12 +171,19 @@ class UserST extends BaseST {
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
 
+        String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:21810 <<< 'ls /config/users'";
+        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+        assertThat(zkResult.out().contains(userName), is(true));
+
+        // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(userName);
 
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), emptyString());
 
+        ExecResult zkDeleteResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+        assertThat(zkDeleteResult.out().contains(userName), is(false));
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
