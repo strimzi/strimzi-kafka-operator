@@ -23,7 +23,7 @@ import lombok.ToString;
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectorPlugins", "buildConfigName" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class KafkaConnectS2Istatus extends KafkaConnectStatus {
+public class KafkaConnectS2IStatus extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
 
     private String buildConfigName;

@@ -1353,7 +1353,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1713,7 +1713,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-ConnectorPlugin-{context}']
 ### `ConnectorPlugin` schema reference
 
-Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
+Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
 
 
 [options="header"]
@@ -1737,7 +1737,7 @@ Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xre
 |spec    1.2+<.<|The specification of the Kafka Connect Source-to-Image (S2I) cluster.
 |xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`]
 |status  1.2+<.<|The status of the Kafka Connect Source-to-Image (S2I) cluster.
-|xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`]
+|xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`]
 |====
 
 [id='type-KafkaConnectS2ISpec-{context}']
@@ -1795,8 +1795,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |string
 |====
 
-[id='type-KafkaConnectS2Istatus-{context}']
-### `KafkaConnectS2Istatus` schema reference
+[id='type-KafkaConnectS2IStatus-{context}']
+### `KafkaConnectS2IStatus` schema reference
 
 Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
