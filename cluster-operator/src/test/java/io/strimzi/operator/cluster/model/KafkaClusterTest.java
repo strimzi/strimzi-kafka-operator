@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -3295,11 +3296,12 @@ public class KafkaClusterTest {
         assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-1".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate-1"));
 
         // Volumes
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca.crt"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
+        List<Volume> volumes = sts.getSpec().getTemplate().getSpec().getVolumes();
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
     }
 }
