@@ -97,8 +97,9 @@ def clearImages() {
 
 
 def buildStrimziImages() {
-    sh "make docker_build"
-    sh "make docker_tag"
+    sh(script: "make docker_build")
+    sh(script: "make docker_tag")
+    sh(script: "make docker_push")
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
