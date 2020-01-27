@@ -43,7 +43,12 @@ public class KafkaConnectorResource {
         return deployKafkaConnector(defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks).build());
     }
 
-    private static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
+    public static KafkaConnectorBuilder defaultKafkaConnector(String name, String clusterName, int maxTasks) {
+        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
+        return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
+    }
+
+    public static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
         return new KafkaConnectorBuilder(kafkaConnector)
             .editOrNewMetadata()
                 .withName(name)
@@ -53,6 +58,12 @@ public class KafkaConnectorResource {
             .editOrNewSpec()
                 .withTasksMax(maxTasks)
             .endSpec();
+    }
+
+    public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
+        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
+        return kafkaConnector;
+
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
