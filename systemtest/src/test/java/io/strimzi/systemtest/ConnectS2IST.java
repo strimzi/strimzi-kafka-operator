@@ -118,6 +118,22 @@ class ConnectS2IST extends BaseST {
 
         String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(kafkaConnectS2IName, kC -> {
+            Map<String, Object> config = kC.getSpec().getConfig();
+            config.put("mongodb.user", "test-user");
+            kC.getSpec().setConfig(config);
+            kC.getSpec().setTasksMax(8);
+        });
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
+            () -> {
+                String connectorConfig = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/config").out();
+                assertThat(connectorStatus, containsString("RUNNING"));
+                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("mongodb.user\":\"test-user");
+            });
     }
 
     @Test
