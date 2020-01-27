@@ -33,7 +33,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
-    private String javaxNetDebug;
+    private Map<String, Object> javaSystemProperties;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -78,13 +78,13 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    @Description("TLS debugging logging colon separated options. For example `ssl:handshake:verbose`.")
-    public String getJavaxNetDebug() {
-        return javaxNetDebug;
+    @Description("A map of -D options to the JVM.")
+    public Map<String, Object> getJavaSystemProperties() {
+        return javaSystemProperties;
     }
 
-    public void setJavaxNetDebug(String javaxNetDebug) {
-        this.javaxNetDebug = javaxNetDebug;
+    public void setJavaSystemProperties(Map<String, Object> javaSystemProperties) {
+        this.javaSystemProperties = javaSystemProperties;
     }
 
     @JsonProperty("-XX")

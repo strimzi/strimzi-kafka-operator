@@ -836,8 +836,8 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
-                    javaxNetDebug:
-                      type: string
+                    javaSystemProperties:
+                      type: object
                 jmxOptions:
                   type: object
                   properties:
@@ -1700,8 +1700,8 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
-                    javaxNetDebug:
-                      type: string
+                    javaSystemProperties:
+                      type: object
                 resources:
                   type: object
                   properties:

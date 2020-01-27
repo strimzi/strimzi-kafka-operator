@@ -766,17 +766,17 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 [options="header"]
 |====
-|Property                 |Description
-|-XX               1.2+<.<|A map of -XX options to the JVM.
+|Property                     |Description
+|-XX                   1.2+<.<|A map of -XX options to the JVM.
 |map
-|-Xms              1.2+<.<|-Xms option to to the JVM.
+|-Xms                  1.2+<.<|-Xms option to to the JVM.
 |string
-|-Xmx              1.2+<.<|-Xmx option to to the JVM.
+|-Xmx                  1.2+<.<|-Xmx option to to the JVM.
 |string
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
+|gcLoggingEnabled      1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
-|javaxNetDebug     1.2+<.<|TLS debugging logging colon separated options. For example `ssl:handshake:verbose`.
-|string
+|javaSystemProperties  1.2+<.<|A map of -D options to the JVM.
+|map
 |====
 
 [id='type-KafkaJmxOptions-{context}']

@@ -145,7 +145,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-        kafkaBridgeCluster.setTlsDebugOptions(spec.getJvmOptions() == null ? DEFAULT_TLS_DEBUG_OPTIONS : spec.getJvmOptions().getJavaxNetDebug());
+        kafkaBridgeCluster.setJavaSystemProperties(spec.getJvmOptions() == null ? DEFAULT_JAVA_SYSTEM_PROPERTIES : spec.getJvmOptions().getJavaSystemProperties());
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
@@ -353,8 +353,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (tlsDebugOptions != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TLS_DEBUG_OPTIONS, tlsDebugOptions));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, getJavaSystemPropertiesToString(javaSystemProperties)));
         }
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));

@@ -118,6 +118,10 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
+    private final Map<String, Object> javaSystemProperties = new HashMap<String, Object>() {{
+            put("javax.net.debug", "verbose");
+            put("something.else", 42);
+        }};
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
             .withLivenessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
@@ -128,6 +132,9 @@ public class KafkaClusterTest {
             .editSpec()
                 .editKafka()
                     .withTlsSidecar(tlsSidecar)
+                    .withNewJvmOptions()
+                        .addToJavaSystemProperties(javaSystemProperties)
+                    .endJvmOptions()
                 .endKafka()
             .endSpec()
             .build();
@@ -139,6 +146,13 @@ public class KafkaClusterTest {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(kc.createOwnerReference(), metricsCm);
+    }
+
+    @Test
+    public void  testJavaSystemProperties() {
+        assertThat(kc.getEnvVars().get(2).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
+        assertThat(kc.getEnvVars().get(2).getValue(), is("-Djavax.net.debug=" + javaSystemProperties.get("javax.net.debug") + " " +
+                "-Dsomething.else=" + javaSystemProperties.get("something.else")));
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {

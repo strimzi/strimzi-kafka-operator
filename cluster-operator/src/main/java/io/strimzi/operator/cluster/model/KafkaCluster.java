@@ -416,7 +416,7 @@ public class KafkaCluster extends AbstractModel {
         result.setLogging(logging == null ? new InlineLogging() : logging);
 
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
-        result.setTlsDebugOptions(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_TLS_DEBUG_OPTIONS : kafkaClusterSpec.getJvmOptions().getJavaxNetDebug());
+        result.setJavaSystemProperties(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JAVA_SYSTEM_PROPERTIES : kafkaClusterSpec.getJvmOptions().getJavaSystemProperties());
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
@@ -1631,8 +1631,8 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (tlsDebugOptions != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TLS_DEBUG_OPTIONS, tlsDebugOptions));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, getJavaSystemPropertiesToString(javaSystemProperties)));
         }
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
