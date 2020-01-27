@@ -146,15 +146,15 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
                 "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
-                "strimzi.authz.token.endpoint.uri=http://token-endpoint-uri\n" +
-                "strimzi.authz.client.id=my-client-id\n" +
-                "strimzi.authz.delegate.to.kafka.acl=false\n" +
-                "strimzi.authz.kafka.cluster.name=my-cluster\n" +
-                "strimzi.authz.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
-                "strimzi.authz.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
-                "strimzi.authz.ssl.truststore.type=PKCS12\n" +
-                "strimzi.authz.ssl.secure.random.implementation=SHA1PRNG\n" +
-                "strimzi.authz.ssl.endpoint.identification.algorithm=\n" +
+                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
+                "strimzi.authorization.client.id=my-client-id\n" +
+                "strimzi.authorization.delegate.to.kafka.acl=false\n" +
+                "strimzi.authorization.kafka.cluster.name=my-cluster\n" +
+                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
+                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
+                "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
+                "strimzi.authorization.ssl.endpoint.identification.algorithm=\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 

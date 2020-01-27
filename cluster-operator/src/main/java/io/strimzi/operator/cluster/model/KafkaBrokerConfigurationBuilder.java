@@ -405,18 +405,18 @@ public class KafkaBrokerConfigurationBuilder {
             KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
             writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
             writer.println("principal.builder.class=" + KafkaAuthorizationKeycloak.PRINCIPAL_BUILDER_CLASS_NAME);
-            writer.println("strimzi.authz.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
-            writer.println("strimzi.authz.client.id=" + keycloakAuthz.getClientId());
-            writer.println("strimzi.authz.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
-            writer.println("strimzi.authz.kafka.cluster.name=" + clusterName);
+            writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
+            writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
+            writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
+            writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {
-                writer.println("strimzi.authz.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
-                writer.println("strimzi.authz.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
-                writer.println("strimzi.authz.ssl.truststore.type=PKCS12");
-                writer.println("strimzi.authz.ssl.secure.random.implementation=SHA1PRNG");
+                writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
+                writer.println("strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+                writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
+                writer.println("strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG");
                 String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
-                writer.println("strimzi.authz.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
+                writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
             }
 
             // User configured super users
