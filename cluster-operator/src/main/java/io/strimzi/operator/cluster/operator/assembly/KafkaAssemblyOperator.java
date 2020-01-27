@@ -857,24 +857,42 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(res.cause());
                         }
 
-                        StatefulSet sts = res.resultAt(0);
-                        ConfigMap cm = res.resultAt(1);
+                        StatefulSet oldSts = res.resultAt(0);
+                        ConfigMap oldCm = res.resultAt(1);
 
-                        if (sts == null || cm == null) {
+                        if (oldSts == null || oldCm == null) {
                             return Future.succeededFuture(this);
                         }
 
-                        KafkaVersionChange versionChange = getKafkaVersionChange(sts);
+                        KafkaVersionChange versionChange = getKafkaVersionChange(oldSts);
 
                         // Get the current version of the cluster
-                        KafkaVersion currentVersion = versions.version(Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION));
+                        KafkaVersion currentVersion = versions.version(Annotations.annotations(oldSts).get(ANNO_STRIMZI_IO_KAFKA_VERSION));
+
+                        StatefulSet sts;
+                        ConfigMap cm;
+
+                        // When Kafka upgrade is done together with broker upgrade (when `version: X.Y.Z` is missing in
+                        // the CRD), the broker configuration file introduced in 0.16.0 might not be there yet (if
+                        // upgrading from any version before 0.16.0). We have to detect this and trigger different
+                        // upgrade procedure.
+                        boolean certificatesHaveToBeUpgraded;
+                        if (oldCm.getData().get("server.config") == null)  {
+                            certificatesHaveToBeUpgraded = true;
+                            cm = getKafkaAncialiaryCm();
+                            sts = getKafkaStatefulSet();
+                        } else {
+                            sts = oldSts;
+                            cm = oldCm;
+                            certificatesHaveToBeUpgraded = false;
+                        }
 
                         if (versionChange.isNoop()) {
                             log.debug("Kafka.spec.kafka.version unchanged");
                             return Future.succeededFuture(this);
                         } else {
                             // Wait until the STS is not being updated (it shouldn't be, but there's no harm in checking)
-                            return waitForQuiescence(sts).compose(v -> {
+                            return waitForQuiescence(oldSts).compose(v -> {
                                 // Get the image currently set in the Kafka CR or, if that is not set, the image from the version we are changing to.
                                 String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), versionChange.to().version());
 
@@ -883,7 +901,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (versionChange.isUpgrade()) {
                                     if (currentVersion.equals(versionChange.from())) {
-                                        f = f.compose(ignored -> kafkaUpgradePhase1(sts, cm, versionChange, image));
+                                        f = f.compose(ignored -> kafkaUpgradePhase1(sts, cm, versionChange, image, certificatesHaveToBeUpgraded));
                                     }
                                     result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, cm, versionChange));
                                 } else {
@@ -905,7 +923,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Set inter.broker.protocol.version if it's not set
          * Perform a rolling update.
          */
-        private Future<StatefulSet> kafkaUpgradePhase1(StatefulSet sts, ConfigMap cm, KafkaVersionChange versionChange, String upgradedImage) {
+        private Future<StatefulSet> kafkaUpgradePhase1(StatefulSet sts, ConfigMap cm, KafkaVersionChange versionChange, String upgradedImage, boolean certificatesHaveToBeUpgraded) {
             log.info("{}: {}, phase 1", reconciliation, versionChange);
 
             Map<String, String> annotations = Annotations.annotations(sts);
@@ -923,12 +941,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // to match the old version
                 return Future.failedFuture(new KafkaUpgradeException(versionChange + " requires a message format change " +
                         "from " + versionChange.from().messageVersion() + " to " + versionChange.to().messageVersion() + ". " +
-                        "You must explicitly set " +
                         LOG_MESSAGE_FORMAT_VERSION + ": \"" + versionChange.from().messageVersion() + "\"" +
-                        " in Kafka.spec.kafka.config to perform the upgrade. " +
-                        "Then you can upgrade client applications. " +
-                        "And finally you can remove " + LOG_MESSAGE_FORMAT_VERSION +
-                        " from Kafka.spec.kafka.config"));
+                        " must be explicitely set."));
             }
             // Otherwise both versions use the same message format, so we don't care.
 
@@ -985,11 +999,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ConfigMap newCm = new ConfigMapBuilder(cm).build();
             newCm.getData().put("server.config", config);
 
+            Future<Void> secretUpdateFuture;
+            if (certificatesHaveToBeUpgraded) {
+                // Advertised hostnames for replication changed, we need to update the certs as well
+                secretUpdateFuture = kafkaGenerateCertificates(() -> new Date())
+                        .compose(ignore -> secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()))
+                        .map(ignore -> (Void) null);
+            } else {
+                secretUpdateFuture = Future.succeededFuture();
+            }
+
             // patch and rolling upgrade
             String stsName = KafkaCluster.kafkaClusterName(this.name);
             String configCmName = KafkaCluster.metricAndLogConfigsName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, this.name);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, configCmName, newCm))
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, configCmName, newCm), secretUpdateFuture)
                     .compose(result -> {
                         StatefulSet resultSts = null;
 
@@ -997,7 +1021,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             resultSts = (StatefulSet) ((ReconcileResult) result.resultAt(0)).resource();
                         }
 
-                        return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
+                        return kafkaSetOperations.maybeRollingUpdate(newSts, pod -> {
                             log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return true;
                         }).map(resultSts);
@@ -2033,16 +2057,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return thumbprintPromise.future();
         }
 
-        Future<ReconciliationState> kafkaAncillaryCm() {
+        ConfigMap getKafkaAncialiaryCm()    {
             ConfigMap loggingCm = null;
 
             if (kafkaCluster.getLogging() instanceof ExternalLogging) {
                 loggingCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
             }
 
-            ConfigMap kafkaAncillaryCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+            return kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+        }
 
-            return getReconciliationStateOfConfigMap(kafkaCluster, kafkaAncillaryCm, this::withKafkaAncillaryCmChanged);
+        Future<ReconciliationState> kafkaAncillaryCm() {
+            return getReconciliationStateOfConfigMap(kafkaCluster, getKafkaAncialiaryCm(), this::withKafkaAncillaryCmChanged);
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -2196,7 +2222,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return maybeResizeReconcilePvcs(pvcs, kafkaCluster);
         }
 
-        Future<ReconciliationState> kafkaStatefulSet() {
+        StatefulSet getKafkaStatefulSet()   {
             StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
 
@@ -2221,7 +2247,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         externalListenerCustomCertificateThumbprint);
             }
 
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSts));
+            return kafkaSts;
+        }
+
+        Future<ReconciliationState> kafkaStatefulSet() {
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
