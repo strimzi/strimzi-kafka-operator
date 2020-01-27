@@ -32,13 +32,12 @@ Run the following commands:
 ----
 # Delete any existing secret (ignore "Not Exists" errors)
 kubectl delete secret _<ca-cert-secret>_
-# Create and label the new one
+# Create and label the new secret
 kubectl create secret generic _<ca-cert-secret>_ --from-file=ca.crt=_<ca-cert-file>_
 ----
 +
 
-. Put your CA key in the corresponding `Secret` (`_<cluster>_-cluster-ca` for the cluster CA or `_<cluster>_-clients-ca` for the clients CA)
-Run the following commands:
+. Put your CA key in the corresponding `Secret` (`_<cluster>_-cluster-ca` for the cluster CA or `_<cluster>_-clients-ca` for the clients CA):
 +
 [source,shell,subs="+quotes"]
 ----
@@ -48,8 +47,7 @@ kubectl delete secret _<ca-key-secret>_
 kubectl create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
 ----
 
-. Label both `Secrets` with labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_<my-cluster>_`:
-Run the following commands:
+. Label both `Secrets` with the labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_<my-cluster>_`:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -70,6 +68,8 @@ spec:
     generateCertificateAuthority: false
 ----
 
-//.Additional resources
-//
-//* For the procedure for renewing CA certificates you have previously //installed, see xref:renewing-your-own-ca-certificates-{context}[]
+.Additional resources
+
+* For the procedure for renewing CA certificates you have previously installed, see xref:renewing-your-own-ca-certificates-{context}[].
+
+* xref:proc-installing-certs-per-listener-{context}[].

@@ -1,0 +1,20 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='kafka-listener-certificates-{context}']
+
+= Kafka listener certificates
+
+You can provide your own server certificates and public keys for the following types of listeners:
+
+* TLS listeners for inter-cluster communication
+
+* External listeners (`route`, `loadbalancer`, `ingress`, and `nodeport` types) which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
+
+These user-provided certificates are called _Kafka listener certificates_.
+
+Providing Kafka listener certificates for external listeners allows you to leverage existing security infrastructure, such as your organization's private CA or a public CA.
+Kafka clients will connect to Kafka brokers using Kafka listener certificates rather than certificates signed by the cluster CA or clients CA.
+
+You must manually renew Kafka listener certificates when needed.
