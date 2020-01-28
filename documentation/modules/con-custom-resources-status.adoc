@@ -96,10 +96,20 @@ status:
   - addresses:
     - host: my-cluster-kafka-bootstrap.myproject.svc
       port: 9093
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
     type: tls
   - addresses:
     - host: 172.29.49.180
       port: 9094
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
     type: external
     # ...
 ----

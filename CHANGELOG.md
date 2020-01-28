@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.17.0
+
+* Add public keys of TLS listeners to the status section of the Kafka CR
+
 ## 0.16.0
 
 * Add support for Kafka 2.4.0 and upgrade from Zookeeper 3.4.x to 3.5.x
