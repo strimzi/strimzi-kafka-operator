@@ -15,7 +15,7 @@ public class ClientFactory {
 
         if (clientType.equalsIgnoreCase(EClientType.BASIC.getClientType())) {
             return new KafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.EXTERNAL.getClientType())) {
+        } else if (clientType.equalsIgnoreCase(EClientType.INTERNAL.getClientType())) {
             return new InternalKafkaClient();
         } else if (clientType.equalsIgnoreCase(EClientType.OAUTH.getClientType())) {
             return new OauthKafkaClient();
