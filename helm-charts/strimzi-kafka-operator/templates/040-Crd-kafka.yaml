@@ -3691,4 +3691,8 @@ spec:
                           type: string
                         port:
                           type: integer
+                  certificates:
+                    type: array
+                    items:
+                      type: string
 {{- end -}}
