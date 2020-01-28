@@ -34,6 +34,8 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
@@ -118,9 +120,9 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
-    private final Map<String, String> javaSystemProperties = new HashMap<String, String>() {{
-            put("javax.net.debug", "verbose");
-            put("something.else", "42");
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
+            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
         }};
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
@@ -133,7 +135,7 @@ public class KafkaClusterTest {
                 .editKafka()
                     .withTlsSidecar(tlsSidecar)
                     .withNewJvmOptions()
-                        .addToJavaSystemProperties(javaSystemProperties)
+                        .addAllToJavaSystemProperties(javaSystemProperties)
                     .endJvmOptions()
                 .endKafka()
             .endSpec()
@@ -151,8 +153,8 @@ public class KafkaClusterTest {
     @Test
     public void  testJavaSystemProperties() {
         assertThat(kc.getEnvVars().get(2).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-        assertThat(kc.getEnvVars().get(2).getValue(), is("-Djavax.net.debug=" + javaSystemProperties.get("javax.net.debug") + " " +
-                "-Dsomething.else=" + javaSystemProperties.get("something.else")));
+        assertThat(kc.getEnvVars().get(2).getValue(), is("-D" + javaSystemProperties.get(0).getName() + "=" + javaSystemProperties.get(0).getValue() + " " +
+                "-D" + javaSystemProperties.get(1).getName() + "=" + javaSystemProperties.get(1).getValue()));
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {

@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
@@ -144,7 +145,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
-    protected Map<String, String> javaSystemProperties = null;
+    protected List<SystemProperty> javaSystemProperties = null;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -288,7 +289,7 @@ public abstract class AbstractModel {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    protected void setJavaSystemProperties(Map<String, String> javaSystemProperties) {
+    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
         this.javaSystemProperties = javaSystemProperties;
     }
 
@@ -1183,13 +1184,13 @@ public abstract class AbstractModel {
         }
     }
 
-    protected String getJavaSystemPropertiesToString(Map<String, String> javaSystemProperties) {
+    protected String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
         if (javaSystemProperties == null) {
             return null;
         }
         List<String> javaSystemPropertiesList = new ArrayList<>();
-        for (Map.Entry<String, String> property: javaSystemProperties.entrySet()) {
-            javaSystemPropertiesList.add("-D" + property.getKey() + "=" + property.getValue());
+        for (SystemProperty property: javaSystemProperties) {
+            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
         }
         return String.join(" ", javaSystemPropertiesList);
     }
