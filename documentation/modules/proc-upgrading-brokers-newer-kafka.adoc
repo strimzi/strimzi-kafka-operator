@@ -16,12 +16,11 @@ For the `Kafka` resource to be upgraded, check:
 * The `Kafka.spec.kafka.config` does not contain options that are not supported in the version of Kafka that you are upgrading to.
 * Whether the `log.message.format.version` for the current Kafka version needs to be updated for the new version.
 +
-xref:assembly-upgrade-{context}[Consult the Kafka versions table].
+xref:ref-kafka-versions-{context}[Consult the Kafka versions table].
 
 .Procedure
 
 . Update the Kafka cluster configuration in an editor, as required:
-
 +
 [source,shell,subs=+quotes]
 ----
@@ -30,7 +29,7 @@ kubectl edit kafka _my-cluster_
 
 .. If the `log.message.format.version` of the current Kafka version is the same as that of the new Kafka version, proceed to the next step.
 +
-Otherwise, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the current version.
+Otherwise, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the _current_ version.
 +
 For example, if upgrading from Kafka {KafkaVersionLower}:
 +
@@ -75,6 +74,8 @@ See xref:con-versions-and-images-str[]
 
 . Save and exit the editor, then wait for rolling updates to complete.
 +
+NOTE: Additional rolling updates occur if the new version of Kafka has a new ZooKeeper version.
++
 Check the update in the logs or by watching the pod state transitions:
 +
 [source,shell,subs=+quotes]
@@ -107,7 +108,7 @@ The rolling updates:
 * Ensure each pod is using the broker binaries for the new version of Kafka
 * Configure the brokers to send messages using the interbroker protocol of the new version of Kafka
 +
-NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, updates the clients as quickly as possible.
+NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, update the clients as quickly as possible.
 
 . Depending on your chosen strategy for upgrading clients, upgrade all client applications to use the new version of the client binaries.
 +
@@ -119,7 +120,7 @@ WARNING: You cannot downgrade after completing this step. If you need to revert 
 If required, set the version property for Kafka Connect and Mirror Maker as the new version of Kafka:
 +
 .. For Kafka Connect, update `KafkaConnect.spec.version`
-.. For MIrror Maker, update `KafkaMirrorMaker.spec.version`
+.. For Mirror Maker, update `KafkaMirrorMaker.spec.version`
 
 . If the `log.message.format.version` identified in step 1 is the same as the new version proceed to the next step.
 +
