@@ -97,8 +97,13 @@ def clearImages() {
 
 
 def buildStrimziImages() {
-    sh "make docker_build"
-    sh "make docker_tag"
+    sh(script: "make docker_build")
+    sh(script: "make docker_tag")
+    // Login to internal registries
+    sh(script: "docker login ${env.DOCKER_REGISTRY} -u \$(oc whoami) -p \$(oc whoami -t)")
+    // Create namespace for images
+    sh(script: "oc create namespace ${env.DOCKER_ORG}")
+    sh(script: "make docker_push")
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
