@@ -16,7 +16,7 @@ For the `Kafka` resource to be upgraded, check:
 * The `Kafka.spec.kafka.config` does not contain options that are not supported in the version of Kafka that you are upgrading to.
 * Whether the `log.message.format.version` for the current Kafka version needs to be updated for the new version.
 +
-xref:ref-kafka-versions-{context}[Consult the Kafka versions table] 
+xref:ref-kafka-versions-{context}[Consult the Kafka versions table].
 
 .Procedure
 
