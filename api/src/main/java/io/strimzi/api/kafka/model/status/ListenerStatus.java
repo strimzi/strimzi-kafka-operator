@@ -56,7 +56,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         this.addresses = addresses;
     }
 
-    @Description("The A list of public TLS keys which can be used to verify the identity of the server when connecting " +
+    @Description("The list of public TLS keys which can be used to verify the identity of the server when connecting " +
             "to the given listener. Set only for `tls` and `external` listeners.")
     public List<String> getCertificates() {
         return certificates;

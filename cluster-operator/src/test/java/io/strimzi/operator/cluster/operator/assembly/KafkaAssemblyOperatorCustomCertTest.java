@@ -422,8 +422,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.reconcileCas(this::dateSupplier)
                     .compose(state -> state.getKafkaClusterDescription())
-                    //.compose(state -> state.getCustomTlsListenerThumbprint())
-                    //.compose(state -> state.getCustomExternalListenerThumbprint())
                     .compose(state -> state.customTlsListenerCertificate())
                     .compose(state -> state.customExternalListenerCertificate())
                     .compose(state -> state.kafkaStatefulSet())
