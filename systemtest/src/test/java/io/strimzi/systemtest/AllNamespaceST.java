@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +40,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
     private static final String SECOND_CLUSTER_NAME = CLUSTER_NAME + "-second";
+
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -118,7 +118,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
     void testUserInDifferentNamespace() throws Exception {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -140,7 +139,22 @@ class AllNamespaceST extends AbstractNamespaceST {
             }
         }
 
-        kafkaClient.sendAndRecvMessagesTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, THIRD_NAMESPACE).done();
+
+        cluster.setNamespace(THIRD_NAMESPACE);
+
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking produceed and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+                externalKafkaClient.sendMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS"),
+                externalKafkaClient.receiveMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         cluster.setNamespace(startingNamespace);
     }
@@ -173,12 +187,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
                 .editEntityOperator()
                     .editTopicOperator()
                         .withWatchedNamespace(SECOND_NAMESPACE)

@@ -737,9 +737,10 @@ class KafkaST extends BaseST {
     @Test
     void testForTopicOperator() throws InterruptedException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String topicName = "my-topic";
 
         //Creating topics for testing
-        cmdKubeClient().create(TOPIC_CM);
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName);
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
@@ -1302,7 +1303,7 @@ class KafkaST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -1540,7 +1541,7 @@ class KafkaST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, Constants.KAFKA_CLIENTS + "-" + CLUSTER_NAME).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(Constants.KAFKA_CLIENTS + "-" + CLUSTER_NAME).get(0).getMetadata().getName();
@@ -1657,7 +1658,7 @@ class KafkaST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -1727,7 +1728,7 @@ class KafkaST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
