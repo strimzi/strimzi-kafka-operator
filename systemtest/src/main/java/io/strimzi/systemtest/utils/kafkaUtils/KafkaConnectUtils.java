@@ -19,11 +19,11 @@ public class KafkaConnectUtils {
 
     private KafkaConnectUtils() {}
 
-    public static void createFileSinkConnector(String podName, String topicName) {
+    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName) {
         cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
                 "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
-                "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"/tmp/test-file-sink.txt\" } }' " +
+                "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
                 "http://localhost:8083/connectors"
         );
     }
@@ -42,13 +42,14 @@ public class KafkaConnectUtils {
         LOGGER.info("Kafka connect service is present");
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String message) {
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName, String message) {
         LOGGER.info("Waiting for messages in file sink");
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().contains(message));
+            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
+        LOGGER.info("Expected messages are in file sink");
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName) {
-        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, "0\n1\n");
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName) {
+        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName, "0\n1\n");
     }
 }

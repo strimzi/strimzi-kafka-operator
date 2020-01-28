@@ -7,23 +7,23 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -76,12 +76,32 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    void testDeployKafkaConnectInOtherNamespaceThanCO() {
+    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() throws Exception {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
-        // Check that Kafka Connect was deployed
-        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
+        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
+        // Deploy Kafka Connector
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect");
+
+        cluster.setNamespace(previousNamespace);
+    }
+
+    @Test
+    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() throws Exception {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        // Deploy Kafka Connect in other namespace than CO
+        KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
+        // Deploy Kafka Connector
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect-s2i");
+
         cluster.setNamespace(previousNamespace);
     }
 
