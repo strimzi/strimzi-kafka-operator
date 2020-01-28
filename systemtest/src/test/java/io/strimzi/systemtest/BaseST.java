@@ -386,34 +386,6 @@ public abstract class BaseST implements TestSeparator {
         }
     }
 
-    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
-        LOGGER.info("Checking kafka configuration");
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
-
-        Properties properties = configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
-
-        for (Map.Entry<String, Object> property : config.entrySet()) {
-            String key = property.getKey();
-            Object val = property.getValue();
-
-            assertThat(properties.keySet().contains(key), is(true));
-            assertThat(properties.getProperty(key), is(val));
-        }
-
-        for (Pod pod: pods) {
-            ExecResult result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
-            Properties execProperties = stringToProperties(result.out());
-
-            for (Map.Entry<String, Object> property : config.entrySet()) {
-                String key = property.getKey();
-                Object val = property.getValue();
-
-                assertThat(execProperties.keySet().contains(key), is(true));
-                assertThat(execProperties.getProperty(key), is(val));
-            }
-        }
-    }
-
     /**
      * Verifies container environment variables passed as a map.
      * @param podNamePrefix Name of pod where container is located
