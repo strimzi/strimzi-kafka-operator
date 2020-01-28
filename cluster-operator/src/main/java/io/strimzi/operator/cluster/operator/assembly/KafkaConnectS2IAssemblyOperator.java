@@ -19,9 +19,10 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -52,7 +53,7 @@ import java.util.function.Function;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2Istatus> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2IStatus> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
@@ -91,75 +92,84 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I) {
+        Promise<Void> createOrUpdatePromise = Promise.promise();
+        String name = reconciliation.name();
         String namespace = reconciliation.namespace();
-        if (kafkaConnectS2I.getSpec() == null) {
-            log.error("{} spec cannot be null", kafkaConnectS2I.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
-        if (pfa.hasImages() && pfa.hasApps() && pfa.hasBuilds()) {
-            Promise<Void> createOrUpdatePromise = Promise.promise();
-            KafkaConnectS2ICluster connect;
-            KafkaConnectS2Istatus kafkaConnectS2Istatus = new KafkaConnectS2Istatus();
-            try {
-                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);
-            } catch (Exception e) {
-                StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
-                return updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus);
+        KafkaConnectS2ICluster connect;
+        KafkaConnectS2IStatus kafkaConnectS2Istatus = new KafkaConnectS2IStatus();
+
+        try {
+            if (kafkaConnectS2I.getSpec() == null) {
+                log.error("{}: Resource lacks spec property", reconciliation, kafkaConnectS2I.getMetadata().getName());
+                throw new InvalidResourceException("spec property is required");
             }
-            connect.generateBuildConfig();
-            ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
-                    configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
-                    null);
 
-            HashMap<String, String> annotations = new HashMap<>();
-            annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
-            connectServiceAccount(namespace, connect)
-                    .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
-                    .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
-                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                    .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
-                    .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
-                    .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                    .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
-                    .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                    .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus))
-                    .setHandler(reconciliationResult -> {
-                        StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
-                        kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
-                        kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
+            connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);
+        } catch (Exception e) {
+            StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
+            return updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus);
+        }
 
-                        updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
-                            // If both features succeeded, createOrUpdate succeeded as well
-                            // If one or both of them failed, we prefer the reconciliation failure as the main error
-                            if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdatePromise.complete();
-                            } else if (reconciliationResult.failed()) {
-                                createOrUpdatePromise.fail(reconciliationResult.cause());
-                            } else {
-                                createOrUpdatePromise.fail(statusResult.cause());
-                            }
-                        });
+        connect.generateBuildConfig();
+        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
+                configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
+                null);
+
+        HashMap<String, String> annotations = new HashMap<>();
+        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+
+        log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation, name, namespace);
+
+        connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
+                .compose(otherConnect -> {
+                    if (otherConnect != null
+                            // There is a KafkaConnect with the same name which is older than  or equally old as this KafkaConnectS2I
+                            && kafkaConnectS2I.getMetadata().getCreationTimestamp().compareTo(otherConnect.getMetadata().getCreationTimestamp()) >= 0)    {
+                        return Future.failedFuture("Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
+                                "KafkaConnect is older and will be used while this custom resource will be ignored.");
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
+                .compose(i -> {
+                    if (pfa.hasImages() && pfa.hasApps() && pfa.hasBuilds()) {
+                        return Future.succeededFuture();
+                    } else {
+                        return Future.failedFuture("The OpenShift build, image or apps APIs are not available in this Kubernetes cluster. " +
+                                "Kafka Connect S2I deployment cannot be enabled.");
+                    }
+                })
+                .compose(i -> connectServiceAccount(namespace, connect))
+                .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
+                .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
+                .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
+                .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
+                .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
+                .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
+                .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
+                .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
+                .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus))
+                .setHandler(reconciliationResult -> {
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
+                    kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
+                    kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
+
+                    updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
+                        // If both features succeeded, createOrUpdate succeeded as well
+                        // If one or both of them failed, we prefer the reconciliation failure as the main error
+                        if (reconciliationResult.succeeded() && statusResult.succeeded()) {
+                            createOrUpdatePromise.complete();
+                        } else if (reconciliationResult.failed()) {
+                            createOrUpdatePromise.fail(reconciliationResult.cause());
+                        } else {
+                            createOrUpdatePromise.fail(statusResult.cause());
+                        }
                     });
-            return createOrUpdatePromise.future();
-
-        } else {
-            return Future.failedFuture("The OpenShift build, image or apps APIs are not available in this Kubernetes cluster. Kafka Connect S2I deployment cannot be enabled.");
-        }
-    }
-
-    @Override
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnectS2I connects2i, KafkaConnectS2Istatus connects2istatus) {
-        return connectOperations.getAsync(connects2i.getMetadata().getNamespace(), connects2i.getMetadata().getName()).compose(connect -> {
-            // If there's a non-s2i of the same name then do nothing, since that takes precedence
-            if (connect != null) {
-                return Future.succeededFuture();
-            } else {
-                return super.reconcileConnectors(reconciliation, connects2i, connects2istatus);
-            }
-        });
+                });
+        return createOrUpdatePromise.future();
     }
 
     /**
@@ -172,7 +182,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
      *
      * @return
      */
-    Future<Void> updateStatus(KafkaConnectS2I kafkaConnectS2Iassembly, Reconciliation reconciliation, KafkaConnectS2Istatus desiredStatus) {
+    Future<Void> updateStatus(KafkaConnectS2I kafkaConnectS2Iassembly, Reconciliation reconciliation, KafkaConnectS2IStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(kafkaConnectS2Iassembly.getMetadata().getNamespace(), kafkaConnectS2Iassembly.getMetadata().getName()).setHandler(getRes -> {
@@ -184,7 +194,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, connect.getApiVersion());
                         updateStatusPromise.complete();
                     } else {
-                        KafkaConnectS2Istatus currentStatus = connect.getStatus();
+                        KafkaConnectS2IStatus currentStatus = connect.getStatus();
 
                         StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
 

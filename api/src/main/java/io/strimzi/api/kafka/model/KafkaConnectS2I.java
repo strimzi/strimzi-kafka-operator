@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.status.HasStatus;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -81,7 +81,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectS2Istatus> {
+public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectS2IStatus> {
 
     private static final long serialVersionUID = 1L;
 
@@ -102,7 +102,7 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
     private String apiVersion;
     private ObjectMeta metadata;
     private KafkaConnectS2ISpec spec;
-    private KafkaConnectS2Istatus status;
+    private KafkaConnectS2IStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -143,11 +143,11 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
 
     @Override
     @Description("The status of the Kafka Connect Source-to-Image (S2I) cluster.")
-    public KafkaConnectS2Istatus getStatus() {
+    public KafkaConnectS2IStatus getStatus() {
         return status;
     }
 
-    public void setStatus(KafkaConnectS2Istatus status) {
+    public void setStatus(KafkaConnectS2IStatus status) {
         this.status = status;
     }
 

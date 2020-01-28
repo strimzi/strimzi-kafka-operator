@@ -8,12 +8,16 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -23,6 +27,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -48,6 +53,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
+    private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -67,6 +73,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
+        this.connectS2IOperations = supplier.connectS2IOperator;
         this.versions = config.versions();
     }
 
@@ -100,7 +107,26 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        connectServiceAccount(namespace, connect)
+
+        Future<KafkaConnectS2I> connectS2ICheck;
+        if (connectS2IOperations != null)   {
+            connectS2ICheck = connectS2IOperations.getAsync(kafkaConnect.getMetadata().getNamespace(), kafkaConnect.getMetadata().getName());
+        } else {
+            connectS2ICheck = Future.succeededFuture(null);
+        }
+
+        connectS2ICheck
+                .compose(otherConnect -> {
+                    if (otherConnect != null
+                            // There is a KafkaConnectS2I with the same name which is older than this KafkaConnect
+                            && kafkaConnect.getMetadata().getCreationTimestamp().compareTo(otherConnect.getMetadata().getCreationTimestamp()) > 0)    {
+                        return Future.failedFuture("Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
+                                "KafkaConnectS2I is older and will be used while this custom resource will be ignored.");
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
+                .compose(i -> connectServiceAccount(namespace, connect))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -127,6 +153,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             }
                         });
                 });
+
         return createOrUpdatePromise.future();
     }
 

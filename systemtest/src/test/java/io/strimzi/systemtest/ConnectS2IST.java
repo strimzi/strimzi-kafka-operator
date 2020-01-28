@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -362,8 +362,8 @@ class ConnectS2IST extends BaseST {
     }
 
     private void checkConnectorInStatus(String namespace, String kafkaConnectS2IName) {
-        KafkaConnectS2Istatus kafkaConnectS2Istatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespace).withName(kafkaConnectS2IName).get().getStatus();
-        List<ConnectorPlugin> pluginsList = kafkaConnectS2Istatus.getConnectorPlugins();
+        KafkaConnectS2IStatus kafkaConnectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespace).withName(kafkaConnectS2IName).get().getStatus();
+        List<ConnectorPlugin> pluginsList = kafkaConnectS2IStatus.getConnectorPlugins();
         assertThat(pluginsList, notNullValue());
         List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
         assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
