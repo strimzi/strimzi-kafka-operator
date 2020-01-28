@@ -1041,5 +1041,6 @@ public class KafkaStatusTest {
                     .compose(state -> state.kafkaNodePortExternalListenerStatus())
                     .map((Void) null);
         }
+
     }
 }

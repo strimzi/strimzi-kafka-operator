@@ -27,13 +27,14 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "addresses" })
+@JsonPropertyOrder({ "type", "addresses", "certificates" })
 @EqualsAndHashCode
 public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String type;
     private List<ListenerAddress> addresses;
+    private List<String> certificates;
     private Map<String, Object> additionalProperties;
 
     @Description("The type of the listener. " +
@@ -53,6 +54,16 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
 
     public void setAddresses(List<ListenerAddress> addresses) {
         this.addresses = addresses;
+    }
+
+    @Description("The A list of public TLS keys which can be used to verify the identity of the server when connecting " +
+            "to the given listener. Set only for `tls` and `external` listeners.")
+    public List<String> getCertificates() {
+        return certificates;
+    }
+
+    public void setCertificates(List<String> certificates) {
+        this.certificates = certificates;
     }
 
     @Override

@@ -138,7 +138,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
@@ -297,8 +297,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
                 .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
-                .compose(state -> state.getCustomTlsListenerThumbprint())
-                .compose(state -> state.getCustomExternalListenerThumbprint())
+                .compose(state -> state.customTlsListenerCertificate())
+                .compose(state -> state.customExternalListenerCertificate())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
@@ -311,6 +311,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
                 .compose(state -> state.kafkaNodePortExternalListenerStatus())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
+                .compose(state -> state.kafkaTlsListenerCertificatesToStatus())
+                .compose(state -> state.kafkaExternalListenerCertificatesToStatus())
 
                 .compose(state -> state.getTopicOperatorDescription())
                 .compose(state -> state.topicOperatorServiceAccount())
@@ -402,7 +404,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingEntityOperatorCertsChanged = false;
 
         // Custom Listener certificates
+        private String tlsListenerCustomCertificate;
         private String tlsListenerCustomCertificateThumbprint;
+        private String externalListenerCustomCertificate;
         private String externalListenerCustomCertificateThumbprint;
 
         // Stores node port of the external bootstrap service for use in KafkaStatus
@@ -1983,54 +1987,77 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return resultPromise.future();
         }
 
-        Future<ReconciliationState> getCustomTlsListenerThumbprint() {
-            return getCertificateSignature(kafkaCluster.getSecretSourceTls()).map(thumbprint -> {
-                tlsListenerCustomCertificateThumbprint = thumbprint;
-                return this;
-            });
+        Future<ReconciliationState> customTlsListenerCertificate() {
+            CertAndKeySecretSource customCertSecret = kafkaCluster.getSecretSourceTls();
+
+            return getCustomCertificateSecret(customCertSecret)
+                    .compose(secret -> {
+                        if (secret != null)  {
+                            byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
+                            tlsListenerCustomCertificate = new String(publicKeyBytes);
+                            tlsListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
+
+                            return Future.succeededFuture(this);
+                        } else {
+                            return Future.succeededFuture(this);
+                        }
+                    });
         }
 
-        Future<ReconciliationState> getCustomExternalListenerThumbprint() {
-            return getCertificateSignature(kafkaCluster.getSecretSourceExternal()).map(thumbprint -> {
-                externalListenerCustomCertificateThumbprint = thumbprint;
-                return this;
-            });
+        Future<ReconciliationState> customExternalListenerCertificate() {
+            CertAndKeySecretSource customCertSecret = kafkaCluster.getSecretSourceExternal();
+
+            return getCustomCertificateSecret(customCertSecret)
+                    .compose(secret -> {
+                        if (secret != null)  {
+                            byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
+                            externalListenerCustomCertificate = new String(publicKeyBytes);
+                            externalListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
+
+                            return Future.succeededFuture(this);
+                        } else {
+                            return Future.succeededFuture(this);
+                        }
+                    });
         }
 
-        Future<String> getCertificateSignature(CertAndKeySecretSource customCertSecret)  {
-            Promise<String> thumbprintPromise = Promise.promise();
-
+        Future<Secret> getCustomCertificateSecret(CertAndKeySecretSource customCertSecret)  {
+            Promise<Secret> certificatePromise = Promise.promise();
             if (customCertSecret != null)   {
                 secretOperations.getAsync(namespace, customCertSecret.getSecretName())
                         .setHandler(result -> {
                             if (result.succeeded()) {
                                 Secret certSecret = result.result();
-
                                 if (certSecret != null) {
                                     if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
-                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
+                                        certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
                                     } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
-                                        thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
-                                    } else
-                                        try {
-                                            X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-                                            byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
-                                            thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
-                                        } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
-                                            thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
-                                        }
+                                        certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
+                                    } else  {
+                                        certificatePromise.complete(certSecret);
+                                    }
                                 } else {
-                                    thumbprintPromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist."));
+                                    certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist."));
                                 }
                             } else {
-                                thumbprintPromise.fail(new NoSuchResourceException("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate."));
+                                certificatePromise.fail(new NoSuchResourceException("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate."));
                             }
                         });
             } else {
-                thumbprintPromise.complete(null);
+                certificatePromise.complete(null);
             }
 
-            return thumbprintPromise.future();
+            return certificatePromise.future();
+        }
+
+        String getCertificateThumbprint(Secret certSecret, CertAndKeySecretSource customCertSecret)   {
+            try {
+                X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
+                byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+                return Base64.getEncoder().encodeToString(signature);
+            } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
+                throw new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e);
+            }
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
@@ -3069,6 +3096,40 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             desired.add(ls);
 
             kafkaStatus.setListeners(desired);
+        }
+
+        Future<ReconciliationState> kafkaTlsListenerCertificatesToStatus() {
+            if (kafkaCluster.getListeners() != null
+                    && kafkaCluster.getListeners().getTls() != null) {
+                addCertificateToListener("tls", tlsListenerCustomCertificate);
+            }
+
+            return Future.succeededFuture(this);
+        }
+
+        Future<ReconciliationState> kafkaExternalListenerCertificatesToStatus() {
+            if (kafkaCluster.isExposedWithTls())    {
+                addCertificateToListener("external", externalListenerCustomCertificate);
+            }
+
+            return Future.succeededFuture(this);
+        }
+
+        void addCertificateToListener(String type, String certificate)    {
+            if (certificate == null)    {
+                // When custom certificate is not used, use the current CA certificate
+                certificate = new String(clusterCa.currentCaCertBytes());
+            }
+
+            List<ListenerStatus> listeners = kafkaStatus.getListeners();
+
+            if (listeners != null) {
+                ListenerStatus listener = listeners.stream().filter(listenerType -> type.equals(listenerType.getType())).findFirst().orElse(null);
+
+                if (listener != null) {
+                    listener.setCertificates(Collections.singletonList(certificate));
+                }
+            }
         }
 
         String getInternalServiceHostname(String serviceName)    {
