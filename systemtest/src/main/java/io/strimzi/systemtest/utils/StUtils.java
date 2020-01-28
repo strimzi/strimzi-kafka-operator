@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils;
 
 import com.jayway.jsonpath.JsonPath;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
@@ -17,10 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -175,5 +173,35 @@ public class StUtils {
      */
     public static String globalVariableJsonPathBuilder(int containerIndex, String envVar) {
         return "$.spec.containers[" + containerIndex + "].env[?(@.name=='" + envVar + "')].value";
+    }
+
+    public static Properties stringToProperties(String str) {
+        Properties result = new Properties();
+        List<String> list = getLinesWithoutCommentsAndEmptyLines(str);
+        for (String line: list) {
+            String[] split = line.split("=");
+            if (split.length == 1) {
+                result.put(split[0], "");
+            } else {
+                result.put(split[0], split[1]);
+            }
+        }
+        return result;
+    }
+
+    public static Properties configMap2Properties(ConfigMap cm) {
+        return stringToProperties(cm.getData().get("server.config"));
+    }
+
+    public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
+        List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
+        List<String> validLines = new ArrayList<>();
+
+        for (String line : allLines)    {
+            if (!line.replace(" ", "").startsWith("#") && !line.isEmpty())   {
+                validLines.add(line.replace(" ", ""));
+            }
+        }
+        return validLines;
     }
 }
