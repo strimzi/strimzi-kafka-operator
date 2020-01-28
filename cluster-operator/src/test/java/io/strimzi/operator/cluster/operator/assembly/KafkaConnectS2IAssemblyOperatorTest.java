@@ -1019,7 +1019,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
             context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
             context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("NotReady")));
-            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), is("Both KafkaConnect and KafkaConnectS2I exist with the same name. KafkaConnect seems to exists longer and will be used while this custom resource will be ignored.")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), is("Both KafkaConnect and KafkaConnectS2I exist with the same name. KafkaConnect is older and will be used while this custom resource will be ignored.")));
 
             async.flag();
         });

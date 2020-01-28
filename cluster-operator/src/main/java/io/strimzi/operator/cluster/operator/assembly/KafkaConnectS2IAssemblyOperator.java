@@ -126,7 +126,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                             // There is a KafkaConnect with the same name which is older than  or equally old as this KafkaConnectS2I
                             && kafkaConnectS2I.getMetadata().getCreationTimestamp().compareTo(otherConnect.getMetadata().getCreationTimestamp()) >= 0)    {
                         return Future.failedFuture("Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
-                                "KafkaConnect seems to exists longer and will be used while this custom resource will be ignored.");
+                                "KafkaConnect is older and will be used while this custom resource will be ignored.");
                     } else {
                         return Future.succeededFuture();
                     }

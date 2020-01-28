@@ -169,18 +169,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 log.info("{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 return Future.succeededFuture();
-                                            } else if (connect != null) {
+                                            } else if (connect != null && isOlderOrAlone(connect.getMetadata().getCreationTimestamp(), connectS2i)) {
                                                 // grab the lock and call reconcileConnectors()
                                                 // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
                                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
 
-                                                if (connectS2i != null) {
-                                                    log.warn("{}: There is both a KafkaConnect resource and a KafkaConnectS2I resource named {}. " +
-                                                                    "The KafkaConnect takes precedence for the connector {}",
-                                                            reconciliation, connectName, connect.getMetadata().getName());
-                                                }
                                                 return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                                     () -> connectOperator.reconcileConnector(reconciliation,
                                                                 KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
@@ -233,6 +228,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             });
             return null;
         });
+    }
+
+    /**
+     * Returns true if the resource is null or if the creationDate of the resource is newer than the creationDate. If
+     * the dates are the same, it returns true. This is used to determine whether Connect and ConnectS2I both exist and
+     * when yes which of them should get the connectors (the older one).
+     *
+     * @param creationDate  creation date of the initial resource
+     * @param resource  resource to compare it with
+     * @return
+     */
+    /*test*/ static boolean isOlderOrAlone(String creationDate, HasMetadata resource)  {
+        return resource == null || creationDate.compareTo(resource.getMetadata().getCreationTimestamp()) <= 0;
     }
 
     public static boolean isUseResources(HasMetadata connect) {

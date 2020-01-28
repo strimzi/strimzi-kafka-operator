@@ -849,9 +849,20 @@ public class KafkaConnectAssemblyOperatorTest {
             List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
             context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
             context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("NotReady")));
-            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), is("Both KafkaConnect and KafkaConnectS2I exist with the same name. KafkaConnectS2I seems to exists longer and will be used while this custom resource will be ignored.")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), is("Both KafkaConnect and KafkaConnectS2I exist with the same name. KafkaConnectS2I is older and will be used while this custom resource will be ignored.")));
 
             async.flag();
         });
+    }
+
+    @Test
+    public void testIsOlderOrAlone()    {
+        KafkaConnectS2I conflictingConnectS2I = ResourceUtils.createEmptyKafkaConnectS2ICluster("foo", "bar");
+        conflictingConnectS2I.getMetadata().setCreationTimestamp("2020-01-27T19:31:13Z");
+
+        assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:11Z", null), is(true));
+        assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:12Z", conflictingConnectS2I), is(true));
+        assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:13Z", conflictingConnectS2I), is(true));
+        assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:14Z", conflictingConnectS2I), is(false));
     }
 }

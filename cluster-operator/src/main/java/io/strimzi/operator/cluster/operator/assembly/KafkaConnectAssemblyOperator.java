@@ -121,7 +121,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             // There is a KafkaConnectS2I with the same name which is older than this KafkaConnect
                             && kafkaConnect.getMetadata().getCreationTimestamp().compareTo(otherConnect.getMetadata().getCreationTimestamp()) > 0)    {
                         return Future.failedFuture("Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
-                                "KafkaConnectS2I seems to exists longer and will be used while this custom resource will be ignored.");
+                                "KafkaConnectS2I is older and will be used while this custom resource will be ignored.");
                     } else {
                         return Future.succeededFuture();
                     }
