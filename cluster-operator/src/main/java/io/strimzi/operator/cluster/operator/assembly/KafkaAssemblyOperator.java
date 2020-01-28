@@ -98,6 +98,7 @@ import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -1995,7 +1996,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(secret -> {
                         if (secret != null)  {
                             byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
-                            tlsListenerCustomCertificate = new String(publicKeyBytes, Charset.defaultCharset());
+                            tlsListenerCustomCertificate = new String(publicKeyBytes, StandardCharsets.US_ASCII);
                             tlsListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
 
                             return Future.succeededFuture(this);
@@ -2012,7 +2013,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(secret -> {
                         if (secret != null)  {
                             byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
-                            externalListenerCustomCertificate = new String(publicKeyBytes, Charset.defaultCharset());
+                            externalListenerCustomCertificate = new String(publicKeyBytes, StandardCharsets.US_ASCII);
                             externalListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
 
                             return Future.succeededFuture(this);
@@ -3119,7 +3120,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         void addCertificateToListener(String type, String certificate)    {
             if (certificate == null)    {
                 // When custom certificate is not used, use the current CA certificate
-                certificate = new String(clusterCa.currentCaCertBytes(), Charset.defaultCharset());
+                certificate = new String(clusterCa.currentCaCertBytes(), StandardCharsets.US_ASCII);
             }
 
             List<ListenerStatus> listeners = kafkaStatus.getListeners();
