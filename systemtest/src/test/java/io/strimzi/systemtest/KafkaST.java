@@ -13,9 +13,11 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -31,6 +33,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
@@ -42,6 +45,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -57,12 +61,14 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,6 +79,8 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
+import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -1828,6 +1836,147 @@ class KafkaST extends BaseST {
 
             assertThat("editedTestValue", is(pvc.getMetadata().getLabels().get("testKey")));
             assertThat("editedTestValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
+        }
+    }
+
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas) {
+
+        String logMsgFormat;
+        if (initialVersion.compareTo(newVersion) < 0) {
+            // If it is an upgrade test we keep the message format as the lower version number
+            logMsgFormat = initialVersion.messageVersion();
+        } else {
+            // If it is a downgrade then we make sure to use the lower version number for the message format
+            logMsgFormat = newVersion.messageVersion();
+        }
+
+        LOGGER.info("Deploying initial Kafka version (" + initialVersion.version() + ")");
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, kafkaReplicas, zkReplicas)
+                .editSpec()
+                    .editKafka()
+                        .withVersion(initialVersion.version())
+                        .addToConfig("log.message.format.version", logMsgFormat)
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        // Wait for kafka broker deployment to finish
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        LOGGER.info("Deployment of initial Kafka version (" + initialVersion.version() + ") complete");
+
+        String zkVersionCommand = "ls libs | grep -Po 'zookeeper-\\K\\d+.\\d+.\\d+' | head -1";
+        String zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0),
+                "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
+        LOGGER.debug("Pre-change Zookeeper version query returned: " + zkResult);
+
+        String kafkaVersionCommand = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.jar)' | head -1";
+        String kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
+        LOGGER.debug("Pre-change Kafka version query returned: " + kafkaResult);
+
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
+
+        // Get the Kafka resource from K8s
+        Kafka retrievedKafka = Crds.kafkaOperation(kubeClient(NAMESPACE).getClient())
+                .inNamespace(NAMESPACE)
+                .withName(CLUSTER_NAME)
+                .get();
+
+        // Change the Kafka version for the resource
+        retrievedKafka.getSpec().getKafka().setVersion(newVersion.version());
+
+        // Patch the existing resource with this new version
+        Crds.kafkaOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(retrievedKafka);
+
+        LOGGER.info("Waiting for deployment of new Kafka version (" + newVersion.version() + ") to complete");
+
+        // Wait for the zk version change roll
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
+        LOGGER.debug("1st Zookeeper roll (image change) is complete");
+
+        // Wait for the kafka broker version change roll
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+        LOGGER.debug("Kafka roll (image change) is complete");
+
+        // Wait for the zk rolling update
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
+        LOGGER.debug("2nd Zookeeper roll (update) is complete");
+
+        LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
+
+        // Extract the zookeeper version number from the jars in the lib directory
+        zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0),
+                "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
+        LOGGER.debug("Post-change Zookeeper version query returned: " + zkResult);
+
+        assertThat("Zookeeper container had version " + zkResult + " where " + newVersion.zookeeperVersion() +
+                " was expected", zkResult, is(newVersion.zookeeperVersion()));
+
+        // Extract the Kafka version number from the jars in the lib directory
+        kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
+        LOGGER.debug("Post-change Kafka version query returned: " + kafkaResult);
+
+        assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
+                " was expected", kafkaResult, is(newVersion.version()));
+
+    }
+
+    @Test
+    void testKafkaClusterUpgrade() throws IOException {
+
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+
+        TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
+        TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
+
+        runVersionChange(initialVersion, newVersion, 3, 3);
+
+    }
+
+    @Test
+    void testKafkaClusterDowngrade() throws IOException {
+
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+
+        TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
+        TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);
+
+        runVersionChange(initialVersion, newVersion, 3, 3);
+
+    }
+
+    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
+        LOGGER.info("Checking kafka configuration");
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        Properties properties = configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
+
+        for (Map.Entry<String, Object> property : config.entrySet()) {
+            String key = property.getKey();
+            Object val = property.getValue();
+
+            assertThat(properties.keySet().contains(key), is(true));
+            assertThat(properties.getProperty(key), is(val));
+        }
+
+        for (Pod pod: pods) {
+            ExecResult result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
+            Properties execProperties = stringToProperties(result.out());
+
+            for (Map.Entry<String, Object> property : config.entrySet()) {
+                String key = property.getKey();
+                Object val = property.getValue();
+
+                assertThat(execProperties.keySet().contains(key), is(true));
+                assertThat(execProperties.getProperty(key), is(val));
+            }
         }
     }
 
