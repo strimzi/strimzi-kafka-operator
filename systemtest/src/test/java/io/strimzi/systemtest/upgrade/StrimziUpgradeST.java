@@ -5,21 +5,23 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -29,9 +31,9 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import javax.json.Json;
@@ -79,6 +81,9 @@ public class StrimziUpgradeST extends BaseST {
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
     private final String userName = "my-user";
+
+    private final String latestReleasedOperatorImage = "docker.io/strimzi/operator:0.16.1";
+    private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -170,6 +175,43 @@ public class StrimziUpgradeST extends BaseST {
 
             deleteInstalledYamls(coDir);
         }
+    }
+
+    @Test
+    void testUpgradeKafkaWithoutVersion() {
+        cluster.applyClusterOperatorInstallFiles();
+        applyRoleBindings(NAMESPACE);
+
+        KubernetesResource.clusterOperator(NAMESPACE)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .withImage(latestReleasedOperatorImage)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec().done();
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .withVersion(null)
+                .endKafka()
+            .endSpec().done();
+
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        Deployment coDeployment = kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").get();
+        coDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(latestOperatorImage);
+
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").replace(coDeployment);
+
+        DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaSnapshot);
+
+        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion(), is("2.4.0"));
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {
