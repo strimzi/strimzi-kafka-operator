@@ -100,7 +100,9 @@ def buildStrimziImages() {
     sh(script: "make docker_build")
     sh(script: "make docker_tag")
     // Login to internal registries
-    sh("script: docker login 172.30.1.1:5000 -u \$(oc whoami) -p \$(oc whoami -t)")
+    sh("script: docker login ${env.DOCKER_REGISTRY} -u \$(oc whoami) -p \$(oc whoami -t)")
+    // Create namespace for images
+    sh("script: oc create namespace ${env.DOCKER_ORG}")
     sh(script: "make docker_push")
 }
 
