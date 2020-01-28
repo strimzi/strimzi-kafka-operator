@@ -415,18 +415,18 @@ public abstract class BaseST implements TestSeparator {
         return validLines;
     }
 
-    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName){
+    protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
         LOGGER.info("Checking kafka configuration");
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
-        Properties properties= configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
+        Properties properties = configMap2Properties(kubeClient().getConfigMap(clusterName + "-kafka-config"));
 
         config.forEach((key, val) -> {
             assertThat(properties.keySet().contains(key), is(true));
             assertThat(properties.getProperty(key), is(val));
         });
 
-        for(Pod pod: pods){
+        for (Pod pod: pods) {
             ExecResult result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
             Properties execProperties = stringToProperties(result.out());
 
