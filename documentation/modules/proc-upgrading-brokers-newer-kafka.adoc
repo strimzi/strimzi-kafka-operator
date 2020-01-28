@@ -75,7 +75,6 @@ See xref:con-versions-and-images-str[]
 . Save and exit the editor, then wait for rolling updates to complete.
 +
 NOTE: Additional rolling updates occur if the new version of Kafka has a new ZooKeeper version.
-
 +
 Check the update in the logs or by watching the pod state transitions:
 +
