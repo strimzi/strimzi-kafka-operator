@@ -942,7 +942,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return Future.failedFuture(new KafkaUpgradeException(versionChange + " requires a message format change " +
                         "from " + versionChange.from().messageVersion() + " to " + versionChange.to().messageVersion() + ". " +
                         LOG_MESSAGE_FORMAT_VERSION + ": \"" + versionChange.from().messageVersion() + "\"" +
-                        " must be explicitely set."));
+                        " must be explicitly set."));
             }
             // Otherwise both versions use the same message format, so we don't care.
 
