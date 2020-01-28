@@ -7,6 +7,7 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.executor.Exec;
@@ -102,7 +103,7 @@ public class OauthBaseST extends BaseST {
 
         clusterHost = kubeClient(NAMESPACE).getNodeAddress();
 
-        String keycloakIpWithPort = clusterHost + ":32223";
+        String keycloakIpWithPort = clusterHost + ":" + Constants.HTTP_JAEGER_DEFAULT_NODE_PORT;
 
         LOGGER.info("Importing new realm");
         Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm.sh", "admin", "admin", keycloakIpWithPort);

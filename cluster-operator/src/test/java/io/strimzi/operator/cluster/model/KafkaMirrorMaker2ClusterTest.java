@@ -82,7 +82,9 @@ public class KafkaMirrorMaker2ClusterTest {
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
             .addPair("group.id", "mirrormaker2-cluster")
             .addPair("status.storage.topic", "mirrormaker2-cluster-status")
+            .addPair("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider")
             .addPair("offset.storage.topic", "mirrormaker2-cluster-offsets")
+            .addPair("config.providers", "file")
             .addPair("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
@@ -373,8 +375,8 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         Deployment dep = kmm2.generateDeployment(emptyMap(), true, null, null);
 
-        // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(2));
+        // 3 = 1 volume from logging/metrics + 2 from above cert mounted for connect and for connectors
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
     }
 

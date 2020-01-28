@@ -29,7 +29,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS" ]; then
         export clusterAlias="${PASSWORD_FILE_CLUSTER[0]}"
         export passwordFile="${PASSWORD_FILE_CLUSTER[1]}"
 
-        PASSWORD=$(cat /opt/kafka/connect-password/$passwordFile)
+        PASSWORD=$(cat /opt/kafka/mm2-password/$passwordFile)
         SASL_AUTH_CONFIGURATION=$(cat <<EOF
 ${SASL_AUTH_CONFIGURATION}
 ${clusterAlias}.sasl.password=${PASSWORD}
@@ -57,7 +57,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS" ]; then
         export clusterAlias="${CLIENT_SECRET_CLUSTER[0]}"
         export clientSecretFile="${CLIENT_SECRET_CLUSTER[1]}"
 
-        OAUTH_CLIENT_SECRET=$(cat /opt/kafka/oauth/$clientSecretFile)
+        OAUTH_CLIENT_SECRET=$(cat /opt/kafka/mm2-oauth/$clusterAlias/$clientSecretFile)
         OAUTH_CLIENT_SECRETS_CONFIGURATION=$(cat <<EOF
 ${OAUTH_CLIENT_SECRETS_CONFIGURATION}
 ${clusterAlias}.oauth.client.secret=${OAUTH_CLIENT_SECRET}
@@ -77,7 +77,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS" ]; then
         export clusterAlias="${ACCESS_TOKEN_CLUSTER[0]}"
         export accessTokenFile="${ACCESS_TOKEN_CLUSTER[1]}"
 
-        OAUTH_ACCESS_TOKEN=$(cat /opt/kafka/oauth/$accessTokenFile)
+        OAUTH_ACCESS_TOKEN=$(cat /opt/kafka/mm2-oauth/$clusterAlias/$accessTokenFile)
         OAUTH_ACCESS_TOKENS_CONFIGURATION=$(cat <<EOF
 ${OAUTH_ACCESS_TOKENS_CONFIGURATION}
 ${clusterAlias}.oauth.access.token=${OAUTH_ACCESS_TOKEN}
@@ -97,7 +97,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS" ]; then
         export clusterAlias="${REFRESH_TOKEN_CLUSTER[0]}"
         export refreshTokenFile="${REFRESH_TOKEN_CLUSTER[1]}"
 
-        OAUTH_REFRESH_TOKEN=$(cat /opt/kafka/oauth/$refreshTokenFile)
+        OAUTH_REFRESH_TOKEN=$(cat /opt/kafka/mm2-oauth/$clusterAlias/$refreshTokenFile)
         OAUTH_REFRESH_TOKENS_CONFIGURATION=$(cat <<EOF
 ${OAUTH_REFRESH_TOKENS_CONFIGURATION}
 ${clusterAlias}.oauth.refresh.token=${OAUTH_REFRESH_TOKEN}

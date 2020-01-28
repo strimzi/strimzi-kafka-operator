@@ -65,7 +65,9 @@ class MirrorMaker2ST extends BaseST {
                 "offset.storage.topic=mirrormaker2-cluster-offsets\n" +
                 "config.storage.replication.factor=1\n" +
                 "status.storage.replication.factor=1\n" +
-                "offset.storage.replication.factor=1\n");
+                "offset.storage.replication.factor=1\n" + 
+                "config.providers=file\n" + 
+                "config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider\n");
 
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
@@ -172,7 +174,7 @@ class MirrorMaker2ST extends BaseST {
         KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
         SecretUtils.waitForSecretReady(kafkaUserTargetName);
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, null, NAMESPACE, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -323,7 +325,7 @@ class MirrorMaker2ST extends BaseST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, null, NAMESPACE, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 

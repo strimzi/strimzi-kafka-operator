@@ -48,15 +48,15 @@ do
         "${TLS_AUTH_KEYS["${clusterAlias}"]}" \
         "/tmp/kafka/clusters/${clusterAlias}.truststore.p12" \
         "/tmp/kafka/clusters/${clusterAlias}.keystore.p12" \
-        "/opt/kafka/connect-certs" \
-        "/opt/kafka/oauth-certs/${clusterAlias}" \
+        "/opt/kafka/mm2-certs" \
+        "/opt/kafka/mm2-oauth-certs/${clusterAlias}" \
         "/tmp/kafka/clusters/${clusterAlias}-oauth.truststore.p12"
 done
 echo "Preparing MirrorMaker 2.0 cluster truststores is complete"
 
 # Generate and print the connector config file
 echo "Creating connector configuration:"
-./kafka_mirror_maker_2_connector_config_generator.sh | tee /tmp/strimzi-mirrormaker2-connector.properties | sed -e 's/password=.*/password=[hidden]/g'
+./kafka_mirror_maker_2_connector_config_generator.sh | tee /tmp/strimzi-mirrormaker2-connector.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 ./kafka_connect_run.sh

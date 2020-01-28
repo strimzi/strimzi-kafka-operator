@@ -32,6 +32,8 @@ public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
         DEFAULTS.put("status.storage.topic", "mirrormaker2-cluster-status");
         DEFAULTS.put("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
         DEFAULTS.put("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
+        DEFAULTS.put("config.providers", "file");
+        DEFAULTS.put("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
     }
 
     /**

@@ -180,7 +180,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                                                 return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                                     () -> connectOperator.reconcileConnector(reconciliation,
-                                                                connectOperator.qualifiedServiceName(connectName, connectNamespace), apiClient,
+                                                                KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                                 isUseResources(connect),
                                                                 kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                             .compose(reconcileResult -> {
@@ -196,7 +196,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                                                 return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                                     () -> connectS2IOperator.reconcileConnector(reconciliation,
-                                                                connectS2IOperator.qualifiedServiceName(connectName, connectNamespace), apiClient,
+                                                                KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                                 isUseResources(connectS2i),
                                                                 kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                             .compose(reconcileResult -> {
@@ -263,7 +263,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect, S connectStatus) {
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
-        String host = qualifiedServiceName(connectName, namespace);
+        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         boolean useResources = isUseResources(connect);
         return CompositeFuture.join(
@@ -467,9 +467,5 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
 
         return updateStatusPromise.future();
-    }
-
-    protected String qualifiedServiceName(String connectName, String namespace) {
-        return KafkaConnectResources.qualifiedServiceName(connectName, namespace);
     }
 }

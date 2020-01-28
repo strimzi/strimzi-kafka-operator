@@ -174,11 +174,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 mirrorMaker2Cluster.generateServiceAccount());
     }
 
-    @Override
-    protected String qualifiedServiceName(String name, String namespace) {
-        return KafkaMirrorMaker2Resources.qualifiedServiceName(name, namespace);
-    }
-
     /**
      * Reconcile all the MirrorMaker 2.0 connectors selected by the given MirrorMaker 2.0 instance.
      * @param reconciliation The reconciliation
@@ -192,7 +187,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     new InvalidResourceException("spec property is required"));
         }
         List<KafkaMirrorMaker2MirrorSpec> mirrors = ModelUtils.asListOrEmptyList(kafkaMirrorMaker2.getSpec().getMirrors());
-        String host = qualifiedServiceName(mirrorMaker2Name, reconciliation.namespace());
+        String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Name, reconciliation.namespace());
         KafkaConnectApi apiClient = getKafkaConnectApi();
         return apiClient.list(host, KafkaConnectCluster.REST_API_PORT).compose(deleteMirrorMaker2ConnectorNames -> {
 
