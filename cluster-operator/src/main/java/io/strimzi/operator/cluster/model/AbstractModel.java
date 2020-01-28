@@ -81,7 +81,6 @@ public abstract class AbstractModel {
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
-    protected static final Map<String, Object> DEFAULT_JAVA_SYSTEM_PROPERTIES = null;
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
@@ -145,7 +144,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
-    protected Map<String, Object> javaSystemProperties;
+    protected Map<String, String> javaSystemProperties = null;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -289,7 +288,7 @@ public abstract class AbstractModel {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    protected void setJavaSystemProperties(Map<String, Object> javaSystemProperties) {
+    protected void setJavaSystemProperties(Map<String, String> javaSystemProperties) {
         this.javaSystemProperties = javaSystemProperties;
     }
 
@@ -1184,12 +1183,12 @@ public abstract class AbstractModel {
         }
     }
 
-    protected String getJavaSystemPropertiesToString(Map<String, Object> javaSystemProperties) {
+    protected String getJavaSystemPropertiesToString(Map<String, String> javaSystemProperties) {
         if (javaSystemProperties == null) {
             return null;
         }
         List<String> javaSystemPropertiesList = new ArrayList<>();
-        for (Map.Entry<String, Object> property: javaSystemProperties.entrySet()) {
+        for (Map.Entry<String, String> property: javaSystemProperties.entrySet()) {
             javaSystemPropertiesList.add("-D" + property.getKey() + "=" + property.getValue());
         }
         return String.join(" ", javaSystemPropertiesList);

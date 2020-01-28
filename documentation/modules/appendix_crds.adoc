@@ -775,7 +775,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |string
 |gcLoggingEnabled      1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
-|javaSystemProperties  1.2+<.<|A map of -D options to the JVM.
+|javaSystemProperties  1.2+<.<|A map of additional system properties which will be passed using the `-D` option to the JVM.
 |map
 |====
 

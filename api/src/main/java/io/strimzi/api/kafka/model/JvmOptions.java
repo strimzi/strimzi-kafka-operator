@@ -33,7 +33,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
-    private Map<String, Object> javaSystemProperties;
+    private Map<String, String> javaSystemProperties;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -78,12 +78,12 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    @Description("A map of -D options to the JVM.")
-    public Map<String, Object> getJavaSystemProperties() {
+    @Description("A map of additional system properties which will be passed using the `-D` option to the JVM.")
+    public Map<String, String> getJavaSystemProperties() {
         return javaSystemProperties;
     }
 
-    public void setJavaSystemProperties(Map<String, Object> javaSystemProperties) {
+    public void setJavaSystemProperties(Map<String, String> javaSystemProperties) {
         this.javaSystemProperties = javaSystemProperties;
     }
 

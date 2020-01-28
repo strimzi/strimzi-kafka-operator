@@ -118,9 +118,9 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
-    private final Map<String, Object> javaSystemProperties = new HashMap<String, Object>() {{
+    private final Map<String, String> javaSystemProperties = new HashMap<String, String>() {{
             put("javax.net.debug", "verbose");
-            put("something.else", 42);
+            put("something.else", "42");
         }};
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
