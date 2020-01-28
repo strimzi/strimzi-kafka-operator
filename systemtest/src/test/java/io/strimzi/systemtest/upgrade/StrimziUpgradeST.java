@@ -222,11 +222,11 @@ public class StrimziUpgradeST extends BaseST {
         final String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
-        Integer sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        Integer sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
             produceMessagesCount, "TLS");
         assertThat(sent, is(produceMessagesCount));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
             kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         assertThat(received, is(consumeMessagesCount));
 
@@ -264,8 +264,8 @@ public class StrimziUpgradeST extends BaseST {
         final String afterUpgradeKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
+        internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
             kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         assertThat(received, is(consumeMessagesCount));
 

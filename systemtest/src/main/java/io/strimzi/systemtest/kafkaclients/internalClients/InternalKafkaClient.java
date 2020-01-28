@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients.externalclient;
+package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
 import org.apache.logging.log4j.LogManager;
@@ -12,21 +12,21 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.kafkaclients.externalclient.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaclients.externalclient.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ExternalKafkaClient implements IKafkaClient {
+public class InternalKafkaClient implements IKafkaClient {
 
-    private static final Logger LOGGER = LogManager.getLogger(ExternalKafkaClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
     private int sent;
     private int received;
     private Random rng;
     private String podName;
 
-    public ExternalKafkaClient() {
+    public InternalKafkaClient() {
         this.sent = 0;
         this.received = 0;
         this.rng = new Random();

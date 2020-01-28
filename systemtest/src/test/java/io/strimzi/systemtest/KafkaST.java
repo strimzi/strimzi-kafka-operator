@@ -494,12 +494,12 @@ class KafkaST extends BaseST {
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        LOGGER.info("Checking produceed and consumed messages to pod:{}", externalKafkaClient.getPodName());
-        externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
-            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        LOGGER.info("Checking produceed and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
         );
     }
 
@@ -533,12 +533,12 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(kafkaClientsPodName);
+        internalKafkaClient.setPodName(kafkaClientsPodName);
 
         // Check brokers availability
-        externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS"),
-            externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS"),
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
     }
 
@@ -585,11 +585,11 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(kafkaClientsPodName);
+        internalKafkaClient.setPodName(kafkaClientsPodName);
 
-        externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50),
-            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50),
+            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
         );
     }
 
@@ -623,11 +623,11 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(kafkaClientsPodName);
+        internalKafkaClient.setPodName(kafkaClientsPodName);
 
-        externalKafkaClient.checkProducedAndConsumedMessages(
-            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount),
-            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, CONSUMER_GROUP_NAME)
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount),
+            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, CONSUMER_GROUP_NAME)
         );
     }
 
