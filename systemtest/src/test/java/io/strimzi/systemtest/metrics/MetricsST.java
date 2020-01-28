@@ -39,6 +39,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
 public class MetricsST extends BaseST {
@@ -182,7 +183,7 @@ public class MetricsST extends BaseST {
             LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
         }
 
-        assertThat("Collected metrics should not be empty", exec.out(), emptyString());
+        assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));
         return exec.out();
     }
 
