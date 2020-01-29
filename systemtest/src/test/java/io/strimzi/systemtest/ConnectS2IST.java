@@ -355,7 +355,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("status.storage.topic", connectClusterName + "-status")
             .endSpec().done();
 
-        // Crate connect cluster with default connect image
+        // Create connect cluster with default connect image
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
@@ -380,7 +380,7 @@ class ConnectS2IST extends BaseST {
             .endSpec().done();
         KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
 
-        // Wait for first reconciliation
+        // Wait for Cluster Operator reconciliation
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnectS2I contains created connector
@@ -419,7 +419,7 @@ class ConnectS2IST extends BaseST {
         availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
         assertThat(availableConnectors, containsString("sink-test"));
 
-        // Wait for second reconciliation and check that pods are not rolled
+        // Wait for Cluster Operator reconciliation
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
