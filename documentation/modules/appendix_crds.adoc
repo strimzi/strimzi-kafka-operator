@@ -1778,7 +1778,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-ConnectorPlugin-{context}']
 ### `ConnectorPlugin` schema reference
 
-Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
 
 
 [options="header"]
