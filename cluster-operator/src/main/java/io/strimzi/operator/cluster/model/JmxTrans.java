@@ -99,10 +99,11 @@ public class JmxTrans extends AbstractModel {
         JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTrans();
         if (spec != null) {
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions() == null) {
-                log.info(String.format("Can't start up JmxTrans '%s' in '%s' as Kafka spec.kafka.jmxOptions is not specified",
+                String error = String.format("Can't start up JmxTrans '%s' in '%s' as Kafka spec.kafka.jmxOptions is not specified",
                         JmxTransResources.deploymentName(kafkaAssembly.getMetadata().getName()),
-                        kafkaAssembly.getMetadata().getNamespace()));
-                return null;
+                        kafkaAssembly.getMetadata().getNamespace());
+                log.warn(error);
+                throw new InvalidResourceException(error);
             }
             result = new JmxTrans(kafkaAssembly.getMetadata().getNamespace(),
                     kafkaAssembly.getMetadata().getName(),

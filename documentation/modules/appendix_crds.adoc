@@ -35,7 +35,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|jmxTrans                1.2+<.<|Configuration for JmxTrans. When the property is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
+|jmxTrans                1.2+<.<|Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
 |xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
@@ -1298,14 +1298,14 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Property                  |Description
 |image              1.2+<.<|The image to use for the JmxTrans.
 |string
-|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on. For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].
+|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on. For more information on these properties see, xref:type-JmxTransOutputDefinitionTemplate-reference[`JmxTransOutputDefinitionTemplate` schema reference].
 |xref:type-JmxTransOutputDefinitionTemplate-{context}[`JmxTransOutputDefinitionTemplate`] array
-|kafkaQueries       1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].
+|logLevel           1.2+<.<|Sets the logging level of the JmxTrans deployment.For more information see, https://github.com/jmxtrans/jmxtrans-agent/wiki/Troubleshooting[JmxTrans Logging Level].
+|string
+|kafkaQueries       1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information on these properties see, xref:type-JmxTransQueryTemplate-reference[`JmxTransQueryTemplate` schema reference].
 |xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
 |resources          1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|logLevel           1.2+<.<|Sets the logging level of the JmxTrans deployment.For more information see, https://github.com/jmxtrans/jmxtrans-agent/wiki/Troubleshooting[JmxTrans Logging Level].
-|string
 |====
 
 [id='type-JmxTransOutputDefinitionTemplate-{context}']
@@ -1323,7 +1323,7 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |string
 |port                 1.2+<.<|The port of the remote host that the data is pushed to.
 |integer
-|flushDelayInSeconds  1.2+<.<|How many seconds the JmxTransSpec waits before pushing a new set of data out.
+|flushDelayInSeconds  1.2+<.<|How many seconds the JmxTrans waits before pushing a new set of data out.
 |integer
 |typeNames            1.2+<.<|Template for filtering data to be included in response to a wildcard query. For more information see https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries].
 |string array

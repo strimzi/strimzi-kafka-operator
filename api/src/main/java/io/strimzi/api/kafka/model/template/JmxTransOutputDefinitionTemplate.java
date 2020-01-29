@@ -73,7 +73,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.port = port;
     }
 
-    @Description("How many seconds the JmxTransSpec waits before pushing a new set of data out.")
+    @Description("How many seconds the JmxTrans waits before pushing a new set of data out.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getFlushDelayInSeconds() {
         return flushDelayInSeconds;

@@ -29,7 +29,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"image", "outputDefinitions", "loggingLevel", "kafkaQueries", "resources"})
+@JsonPropertyOrder({"image", "outputDefinitions", "logLevel", "kafkaQueries", "resources"})
 @EqualsAndHashCode
 public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -67,7 +67,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Defines the output hosts that will be referenced later on. " +
-            "For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].")
+            "For more information on these properties see, xref:type-JmxTransOutputDefinitionTemplate-reference[`JmxTransOutputDefinitionTemplate` schema reference].")
     public List<JmxTransOutputDefinitionTemplate> getOutputDefinitions() {
         return outputDefinitions;
     }
@@ -79,7 +79,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Queries to send to the Kafka brokers to define what data should be read from each broker. " +
-            "For more information on these properties see, xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].")
+            "For more information on these properties see, xref:type-JmxTransQueryTemplate-reference[`JmxTransQueryTemplate` schema reference].")
     public List<JmxTransQueryTemplate> getKafkaQueries() {
         return kafkaQueries;
     }

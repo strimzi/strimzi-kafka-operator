@@ -3301,6 +3301,8 @@ spec:
                     required:
                     - outputType
                     - name
+                logLevel:
+                  type: string
                 kafkaQueries:
                   type: array
                   items:
@@ -3327,8 +3329,6 @@ spec:
                       type: object
                     requests:
                       type: object
-                logLevel:
-                  type: string
               required:
               - outputDefinitions
               - kafkaQueries

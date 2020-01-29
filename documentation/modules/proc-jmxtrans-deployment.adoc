@@ -7,14 +7,10 @@
 = Configuring a JMXTrans deployment
 
 .Prerequisites
-* A running kubernetes cluster
+* A running Kubernetes cluster
 
-You can configure a JmxTrans deployment using the jmxTrans property in the following resources:
-
-* `Kafka.spec`
-
+You can configure a JmxTrans deployment by using the `Kafka.spec.jmxTrans` property.
 A JmxTrans deployment can read from a secure or insecure Kafka broker.
-
 To configure a JmxTrans deployment, define the following properties:
 
 * `Kafka.spec.jmxTrans.outputDefinitions`
