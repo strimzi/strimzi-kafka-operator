@@ -114,27 +114,27 @@ public class AuthenticationUtils {
 
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
+                    volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
 
                 if (createOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getSecretName(), isOpenShift));
                     }
                     if (oauth.getAccessToken() != null) {
-                        volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getSecretName(), isOpenShift));
                     }
                     if (oauth.getRefreshToken() != null) {
-                        volumeList.add(AbstractModel.createSecretVolume(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getSecretName(), isOpenShift));
                     }
                 }
             }
@@ -175,28 +175,28 @@ public class AuthenticationUtils {
 
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
             
                 if (mountOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
                     }
                     if (oauth.getAccessToken() != null) {
-                        volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
                     }
                     if (oauth.getRefreshToken() != null) {
-                        volumeMountList.add(AbstractModel.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
                     }
                 }
             }

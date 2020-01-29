@@ -137,7 +137,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume with same Secret name was already added
                         if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
-                            volumeList.add(createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
+                            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
                         }
                     }
                 }
@@ -163,7 +163,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeMountName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume mount with same Secret name was already added
                         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
-                            volumeMountList.add(createVolumeMount(volumeMountName,
+                            volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
                                     MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                         }
                     }
