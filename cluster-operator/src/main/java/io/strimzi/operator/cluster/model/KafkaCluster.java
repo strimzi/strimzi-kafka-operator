@@ -547,8 +547,16 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (!isListenerOAuth && kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
-            throw new InvalidResourceException("You cannot configure Keycloak Authorization without any listener with OAuth based authentication");
+        if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
+            if (!isListenerOAuth) {
+                throw new InvalidResourceException("You cannot configure Keycloak Authorization without any listener with OAuth based authentication");
+            } else {
+                KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
+                if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
+                    log.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                }
+            }
         }
 
         result.setAuthorization(kafkaClusterSpec.getAuthorization());

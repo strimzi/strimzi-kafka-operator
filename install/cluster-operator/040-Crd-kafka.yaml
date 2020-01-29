@@ -578,8 +578,6 @@ spec:
                       - simple
                       - keycloak
                   required:
-                  - clientId
-                  - tokenEndpointUri
                   - type
                 config:
                   type: object
