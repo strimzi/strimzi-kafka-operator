@@ -8,11 +8,11 @@
 This procedure describes how to configure Kafka brokers to use {oauth} authorization using {oauth-server} Authorization Services.
 
 The properties used to configure authorization for Kafka brokers might already be configured for xref:proc-oauth-authentication-broker-config-{context}[{oauth} authentication].
-If so, they are also used for authorization if specific authorization properties are not defined.
+If so, they are also used for authorization if the equivalent authorization properties are not defined.
 
 .Before you begin
 Consider the access you require or want to limit for certain users.
-You can use a combination of groups, roles, clients and users to configure access.
+You can use a combination of groups, roles, clients, and users to configure access in {oauth-server}.
 
 Typically, groups are used to match users based on organizational departments or geographical locations.
 And roles are used to match users based on their function.
@@ -20,21 +20,21 @@ And roles are used to match users based on their function.
 With {oauth-server}, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
 Storage and access to user data may be a factor in how you choose to configure authorization policies.
 
-NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on Kafka broker.
+NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on the Kafka broker.
 
 .Prerequisites
 
 * {ProductName} must be configured to use {oauth} with {oauth-server} for xref:assembly-oauth-authentication_str[token-based authentication].
 You use the same {oauth-server} server endpoint when you set up authorization.
-* You need to understand how to manage policies and permissions for {oauth-server} Authorization Services, as described in the {oauth-keycloak-doc}.
+* You need to understand how to manage policies and permissions for {oauth-server} Authorization Services, as described in the {oauth-server-doc}.
 
 
 .Procedure
 
 . Access the {oauth-server} Admin Console or use the {oauth-server} Admin CLI to enable Authorization Services for the Kafka broker client you created when setting up {oauth} authentication.
-. Use Authorization Services to define resources, authorization scopes, policies and permissions for the client.
+. Use Authorization Services to define resources, authorization scopes, policies, and permissions for the client.
 . Bind the permissions to users and clients by assigning them roles and groups.
-. Configure the Kafka brokers to use the {oauth-server} authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
+. Configure the Kafka brokers to use {oauth-server} authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
 +
 [source,shell]
 ----
@@ -78,7 +78,7 @@ The default is `false`.
 <6> Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
 <7> (Optional) Trusted certificates for TLS connection to the authorization server.
 +
-If the properties are not added, the equivalent properties configured for {oauth} authentication are used.
+If the URI, client ID and TLS properties are not added, the equivalent properties configured for {oauth} authentication are used.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

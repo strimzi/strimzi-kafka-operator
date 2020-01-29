@@ -41,10 +41,11 @@
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
 :oauth-artifact-version: 0.2.0
 :oauth-server: Keycloak
-:oauth-keycloak-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
-:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}]
-:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the {oauth} authorization server]
-:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server]
+:oauth-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
+:oauth-authorization-services: link: https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
+:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}^]
+:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the {oauth} authorization server^]
+:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server^]
 
 // External links
 :docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]

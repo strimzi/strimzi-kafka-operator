@@ -5,7 +5,7 @@
 [id='con-oauth-authorization-mechanism_{context}']
 = {oauth} authorization mechanism
 
-{oauth} authorization uses {oauth-server} Authorization Services REST endpoints to extend token-based authentication with {oauth-server} by applying defined security policies on a particular user,
+{oauth} authorization in {ProductName} uses {oauth-server} server Authorization Services REST endpoints to extend token-based authentication with {oauth-server} by applying defined security policies on a particular user,
 and providing a list of permissions granted on different resources for that user.
 Policies use roles and groups to match permissions to users.
 {oauth} authorization enforces permissions locally based on the received list of grants for the user from {oauth-server} Authorization Services.
@@ -14,7 +14,7 @@ Policies use roles and groups to match permissions to users.
 
 A {oauth-server} _authorizer_ (`KeycloakRBACAuthorizer`) is provided with {ProductName}.
 To be able to use the {oauth-server} REST endpoints for Authorization Services provided by {oauth-server},
-a custom authorizer configuration is required on the Kafka Broker.
+you configure a custom authorizer on the Kafka broker.
 
 The authorizer fetches a list of granted permissions from the authorization server one-time-only,
 and enforces authorization locally on the Kafka Broker, making rapid authorization decisions for each user session.
