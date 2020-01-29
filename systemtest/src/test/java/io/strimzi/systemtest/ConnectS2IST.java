@@ -342,7 +342,7 @@ class ConnectS2IST extends BaseST {
         String connectS2IClusterName = "connect-s2i-cluster";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        // Crate connect cluster with default connect image
+        // Create different connect cluster via S2I resources
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
@@ -354,6 +354,21 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("config.storage.topic", connectClusterName + "-config")
                 .addToConfig("status.storage.topic", connectClusterName + "-status")
             .endSpec().done();
+
+        // Crate connect cluster with default connect image
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata()
+            .editSpec()
+                .addToConfig("group.id", connectS2IClusterName)
+                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
+                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
+            .endSpec().build());
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
@@ -368,31 +383,26 @@ class ConnectS2IST extends BaseST {
         // Wait for first reconciliation
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
-        // Check that KafkaConnect contains created connector
-        String connectPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        // Check that KafkaConnectS2I contains created connector
+        String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
         assertThat(availableConnectors, containsString(CLUSTER_NAME));
-
-        // Create different connect cluster via S2I resources
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
-            .endMetadata()
-            .editSpec()
-                .addToConfig("group.id", connectS2IClusterName)
-                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
-                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
-            .endSpec().build());
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
 
-        // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
-        assertThat(availableConnectors, containsString(CLUSTER_NAME));
+        String newTopic = "new-topic";
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
+            kc.getSpec().getConfig().put("topics", newTopic);
+            kc.getSpec().setTasksMax(8);
+        });
+
+        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
+            () -> {
+                String connectorConfig = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/config").out();
+                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
+            });
 
         // Now delete KafkaConnector resource and create connector manually
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
@@ -406,14 +416,14 @@ class ConnectS2IST extends BaseST {
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
         assertThat(availableConnectors, containsString("sink-test"));
 
         // Wait for second reconciliation and check that pods are not rolled
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
         assertThat(availableConnectors, containsString("sink-test"));
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
