@@ -8,7 +8,7 @@ watchAnyNamespace: false
 image:
   repository: strimzi
   name: operator
-  tag: 0.16.1
+  tag: 0.16.2
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
@@ -26,57 +26,57 @@ zookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 kafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 topicOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.16.1
+    tag: 0.16.2
 userOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.16.1
+    tag: 0.16.2
 kafkaInit:
   image:
     repository: strimzi
     name: operator
-    tag: 0.16.1
+    tag: 0.16.2
 tlsSidecarZookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 kafkaMirrorMaker:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 kafkaBridge:
   image:
     repository: strimzi
@@ -86,7 +86,7 @@ kafkaExporter:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.16.1
+    tagPrefix: 0.16.2
 resources:
   limits:
     memory: 256Mi
