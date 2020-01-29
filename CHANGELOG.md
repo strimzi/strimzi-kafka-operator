@@ -1,5 +1,7 @@
 
 # CHANGELOG
+## 0.17.0
+* Add Jmxtrans deployment
 
 ## 0.17.0
 

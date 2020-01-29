@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -152,6 +153,31 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.kafka.jmxOptions.authentication.type in body should be one of [password]"),
                 containsStringIgnoringCase("spec.kafka.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\"")));
+    }
+
+    @Test
+    void testJmxOptionsWithoutRequiredOutputDefinitionKeys() {
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "JmxTrans-output-definition-with-missing-required-property.yaml");
+            });
+
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.outputDefinitions.outputType in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.outputDefinitions.name in body is required"));
+    }
+
+    @Test
+    void testJmxOptionsWithoutRequiredQueryKeys() {
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "JmxTrans-queries-with-missing-required-property.yaml");
+            });
+
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.attributes in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.targetMBean in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.outputs in body is required"));
     }
 
     @BeforeAll

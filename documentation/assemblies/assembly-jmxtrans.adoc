@@ -1,0 +1,24 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+// assembly-deployment-configuration-kafka.adoc
+
+:parent-context: {context}
+
+[id='assembly-jmxtrans-{context}']
+= Retrieving JMX metrics with JMXTrans
+
+JmxTrans is a way of retrieving JMX metrics data from Java processes and pushing that data in various formats to remote sinks inside or outside of the cluster.
+JmxTrans can communicate with a secure JMX port.
+{ProductName} supports using JmxTrans to read JMX data from Kafka brokers.
+
+include::../modules/con-jmxtrans.adoc[leveloffset=+1]
+
+include::../modules/proc-jmxtrans-deployment.adoc[leveloffset=+1]
+
+== Additional resources
+
+For more information about the Jmxtrans see link:https://github.com/jmxtrans/jmxtrans[Jmxtrans github]
+
+// Restore the context to what it was before this assembly.
+:context: {parent-context}

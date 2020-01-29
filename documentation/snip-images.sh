@@ -55,5 +55,12 @@ a|
 a|
 {ProductName} image for running the {ProductName} kafka Bridge
 
+|JmxTrans
+a|
+* {DockerOrg}/jmxtrans:{DockerTag}
+
+a|
+{ProductName} image for running the {ProductName} JmxTrans
+
 |===
 EOF

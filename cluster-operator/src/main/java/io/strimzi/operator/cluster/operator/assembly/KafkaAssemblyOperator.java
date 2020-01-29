@@ -59,13 +59,14 @@ import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.JmxTrans;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -105,8 +106,8 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -339,6 +340,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterReady())
 
+                .compose(state -> state.getJmxTransDescription())
+                .compose(state -> state.jmxTransServiceAccount())
+                .compose(state -> state.jmxTransConfigMap())
+                .compose(state -> state.jmxTransDeployment())
+                .compose(state -> state.jmxTransDeploymentReady())
+
                 .map((Void) null)
                 .setHandler(chainPromise);
 
@@ -412,6 +419,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         // Stores node port of the external bootstrap service for use in KafkaStatus
         /* test */ int externalBootstrapNodePort;
+
+        private JmxTrans jmxTrans = null;
+        private ConfigMap jmxTransConfigMap = null;
+        private Deployment jmxTransDeployment = null;
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
@@ -3217,6 +3228,66 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return withVoid(deploymentOperations.waitForObserved(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
                 }).compose(dep -> {
                     return withVoid(deploymentOperations.readiness(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
+                }).map(i -> this);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
+        Future<ReconciliationState> getJmxTransDescription() {
+            try {
+                int numOfBrokers = kafkaCluster.getReplicas();
+                this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
+                if (this.jmxTrans != null) {
+                    this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
+                    this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
+                }
+
+                return Future.succeededFuture(this);
+            } catch (Throwable e) {
+                return Future.failedFuture(e);
+            }
+        }
+
+        Future<ReconciliationState> jmxTransConfigMap() {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    JmxTrans.jmxTransConfigName(name),
+                    jmxTransConfigMap));
+        }
+
+
+        Future<ReconciliationState> jmxTransServiceAccount() {
+            return withVoid(serviceAccountOperations.reconcile(namespace,
+                    JmxTrans.containerServiceAccountName(name),
+                    jmxTrans != null ? jmxTrans.generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> jmxTransDeployment() {
+            if (this.jmxTrans != null && this.jmxTransDeployment != null) {
+                return deploymentOperations.getAsync(namespace, this.jmxTrans.getName()).compose(dep -> {
+                    return configMapOperations.getAsync(namespace, jmxTransConfigMap.getMetadata().getName()).compose(res -> {
+                        String resourceVersion = res.getMetadata().getResourceVersion();
+                        // getting the current cluster CA generation from the current deployment, if it exists
+                        int caCertGeneration = getCaCertGeneration(this.clusterCa);
+                        Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
+                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
+                                JmxTrans.CONFIG_MAP_ANNOTATION_KEY, resourceVersion);
+                        return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name),
+                                jmxTransDeployment));
+                    });
+                });
+            } else {
+                return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name), null));
+            }
+        }
+
+        Future<ReconciliationState> jmxTransDeploymentReady() {
+            if (this.jmxTrans != null && jmxTransDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace,  this.jmxTrans.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.waitForObserved(namespace,  this.jmxTrans.getName(), 1_000, operationTimeoutMs));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.jmxTrans.getName(), 1_000, operationTimeoutMs));
                 }).map(i -> this);
             }
             return withVoid(Future.succeededFuture());

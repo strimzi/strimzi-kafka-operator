@@ -14,6 +14,7 @@ You can specify which container image to use for each component using the `image
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`
+* `Kafka.spec.jmxTrans`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 * `KafkaBridge.spec`
@@ -79,6 +80,9 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 . `{DockerKafkaBridge}` container image.
 * For Kafka broker initializer:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaInit}` container image.
+* For Kafka broker initializer:
+. Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in special situations, where you need to use a different container registry.

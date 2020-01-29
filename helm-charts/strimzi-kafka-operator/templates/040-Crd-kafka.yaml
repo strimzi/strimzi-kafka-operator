@@ -3274,6 +3274,64 @@ spec:
                   enum:
                   - renew-certificate
                   - replace-key
+            jmxTrans:
+              type: object
+              properties:
+                image:
+                  type: string
+                outputDefinitions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      outputType:
+                        type: string
+                      host:
+                        type: string
+                      port:
+                        type: integer
+                      flushDelayInSeconds:
+                        type: integer
+                      typeNames:
+                        type: array
+                        items:
+                          type: string
+                      name:
+                        type: string
+                    required:
+                    - outputType
+                    - name
+                logLevel:
+                  type: string
+                kafkaQueries:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      targetMBean:
+                        type: string
+                      attributes:
+                        type: array
+                        items:
+                          type: string
+                      outputs:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                    - targetMBean
+                    - attributes
+                    - outputs
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+              required:
+              - outputDefinitions
+              - kafkaQueries
             kafkaExporter:
               type: object
               properties:

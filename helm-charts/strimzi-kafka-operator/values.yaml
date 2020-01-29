@@ -87,6 +87,11 @@ kafkaExporter:
     repository: strimzi
     name: kafka
     tagPrefix: latest
+jmxTrans:
+  image:
+    repository: strimzi
+    name: jmxtrans
+    tag: latest
 resources:
   limits:
     memory: 256Mi

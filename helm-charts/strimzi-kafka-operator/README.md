@@ -62,6 +62,9 @@ the documentation for more details.
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
 | `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `latest`                                             |
+| `jmxtrans.image.repository`          | JmxTrans image repository                 | `strimzi`                                            |
+| `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
+| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `latest`                                             |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
 | `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `latest`                                             |
