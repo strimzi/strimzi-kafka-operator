@@ -36,19 +36,15 @@ import static io.strimzi.test.TestUtils.toYamlString;
 public class KafkaClientsResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
 
-    public static DoneableDeployment deployKafkaClients(String kafkaClusterName, String kafkaClusterNamespace) {
-        return deployKafkaClients(false, kafkaClusterName, kafkaClusterName, kafkaClusterNamespace, null);
+    public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
+        return deployKafkaClients(false, kafkaClusterName, null);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClusterName, String kafkaClusterNamespace) {
-        return deployKafkaClients(tlsListener, kafkaClusterName, kafkaClusterName, kafkaClusterNamespace, null);
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName,  KafkaUser... kafkaUsers) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, true, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, String kafkaClusterName, String kafkaCLusterNamespace,  KafkaUser... kafkaUsers) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, kafkaClusterName, kafkaCLusterNamespace, true, kafkaUsers);
-    }
-
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, String kafkaClusterName, String kafkaClusterNamespace, boolean hostnameVerification, KafkaUser... kafkaUsers) {
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
@@ -62,7 +58,7 @@ public class KafkaClientsResource {
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, kafkaClusterName, kafkaClusterNamespace, hostnameVerification, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -70,7 +66,7 @@ public class KafkaClientsResource {
         return KubernetesResource.deployNewDeployment(kafkaClient);
     }
 
-    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, String kafkaClusterName, String kafkaClusterNamespace, boolean hostnameVerification, KafkaUser... kafkaUsers) {
+    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
@@ -154,9 +150,10 @@ public class KafkaClientsResource {
                             .endVolume();
                 }
 
-                if (tlsListener) {                    
-                    String clusterName = kafkaClusterName != null ? kafkaClusterName : kafkaUser.getMetadata().getClusterName();
-                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(kafkaClusterNamespace, clusterName);
+                if (tlsListener) {
+                    String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
+                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
+                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
 

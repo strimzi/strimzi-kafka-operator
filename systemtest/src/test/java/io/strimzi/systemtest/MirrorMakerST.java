@@ -69,7 +69,7 @@ public class MirrorMakerST extends BaseST {
         // Deploy Topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -189,7 +189,7 @@ public class MirrorMakerST extends BaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -208,19 +208,19 @@ public class MirrorMakerST extends BaseST {
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
-                .editSpec()
+            .editSpec()
                 .editConsumer()
-                .withNewTls()
-                .withTrustedCertificates(certSecretSource)
-                .endTls()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretSource)
+                    .endTls()
                 .endConsumer()
                 .editProducer()
-                .withNewTls()
-                .withTrustedCertificates(certSecretTarget)
-                .endTls()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretTarget)
+                    .endTls()
                 .endProducer()
-                .endSpec()
-                .done();
+            .endSpec()
+            .done();
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
@@ -296,7 +296,7 @@ public class MirrorMakerST extends BaseST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -377,7 +377,7 @@ public class MirrorMakerST extends BaseST {
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         KafkaTopicUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
         externalKafkaClient.checkProducedAndConsumedMessages(

@@ -106,7 +106,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         String kafkaConnectPodName = kubeClient().listPods("type", connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, clusterName, namespace).done();
+        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
         externalKafkaClient.setPodName(kafkaClientsPodName);
         int sent = externalKafkaClient.sendMessages(topicName, namespace, clusterName, 10);
