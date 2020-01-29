@@ -147,15 +147,15 @@ fi
 
 AUTHZ_KEYCLOAK_DIR="/opt/kafka/certificates/authz-keycloak-certs"
 AUTHZ_KEYCLOAK_STORE="/tmp/kafka/authz-keycloak.truststore.p12"
-if [ -d "$OAUTH_CERT_DIR" ]; then
+if [ -d "$AUTHZ_KEYCLOAK_DIR" ]; then
   echo "Preparing truststore for Authorization with Keycloak"
 
   # Add each certificate to the trust store
   declare -i INDEX=0
-  for CRT in $OAUTH_CERT_DIR/**/*; do
+  for CRT in $AUTHZ_KEYCLOAK_DIR/**/*; do
     ALIAS="authz-keycloak-${INDEX}"
-    echo "Adding $CRT to truststore $OAUTH_STORE with alias $ALIAS"
-    create_truststore "$OAUTH_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+    echo "Adding $CRT to truststore $AUTHZ_KEYCLOAK_STORE with alias $ALIAS"
+    create_truststore "$AUTHZ_KEYCLOAK_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
     INDEX+=1
   done
   echo "Preparing truststore for Authorization with Keycloak is complete"
