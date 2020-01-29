@@ -184,11 +184,7 @@ public class StUtils {
         List<String> list = getLinesWithoutCommentsAndEmptyLines(str);
         for (String line: list) {
             String[] split = line.split("=");
-            if (split.length == 1) {
-                result.put(split[0], "");
-            } else {
-                result.put(split[0], split[1]);
-            }
+            result.put(split[0], split.length == 1 ? "" : split[1]);
         }
         return result;
     }
