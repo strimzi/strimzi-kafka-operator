@@ -8,9 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.externalclient.ExternalKafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.executor.Exec;
@@ -40,16 +37,14 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
 public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
-
-    protected ExternalKafkaClient externalKafkaClient = (ExternalKafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
 
     public static final String NAMESPACE = "metrics-cluster-test";
     private final Object lock = new Object();
@@ -188,7 +183,7 @@ public class MetricsST extends BaseST {
             LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
         }
 
-        assertThat("Collected metrics should not be empty", exec.out(), not(isEmptyString()));
+        assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));
         return exec.out();
     }
 

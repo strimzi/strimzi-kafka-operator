@@ -6,6 +6,11 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -14,11 +19,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+
+import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -255,9 +257,10 @@ public class TopicST extends BaseST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        LOGGER.info("Checking topic in Kafka {}", KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName));
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
-                hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+        List<String> topicInfo = KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
+        LOGGER.info("Checking topic {} in Kafka {}", topicName, CLUSTER_NAME);
+        LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
+        assertThat(topicInfo, hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
     }
 
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {

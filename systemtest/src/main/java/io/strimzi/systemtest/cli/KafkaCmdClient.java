@@ -41,7 +41,7 @@ public class KafkaCmdClient {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
+            "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().replace(": ", ":").split("\\s+"));
     }
 
     public static String updateTopicPartitionsCountUsingPodCli(String clusterName, int zkPodId, String topic, int partitions) {
