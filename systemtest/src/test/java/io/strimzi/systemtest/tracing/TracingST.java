@@ -10,6 +10,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
@@ -791,7 +792,7 @@ public class TracingST extends BaseST {
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect in Pod:{}", kafkaConnectS2IPodName);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 

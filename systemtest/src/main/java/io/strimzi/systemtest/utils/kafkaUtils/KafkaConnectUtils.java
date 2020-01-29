@@ -6,7 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +32,7 @@ public class KafkaConnectUtils {
     public static void waitForConnectStatus(String name, String status) {
         LOGGER.info("Waiting for Kafka Connect {} state: {}", name, status);
         TestUtils.waitFor("Kafka Connect " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-                () -> KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
+            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
         LOGGER.info("Kafka Connect {} is in desired state: {}", name, status);
     }
 

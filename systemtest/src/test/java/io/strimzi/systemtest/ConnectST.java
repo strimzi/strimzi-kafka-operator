@@ -145,7 +145,7 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
@@ -347,7 +347,7 @@ class ConnectST extends BaseST {
 
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
@@ -420,7 +420,7 @@ class ConnectST extends BaseST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
@@ -522,7 +522,7 @@ class ConnectST extends BaseST {
     }
 
     @Test
-    void testKafkaConnectorWithConnectAndConnectS2I() {
+    void testKafkaConnectorWithConnectAndConnectS2IWithSameName() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
         String connectS2IClusterName = "connect-s2i-cluster";
@@ -588,7 +588,7 @@ class ConnectST extends BaseST {
         });
 
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
-        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
