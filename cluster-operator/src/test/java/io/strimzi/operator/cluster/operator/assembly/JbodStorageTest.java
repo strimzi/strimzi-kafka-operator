@@ -22,8 +22,8 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -143,7 +143,7 @@ public class JbodStorageTest {
                 for (SingleVolumeStorage volume : this.volumes) {
                     if (volume instanceof PersistentClaimStorage) {
                         context.verify(() -> assertThat(pvcs.stream().anyMatch(pvc -> {
-                            String pvcName = ModelUtils.getVolumePrefix(volume.getId()) + "-"
+                            String pvcName = VolumeUtils.getVolumePrefix(volume.getId()) + "-"
                                     + KafkaCluster.kafkaPodName(NAME, podId);
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
 

@@ -257,7 +257,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             for (CertSecretSource certSecretSource: client.getTls().getTrustedCertificates()) {
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                    volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                 }
             }
         }
@@ -267,14 +267,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         /** producer auth*/
         if (producer.getTls() != null && producer.getTls().getTrustedCertificates() != null && producer.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: producer.getTls().getTrustedCertificates()) {
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
                             TLS_CERTS_VOLUME_MOUNT_PRODUCER + certSecretSource.getSecretName()));
                 }
             }
@@ -287,7 +287,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             for (CertSecretSource certSecretSource: consumer.getTls().getTrustedCertificates()) {
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
                             TLS_CERTS_VOLUME_MOUNT_CONSUMER + certSecretSource.getSecretName()));
                 }
             }
