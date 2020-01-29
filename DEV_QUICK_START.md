@@ -41,13 +41,13 @@ To build Strimzi from source the operator and Kafka code needs to be compiled in
 
 3. Now build the Docker images and push them to your repository on Docker Hub:
     
-        make all
+        make clean all
 
    Once this completes you should have several new repositories under your Docker Hub account (`docker_hub_username/operator`, `docker_hub_username/kafka` and `docker_hub_username/test-client`).
 
    The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
 
-        make MVN_ARGS='-DskipTests -DskipIT' all
+        make MVN_ARGS='-DskipTests -DskipIT' clean all
 
 4. In order to use the newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command:
 
