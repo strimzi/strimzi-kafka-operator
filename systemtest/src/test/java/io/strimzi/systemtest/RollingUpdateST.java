@@ -8,11 +8,13 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -69,6 +71,16 @@ class RollingUpdateST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
         int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+//        String userName = "alice";
+//        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+//
+//        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+//        final String defaultKafkaClientsPodName =
+//                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+//
+//        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+//
+//        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");
@@ -123,6 +135,17 @@ class RollingUpdateST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3, 1).done();
 
         int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+//        String userName = "alice";
+//        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+//
+//        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+//
+//        final String defaultKafkaClientsPodName =
+//                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+//
+//        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+//
+//        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");
@@ -164,24 +187,22 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(NODEPORT_SUPPORTED)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
+
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
                     .addToConfig(singletonMap("default.replication.factor", 1))
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec().done();
+
+        String userName = "alice";
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, NAMESPACE, 3, 1, false);
         // kafka cluster already deployed
@@ -194,9 +215,15 @@ class RollingUpdateST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, initialReplicas).done();
 
-        kafkaClient.sendMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
         // scale up
         final int scaleTo = initialReplicas + 4;
         final int newPodId = initialReplicas;
@@ -204,9 +231,8 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
         LOGGER.info("Scaling to {} finished", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
@@ -214,8 +240,7 @@ class RollingUpdateST extends BaseST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
-        //Test that CO doesn't have any exceptions in log
+        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));        //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
@@ -223,7 +248,7 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Scaling down to {}", initialReplicas);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, initialReplicas);
         LOGGER.info("Scaling down to {} finished", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -236,7 +261,7 @@ class RollingUpdateST extends BaseST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME + new Random().nextInt(Integer.MAX_VALUE));
     }
 
     /**
@@ -305,15 +330,21 @@ class RollingUpdateST extends BaseST {
     void testZookeeperScaleUpScaleDown() throws Exception {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        String userName = "alice";
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(initialZkReplicas, is(3));
 
         int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+
         assertThat(sent, is(messageCount));
 
         Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
@@ -375,24 +406,26 @@ class RollingUpdateST extends BaseST {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        kafkaClient.sendMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName);
+
+        String userName = "alice";
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
 
         // rolling update for kafka
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
@@ -418,7 +451,7 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
 
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zkName).cascading(false).edit()
             .editMetadata()
@@ -436,7 +469,7 @@ class RollingUpdateST extends BaseST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
 
         // deploy Cluster Operator with short timeout for other tests (restore default configuration)
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
