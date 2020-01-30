@@ -142,10 +142,11 @@ class ConnectST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
@@ -339,15 +340,15 @@ class ConnectST extends BaseST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
-
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
@@ -415,12 +416,13 @@ class ConnectST extends BaseST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         kafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
