@@ -14,9 +14,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.internalclients.TracingKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -76,8 +73,6 @@ public class TracingST extends BaseST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
-
-    private TracingKafkaClient tracingKafkaClient = (TracingKafkaClient) ClientFactory.getClient(EClientType.TRACING.getClientType());
 
     private static final String JI_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-instance/";
     private static final String JO_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-operator/";
@@ -139,8 +134,7 @@ public class TracingST extends BaseST {
                 .endSpec()
                 .done();
 
-        tracingKafkaClient.setServiceName(JAEGER_PRODUCER_SERVICE);
-        tracingKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50);
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
