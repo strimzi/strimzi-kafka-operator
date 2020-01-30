@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth-callback.version>0.3.0</strimzi-oauth-callback.version>
+        <strimzi-oauth.version>0.3.0</strimzi-oauth.version>
     </properties>
 
     <dependencies>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-oauth-server</artifactId>
-            <version>${strimzi-oauth-callback.version}</version>
+            <version>${strimzi-oauth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-oauth-client</artifactId>
-            <version>${strimzi-oauth-callback.version}</version>
+            <version>${strimzi-oauth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
@@ -110,7 +110,7 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
-            <version>${strimzi-oauth-callback.version}</version>
+            <version>${strimzi-oauth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
@@ -131,11 +131,4 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1054/</url>
-        </repository>
-    </repositories>
 </project>
