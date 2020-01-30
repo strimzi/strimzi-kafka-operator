@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -493,12 +494,14 @@ public class KafkaCluster extends AbstractModel {
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);
 
+        boolean isListenerOAuth = false;
         if (listeners != null) {
             if (listeners.getPlain() != null) {
                 if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
                     throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
                 } else if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth(), "Plain listener");
+                    isListenerOAuth = true;
                 }
             }
 
@@ -507,11 +510,13 @@ public class KafkaCluster extends AbstractModel {
                     throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
                 } else if (listeners.getExternal().getAuth() != null && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth(), "External listener");
+                    isListenerOAuth = true;
                 }
             }
 
             if (listeners.getTls() != null && listeners.getTls().getAuth() != null && listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                 validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth(), "TLS listener");
+                isListenerOAuth = true;
             }
 
             if (listeners.getExternal() != null) {
@@ -542,6 +547,18 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getTls() != null && listeners.getTls().getConfiguration() != null) {
                 result.setSecretSourceTls(listeners.getTls().getConfiguration().getBrokerCertChainAndKey());
+            }
+        }
+
+        if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
+            if (!isListenerOAuth) {
+                throw new InvalidResourceException("You cannot configure Keycloak Authorization without any listener with OAuth based authentication");
+            } else {
+                KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
+                if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
+                    log.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                }
             }
         }
 
@@ -1418,6 +1435,11 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (authorization instanceof KafkaAuthorizationKeycloak) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
+        }
+
         return volumeList;
     }
 
@@ -1476,6 +1498,11 @@ public class KafkaCluster extends AbstractModel {
                     }
                 }
             }
+        }
+
+        if (authorization instanceof KafkaAuthorizationKeycloak) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs"));
         }
 
         return volumeMountList;
