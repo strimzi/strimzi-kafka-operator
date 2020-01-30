@@ -1,0 +1,50 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: test-kafka-mirror-maker-2
+spec:
+  replicas: 1
+  connectCluster: target
+  clusters:
+  - alias: source
+    bootstrapServers: my-source-kafka:9092
+  - alias: target
+    bootstrapServers: my-target-kafka:9092
+  mirrors:
+  - sourceCluster: source
+    targetCluster: target
+    sourceConnector: {}
+    topics: my-topic
+  externalConfiguration:
+    env:
+    - name: SOME_VARIABLE
+      valueFrom:
+        secretKeyRef:
+          name: myaccesskey
+          key: access-key
+    - name: SOME_OTHER_VARIABLE
+      valueFrom:
+        configMapKeyRef:
+          name: myconfig
+          key: some-property
+    volumes:
+    - name: secret-volume
+      secret:
+        secretName: ssh-key-secret
+    - name: foo
+      secret:
+        secretName: mysecret
+# Uncomment after kubernetes/kubernetes#68466 is fixed
+#        items:
+#        - key: username
+#          path: my-group/my-username
+    - name: config-map-volume
+      configMap:
+        name: my-config-map
+    - name: config-vol
+      configMap:
+        name: log-config
+# Uncomment after kubernetes/kubernetes#68466 is fixed
+#        items:
+#        - key: log_level
+#          path: log_level

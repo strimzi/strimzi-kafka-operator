@@ -75,6 +75,7 @@ public class ZookeeperClusterTest {
             KafkaVersionTestUtils.getKafkaImageMap(),
             emptyMap(),
             emptyMap(),
+            emptyMap(),
             emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";

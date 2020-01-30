@@ -7,6 +7,8 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -25,6 +27,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
@@ -254,6 +257,130 @@ public class OauthPlainST extends OauthBaseST {
 
         for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("MirrorMaker doesn't replicated data to target kafka cluster", consumerLogs, containsString("value: \"Hello world - " + i + "\""));
+        }
+    }
+
+    @Test
+    void testProducerConsumerMirrorMaker2() {
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+
+        String kafkaSourceClusterName = CLUSTER_NAME;
+        String kafkaTargetClusterName = CLUSTER_NAME + "-target";
+        String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + TOPIC_NAME;
+    
+        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewPlain()
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(validIssuerUri)
+                                    .withJwksEndpointUri(jwksEndpointUri)
+                                    .withJwksExpirySeconds(500)
+                                    .withJwksRefreshSeconds(400)
+                                    .withUserNameClaim(userNameClaim)
+                                    .withTlsTrustedCertificates(
+                                        new CertSecretSourceBuilder()
+                                            .withSecretName(SECRET_OF_KEYCLOAK)
+                                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                            .build())
+                                    .withDisableTlsHostnameVerification(true)
+                                .endKafkaListenerAuthenticationOAuth()
+                            .endPlain()
+                            .withNewTls()
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(validIssuerUri)
+                                    .withJwksEndpointUri(jwksEndpointUri)
+                                    .withJwksExpirySeconds(500)
+                                    .withJwksRefreshSeconds(400)
+                                    .withUserNameClaim(userNameClaim)
+                                    .withTlsTrustedCertificates(
+                                        new CertSecretSourceBuilder()
+                                            .withSecretName(SECRET_OF_KEYCLOAK)
+                                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                            .build())
+                                    .withDisableTlsHostnameVerification(true)
+                                .endKafkaListenerAuthenticationOAuth()
+                            .endTls()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(validIssuerUri)
+                                    .withJwksExpirySeconds(500)
+                                    .withJwksRefreshSeconds(400)
+                                    .withJwksEndpointUri(jwksEndpointUri)
+                                    .withUserNameClaim(userNameClaim)
+                                    .withTlsTrustedCertificates(
+                                        new CertSecretSourceBuilder()
+                                            .withSecretName(SECRET_OF_KEYCLOAK)
+                                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                            .build())
+                                    .withDisableTlsHostnameVerification(true)
+                                .endKafkaListenerAuthenticationOAuth()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+
+        // Deploy Mirror Maker 2.0 with oauth
+        KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias(kafkaSourceClusterName)
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                    .withClientId("kafka-mirror-maker-2")
+                    .withNewClientSecret()
+                        .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
+                        .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    .addNewTlsTrustedCertificate()
+                        .withSecretName(SECRET_OF_KEYCLOAK)
+                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                    .endTlsTrustedCertificate()
+                    .withDisableTlsHostnameVerification(true)
+                .endKafkaClientAuthenticationOAuth()
+                .build();
+
+        KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias(kafkaTargetClusterName)
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                    .withClientId("kafka-mirror-maker-2")
+                    .withNewClientSecret()
+                        .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
+                        .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    .addNewTlsTrustedCertificate()
+                        .withSecretName(SECRET_OF_KEYCLOAK)
+                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                    .endTlsTrustedCertificate()
+                    .withDisableTlsHostnameVerification(true)
+                .endKafkaClientAuthenticationOAuth()
+                .build();
+        
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaTargetClusterName, kafkaSourceClusterName, 1, true)
+                .editSpec()
+                    .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
+                    .editFirstMirror()
+                        .withNewSourceCluster(kafkaSourceClusterName)
+                    .endMirror()
+                .endSpec()
+                .done();
+
+        KafkaClientsResource.consumerWithOauth("hello-world-consumer-target", oauthTokenEndpointUri, kafkaTargetClusterTopicName, KafkaResources.plainBootstrapAddress(kafkaTargetClusterName)).done();
+
+        String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-target-").get(0).getMetadata().getName();
+        String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
+
+        PodUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
+
+        String consumerLogs = kubeClient().logs(consumerPodName);
+
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
+            assertThat("MirrorMaker2 doesn't replicated data to target kafka cluster", consumerLogs, containsString("value: \"Hello world - " + i + "\""));
         }
     }
 

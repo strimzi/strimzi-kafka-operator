@@ -144,17 +144,22 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaConnect.tracing = spec.getTracing();
 
-        KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+        AbstractConfiguration config = kafkaConnect.getConfiguration();
+        if (config == null) {
+            config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+            kafkaConnect.setConfiguration(config);
+        }
         if (kafkaConnect.tracing != null)   {
             config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
             config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
-        kafkaConnect.setConfiguration(config);
 
-        String image = spec instanceof KafkaConnectS2ISpec ?
-                versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
-                : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-        kafkaConnect.setImage(image);
+        if (kafkaConnect.getImage() == null) {
+            String image = spec instanceof KafkaConnectS2ISpec ?
+                    versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
+                    : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
+            kafkaConnect.setImage(image);
+        }
 
         kafkaConnect.setResources(spec.getResources());
         kafkaConnect.setLogging(spec.getLogging());
@@ -408,7 +413,7 @@ public class KafkaConnectCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withCommand("/opt/kafka/kafka_connect_run.sh")
+                .withCommand(getCommand())
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
@@ -421,6 +426,10 @@ public class KafkaConnectCluster extends AbstractModel {
         containers.add(container);
 
         return containers;
+    }
+
+    protected String getCommand() {
+        return "/opt/kafka/kafka_connect_run.sh";
     }
 
     @Override

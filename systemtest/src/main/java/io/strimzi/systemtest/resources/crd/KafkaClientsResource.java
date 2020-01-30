@@ -154,8 +154,9 @@ public class KafkaClientsResource {
                             .endVolume();
                 }
 
-                if (tlsListener) {
-                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(kafkaClusterNamespace, kafkaClusterName);
+                if (tlsListener) {                    
+                    String clusterName = kafkaClusterName != null ? kafkaClusterName : kafkaUser.getMetadata().getClusterName();
+                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(kafkaClusterNamespace, clusterName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
 

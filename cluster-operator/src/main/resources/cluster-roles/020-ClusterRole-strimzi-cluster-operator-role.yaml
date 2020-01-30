@@ -52,6 +52,8 @@ rules:
   - kafkamirrormakers/status
   - kafkabridges
   - kafkabridges/status
+  - kafkamirrormaker2s
+  - kafkamirrormaker2s/status
   verbs:
   - get
   - list

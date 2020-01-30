@@ -22,12 +22,21 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
     protected static final Logger log = LogManager.getLogger(AuthenticationUtils.class.getName());
+
+    public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
+    public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
+    public static final String SASL_USERNAME = "SASL_USERNAME";
+    public static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
+    public static final String SASL_MECHANISM = "SASL_MECHANISM";
+    public static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
@@ -85,28 +94,54 @@ public class AuthenticationUtils {
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
     public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift)   {
+        configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, "", false);
+    }
+
+    /**
+     * Creates the Volumes used for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param volumeList    List where the volumes will be added
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
+     * @param volumeNamePrefix Prefix used for volume names
+     * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
+     */
+    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
 
                 // skipping if a volume with same Secret name was already added
-                if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeList.add(VolumeUtils.createSecretVolume(tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
+                if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
+                    volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeList.add(VolumeUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeList.add(VolumeUtils.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
+
+                if (createOAuthSecretVolumes) {
+                    if (oauth.getClientSecret() != null) {
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getSecretName(), isOpenShift));
+                    }
+                    if (oauth.getAccessToken() != null) {
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getSecretName(), isOpenShift));
+                    }
+                    if (oauth.getRefreshToken() != null) {
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getSecretName(), isOpenShift));
+                    }
+                }
             }
         }
     }
 
-    /**
+        /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
      *
      * @param authentication    Authentication object from CRD
@@ -116,25 +151,54 @@ public class AuthenticationUtils {
      * @param oauthVolumeMount      Path where the OAuth certificates would be mounted
      * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
      */
-    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount, String oauthVolumeNamePrefix)   {
+    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount, String oauthVolumeNamePrefix) {
+        configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsVolumeMount, passwordVolumeMount, oauthVolumeMount, oauthVolumeNamePrefix, "", false, null);
+    }
+
+    /**
+     * Creates the VolumeMounts used for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param volumeMountList    List where the volume mounts will be added
+     * @param tlsVolumeMount    Path where the TLS certs should be mounted
+     * @param passwordVolumeMount   Path where passwords should be mounted
+     * @param oauthCertsVolumeMount Path where the OAuth certificates would be mounted
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
+     * @param volumeNamePrefix Prefix used for volume mount names
+     * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
+     * @param oauthSecretsVolumeMount Path where the OAuth secrets would be mounted
+     */
+    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
 
                 // skipping if a volume mount with same Secret name was already added
-                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(tlsAuth.getCertificateAndKey().getSecretName(),
+                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
+                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthVolumeMount));
+                volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
+            
+                if (mountOAuthSecretVolumes) {
+                    if (oauth.getClientSecret() != null) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
+                    }
+                    if (oauth.getAccessToken() != null) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
+                    }
+                    if (oauth.getRefreshToken() != null) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
+                    }
+                }
             }
         }
     }
@@ -148,33 +212,13 @@ public class AuthenticationUtils {
      */
     public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
         if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls) {
-                KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("TLS_AUTH_CERT"), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate())));
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("TLS_AUTH_KEY"), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey())));
-            } else if (authentication instanceof KafkaClientAuthenticationPlain) {
-                KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_USERNAME"), passwordAuth.getUsername()));
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_PASSWORD_FILE"), String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword())));
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_MECHANISM"), "plain"));
-            } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
-                KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_USERNAME"), passwordAuth.getUsername()));
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_PASSWORD_FILE"), String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword())));
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_MECHANISM"), "scram-sha-512"));
-            } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
+
+            for (Entry<String, String> entry: getClientAuthenticationProperties(authentication).entrySet()) {
+                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply(entry.getKey()), entry.getValue()));
+            }
+            
+            if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("SASL_MECHANISM"), "oauth"));
-
-                List<String> options = new ArrayList<>(2);
-                if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-                if (oauth.getTokenEndpointUri() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri()));
-                if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-                if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
-                if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
-
-                varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("OAUTH_CONFIG"), String.join(" ", options)));
 
                 if (oauth.getClientSecret() != null)    {
                     varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_CLIENT_SECRET"), oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
@@ -189,6 +233,48 @@ public class AuthenticationUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Get a map of properties related to authentication in Kafka clients.
+     *
+     * @param authentication    Authentication object with auth configuration
+     * @return Map of name/value pairs
+     */
+    public static Map<String, String> getClientAuthenticationProperties(KafkaClientAuthentication authentication) {
+        Map<String, String> properties = new HashMap<>();
+        
+        if (authentication != null) {
+            if (authentication instanceof KafkaClientAuthenticationTls) {
+                KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
+                properties.put(TLS_AUTH_CERT, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate()));
+                properties.put(TLS_AUTH_KEY, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey()));
+            } else if (authentication instanceof KafkaClientAuthenticationPlain) {
+                KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
+                properties.put(SASL_USERNAME, passwordAuth.getUsername());
+                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
+                properties.put(SASL_MECHANISM, KafkaClientAuthenticationPlain.TYPE_PLAIN);
+            } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
+                KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
+                properties.put(SASL_USERNAME, passwordAuth.getUsername());
+                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
+                properties.put(SASL_MECHANISM, KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512);
+            } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
+                KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
+                properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
+
+                List<String> options = new ArrayList<>(2);
+                if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
+                if (oauth.getTokenEndpointUri() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri()));
+                if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
+                if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
+                if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
+
+                properties.put(OAUTH_CONFIG, String.join(" ", options));
+            }
+        }
+        
+        return properties;
     }
 
     /**

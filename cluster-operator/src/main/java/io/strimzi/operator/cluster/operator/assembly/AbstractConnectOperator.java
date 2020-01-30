@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
@@ -80,6 +81,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = "strimzi.io/use-connector-resources";
+    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -289,6 +291,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
     }
 
+    protected KafkaConnectApi getKafkaConnectApi() {
+        return connectClientProvider.apply(vertx);
+    }
+
     private Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, boolean useResources, String connectorName, KafkaConnector connector) {
         if (connector == null) {
             if (useResources) {
@@ -377,7 +383,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             });
     }
 
-    private JsonObject asJson(KafkaConnectorSpec spec) {
+    protected JsonObject asJson(KafkaConnectorSpec spec) {
         JsonObject connectorConfigJson = new JsonObject();
         if (spec.getConfig() != null) {
             for (Map.Entry<String, Object> cf : spec.getConfig().entrySet()) {
@@ -391,9 +397,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 connectorConfigJson.put(name, cf.getValue());
             }
         }
-        return connectorConfigJson
-                .put("connector.class", spec.getClassName())
-                .put("tasks.max", spec.getTasksMax());
+
+        if (spec.getTasksMax() != null) {
+            connectorConfigJson.put("tasks.max", spec.getTasksMax());
+        }
+
+        return connectorConfigJson.put("connector.class", spec.getClassName());
     }
 
     /**
@@ -420,6 +429,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                 if (fetchedResource != null) {
                     if ((!(fetchedResource instanceof KafkaConnector))
+                            && (!(fetchedResource instanceof KafkaMirrorMaker2))
                             && StatusUtils.isResourceV1alpha1(fetchedResource)) {
                         log.warn("{}: {} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
                                 reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());

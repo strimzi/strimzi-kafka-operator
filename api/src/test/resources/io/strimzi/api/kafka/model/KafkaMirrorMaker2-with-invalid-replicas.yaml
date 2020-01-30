@@ -1,0 +1,20 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: test-kafka-mirror-maker-2
+spec:
+  image: foo
+  replicas: oops, this is not an int
+  connectCluster: target
+  clusters:
+  - alias: source
+    bootstrapServers: my-source-kafka:9092
+  - alias: target
+    bootstrapServers: my-target-kafka:9092
+  mirrors:
+  - sourceCluster: source
+    targetCluster: target
+    sourceConnector: {}
+    topics: my-topic
+  config:
+    name: bar
