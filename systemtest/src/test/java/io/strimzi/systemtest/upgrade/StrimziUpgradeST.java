@@ -54,6 +54,7 @@ import java.util.function.Consumer;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -82,7 +83,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
 
-    private final String latestReleasedOperatorImage = "docker.io/strimzi/operator:0.16.1";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip";
     private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
 
     @ParameterizedTest()
@@ -179,39 +180,38 @@ public class StrimziUpgradeST extends BaseST {
 
     @Test
     void testUpgradeKafkaWithoutVersion() {
-        cluster.applyClusterOperatorInstallFiles();
-        applyRoleBindings(NAMESPACE);
+        File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        KubernetesResource.clusterOperator(NAMESPACE)
-            .editSpec()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .withImage(latestReleasedOperatorImage)
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec().done();
+        coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");
+
+        // Modify + apply installation files
+        copyModifyApply(coDir);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
+                    .addToConfig("log.message.format.version", "2.3")
                 .endKafka()
             .endSpec().done();
 
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
-        Deployment coDeployment = kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").get();
-        coDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(latestOperatorImage);
+        // Update CRDs, CRB, etc.
+        cluster.applyClusterOperatorInstallFiles();
+        applyRoleBindings(NAMESPACE);
 
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").replace(coDeployment);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").delete();
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
 
         DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
-        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion(), is("2.4.0"));
+        assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {
