@@ -496,7 +496,7 @@ class KafkaST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        LOGGER.info("Checking produceed and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
             internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
