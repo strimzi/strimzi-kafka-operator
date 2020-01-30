@@ -87,14 +87,14 @@ public class VerifiableClient {
     /**
      * Run clients
      *
-     * @param timeout kill timeout in ms
+     * @param timeoutMs kill timeout in ms
      * @return true if command end with exit code 0
      */
-    private boolean runClient(int timeout, boolean logToOutput) {
+    private boolean runClient(long timeoutMs, boolean logToOutput) {
         messages.clear();
         try {
             executor = new Exec();
-            int ret = executor.execute(null, prepareCommand(), timeout);
+            int ret = executor.execute(null, prepareCommand(), timeoutMs);
             synchronized (lock) {
                 LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
@@ -151,8 +151,8 @@ public class VerifiableClient {
      *
      * @return exit status of client
      */
-    public boolean run() {
-        return runClient(120_000, true);
+    public boolean run(long timeoutMs) {
+        return runClient(timeoutMs, true);
     }
 
     /**

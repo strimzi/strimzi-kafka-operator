@@ -10,7 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.Future;
 
-public class TracingKafkaClient implements IKafkaClient {
+/**
+ * The TracingKafkaClient for sending and receiving messages using tracing properties.
+ * The client is using an external listeners.
+ */
+public class TracingKafkaClient implements IKafkaClient<Future<Integer>> {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
 
     private String serviceName;
@@ -18,22 +22,26 @@ public class TracingKafkaClient implements IKafkaClient {
     public TracingKafkaClient() { }
 
     @Override
-    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
+    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                        long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) {
+    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                           int messageCount, String securityProtocol, long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                           String consumerGroup, long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup) {
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                              int messageCount, String securityProtocol, String consumerGroup, long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 

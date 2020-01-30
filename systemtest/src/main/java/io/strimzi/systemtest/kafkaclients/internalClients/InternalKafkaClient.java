@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +18,11 @@ import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class InternalKafkaClient implements IKafkaClient {
+/**
+ * The InternalKafkaClient for sending and receiving messages using basic properties.
+ * The client is using an internal listeners and communicate from the pod.
+ */
+public class InternalKafkaClient implements IKafkaClient<Integer> {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
@@ -41,8 +46,10 @@ public class InternalKafkaClient implements IKafkaClient {
      * @param securityProtocol option for tls listener inside kafka cluster
      * @return count of send and acknowledged messages
      */
-    private Integer sendMessages(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String podName) throws InterruptedException {
-        String bootstrapServer = securityProtocol.equals("TLS") ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
+    private Integer sendMessages(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                 int messageCount, String securityProtocol, String podName, long timeoutMs) {
+        String bootstrapServer = securityProtocol.equals("TLS") ?
+                clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         producerArguments.put(ClientArgument.TOPIC, topicName);
@@ -59,7 +66,7 @@ public class InternalKafkaClient implements IKafkaClient {
         producer.setArguments(producerArguments);
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
-        boolean hasPassed = producer.run();
+        boolean hasPassed = producer.run(timeoutMs);
         LOGGER.info("Producer finished correctly: {}", hasPassed);
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
@@ -78,10 +85,41 @@ public class InternalKafkaClient implements IKafkaClient {
      * @param securityProtocol option for tls listener inside kafka cluster
      * @return count of send and acknowledged messages
      */
+    public Integer sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                   int messageCount, String securityProtocol) {
+        LOGGER.info("Sending messages to from: {}", this.podName);
+        return sendMessages(topicName, namespace, clusterName, kafkaUsername, messageCount, securityProtocol,
+                this.podName, Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    /**
+     * Method for send messages to specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param topicName topic name
+     * @param namespace namespace
+     * @param clusterName cluster name
+     * @param messageCount messages count
+     * @param securityProtocol option for tls listener inside kafka cluster
+     * @return count of send and acknowledged messages
+     */
     @Override
-    public Integer sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) throws InterruptedException {
+    public Integer sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                   int messageCount, String securityProtocol, long timeoutMs) throws RuntimeException {
         LOGGER.info("Sending messages to pod: {}", this.podName);
-        return sendMessages(topicName, namespace, clusterName, kafkaUsername, messageCount, securityProtocol, this.podName);
+        return sendMessages(topicName, namespace, clusterName, kafkaUsername, messageCount, securityProtocol, this.podName,
+                timeoutMs);
+    }
+
+    /**
+     * Method for send messages to specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param topicName topic name
+     * @param namespace namespace
+     * @param clusterName cluster name
+     * @param messageCount messages count
+     * @return count of send and acknowledged messages
+     */
+    public Integer sendMessages(String topicName, String namespace, String clusterName, int messageCount) throws RuntimeException {
+        return sendMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN",
+                Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -93,8 +131,9 @@ public class InternalKafkaClient implements IKafkaClient {
      * @return count of send and acknowledged messages
      */
     @Override
-    public Integer sendMessages(String topicName, String namespace, String clusterName, int messageCount) throws InterruptedException {
-        return sendMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN");
+    public Integer sendMessages(String topicName, String namespace, String clusterName, int messageCount, long timeoutMs) throws RuntimeException {
+        return sendMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN",
+                timeoutMs);
     }
 
     /**
@@ -107,7 +146,8 @@ public class InternalKafkaClient implements IKafkaClient {
      * @return count of send and acknowledged messages
      */
     public Integer sendMessages(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount) throws InterruptedException {
-        return sendMessagesTls(topicName, namespace, clusterName, kafkaUsername, messageCount, "PLAIN");
+        return sendMessagesTls(topicName, namespace, clusterName, kafkaUsername, messageCount, "PLAIN",
+                Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -121,8 +161,10 @@ public class InternalKafkaClient implements IKafkaClient {
      * @return count of received messages
      */
     @Override
-    public Integer receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup) {
-        String bootstrapServer = securityProtocol.equals("TLS") ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
+    public Integer receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                      int messageCount, String securityProtocol, String consumerGroup, long timeoutMs) {
+        String bootstrapServer = securityProtocol.equals("TLS") ?
+                clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         consumerArguments.put(ClientArgument.GROUP_ID, consumerGroup);
@@ -151,13 +193,53 @@ public class InternalKafkaClient implements IKafkaClient {
 
         LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, bootstrapServer, topicName);
 
-        boolean hasPassed = consumer.run();
+        boolean hasPassed = consumer.run(timeoutMs);
         LOGGER.info("Consumer finished correctly: {}", hasPassed);
 
         received = getReceivedMessagesCount(consumer.getMessages().toString());
         LOGGER.info("Consumer consumed {} messages", received);
 
         return received;
+    }
+
+
+    /**
+     * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param messageCount message count
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @return count of received messages
+     */
+    public Integer receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUserName,
+                                      int messageCount, String securityProtocol, String consumerGroup) {
+        return receiveMessagesTls(topicName, namespace, clusterName, kafkaUserName, messageCount, securityProtocol,
+                consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    /**
+     * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param messageCount message count
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @return count of received messages
+     */
+    public Integer receiveMessagesTls(String topicName, String namespace, String clusterName, int messageCount,
+                                      String consumerGroup) {
+        return receiveMessagesTls(topicName, namespace, clusterName, null, messageCount, "TLS",
+                consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    /**
+     * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param messageCount message count
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @return count of received messages
+     */
+    public Integer receiveMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                   String consumerGroup) {
+        return receiveMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN",
+                consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -168,8 +250,10 @@ public class InternalKafkaClient implements IKafkaClient {
      * @return count of received messages
      */
     @Override
-    public Integer receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
-        return receiveMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN", consumerGroup);
+    public Integer receiveMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                   String consumerGroup, long timeoutMs) {
+        return receiveMessagesTls(topicName, namespace, clusterName, null, messageCount, "PLAIN",
+                consumerGroup, timeoutMs);
     }
 
     /**
@@ -183,7 +267,7 @@ public class InternalKafkaClient implements IKafkaClient {
      * @return count of received messages
      */
     public Integer receiveMessages(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String consumerGroup) {
-        return receiveMessagesTls(topicName, namespace, clusterName, kafkaUsername, messageCount, "PLAIN", consumerGroup);
+        return receiveMessagesTls(topicName, namespace, clusterName, kafkaUsername, messageCount, "PLAIN", consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     public void checkProducedAndConsumedMessages(int producedMesssages, int consumedMessages) {
