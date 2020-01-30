@@ -218,7 +218,7 @@ public class TopicST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 

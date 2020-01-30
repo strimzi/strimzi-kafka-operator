@@ -424,7 +424,7 @@ public class StrimziUpgradeST extends BaseST {
 
     void deployClients(String image, KafkaUser kafkaUser) {
         // Deploy new clients
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, NAMESPACE, kafkaUser)
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
             .editSpec()
                 .editTemplate()
                     .editSpec()
