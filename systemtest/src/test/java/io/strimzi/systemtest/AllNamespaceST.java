@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -125,6 +126,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         SecretUtils.waitForSecretReady(USER_NAME);
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
                 .getStatus().getConditions().get(0);
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
@@ -143,7 +145,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             }
         }
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, CLUSTER_NAME, THIRD_NAMESPACE, user).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
