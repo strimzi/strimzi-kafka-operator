@@ -43,6 +43,9 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
@@ -77,7 +80,11 @@ public class TopicOperatorMockTest {
     @BeforeEach
     public void createMockKube(VertxTestContext context) throws Exception {
         assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
-        vertx = Vertx.vertx();
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.topic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
