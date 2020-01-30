@@ -1183,15 +1183,4 @@ public abstract class AbstractModel {
             }
         }
     }
-
-    protected String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
-        if (javaSystemProperties == null) {
-            return null;
-        }
-        List<String> javaSystemPropertiesList = new ArrayList<>();
-        for (SystemProperty property: javaSystemProperties) {
-            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
-        }
-        return String.join(" ", javaSystemPropertiesList);
-    }
 }

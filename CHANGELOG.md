@@ -3,6 +3,7 @@
 
 ## 0.17.0
 
+* Add possibility to set Java System Properties via CR yaml
 * Add support for Mirror Maker 2.0
 * Add Jmxtrans deployment
 * Add public keys of TLS listeners to the status section of the Kafka CR

@@ -32,7 +32,7 @@ public class SystemProperty implements UnknownPropertyPreserving, Serializable {
     private String value;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The system property key.")
+    @Description("The system property name.")
     public String getName() {
         return name;
     }

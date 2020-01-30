@@ -175,6 +175,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return volumeMountList;
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = super.getEnvVars();        
@@ -257,6 +258,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         if (clustersOauthRefreshTokens.length() > 0) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS, clustersOauthRefreshTokens.toString()));
+        }
+
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
 
         return varList;

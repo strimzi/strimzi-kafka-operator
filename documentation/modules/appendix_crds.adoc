@@ -788,7 +788,7 @@ Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 [options="header"]
 |====
 |Property      |Description
-|name   1.2+<.<|The system property key.
+|name   1.2+<.<|The system property name.
 |string
 |value  1.2+<.<|The system property value.
 |string

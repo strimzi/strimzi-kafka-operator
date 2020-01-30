@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -390,5 +391,16 @@ public class ModelUtils {
     public static <T> List<T> asListOrEmptyList(List<T> list) {
         return Optional.ofNullable(list)
                 .orElse(Collections.emptyList());
+    }
+
+    public static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
+        if (javaSystemProperties == null) {
+            return null;
+        }
+        List<String> javaSystemPropertiesList = new ArrayList<>();
+        for (SystemProperty property: javaSystemProperties) {
+            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
+        }
+        return String.join(" ", javaSystemPropertiesList);
     }
 }
