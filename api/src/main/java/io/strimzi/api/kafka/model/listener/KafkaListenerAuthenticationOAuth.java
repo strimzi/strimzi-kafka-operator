@@ -44,6 +44,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
+    private boolean enableECDSA = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -181,5 +182,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setDisableTlsHostnameVerification(boolean disableTlsHostnameVerification) {
         this.disableTlsHostnameVerification = disableTlsHostnameVerification;
+    }
+
+    @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
+            "Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableECDSA() {
+        return enableECDSA;
+    }
+
+    public void setEnableECDSA(boolean enableECDSA) {
+        this.enableECDSA = enableECDSA;
     }
 }

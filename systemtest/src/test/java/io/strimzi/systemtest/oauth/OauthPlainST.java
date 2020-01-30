@@ -166,6 +166,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksEndpointUri(jwksEndpointUri)
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
@@ -181,6 +182,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksEndpointUri(jwksEndpointUri)
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
@@ -196,6 +198,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
                                     .withJwksEndpointUri(jwksEndpointUri)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
@@ -279,6 +282,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksEndpointUri(jwksEndpointUri)
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
@@ -294,6 +298,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksEndpointUri(jwksEndpointUri)
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
@@ -309,6 +314,7 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
                                     .withJwksEndpointUri(jwksEndpointUri)
+                                    .withEnableECDSA(true)
                                     .withUserNameClaim(userNameClaim)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()

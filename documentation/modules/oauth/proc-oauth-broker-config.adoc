@@ -62,6 +62,7 @@ external:
     disableTlsHostnameVerification: true <6>
     jwksExpirySeconds: 360 <7>
     jwksRefreshSeconds: 300 <8>
+    enableECDSA: "true" <9>
 ----
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
@@ -71,6 +72,7 @@ external:
 <6> (Optional) Disable TLS hostname verification. Default is `false`.
 <7> The duration the JWKs certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <8> The period between refreshes of JWKs certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
+<9> (Optional) If ECDSA is used for signing JWT tokens on authorization server, then this needs to be enabled. It installs additional crypto providers using BouncyCastle crypto library. Default is `false`.
 
 [[example-2]]
 .Example 2: Configuring token validation using an introspection endpoint
