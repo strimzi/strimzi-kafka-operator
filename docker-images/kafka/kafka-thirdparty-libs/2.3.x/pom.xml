@@ -131,4 +131,11 @@
             </exclusions>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1054/</url>
+        </repository>
+    </repositories>
 </project>
