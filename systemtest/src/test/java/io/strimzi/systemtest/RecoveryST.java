@@ -249,7 +249,7 @@ class RecoveryST extends BaseST {
     }
 
     @Override
-    void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("No search in strimzi-cluster-operator log for errors");
     }
 }
