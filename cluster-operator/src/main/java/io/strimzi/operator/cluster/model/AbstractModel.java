@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
@@ -92,6 +93,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
@@ -143,6 +145,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
+    protected List<SystemProperty> javaSystemProperties = null;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -284,6 +287,10 @@ public abstract class AbstractModel {
 
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
+        this.javaSystemProperties = javaSystemProperties;
     }
 
     protected abstract String getDefaultLogConfigFileName();

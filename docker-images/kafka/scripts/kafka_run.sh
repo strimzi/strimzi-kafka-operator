@@ -40,6 +40,10 @@ EOF
   fi
 fi
 
+if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
+fi
+
 KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
 
 # enabling Prometheus JMX exporter as Java agent

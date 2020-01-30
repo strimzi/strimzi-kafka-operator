@@ -766,15 +766,32 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 [options="header"]
 |====
-|Property                 |Description
-|-XX               1.2+<.<|A map of -XX options to the JVM.
+|Property                     |Description
+|-XX                   1.2+<.<|A map of -XX options to the JVM.
 |map
-|-Xms              1.2+<.<|-Xms option to to the JVM.
+|-Xms                  1.2+<.<|-Xms option to to the JVM.
 |string
-|-Xmx              1.2+<.<|-Xmx option to to the JVM.
+|-Xmx                  1.2+<.<|-Xmx option to to the JVM.
 |string
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
+|gcLoggingEnabled      1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
+|javaSystemProperties  1.2+<.<|A map of additional system properties which will be passed using the `-D` option to the JVM.
+|xref:type-SystemProperty-{context}[`SystemProperty`] array
+|====
+
+[id='type-SystemProperty-{context}']
+### `SystemProperty` schema reference
+
+Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
+
+
+[options="header"]
+|====
+|Property      |Description
+|name   1.2+<.<|The system property name.
+|string
+|value  1.2+<.<|The system property value.
+|string
 |====
 
 [id='type-KafkaJmxOptions-{context}']

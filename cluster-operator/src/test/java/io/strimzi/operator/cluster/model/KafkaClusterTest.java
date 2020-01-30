@@ -34,6 +34,8 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
@@ -118,6 +120,10 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
+            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
+        }};
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
             .withLivenessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
@@ -128,6 +134,9 @@ public class KafkaClusterTest {
             .editSpec()
                 .editKafka()
                     .withTlsSidecar(tlsSidecar)
+                    .withNewJvmOptions()
+                        .addAllToJavaSystemProperties(javaSystemProperties)
+                    .endJvmOptions()
                 .endKafka()
             .endSpec()
             .build();
@@ -139,6 +148,13 @@ public class KafkaClusterTest {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(kc.createOwnerReference(), metricsCm);
+    }
+
+    @Test
+    public void  testJavaSystemProperties() {
+        assertThat(kc.getEnvVars().get(2).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
+        assertThat(kc.getEnvVars().get(2).getValue(), is("-D" + javaSystemProperties.get(0).getName() + "=" + javaSystemProperties.get(0).getValue() + " " +
+                "-D" + javaSystemProperties.get(1).getName() + "=" + javaSystemProperties.get(1).getValue()));
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {

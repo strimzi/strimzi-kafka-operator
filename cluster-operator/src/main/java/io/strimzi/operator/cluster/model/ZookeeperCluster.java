@@ -201,6 +201,9 @@ public class ZookeeperCluster extends AbstractModel {
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        if (zookeeperClusterSpec.getJvmOptions() != null) {
+            zk.setJavaSystemProperties(zookeeperClusterSpec.getJvmOptions().getJavaSystemProperties());
+        }
 
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
@@ -535,6 +538,9 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
+        }
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
