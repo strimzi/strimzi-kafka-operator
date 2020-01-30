@@ -11,8 +11,6 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -223,16 +221,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             return spec.getTemplate().getPod().getAffinity();
         } else {
             return spec.getAffinity();
-        }
-    }
-
-    public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(1);
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-            return createService("ClusterIP", ports, getPrometheusAnnotations());
-        } else {
-            return null;
         }
     }
 

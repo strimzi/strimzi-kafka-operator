@@ -99,7 +99,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);
         mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(namespace, KafkaMirrorMakerResources.serviceName(mirror.getCluster()), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
