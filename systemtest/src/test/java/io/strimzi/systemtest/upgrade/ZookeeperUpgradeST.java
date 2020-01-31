@@ -11,7 +11,6 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
@@ -119,20 +118,14 @@ public class ZookeeperUpgradeST extends BaseST {
         LOGGER.info("1st Zookeeper roll (image change) is complete");
 
         // Wait for the kafka broker version change roll
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("Kafka roll (image change) is complete");
 
         if (testInfo.getDisplayName().contains("Downgrade")) {
-            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-            // Wait for the zk rolling update
-            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
             LOGGER.info("2nd Kafka roll (update) is complete");
-            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
             LOGGER.info("3rd Kafka roll (update) is complete");
-            StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-            LOGGER.info("4th Kafka roll (update) is complete");
         } else {
             // Wait for the zk rolling update
             StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
@@ -157,23 +150,9 @@ public class ZookeeperUpgradeST extends BaseST {
         assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
                 " was expected", kafkaResult, is(newVersion.version()));
 
-        LOGGER.info(" Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
-
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-            Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
-            config.put("log.message.format.version", newVersion.version());
-            kafka.getSpec().getKafka().setConfig(config);
-            LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-        });
-
-        // Wait for the kafka broker version of log.message.format.version change roll
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.info("Kafka roll (log.message.format.version change) is complete");
-
-        LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.version());
+        LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
         assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
-                .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.version()));
+                .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
     }
 
     @BeforeAll
