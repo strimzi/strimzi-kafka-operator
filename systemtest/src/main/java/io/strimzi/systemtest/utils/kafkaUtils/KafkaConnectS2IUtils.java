@@ -36,6 +36,7 @@ public class KafkaConnectS2IUtils {
             () -> {
                 String connect = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnectS2I").get(0);
                 String log = kubeClient().logs(connect);
+                // wait for second occurrence of message about finished rebalancing
                 return (log.length() - log.replace("Finished starting connectors and tasks", "").length()) / "Finished starting connectors and tasks".length() == 2;
             });
         LOGGER.info("Kafka Connect S2I {} rebalanced", name);
