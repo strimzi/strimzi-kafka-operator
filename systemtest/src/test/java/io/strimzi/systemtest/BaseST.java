@@ -327,7 +327,7 @@ public abstract class BaseST implements TestSeparator {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
             entry("imageRepositoryOverride", dockerOrg),
             entry("imageTagOverride", dockerTag),
-            entry("image.pullPolicy", Constants.IMAGE_PULL_POLICY),
+            entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
             entry("resources.requests.memory", REQUESTS_MEMORY),
             entry("resources.requests.cpu", REQUESTS_CPU),
             entry("resources.limits.memory", LIMITS_MEMORY),

@@ -73,7 +73,7 @@ public class KafkaClientsResource {
             .withImage(Environment.TEST_CLIENT_IMAGE)
             .withCommand("sleep")
             .withArgs("infinity")
-            .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
+            .withImagePullPolicy(Environment.COMPONENTS_IMAGE_PULL_POLICY);
 
         String producerConfiguration = ProducerConfig.ACKS_CONFIG + "=all\n";
         String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";

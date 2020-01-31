@@ -86,7 +86,7 @@ public class KubernetesResource {
             }
         }
 
-        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
@@ -99,7 +99,7 @@ public class KubernetesResource {
                     .editSpec()
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))
-                            .withImagePullPolicy(Constants.IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
                         .endContainer()
                     .endSpec()
                 .endTemplate()

@@ -51,9 +51,13 @@ public class Environment {
      */
     private static final String KUBERNETES_DOMAIN_ENV = "KUBERNETES_DOMAIN";
     /**
-     * Image pull policy env var
+     * Image pull policy env var for Components images (Kafka, Bridge, ...)
      */
-    private static final String IMAGE_PULL_POLICY_ENV = "IMAGE_PULL_POLICY";
+    private static final String COMPONENTS_IMAGE_PULL_POLICY_ENV = "IMAGE_PULL_POLICY";
+    /**
+     * Image pull policy env var for Operator images
+     */
+    private static final String OPERATOR_IMAGE_PULL_POLICY_ENV = "OPERATOR_IMAGE_PULL_POLICY";
     /**
      * CO reconciliation interval.
      */
@@ -68,7 +72,8 @@ public class Environment {
     private static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
-    public static final String IMAGE_PULL_POLICY_ENV_DEFAULT = "IfNotPresent";
+    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
+    public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
@@ -85,7 +90,9 @@ public class Environment {
     // variables for kafka bridge image
     private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
-    public static final String IMAGE_PULL_POLICY = System.getenv().getOrDefault(IMAGE_PULL_POLICY_ENV, IMAGE_PULL_POLICY_ENV_DEFAULT);
+    // Image pull policy variables
+    public static final String COMPONENTS_IMAGE_PULL_POLICY = System.getenv().getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
+    public static final String OPERATOR_IMAGE_PULL_POLICY = System.getenv().getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
 
     private Environment() {
     }
@@ -102,6 +109,7 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
-        LOGGER.info(debugFormat, IMAGE_PULL_POLICY_ENV, IMAGE_PULL_POLICY);
+        LOGGER.info(debugFormat, COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY);
+        LOGGER.info(debugFormat, OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY);
     }
 }
