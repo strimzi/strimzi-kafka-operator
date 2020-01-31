@@ -8,7 +8,7 @@ DOCKER_TAG ?= latest
 clean:
 	./build.sh clean
 
-docker_build:
+docker_build: clean
 	./build.sh docker_build
 
 docker_tag:
