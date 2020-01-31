@@ -261,6 +261,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
+|enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+|boolean
 |introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
 |jwksEndpointUri                 1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.

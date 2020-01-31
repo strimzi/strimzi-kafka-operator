@@ -145,6 +145,8 @@ spec:
                               - secretName
                             disableTlsHostnameVerification:
                               type: boolean
+                            enableECDSA:
+                              type: boolean
                             introspectionEndpointUri:
                               type: string
                             jwksEndpointUri:
@@ -252,6 +254,8 @@ spec:
                               - key
                               - secretName
                             disableTlsHostnameVerification:
+                              type: boolean
+                            enableECDSA:
                               type: boolean
                             introspectionEndpointUri:
                               type: string
@@ -376,6 +380,8 @@ spec:
                               - key
                               - secretName
                             disableTlsHostnameVerification:
+                              type: boolean
+                            enableECDSA:
                               type: boolean
                             introspectionEndpointUri:
                               type: string
