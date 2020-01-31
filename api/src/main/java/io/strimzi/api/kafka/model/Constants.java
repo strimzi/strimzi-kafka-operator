@@ -6,7 +6,7 @@
 package io.strimzi.api.kafka.model;
 
 public class Constants {
-    public static final String RESOURCE_GROUP_NAME = "kafka.eventstreams.ibm";
+    public static final String RESOURCE_GROUP_NAME = "kafka.strimzi.io";
 
     public static final String V1BETA1 = "v1beta1";
     public static final String V1ALPHA1 = "v1alpha1";

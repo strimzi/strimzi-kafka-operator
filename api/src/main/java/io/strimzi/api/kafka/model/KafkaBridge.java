@@ -90,10 +90,10 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkabridges";
     public static final String RESOURCE_SINGULAR = "kafkabridge";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
+    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kb";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
