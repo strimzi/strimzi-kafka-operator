@@ -95,7 +95,7 @@ public class KafkaTopic extends CustomResource implements UnknownPropertyPreserv
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaTopic";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkatopics";
     public static final String RESOURCE_SINGULAR = "kafkatopic";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
