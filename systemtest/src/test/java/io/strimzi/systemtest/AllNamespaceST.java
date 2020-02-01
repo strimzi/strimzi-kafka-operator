@@ -44,7 +44,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     private static final String THIRD_NAMESPACE = "third-namespace-test";
     private static final String SECOND_CLUSTER_NAME = CLUSTER_NAME + "-second";
 
-
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */

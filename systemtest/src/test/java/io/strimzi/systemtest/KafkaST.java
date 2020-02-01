@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1278,7 +1279,6 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
     void testPersistentStorageSize() throws Exception {
         String[] diskSizes = {"70Gi", "20Gi"};
         int kafkaRepl = 2;
@@ -1368,8 +1368,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    void testLabelModificationDoesNotBreakCluster() throws Exception {
+        void testLabelModificationDoesNotBreakCluster() throws Exception {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
         String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
@@ -1509,7 +1508,7 @@ class KafkaST extends BaseST {
 
         internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME  + "-" + new Random().nextInt(Integer.MAX_VALUE))
         );
     }
 
@@ -1533,25 +1532,26 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
     void testAppDomainLabels() throws Exception {
+        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
-        Map<String, String> labels;
-
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String kafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(Constants.KAFKA_CLIENTS + "-" + CLUSTER_NAME).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
+
+        Map<String, String> labels;
 
         LOGGER.info("---> PODS <---");
 
         List<Pod> pods = kubeClient().listPods().stream()
                 .filter(pod -> pod.getMetadata().getName().startsWith(CLUSTER_NAME))
+                .filter(pod -> !pod.getMetadata().getName().startsWith(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS))
                 .collect(Collectors.toList());
 
         for (Pod pod : pods) {
@@ -1605,7 +1605,7 @@ class KafkaST extends BaseST {
 
         internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE))
         );
     }
 
