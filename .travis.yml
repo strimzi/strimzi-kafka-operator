@@ -12,7 +12,7 @@ services:
 before_install:
 - gem install asciidoctor
 install:
-- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -U
 before_script:
 - "./.travis/install_yq.sh"
 - "./.travis/setup-kubernetes.sh"
