@@ -4,8 +4,13 @@
  */
 package io.strimzi.api.kafka.model.status;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -24,4 +29,16 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Status extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
+
+    private List<ConnectorStatus> connectors = new ArrayList<>();
+
+    @Description("List of MirrorMaker 2.0 connectors and their statuses")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<ConnectorStatus> getConnectors() {
+        return connectors;
+    }
+
+    public void setConnectors(List<ConnectorStatus> connectors) {
+        this.connectors = connectors;
+    } 
 }

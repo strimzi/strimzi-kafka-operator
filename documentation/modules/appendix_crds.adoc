@@ -2695,5 +2695,22 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
+|connectors          1.2+<.<|List of MirrorMaker 2.0 connectors and their statuses.
+|xref:type-ConnectorStatus-{context}[`ConnectorStatus`] array
+|====
+
+[id='type-ConnectorStatus-{context}']
+### `ConnectorStatus` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|name    1.2+<.<|The name of the connector.
+|string
+|status  1.2+<.<|The connector status, as reported by the Kafka Connect REST API.
+|map
 |====
 
