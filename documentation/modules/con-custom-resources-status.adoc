@@ -26,7 +26,7 @@ m¦KafkaConnect
 ¦The Kafka Connect cluster, if deployed.
 
 m¦KafkaConnectS2I
-¦xref:type-KafkaConnectS2Istatus-reference[]
+¦xref:type-KafkaConnectS2IStatus-reference[]
 ¦The Kafka Connect cluster with Source-to-Image support, if deployed.
 
 m¦KafkaConnector
