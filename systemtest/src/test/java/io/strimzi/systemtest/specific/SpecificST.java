@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
@@ -114,7 +113,7 @@ public class SpecificST extends BaseST {
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
         String nonExistingVersion = "6.6.6";
-        String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported.";
+        String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported.*";
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
                 .editSpec()
@@ -127,15 +126,6 @@ public class SpecificST extends BaseST {
 
         KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
-
-        Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
-
-        verifyCRStatusCondition(
-                condition,
-                nonExistingVersionMessage,
-                "InvalidResourceException",
-                "True",
-                "NotReady");
     }
 
     @BeforeAll
