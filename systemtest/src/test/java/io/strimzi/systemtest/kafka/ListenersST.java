@@ -97,10 +97,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-1");
         assertThat(received, is(20));
     }
 
@@ -147,10 +147,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-2");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-2");
         assertThat(received, is(20));
     }
 
@@ -197,10 +197,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-3");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-3");
         assertThat(received, is(20));
     }
 
@@ -247,10 +247,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-4");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-4");
         assertThat(received, is(20));
     }
 
@@ -297,10 +297,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-5");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-5");
         assertThat(received, is(20));
     }
 
@@ -347,10 +347,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-6");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "TLS", "consumer-group-certs-6");
         assertThat(received, is(20));
     }
 
@@ -414,10 +414,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-71");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-71");
         assertThat(received, is(30));
 
         SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
@@ -437,9 +437,9 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
 
-        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-72");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-72");
         assertThat(received, is(50));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
@@ -458,7 +458,7 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-73");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-73");
         assertThat(received, is(60));
     }
 
@@ -521,10 +521,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-81");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-81");
         assertThat(received, is(30));
 
         SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
@@ -544,9 +544,9 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
 
-        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-82");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-82");
         assertThat(received, is(50));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
@@ -565,7 +565,7 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-83");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-83");
         assertThat(received, is(60));
     }
 
@@ -628,10 +628,10 @@ public class ListenersST extends BaseST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
-        externalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
-        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        internalKafkaClient.setPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName());
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        int received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-91");
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 30, "TLS", "consumer-group-certs-91");
         assertThat(received, is(30));
 
         SecretUtils.createCustomSecret(customCertServer1, CLUSTER_NAME, NAMESPACE,
@@ -651,9 +651,9 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
 
-        sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
+        sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-92");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 50, "TLS", "consumer-group-certs-92");
         assertThat(received, is(50));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
@@ -672,7 +672,7 @@ public class ListenersST extends BaseST {
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
 
-        received = externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-93");
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-93");
         assertThat(received, is(60));
     }
 
