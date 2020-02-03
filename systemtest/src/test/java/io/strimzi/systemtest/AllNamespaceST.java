@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -204,6 +205,8 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         teardownEnvForOperator();
+        ResourceManager.setClassResources();
         deployTestSpecificResources();
+        ResourceManager.setMethodResources();
     }
 }
