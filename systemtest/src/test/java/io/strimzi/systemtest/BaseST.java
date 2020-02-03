@@ -574,11 +574,16 @@ public abstract class BaseST implements TestSeparator {
                 } else if (cm.getMetadata().getName().contains("-mirrormaker2-config")) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
                     assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker2"));
-                } else {
+                } else if (cm.getMetadata().getName().equals(clusterName.concat("-kafka-config"))) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
                     assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
-                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName), is(true));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                } else if (cm.getMetadata().getName().equals(additionalClusterName.concat("-kafka-config"))) {
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/cluster"), is(additionalClusterName));
+                } else {
+                    LOGGER.info("CM {} is not related to current test", cm.getMetadata().getName());
                 }
             }
         );
