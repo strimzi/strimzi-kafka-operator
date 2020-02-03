@@ -226,9 +226,9 @@ public class TopicST extends BaseST {
         LOGGER.info("Topic {} was created", topicName);
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        externalKafkaClient.setPodName(kafkaClientsPodName);
+        internalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50);
+        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
@@ -241,7 +241,7 @@ public class TopicST extends BaseST {
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} recreated", topicName);
 
-        int received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME);
+        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
 
     }

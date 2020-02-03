@@ -9,7 +9,7 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.internalclients.KafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;

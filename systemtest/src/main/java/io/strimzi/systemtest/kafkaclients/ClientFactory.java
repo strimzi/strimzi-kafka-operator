@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
-import io.strimzi.systemtest.kafkaclients.externalclient.ExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalclients.KafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalclients.OauthKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalclients.TracingKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.TracingKafkaClient;
 
 public class ClientFactory {
 
@@ -15,8 +15,8 @@ public class ClientFactory {
 
         if (clientType.equalsIgnoreCase(EClientType.BASIC.getClientType())) {
             return new KafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.EXTERNAL.getClientType())) {
-            return new ExternalKafkaClient();
+        } else if (clientType.equalsIgnoreCase(EClientType.INTERNAL.getClientType())) {
+            return new InternalKafkaClient();
         } else if (clientType.equalsIgnoreCase(EClientType.OAUTH.getClientType())) {
             return new OauthKafkaClient();
         } else if (clientType.equalsIgnoreCase(EClientType.TRACING.getClientType())) {

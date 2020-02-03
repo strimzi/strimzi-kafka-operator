@@ -7,7 +7,7 @@ package io.strimzi.systemtest.kafkaclients;
 public enum EClientType {
 
     BASIC("BASIC"),
-    EXTERNAL("EXTERNAL"),
+    INTERNAL("INTERNAL"),
     TRACING("TRACING"),
     OAUTH("OAUTH");
 

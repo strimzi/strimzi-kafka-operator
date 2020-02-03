@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients.externalclient;
+package io.strimzi.systemtest.kafkaclients.internalClients;
 
 public enum ClientType {
     CLI_KAFKA_VERIFIABLE_PRODUCER,
