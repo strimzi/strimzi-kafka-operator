@@ -97,7 +97,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
 
 @Tag(REGRESSION)
 class KafkaST extends BaseST {
@@ -635,8 +634,8 @@ class KafkaST extends BaseST {
         internalKafkaClient.setPodName(kafkaClientsPodName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount),
-            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS"),
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
     }
 
@@ -1209,7 +1208,7 @@ class KafkaST extends BaseST {
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
         LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pvc", startsWith("data").toString());
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         LOGGER.info("Waiting for Kafka pods deletion");
         PodUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
