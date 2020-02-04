@@ -50,6 +50,10 @@ public class KubernetesResource {
         return deployNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
     }
 
+    public static DeploymentBuilder defaultClusterOperator(String namespace) {
+        return defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+    }
+
     private static DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
 
         Deployment clusterOperator = getDeploymentFromYaml(PATH_TO_CO_CONFIG);
