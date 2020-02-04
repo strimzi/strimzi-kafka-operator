@@ -366,6 +366,12 @@ class RollingUpdateST extends BaseST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testManualTriggeringRollingUpdate() throws Exception {
+        // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
+        kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
+        ResourceManager.setClassResources();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT).done();
+        ResourceManager.setMethodResources();
+
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
@@ -401,12 +407,12 @@ class RollingUpdateST extends BaseST {
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
@@ -423,13 +429,20 @@ class RollingUpdateST extends BaseST {
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(zkName)
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
+        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
-        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
         kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+
+        // deploy Cluster Operator with short timeout for other tests (restore default configuration)
+        kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
+        ResourceManager.setClassResources();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+        ResourceManager.setMethodResources();
     }
 
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
