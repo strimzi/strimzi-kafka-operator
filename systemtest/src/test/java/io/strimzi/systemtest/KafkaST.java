@@ -759,7 +759,7 @@ class KafkaST extends BaseST {
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic"),
-                hasItems("PartitionCount:", "2"));
+                hasItems("PartitionCount:2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -773,7 +773,7 @@ class KafkaST extends BaseST {
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli"),
-                hasItems("PartitionCount:", "2"));
+                hasItems("PartitionCount:2"));
         testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -1171,7 +1171,7 @@ class KafkaST extends BaseST {
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pvc", "data");
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         verifyPVCDeletion(2, jbodStorage);
     }
 
@@ -1661,7 +1661,7 @@ class KafkaST extends BaseST {
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String kafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 
@@ -1731,7 +1731,7 @@ class KafkaST extends BaseST {
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String kafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 

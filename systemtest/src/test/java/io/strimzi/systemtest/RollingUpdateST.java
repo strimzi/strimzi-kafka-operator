@@ -44,7 +44,6 @@ import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
@@ -79,7 +78,7 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
 
         assertThat(sent, is(messageCount));
 
@@ -96,7 +95,7 @@ class RollingUpdateST extends BaseST {
         // first part
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
-        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         // second part
@@ -104,7 +103,7 @@ class RollingUpdateST extends BaseST {
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -117,7 +116,7 @@ class RollingUpdateST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
     }
 
@@ -144,7 +143,7 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
 
         assertThat(sent, is(messageCount));
 
@@ -163,12 +162,12 @@ class RollingUpdateST extends BaseST {
         // Wait for second reconciliation and check that pods are not rolled
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
-        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -181,7 +180,7 @@ class RollingUpdateST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
     }
 
@@ -222,8 +221,8 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
-        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
+        internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         // scale up
         final int scaleTo = initialReplicas + 4;
         final int newPodId = initialReplicas;
@@ -235,12 +234,8 @@ class RollingUpdateST extends BaseST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
         LOGGER.info("Scaling to {} finished", scaleTo);
 
-        //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient().getPodUid(newPodName);
-        List<Event> events = kubeClient().listEvents(uid);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-
-        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));        //Test that CO doesn't have any exceptions in log
+        internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
@@ -254,14 +249,11 @@ class RollingUpdateST extends BaseST {
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
 
-        // Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getStatefulSetUid(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
-        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
     }
 
     /**
@@ -343,7 +335,7 @@ class RollingUpdateST extends BaseST {
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(initialZkReplicas, is(3));
 
-        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
 
         assertThat(sent, is(messageCount));
 
@@ -358,7 +350,7 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Scaling up to {}", scaleZkTo);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
-        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
@@ -369,7 +361,7 @@ class RollingUpdateST extends BaseST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         // scale down
@@ -383,7 +375,7 @@ class RollingUpdateST extends BaseST {
 
         // Wait for one zk pods will became leader and others follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2);
-        received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         //Test that the second pod has event 'Killing'
@@ -425,7 +417,7 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
 
         // rolling update for kafka
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
@@ -451,7 +443,7 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
 
-        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
+        internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zkName).cascading(false).edit()
             .editMetadata()
@@ -469,7 +461,7 @@ class RollingUpdateST extends BaseST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
-        internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME);
+        internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
 
         // deploy Cluster Operator with short timeout for other tests (restore default configuration)
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
