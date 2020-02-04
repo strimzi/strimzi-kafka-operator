@@ -70,17 +70,17 @@ class RollingUpdateST extends BaseST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
+        String userName = "alice";
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
         int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
-//        String userName = "alice";
-//        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-//
-//        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-//        final String defaultKafkaClientsPodName =
-//                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-//
-//        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
-//
-//        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");
@@ -134,18 +134,18 @@ class RollingUpdateST extends BaseST {
             .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3, 1).done();
 
+        String userName = "alice";
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
         int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
-//        String userName = "alice";
-//        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-//
-//        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-//
-//        final String defaultKafkaClientsPodName =
-//                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-//
-//        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
-//
-//        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+
         assertThat(sent, is(messageCount));
 
         LOGGER.info("Update resources for pods");

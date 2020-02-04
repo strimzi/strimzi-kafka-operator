@@ -149,12 +149,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        LOGGER.info("Checking produceed and consumed messages to pod:{}", externalKafkaClient.getPodName());
-        externalKafkaClient.checkProducedAndConsumedMessages(
-                externalKafkaClient.sendMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS"),
-                externalKafkaClient.receiveMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS", CONSUMER_GROUP_NAME)
+        LOGGER.info("Checking produceed and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS"),
+                internalKafkaClient.receiveMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS", CONSUMER_GROUP_NAME)
         );
 
         cluster.setNamespace(startingNamespace);

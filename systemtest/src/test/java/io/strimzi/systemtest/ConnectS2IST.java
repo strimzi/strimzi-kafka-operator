@@ -205,7 +205,7 @@ class ConnectS2IST extends BaseST {
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
@@ -217,9 +217,9 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPod, CONNECT_S2I_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        externalKafkaClient.assertSentAndReceivedMessages(
-                externalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL"),
-                externalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL", "my-group-" + new Random().nextInt(Integer.MAX_VALUE))
+        internalKafkaClient.assertSentAndReceivedMessages(
+                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL"),
+                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL", "my-group-" + new Random().nextInt(Integer.MAX_VALUE))
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
