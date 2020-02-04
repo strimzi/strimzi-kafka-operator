@@ -32,7 +32,7 @@ For more information, see:
 * xref:ref-jbod-storage-{context}#jbod-pvc[JBOD and Persistent Volume Claims]
 
 NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
-If passwords and certificates need to be retained, secrets myst be recreated before creating the `KafkaUser` resources.
+If passwords and certificates need to be retained, secrets must be recreated before creating the `KafkaUser` resources.
 
 .Procedure
 
