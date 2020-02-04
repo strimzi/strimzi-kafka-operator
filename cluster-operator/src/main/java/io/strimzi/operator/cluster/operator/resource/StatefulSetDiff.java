@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +24,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
-        + "|/spec/template/metadata/annotations/strimzi.io~1generation"
+        + "|/spec/template/metadata/annotations/" + Annotations.STRIMZI_DOMAIN + "~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
