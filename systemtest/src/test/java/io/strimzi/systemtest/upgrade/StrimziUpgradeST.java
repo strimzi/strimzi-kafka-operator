@@ -10,16 +10,17 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -29,9 +30,9 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import javax.json.Json;
@@ -52,6 +53,7 @@ import java.util.function.Consumer;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -79,6 +81,9 @@ public class StrimziUpgradeST extends BaseST {
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
     private final String userName = "my-user";
+
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip";
+    private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -170,6 +175,42 @@ public class StrimziUpgradeST extends BaseST {
 
             deleteInstalledYamls(coDir);
         }
+    }
+
+    @Test
+    void testUpgradeKafkaWithoutVersion() {
+        File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
+
+        coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");
+
+        // Modify + apply installation files
+        copyModifyApply(coDir);
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .withVersion(null)
+                    .addToConfig("log.message.format.version", "2.3")
+                .endKafka()
+            .endSpec().done();
+
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+
+        // Update CRDs, CRB, etc.
+        cluster.applyClusterOperatorInstallFiles();
+        applyRoleBindings(NAMESPACE);
+
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").delete();
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
+
+        DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
+
+        assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {

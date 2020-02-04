@@ -91,11 +91,10 @@ public class StatefulSetUtils {
     /**
      *  Method to wait when StatefulSet will be recreated after rolling update
      * @param name StatefulSet name
-     * @param expectedPods Expected number of pods
      * @param snapshot Snapshot of pods for StatefulSet before the rolling update
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
-    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT * 2, () -> {
@@ -106,6 +105,19 @@ public class StatefulSetUtils {
                     return false;
                 }
             });
+        LOGGER.info("StatefulSet {} rolling update finished", name);
+        return ssSnapshot(name);
+    }
+
+    /**
+     *  Method to wait when StatefulSet will be recreated after rolling update with wait for all pods ready
+     * @param name StatefulSet name
+     * @param expectedPods Expected number of pods
+     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
+     * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
+     */
+    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        waitTillSsHasRolled(name, snapshot);
         waitForAllStatefulSetPodsReady(name, expectedPods);
         LOGGER.info("StatefulSet {} rolling update finished", name);
         return ssSnapshot(name);
