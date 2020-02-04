@@ -20,12 +20,12 @@ Cluster-scoped resources, which are not scoped to a particular Kubernetes namesp
 As a cluster administrator, you can inspect all the resources being installed (in the `/install/` directory) to ensure that the `ClusterRoles` do not grant unnecessary privileges.
 
 After installation, the Cluster Operator runs as a regular `Deployment`, so any standard (non-admin) Kubernetes user with privileges to access the `Deployment` can configure it.
-The cluster administrator can grant standard users the privileges necessary to manage Kafka custom resources.
+The cluster administrator can grant standard users the privileges necessary to manage `Kafka` custom resources.
 
 See also:
 
 * xref:co-faq-cluster-role-bindings_{context}[Why does the Cluster Operator need to create `ClusterRoleBindings`?]
-* xref:co-faq-standard-users_{context}[Why can't standard Kubernetes users create Kafka custom resources?]
+* xref:co-faq-standard-users_{context}[Can standard Kubernetes users create Kafka custom resources?]
 
 [id='co-faq-cluster-role-bindings_{context}']
 === Why does the Cluster Operator need to create `ClusterRoleBindings`?
@@ -45,7 +45,7 @@ for example, the Availability Zone in Amazon AWS.
 A `Node` is a cluster-scoped resource, so access to it can only be granted through a `ClusterRoleBinding`, not a namespace-scoped `RoleBinding`.
 
 [id='co-faq-standard-users_{context}']
-=== Why can't standard Kubernetes users create Kafka custom resources?
+=== Can standard Kubernetes users create Kafka custom resources?
 
 By default, standard Kubernetes users will not have the privileges necessary to manage the custom resources handled by the Cluster Operator.
 The cluster administrator can grant a user the necessary privileges using Kubernetes RBAC resources.
