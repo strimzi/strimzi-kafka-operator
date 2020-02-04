@@ -632,8 +632,8 @@ class SecurityST extends BaseST {
     void testCertRenewalInMaintenanceWindow() throws Exception {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
-        long maintenanceWindowDuration = 4;
-        maintenanceWindowStart = maintenanceWindowStart.plusMinutes(maintenanceWindowDuration);
+        long maintenanceWindowDuration = 14;
+        maintenanceWindowStart = maintenanceWindowStart.plusMinutes(5);
         long windowStartMin = maintenanceWindowStart.getMinute();
         long windowStopMin = windowStartMin + maintenanceWindowDuration > 59
                 ? windowStartMin + maintenanceWindowDuration - 60 : windowStartMin + maintenanceWindowDuration;
