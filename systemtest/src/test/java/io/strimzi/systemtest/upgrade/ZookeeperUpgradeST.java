@@ -150,6 +150,26 @@ public class ZookeeperUpgradeST extends BaseST {
         assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
                 " was expected", kafkaResult, is(newVersion.version()));
 
+
+        if (testInfo.getDisplayName().contains("Upgrade")) {
+            LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
+
+            KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+                LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+                Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
+                config.put("log.message.format.version", newVersion.messageVersion());
+                kafka.getSpec().getKafka().setConfig(config);
+                LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+            });
+
+            // Wait for the kafka broker version of log.message.format.version change roll
+            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+            LOGGER.info("Kafka roll (log.message.format.version change) is complete");
+
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.version());
+        }
+
         LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
         assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
                 .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
