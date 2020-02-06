@@ -133,7 +133,6 @@ public class ClusterOperator extends AbstractVerticle {
 
 
     @Override
-    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
     public void stop(Promise<Void> stop) {
         log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
