@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.user;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -57,7 +56,7 @@ public class UserOperator extends AbstractVerticle {
     }
 
     @Override
-    public void start(Future<Void> start) {
+    public void start(Promise<Void> start) {
         log.info("Starting UserOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
@@ -80,8 +79,7 @@ public class UserOperator extends AbstractVerticle {
     }
 
     @Override
-    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
-    public void stop(Future<Void> stop) {
+    public void stop(Promise<Void> stop) {
         log.info("Stopping UserOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
 
@@ -90,7 +88,7 @@ public class UserOperator extends AbstractVerticle {
         }
 
         client.close();
-        ((Promise<Void>) stop).complete();
+        stop.complete();
     }
 
     /**
