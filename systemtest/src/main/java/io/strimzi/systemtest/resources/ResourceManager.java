@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -231,6 +232,7 @@ public class ResourceManager {
                 .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
 
         SecretUtils.waitForClusterSecretsDeletion(kafkaClusterName);
+        PersistentVolumeClaimUtils.waitUntilPVCDeletion(kafkaClusterName);
     }
 
     private static void waitForDeletion(KafkaConnect kafkaConnect) {

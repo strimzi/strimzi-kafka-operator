@@ -10,8 +10,11 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class PersistentVolumeClaimUtils {
@@ -46,5 +49,23 @@ public class PersistentVolumeClaimUtils {
                 return true;
             });
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
+    }
+
+    public static void waitUntilPVCDeletion(String clusterName) {
+        LOGGER.info("Waiting till PVC deletion for cluster {}", clusterName);
+        TestUtils.waitFor("Waiting till PVC will be deleted {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                List<PersistentVolumeClaim> pvcList = kubeClient().listPersistentVolumeClaims().stream().filter(pvc -> pvc.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+                if (pvcList.isEmpty()) {
+                    return true;
+                } else {
+                    for (PersistentVolumeClaim pvc : pvcList) {
+                        LOGGER.warn("PVC {} is not deleted yet! Triggering force delete by cmd client!", pvc.getMetadata().getName());
+                        cmdKubeClient().deleteByName("pvc", pvc.getMetadata().getName());
+                    }
+                    return false;
+                }
+            });
+        LOGGER.info("PVC for cluster {} was deleted", clusterName);
     }
 }
