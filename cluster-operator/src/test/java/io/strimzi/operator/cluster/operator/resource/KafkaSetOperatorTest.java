@@ -40,8 +40,8 @@ public class KafkaSetOperatorTest {
     @BeforeEach
     public void before() {
         KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        a = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
-        b = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        a = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null, -1L);
+        b = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null, -1L);
     }
 
     private Kafka getResource() {
