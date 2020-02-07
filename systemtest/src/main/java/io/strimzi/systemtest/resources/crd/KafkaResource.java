@@ -60,7 +60,21 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
+                .editKafka()
+                    .withNewPersistentClaimStorage()
+                        .withNewSize("100")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
+                .endKafka()
+                .editZookeeper()
+                    .withNewPersistentClaimStorage()
+                        .withNewSize("100")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
+                .endZookeeper()
+            .endSpec().build());
     }
 
     public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
