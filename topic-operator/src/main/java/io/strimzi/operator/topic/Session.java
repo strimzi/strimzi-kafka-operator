@@ -75,7 +75,7 @@ public class Session extends AbstractVerticle {
      * Stop the operator.
      */
     @Override
-    public void stop(Future<Void> stopFuture) throws Exception {
+    public void stop(Promise<Void> stop) throws Exception {
         this.stopped = true;
         Long timerId = this.timerId;
         if (timerId != null) {
@@ -133,11 +133,11 @@ public class Session extends AbstractVerticle {
                 });
                 return Future.succeededFuture();
             });
-        }, stopFuture);
+        }, stop);
     }
 
     @Override
-    public void start(Future<Void> startupFuture) {
+    public void start(Promise<Void> start) {
         LOGGER.info("Starting");
         Properties adminClientProps = new Properties();
 
@@ -170,7 +170,7 @@ public class Session extends AbstractVerticle {
                 this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
             zkResult -> {
                 if (zkResult.failed()) {
-                    ((Promise<Void>) startupFuture).fail(zkResult.cause());
+                    start.fail(zkResult.cause());
                     return;
                 }
                 this.zk = zkResult.result();
@@ -231,7 +231,7 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                promise.future().setHandler(startupFuture);
+                promise.future().setHandler(start);
                 LOGGER.info("Started");
             });
     }

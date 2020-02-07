@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
@@ -96,7 +95,7 @@ public class ClusterOperator extends AbstractVerticle {
     }
 
     @Override
-    public void start(Future<Void> start) {
+    public void start(Promise<Void> start) {
         log.info("Starting ClusterOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
@@ -133,8 +132,7 @@ public class ClusterOperator extends AbstractVerticle {
 
 
     @Override
-    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
-    public void stop(Future<Void> stop) {
+    public void stop(Promise<Void> stop) {
         log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         for (Watch watch : watchByKind.values()) {
@@ -144,7 +142,7 @@ public class ClusterOperator extends AbstractVerticle {
             // TODO remove the watch from the watchByKind
         }
         client.close();
-        ((Promise<Void>) stop).complete();
+        stop.complete();
     }
 
     /**
