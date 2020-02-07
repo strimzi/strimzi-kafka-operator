@@ -314,6 +314,10 @@ spec:
             type: "array"
             items:
               type: "integer"
+        listOfMaps:
+          type: "array"
+          items:
+            type: "object"
         listOfObjects:
           type: "array"
           items:

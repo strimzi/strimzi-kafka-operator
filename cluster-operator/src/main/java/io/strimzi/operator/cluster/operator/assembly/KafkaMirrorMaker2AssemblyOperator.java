@@ -36,7 +36,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
-import io.strimzi.api.kafka.model.status.ConnectorStatusBuilder;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -47,7 +46,6 @@ import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -56,8 +54,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * <p>Assembly operator for a "Kafka MirrorMaker 2.0" assembly, which manages:</p>
@@ -363,40 +359,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     private Future<Map<String, Object>> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
-        return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT, connectorName, asJson(connectorSpec))
-                .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT, connectorName))
-                .compose(status -> {
-                    Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
-                    if (!(path instanceof String)) {
-                        return Future.failedFuture("JSON response lacked $.connector.state");
-                    } else {
-                        String state = (String) path;
-                        boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
-                        if ("RUNNING".equals(state) && shouldPause) {
-                            log.debug("{}: Pausing connector {}", reconciliation, connectorName);
-                            return apiClient.pause(host, KafkaConnectCluster.REST_API_PORT, connectorName)
-                                    .compose(ignored ->
-                                            apiClient.status(host, KafkaConnectCluster.REST_API_PORT,
-                                                    connectorName));
-                        } else if ("PAUSED".equals(state) && !shouldPause) {
-                            log.debug("{}: Resuming connector {}", reconciliation, connectorName);
-                            return apiClient.resume(host, KafkaConnectCluster.REST_API_PORT,
-                                    connectorName)
-                                    .compose(ignored ->
-                                            apiClient.status(host, KafkaConnectCluster.REST_API_PORT,
-                                                    connectorName));
-
-                        } else {
-                            return Future.succeededFuture(status);
-                        }
-                    }
-                })
+        return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                 .setHandler(result -> {
                     if (result.succeeded()) {
-                        mirrorMaker2Status.getConnectors().add(new ConnectorStatusBuilder()
-                                .withName(connectorName)
-                                .withStatus(result.result())
-                                .build());
+                        mirrorMaker2Status.getConnectors().add(result.result());
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }

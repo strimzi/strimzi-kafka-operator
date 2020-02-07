@@ -1088,9 +1088,4 @@ spec:
               type: array
               items:
                 type: object
-                properties:
-                  name:
-                    type: string
-                  status:
-                    type: object
 {{- end -}}
