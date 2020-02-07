@@ -65,6 +65,8 @@ pipeline {
                         env.DOCKER_REGISTRY="172.30.1.1:5000"
                         env.DOCKER_TAG="pr"
                     }
+                    env.BUILD_PROJECT_STATUS = false
+                    env.BUILD_DOCKER_IMAGE_STATUS = false
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
                     echo "DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}"
                     echo "DOCKER_ORG: ${env.DOCKER_ORG}"
@@ -87,6 +89,7 @@ pipeline {
                 script {
                     withMaven(mavenOpts: '-Djansi.force=true') {
                         sh "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress"
+                        env.BUILD_PROJECT_STATUS = true
                     }
                 }
             }
@@ -98,6 +101,7 @@ pipeline {
             steps {
                 script {
                     lib.buildStrimziImages()
+                    env.BUILD_DOCKER_IMAGE_STATUS = true
                 }
             }
         }
