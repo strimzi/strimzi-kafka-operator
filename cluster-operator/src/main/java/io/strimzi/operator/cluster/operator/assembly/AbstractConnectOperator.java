@@ -80,8 +80,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         extends AbstractOperator<T, CrdOperator<C, T, L, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
-    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = "strimzi.io/use-connector-resources";
-    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
+    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = Annotations.STRIMZI_DOMAIN + "use-connector-resources";
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;

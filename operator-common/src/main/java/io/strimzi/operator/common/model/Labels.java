@@ -21,8 +21,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  */
 public class Labels {
 
-    public static final String STRIMZI_DOMAIN = "strimzi.io/";
-    public static final String KUBERNETES_DOMAIN = "app.kubernetes.io/";
+    public static final String STRIMZI_DOMAIN = "strimzi.lol/";
+    public static final String KUBERNETES_DOMAIN = "app.kubernetes.lol/";
 
     /**
      * The kind of a Kubernetes / OpenShift Resource. It contains the same value as the Kind of the corresponding

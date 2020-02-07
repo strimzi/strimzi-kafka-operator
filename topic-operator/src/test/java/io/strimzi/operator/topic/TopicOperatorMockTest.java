@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -167,8 +168,8 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
-                .addToLabels(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL, io.strimzi.operator.common.model.Labels.KUBERNETES_NAME)
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                .addToLabels(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME)
                 .endMetadata()
                 .withNewSpec()
                 .withPartitions(1)
@@ -282,7 +283,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
                 .withTopicName("my-topic") // the same as metadata.name

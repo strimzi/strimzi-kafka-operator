@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.utils.StUtils;
@@ -1005,7 +1006,7 @@ class KafkaST extends BaseST {
         assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
         String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
         assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
 
@@ -1240,9 +1241,9 @@ class KafkaST extends BaseST {
                     String volumeName = volume.getMetadata().getName();
                     pvcs.add(volumeName);
                     LOGGER.info("Checking labels for volume:" + volumeName);
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/cluster"), is(CLUSTER_NAME));
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/name"), is(CLUSTER_NAME.concat("-kafka")));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
                     assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
                 });
 

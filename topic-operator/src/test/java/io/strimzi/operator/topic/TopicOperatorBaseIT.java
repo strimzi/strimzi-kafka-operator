@@ -82,8 +82,7 @@ public abstract class TopicOperatorBaseIT {
 
     protected static String oldNamespace;
 
-    protected final Labels labels = Labels.fromString(
-            "strimzi.io/kind=topic");
+    protected final Labels labels = Labels.fromString(io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
 
     public static final String NAMESPACE = "topic-operator-it";
 

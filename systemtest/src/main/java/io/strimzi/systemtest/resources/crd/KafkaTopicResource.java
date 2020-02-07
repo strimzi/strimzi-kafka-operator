@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,7 +51,7 @@ public class KafkaTopicResource {
             .withNewMetadata()
                 .withName(topicName)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels("strimzi.io/cluster", clusterName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
             .endMetadata()
             .editSpec()
                 .withPartitions(partitions)

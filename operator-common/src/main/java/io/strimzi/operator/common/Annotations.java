@@ -16,9 +16,10 @@ import static java.lang.Integer.parseInt;
 
 public class Annotations {
 
-    public static final String STRIMZI_DOMAIN = "strimzi.io";
+    public static final String STRIMZI_DOMAIN = "strimzi.lol/";
+    public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
 
-    public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
+    public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.lol/revision";
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
         Map<String, String> annotations = metadata.getAnnotations();
