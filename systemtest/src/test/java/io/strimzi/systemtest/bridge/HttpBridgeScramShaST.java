@@ -33,6 +33,8 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Random;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -65,7 +67,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
-        kafkaClient.receiveMessagesExternalScramSha(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
+        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
     }
 
     @Test
@@ -75,7 +78,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // Send messages to Kafka
-        kafkaClient.sendMessagesExternalScramSha(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
+        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(messageCount));
 
         String name = "kafka-consumer-simple-receive";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
