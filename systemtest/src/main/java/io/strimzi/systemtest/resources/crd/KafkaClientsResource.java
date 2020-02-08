@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -151,7 +152,7 @@ public class KafkaClientsResource {
                 }
 
                 if (tlsListener) {
-                    String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
+                    String clusterName = kafkaUser.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
                     String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
                     String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;

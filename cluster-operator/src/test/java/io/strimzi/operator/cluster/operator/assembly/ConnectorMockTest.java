@@ -347,7 +347,7 @@ public class ConnectorMockTest {
                 .endSpec()
                 .done();
         waitForConnectorNotReady(connectorName, "InvalidResourceException",
-                "Resource lacks label 'strimzi.io/cluster': No connect cluster in which to create this connector.");
+                "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No connect cluster in which to create this connector.");
         return;
     }
 
@@ -378,7 +378,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -407,7 +407,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    //.addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -438,7 +438,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -514,7 +514,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -551,7 +551,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -610,7 +610,7 @@ public class ConnectorMockTest {
                 .endSpec()
                 .done();
         waitForConnectorNotReady(connectorName, "NoSuchResourceException",
-                "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
+                "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
 
         verify(api, never()).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -624,7 +624,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -660,7 +660,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connect1Name)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -670,7 +670,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connect2Name)
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -739,7 +739,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(connectName)
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -785,7 +785,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(connectName)
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()

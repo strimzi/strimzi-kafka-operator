@@ -24,7 +24,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
-        + "|/spec/template/metadata/annotations/" + Annotations.STRIMZI_DOMAIN + "~1generation"
+        + "|/spec/template/metadata/annotations/" + Annotations.STRIMZI_DOMAIN + "generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"

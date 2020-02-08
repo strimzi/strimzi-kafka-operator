@@ -343,7 +343,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             Deployment dc = capturedDc.get(0);
             context.verify(() -> assertThat(dc.getMetadata().getName(), is(compareTo.getName())));
             Map<String, String> annotations = new HashMap();
-            annotations.put("strimzi.io/logging", loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
             context.verify(() -> assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null))));
 
             // Verify PodDisruptionBudget

@@ -1608,9 +1608,9 @@ class KafkaST extends BaseST {
 
     void verifyAppLabels(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label strimzi.io/cluster is present", labels.containsKey("strimzi.io/cluster"));
-        assertThat("Label strimzi.io/kind is present", labels.containsKey("strimzi.io/kind"));
-        assertThat("Label strimzi.io/name is present", labels.containsKey("strimzi.io/name"));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
+        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
     }
 
     void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {

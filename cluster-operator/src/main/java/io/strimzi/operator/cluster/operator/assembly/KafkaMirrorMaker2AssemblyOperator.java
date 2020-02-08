@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.strimzi.operator.common.Annotations;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
@@ -134,7 +135,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 null);
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)

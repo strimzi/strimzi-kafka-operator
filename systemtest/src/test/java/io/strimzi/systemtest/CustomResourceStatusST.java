@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -114,7 +115,7 @@ class CustomResourceStatusST extends BaseST {
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
-        String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String eoPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);

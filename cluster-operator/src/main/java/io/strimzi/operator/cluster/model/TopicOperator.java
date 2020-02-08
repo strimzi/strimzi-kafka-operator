@@ -28,7 +28,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
