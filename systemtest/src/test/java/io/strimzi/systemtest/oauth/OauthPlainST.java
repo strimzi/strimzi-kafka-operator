@@ -12,9 +12,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
@@ -31,6 +29,7 @@ import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -40,7 +39,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Random;
@@ -69,16 +67,17 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(EXTERNAL_CLIENTS_USED)
 public class OauthPlainST extends OauthBaseST {
 
-    private OauthKafkaClient oauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);
+    private OauthExternalKafkaClient oauthExternalKafkaClient;
 
     @Description(
             "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @Test
-    void testProducerConsumer() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    void testProducerConsumer() throws InterruptedException, ExecutionException, TimeoutException {
+        oauthExternalKafkaClient.setClusterName(CLUSTER_NAME);
+
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -88,10 +87,9 @@ public class OauthPlainST extends OauthBaseST {
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    void testProducerConsumerConnect() throws InterruptedException, ExecutionException, TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -133,10 +131,9 @@ public class OauthPlainST extends OauthBaseST {
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
     @Tag(MIRROR_MAKER)
-    void testProducerConsumerMirrorMaker() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    void testProducerConsumerMirrorMaker() throws InterruptedException, ExecutionException, TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -208,10 +205,9 @@ public class OauthPlainST extends OauthBaseST {
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 try {
-                    Future<Integer> oauthConsumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, targetKafkaCluster,
-                            MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                    Future<Integer> oauthConsumer = oauthExternalKafkaClient.receiveMessagesPlain();
                     return MESSAGE_COUNT == oauthConsumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     LOGGER.error("Consumer doesn't received messages {}", e.getMessage());
                     e.printStackTrace();
                     return false;
@@ -222,10 +218,9 @@ public class OauthPlainST extends OauthBaseST {
     @Test
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
-    void testProducerConsumerMirrorMaker2() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    void testProducerConsumerMirrorMaker2() throws InterruptedException, ExecutionException, TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -303,10 +298,9 @@ public class OauthPlainST extends OauthBaseST {
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 try {
-                    Future<Integer> oauthConsumer = oauthKafkaClient.receiveMessages(kafkaTargetClusterTopicName, NAMESPACE, kafkaTargetClusterName,
-                         MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                    Future<Integer> oauthConsumer = oauthExternalKafkaClient.receiveMessagesPlain();
                     return MESSAGE_COUNT == oauthConsumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     LOGGER.error("Consumer doesn't received messages {}", e.getMessage());
                     e.printStackTrace();
                     return false;
@@ -318,10 +312,9 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As a oauth bridge, I should be able to send messages to bridge endpoint.")
     @Test
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException, IOException {
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -382,7 +375,7 @@ public class OauthPlainST extends OauthBaseST {
     }
 
     @Test
-    void testIntrospectionEndpointWithPlainCommunication() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    void testIntrospectionEndpointWithPlainCommunication() throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Deploying kafka...");
 
         String introspectionKafka = CLUSTER_NAME + "-intro";
@@ -409,12 +402,20 @@ public class OauthPlainST extends OauthBaseST {
             .endSpec()
             .done();
 
-        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT);
-        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT,
-                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        oauthExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        oauthExternalKafkaClient.setClusterName(introspectionKafka);
+
+        Future<Integer> producer = oauthExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = oauthExternalKafkaClient.receiveMessagesPlain();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+    }
+
+    @BeforeEach
+    void setUpEach() {
+        oauthExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
     }
 
     @BeforeAll
@@ -430,11 +431,18 @@ public class OauthPlainST extends OauthBaseST {
 
         LOGGER.info("Setting producer and consumer properties");
 
-        oauthKafkaClient.setClientId(OAUTH_CLIENT_NAME);
-        oauthKafkaClient.setClientSecretName(OAUTH_CLIENT_SECRET);
-        oauthKafkaClient.setOauthTokenEndpointUri(oauthTokenEndpointUri);
+        oauthExternalKafkaClient = new OauthExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .withOauthClientId(OAUTH_CLIENT_NAME)
+                .withClientSecretName(OAUTH_CLIENT_SECRET)
+                .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+                .build();
 
-        LOGGER.info("Oauth kafka client has following settings {}", oauthKafkaClient.toString());
+        LOGGER.info("Oauth kafka client has following settings {}", oauthExternalKafkaClient.toString());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);

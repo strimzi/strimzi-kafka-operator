@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -64,6 +65,7 @@ class MirrorMaker2ST extends BaseST {
     private String kafkaClusterSourceName = CLUSTER_NAME + "-source";
     private String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
     void testMirrorMaker2() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
@@ -96,17 +98,28 @@ class MirrorMaker2ST extends BaseST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(availabilityTopicSourceName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterSourceName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         // Check brokers availability
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount),
-            internalKafkaClient.receiveMessages(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
+        internalKafkaClient.setTopicName(availabilityTopicTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, messagesCount),
-            internalKafkaClient.receiveMessages(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
         
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
@@ -126,21 +139,33 @@ class MirrorMaker2ST extends BaseST {
         verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
 
-        int sent = internalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            sent,
-            internalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
-        );
+        internalKafkaClient.setTopicName(topicSourceName);
+        internalKafkaClient.setClusterName(kafkaClusterSourceName);
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        int sent = internalKafkaClient.sendMessagesPlain();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessages(topicTargetName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesPlain()
         );
+
+        internalKafkaClient.setTopicName(topicTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        internalKafkaClient.setTopicName(topicSourceNameMirrored);
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
         // Check that mm2 mirror automatically created topic
         internalKafkaClient.checkProducedAndConsumedMessages(
-            messagesCount,
-            internalKafkaClient.receiveMessages(topicSourceNameMirrored, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+            sent,
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
@@ -155,6 +180,7 @@ class MirrorMaker2ST extends BaseST {
     /**
      * Test mirroring messages by MirrorMaker 2.0 over tls transport using mutual tls auth
      */
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth() {
@@ -208,17 +234,29 @@ class MirrorMaker2ST extends BaseST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName("my-topic-test-1")
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterSourceName)
+            .withKafkaUsername(userSource.getMetadata().getName())
+            .withMessageCount(messagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         // Check brokers availability
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
+        internalKafkaClient.setTopicName("my-topic-test-2");
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         // Initialize CertSecretSource with certificate and secret names for source
@@ -264,6 +302,7 @@ class MirrorMaker2ST extends BaseST {
                 .addToConfig("offset.storage.replication.factor", 1)
                 .addToConfig("status.storage.replication.factor", 1)
                 .build();
+
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
                 .withClusters(sourceClusterWithTlsAuth, targetClusterWithTlsAuth)
@@ -273,16 +312,24 @@ class MirrorMaker2ST extends BaseST {
             .endSpec()
             .done();
 
-        int sent = internalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
+        internalKafkaClient.setTopicName(topicSourceName);
+        internalKafkaClient.setClusterName(kafkaClusterSourceName);
+        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
+
+        int sent = internalKafkaClient.sendMessagesTls();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesTls()
         );
 
+        internalKafkaClient.setTopicName(topicTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-                internalKafkaClient.receiveMessagesTls(topicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesTls()
         );
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
@@ -296,6 +343,7 @@ class MirrorMaker2ST extends BaseST {
     /**
      * Test mirroring messages by MirrorMaker 2.0 over tls transport using scram-sha-512 auth
      */
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
     void testMirrorMaker2TlsAndScramSha512Auth() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
@@ -362,17 +410,30 @@ class MirrorMaker2ST extends BaseST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(availabilityTopicSourceName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterSourceName)
+            .withKafkaUsername(userSource.getMetadata().getName())
+            .withMessageCount(messagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         // Check brokers availability
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(availabilityTopicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
+        internalKafkaClient.setTopicName(availabilityTopicTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(availabilityTopicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         // Deploy Mirror Maker with TLS and ScramSha512
@@ -411,16 +472,29 @@ class MirrorMaker2ST extends BaseST {
                 .endMirror()
             .endSpec().done();
 
-        int sent = internalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
+        // Deploy topic
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+
+        internalKafkaClient.setTopicName(topicSourceName);
+        internalKafkaClient.setClusterName(kafkaClusterSourceName);
+        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        int sent = internalKafkaClient.sendMessagesTls();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesTls()
         );
 
+        internalKafkaClient.setTopicName(topicTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessagesTls(topicTargetName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesTls()
         );
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();

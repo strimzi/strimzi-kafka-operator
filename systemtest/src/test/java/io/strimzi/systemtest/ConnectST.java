@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -140,11 +142,18 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaConnectPodName)
+            .withTopicName(CONNECT_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
-                internalKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
@@ -212,11 +221,19 @@ class ConnectST extends BaseST {
         final String kafkaClientsSecondPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-second").get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsSecondPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsSecondPodName)
+            .withTopicName(CONNECT_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(USER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT),
-                internalKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
@@ -242,34 +259,38 @@ class ConnectST extends BaseST {
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                 .endSpec().done();
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String connectorName = "license-source";
-        String topicName = "my-topic";
         KafkaConnectorResource.kafkaConnector(connectorName, CLUSTER_NAME, 2)
             .editSpec()
-                .addToConfig("topic", topicName)
+                .addToConfig("topic", TOPIC_NAME)
             .endSpec().done();
 
-        // consume from the topic (we don't really care about the contents)
-        int messageCount = 10;
-        internalKafkaClient.setPodName(kafkaClientsPodName);
-        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE));
-        assertThat(received, greaterThanOrEqualTo(messageCount));
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        int received = internalKafkaClient.receiveMessagesPlain();
+        assertThat(received, greaterThanOrEqualTo(MESSAGE_COUNT));
 
         String service = KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083);
         String output = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", "curl " + service + "/connectors/" + connectorName).out();
         assertThat(output, containsString("\"name\":\"license-source\""));
         assertThat(output, containsString("\"connector.class\":\"org.apache.kafka.connect.file.FileStreamSourceConnector\""));
         assertThat(output, containsString("\"tasks.max\":\"2\""));
-        assertThat(output, containsString("\"topic\":\"" + topicName + "\""));
+        assertThat(output, containsString("\"topic\":\"" + TOPIC_NAME + "\""));
 
         LOGGER.info("Deleting connector {} CR", connectorName);
         cmdKubeClient().deleteByName("kafkaconnector", connectorName);
 
-        LOGGER.info("Deleting topic {} from CR", topicName);
-        cmdKubeClient().deleteByName("kafkatopic", topicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
     }
 
 
@@ -391,13 +412,21 @@ class ConnectST extends BaseST {
         KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME + "-second", kafkaUser).done();
 
         final String kafkaClientsSecondPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-second").get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-second").get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsSecondPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsSecondPodName)
+            .withTopicName(CONNECT_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(USER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS"),
-                internalKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
@@ -464,13 +493,21 @@ class ConnectST extends BaseST {
         KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME + "-second", kafkaUser).done();
 
         final String kafkaClientsSecondPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-second").get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-second").get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsSecondPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsSecondPodName)
+            .withTopicName(CONNECT_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(USER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS"),
-                internalKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
@@ -683,7 +720,14 @@ class ConnectST extends BaseST {
                 .endSpec().done();
         KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         String execConnectPod =  kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
@@ -695,8 +739,8 @@ class ConnectST extends BaseST {
                 pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
 
         internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");

@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
@@ -66,10 +67,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
@@ -218,7 +219,15 @@ class ConnectS2IST extends BaseST {
         final String tlsKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(tlsKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(tlsKafkaClientsPodName)
+            .withTopicName(CONNECT_S2I_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(userName)
+            .withConsumerGroupName("my-group-" + new Random().nextInt(Integer.MAX_VALUE))
+            .build();
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
@@ -230,9 +239,10 @@ class ConnectS2IST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
-                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
+
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_PATH).out(),
@@ -302,13 +312,15 @@ class ConnectS2IST extends BaseST {
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
             .editSpec()
-                .withResources(new ResourceRequirementsBuilder()
+                .withResources(
+                    new ResourceRequirementsBuilder()
                         .addToLimits("memory", new Quantity("400M"))
                         .addToLimits("cpu", new Quantity("2"))
                         .addToRequests("memory", new Quantity("300M"))
                         .addToRequests("cpu", new Quantity("1"))
                         .build())
-                .withBuildResources(new ResourceRequirementsBuilder()
+                .withBuildResources(
+                    new ResourceRequirementsBuilder()
                         .addToLimits("memory", new Quantity("1000M"))
                         .addToLimits("cpu", new Quantity("1000"))
                         .addToRequests("memory", new Quantity("400M"))
@@ -474,7 +486,14 @@ class ConnectS2IST extends BaseST {
                 .endSpec().done();
         KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         String execConnectPod =  kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
@@ -486,8 +505,8 @@ class ConnectS2IST extends BaseST {
                 pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
 
         internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");

@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.LogCollector;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -210,7 +211,7 @@ public class StrimziUpgradeST extends BaseST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
     }
 
-    private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {
+    private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -265,12 +266,23 @@ public class StrimziUpgradeST extends BaseST {
         final String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
-        Integer sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
-            produceMessagesCount, "TLS");
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterName)
+            .withKafkaUsername(userName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol("TLS")
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(produceMessagesCount));
-        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        internalKafkaClient.setMessageCount(produceMessagesCount);
+
+        int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
         makeSnapshots();
@@ -308,8 +320,9 @@ public class StrimziUpgradeST extends BaseST {
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
         // Check errors in CO log

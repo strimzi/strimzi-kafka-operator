@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -39,7 +39,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(RECOVERY)
-@Tag(INTERNAL_CLIENTS_USED)
 class NamespaceDeletionRecoveryST extends BaseST {
 
     static final String NAMESPACE = "namespace-recovery-cluster-test";
@@ -50,7 +49,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
     private String storageClassName = "retain";
 
     @Test
-    void testTopicAvailable() throws InterruptedException {
+    void testTopicAvailable() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
@@ -93,10 +92,17 @@ class NamespaceDeletionRecoveryST extends BaseST {
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(consumerGroup)
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, consumerGroup);
+        Integer consumed = internalKafkaClient.receiveMessagesPlain();
         assertThat(consumed, is(MESSAGE_COUNT));
     }
 
@@ -156,10 +162,17 @@ class NamespaceDeletionRecoveryST extends BaseST {
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(consumerGroup)
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, consumerGroup);
+        Integer consumed = internalKafkaClient.receiveMessagesPlain();
         assertThat(consumed, is(MESSAGE_COUNT));
     }
 
@@ -192,12 +205,19 @@ class NamespaceDeletionRecoveryST extends BaseST {
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(consumerGroup)
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, consumerGroup)
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
     }
 
