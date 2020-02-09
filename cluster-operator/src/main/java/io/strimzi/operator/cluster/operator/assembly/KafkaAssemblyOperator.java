@@ -375,7 +375,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Service zkHeadlessService;
         private ConfigMap zkMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
-        private boolean zkAncillaryCmChange;
         private boolean zkScalingUp = false;
 
         private KafkaCluster kafkaCluster = null;
@@ -1434,9 +1433,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return r.map(rr -> {
                 if (onlyMetricsSettingChanged) {
                     log.debug("Only metrics setting changed - not triggering rolling update");
-                    this.zkAncillaryCmChange = false;
-                } else {
-                    this.zkAncillaryCmChange = rr instanceof ReconcileResult.Patched;
+                }
+                if (rr != null) {
+                    this.ancillaryCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
             });
