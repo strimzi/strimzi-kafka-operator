@@ -387,7 +387,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Set<String> kafkaExternalAdvertisedHostnames = new LinkedHashSet<>();
         private Set<String> kafkaExternalAdvertisedPorts = new LinkedHashSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
-        private Long ancillaryCmGeneration = 0L;
+        private Long ancillaryZkCmGeneration = 0L;
+        private Long ancillaryKafkaCmGeneration = 0L;
 
         @SuppressWarnings("deprecation")
         /* test */ io.strimzi.operator.cluster.model.TopicOperator topicOperator;
@@ -896,7 +897,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (oldCm.getData().get("server.config") == null)  {
                             certificatesHaveToBeUpgraded = true;
                             cm = getKafkaAncialiaryCm();
-                            sts = getKafkaStatefulSet(this.ancillaryCmGeneration);
+                            sts = getKafkaStatefulSet(this.ancillaryKafkaCmGeneration);
                         } else {
                             sts = oldSts;
                             cm = oldCm;
@@ -1385,7 +1386,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)
+                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, ancillaryZkCmGeneration, this.clusterCa)
             ));
         }
 
@@ -1435,7 +1436,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null) {
-                    this.ancillaryCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.ancillaryZkCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
             });
@@ -1467,7 +1468,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null) {
-                    this.ancillaryCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.ancillaryKafkaCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
             });
@@ -2259,12 +2260,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet(this.ancillaryCmGeneration)));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet(this.ancillaryKafkaCmGeneration)));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)
+                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, ancillaryKafkaCmGeneration, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -2884,6 +2885,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private boolean isPodToRestart(StatefulSet sts, Pod pod,
                                        boolean nodeCertsChange,
+                                       Long ancillaryCmGeneration,
                                        Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
