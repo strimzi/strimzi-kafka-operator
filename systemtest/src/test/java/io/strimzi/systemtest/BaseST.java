@@ -72,8 +72,8 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.getClientType());
+    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.toString());
+    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.toString());
 
     protected static final String CLUSTER_NAME = "my-cluster";
 

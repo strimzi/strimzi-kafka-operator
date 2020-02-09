@@ -87,7 +87,7 @@ class SecurityST extends BaseST {
     public static final String STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
     public static final String STRIMZI_IO_FORCE_REPLACE = "strimzi.io/force-replace";
 
-    private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.getClientType());
+    private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.toString());
     private int messagesCount = 200;
 
     @Test

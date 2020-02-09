@@ -13,13 +13,13 @@ public class ClientFactory {
 
     public static IKafkaClient getClient(String clientType) {
 
-        if (clientType.equalsIgnoreCase(EClientType.BASIC.getClientType())) {
+        if (clientType.equalsIgnoreCase(EClientType.BASIC.toString())) {
             return new KafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.INTERNAL.getClientType())) {
+        } else if (clientType.equalsIgnoreCase(EClientType.INTERNAL.toString())) {
             return new InternalKafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.OAUTH.getClientType())) {
+        } else if (clientType.equalsIgnoreCase(EClientType.OAUTH.toString())) {
             return new OauthKafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.TRACING.getClientType())) {
+        } else if (clientType.equalsIgnoreCase(EClientType.TRACING.toString())) {
             return new TracingKafkaClient();
         }
         return null;

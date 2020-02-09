@@ -49,7 +49,7 @@ public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
+    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.BASIC.toString());
 
     public static final String NAMESPACE = "metrics-cluster-test";
     private final Object lock = new Object();
