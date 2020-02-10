@@ -103,7 +103,7 @@ public class KafkaAssemblyOperatorRollingAfterConfigMapChangeTest {
     }
 
     @Test
-    public void testWithChangedExternalCertificate(VertxTestContext context) throws InterruptedException {
+    public void testWithObsoletePodGeneration(VertxTestContext context) {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
