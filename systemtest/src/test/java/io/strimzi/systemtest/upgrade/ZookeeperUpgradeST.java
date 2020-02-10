@@ -121,14 +121,13 @@ public class ZookeeperUpgradeST extends BaseST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("Kafka roll (image change) is complete");
 
-        if (testInfo.getDisplayName().contains("Downgrade")) {
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
-            LOGGER.info("2nd Kafka roll (update) is complete");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-            LOGGER.info("3rd Kafka roll (update) is complete");
-        } else {
-            // Wait for the zk rolling update
-            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), kafkaReplicas, zkPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        LOGGER.info("2nd Kafka roll (update) is complete");
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+        LOGGER.info("3rd Kafka roll (update) is complete");
+
+        if (testInfo.getDisplayName().contains("Upgrade")) {
+            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
             LOGGER.info("2nd Zookeeper roll (update) is complete");
         }
 
@@ -149,6 +148,26 @@ public class ZookeeperUpgradeST extends BaseST {
 
         assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
                 " was expected", kafkaResult, is(newVersion.version()));
+
+
+        if (testInfo.getDisplayName().contains("Upgrade")) {
+            LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
+
+            KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+                LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+                Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
+                config.put("log.message.format.version", newVersion.messageVersion());
+                kafka.getSpec().getKafka().setConfig(config);
+                LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+            });
+
+            // Wait for the kafka broker version of log.message.format.version change roll
+            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+            LOGGER.info("Kafka roll (log.message.format.version change) is complete");
+
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.version());
+        }
 
         LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
         assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
