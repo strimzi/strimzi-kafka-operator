@@ -11,16 +11,17 @@ import io.strimzi.systemtest.kafkaclients.externalClients.TracingKafkaClient;
 
 public class ClientFactory {
 
-    public static IKafkaClient getClient(String clientType) {
+    public static IKafkaClient getClient(EClientType clientType) {
 
-        if (clientType.equalsIgnoreCase(EClientType.BASIC.toString())) {
-            return new KafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.INTERNAL.toString())) {
-            return new InternalKafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.OAUTH.toString())) {
-            return new OauthKafkaClient();
-        } else if (clientType.equalsIgnoreCase(EClientType.TRACING.toString())) {
-            return new TracingKafkaClient();
+        switch (clientType) {
+            case BASIC:
+                return new KafkaClient();
+            case INTERNAL:
+                return new InternalKafkaClient();
+            case OAUTH:
+                return new OauthKafkaClient();
+            case TRACING:
+                return new TracingKafkaClient();
         }
         return null;
     }
