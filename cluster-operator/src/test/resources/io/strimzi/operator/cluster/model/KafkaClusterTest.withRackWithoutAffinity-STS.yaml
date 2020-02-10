@@ -10,7 +10,7 @@ podAntiAffinity:
   - podAffinityTerm:
       labelSelector:
         matchLabels:
-          strimzi.io/cluster: "my-cluster"
-          strimzi.io/name: "my-cluster-kafka"
+          strimzi.lol/cluster: "my-cluster"
+          strimzi.lol/name: "my-cluster-kafka"
       topologyKey: "failure-domain.beta.kubernetes.io/zone"
     weight: 100

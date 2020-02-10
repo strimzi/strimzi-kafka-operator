@@ -364,7 +364,7 @@ public class ConnectorMockTest {
                 .endMetadata()
                 .done();
         waitForConnectorNotReady(connectorName, "NoSuchResourceException",
-                "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
+                "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
         return;
     }
 
@@ -407,7 +407,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                //.addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -424,7 +424,7 @@ public class ConnectorMockTest {
                 .done();
         assertNotNull(Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).get());
         waitForConnectorNotReady(connectorName, "NoSuchResourceException",
-                "KafkaConnect cluster is not configured with annotation strimzi.io/use-connector-resources");
+                "KafkaConnect cluster is not configured with annotation " + AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
     }
 
     /** Create connect, create connector, delete connector, delete connect */
@@ -500,7 +500,7 @@ public class ConnectorMockTest {
                 .endSpec()
                 .done();
         waitForConnectorNotReady(connectorName, "NoSuchResourceException",
-            "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
+            "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
 
         verify(api, never()).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -585,7 +585,7 @@ public class ConnectorMockTest {
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
         waitForConnectorNotReady(connectorName,
-                "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
+                "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
         verify(api, never()).delete(
@@ -640,7 +640,7 @@ public class ConnectorMockTest {
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
         waitForConnectorNotReady(connectorName,
-                "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
+                "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
         verify(api, never()).delete(

@@ -195,6 +195,8 @@ public class PartialRollingUpdateTest {
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            StatefulSet sts = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSts.getMetadata().getName()).get();
+            System.out.print(sts);
             for (int i = 0; i <= 4; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, i)).get();
                 String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);

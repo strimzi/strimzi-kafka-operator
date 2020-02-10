@@ -1218,7 +1218,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         private Future<Void> kafkaDowngradePhase2(StatefulSet sts, ConfigMap cm, KafkaVersionChange versionChange, String downgradedImage) {
             log.info("{}: {}, phase 2", reconciliation, versionChange);
-            // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
+            // Remove the
+            // strimzi.io/from-version and strimzi.io/to-version since this is the last phase
 
             Map<String, String> annotations = Annotations.annotations(sts);
 
