@@ -93,6 +93,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.cascading(cascade)).thenReturn(mockResource);
+        when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -154,6 +155,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
+        when(mockResource.create(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);

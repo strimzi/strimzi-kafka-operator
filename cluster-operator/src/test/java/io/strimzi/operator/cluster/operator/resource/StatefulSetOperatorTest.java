@@ -375,6 +375,8 @@ public class StatefulSetOperatorTest
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(sts1);
         when(mockResource.cascading(eq(false))).thenReturn(mockERPD);
+        when(mockResource.create(any())).thenReturn(sts1);
+
 
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
