@@ -12,6 +12,8 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.timemeasuring.Operation;
@@ -35,7 +37,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -243,6 +247,23 @@ class LogSettingST extends BaseST {
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
+    }
+
+    @Test
+    @Order(11)
+    void testKubectlGetStrimzi() {
+        String userName = "test-user";
+        String topicName = "test-topic";
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
+        String strimziCRs = cmdKubeClient().execInCurrentNamespace("get", "strimzi").out();
+
+        assertThat(strimziCRs, containsString(CLUSTER_NAME));
+        assertThat(strimziCRs, containsString(GC_LOGGING_SET_NAME));
+        assertThat(strimziCRs, containsString(userName));
+        assertThat(strimziCRs, containsString(topicName));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
