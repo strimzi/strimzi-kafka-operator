@@ -701,7 +701,7 @@ public abstract class BaseST implements TestSeparator {
 
         //Verifying docker image for entity-operator
         String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+                Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
         String imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
         assertThat(imgFromPod, is(imgFromDeplConf.get(TO_IMAGE)));
         imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "user-operator");

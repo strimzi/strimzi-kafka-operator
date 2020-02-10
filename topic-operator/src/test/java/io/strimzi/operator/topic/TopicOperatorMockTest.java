@@ -301,7 +301,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
                     .withTopicName("DIFFERENT") // different to metadata.name

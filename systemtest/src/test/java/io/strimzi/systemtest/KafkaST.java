@@ -1615,8 +1615,8 @@ class KafkaST extends BaseST {
 
     void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label strimzi.io/cluster is present", labels.containsKey("strimzi.io/cluster"));
-        assertThat("Label strimzi.io/kind is present", labels.containsKey("strimzi.io/kind"));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
     }
 
     @Test
@@ -1633,18 +1633,18 @@ class KafkaST extends BaseST {
         SecretUtils.waitForSecretReady(userName);
 
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
-        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
+        String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
         String uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOLogs, containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED"));
 
         LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
-        entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
+        entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
         uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOLogs, not(containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED")));
 
         LOGGER.info("Verifying that user belongs to {} cluster", firstClusterName);
         String kafkaUserResource = cmdKubeClient().getResourceAsYaml("kafkauser", userName);
-        assertThat(kafkaUserResource, containsString("strimzi.io/cluster: " + firstClusterName));
+        assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
     @Test

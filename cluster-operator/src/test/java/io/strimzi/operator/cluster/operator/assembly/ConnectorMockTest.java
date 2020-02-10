@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -378,7 +379,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -424,7 +425,7 @@ public class ConnectorMockTest {
                 .done();
         assertNotNull(Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).get());
         waitForConnectorNotReady(connectorName, "NoSuchResourceException",
-                "KafkaConnect cluster is not configured with annotation " + AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
+                "KafkaConnect cluster is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
     }
 
     /** Create connect, create connector, delete connector, delete connect */
@@ -438,7 +439,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -514,7 +515,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -551,7 +552,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -624,7 +625,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -660,7 +661,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connect1Name)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -670,7 +671,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connect2Name)
-                    .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -739,7 +740,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(connectName)
-                .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -785,7 +786,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(connectName)
-                .addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
