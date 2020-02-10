@@ -18,6 +18,9 @@ public class Annotations {
 
     public static final String STRIMZI_DOMAIN = "strimzi.lol/";
     public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
+    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
+    @Deprecated
+    public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator." + Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
 
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.lol/revision";
 

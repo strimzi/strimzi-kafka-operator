@@ -145,10 +145,6 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
-    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
-    @Deprecated
-    public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator." + Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
-
     private final long operationTimeoutMs;
 
     private final ZookeeperSetOperator zkSetOperations;
@@ -716,13 +712,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
         }
 
+        @SuppressWarnings("deprecation")
         Future<ReconciliationState> kafkaManualRollingUpdate() {
             Future<StatefulSet> futsts = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
             if (futsts != null) {
                 return futsts.compose(sts -> {
                     if (sts != null) {
-                        if (Annotations.booleanAnnotation(sts, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
-                                false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                        // EXPECT DEPRECATION WARNING
+                        if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
                             return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
 
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
@@ -737,13 +735,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
+        @SuppressWarnings("deprecation")
         Future<ReconciliationState> zkManualRollingUpdate() {
             Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
             if (futsts != null) {
                 return futsts.compose(sts -> {
                     if (sts != null) {
-                        if (Annotations.booleanAnnotation(sts, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
-                                false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                        if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
 
                             return zkSetOperations.maybeRollingUpdate(sts, pod -> {
 

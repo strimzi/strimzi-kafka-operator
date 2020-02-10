@@ -304,7 +304,7 @@ class RollingUpdateST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
-                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .addToAnnotations(KafkaAssemblyOperator."strimzi.io/manual-rolling-update", "true")
             .endMetadata().done();
 
         // Wait for first reconciliation

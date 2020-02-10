@@ -264,7 +264,7 @@ public abstract class TopicOperatorBaseIT {
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
-        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
+        m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;
     }
