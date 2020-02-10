@@ -187,7 +187,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
-            <version>${netty-codec-http.version}</version>
+            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
