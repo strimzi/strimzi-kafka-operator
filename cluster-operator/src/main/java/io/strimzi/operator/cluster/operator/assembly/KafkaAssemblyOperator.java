@@ -1435,7 +1435,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (onlyMetricsSettingChanged) {
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
-                if (rr != null) {
+                if (rr != null && rr.resource() != null) {
                     this.zkAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
@@ -1467,7 +1467,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (onlyMetricsSettingChanged) {
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
-                if (rr != null) {
+                if (rr != null && rr.resource() != null) {
                     this.kafkaAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
