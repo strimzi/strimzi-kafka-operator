@@ -387,8 +387,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Set<String> kafkaExternalAdvertisedHostnames = new LinkedHashSet<>();
         private Set<String> kafkaExternalAdvertisedPorts = new LinkedHashSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
-        private Long ancillaryZkCmGeneration = 0L;
-        private Long ancillaryKafkaCmGeneration = 0L;
+        private Long zkAncillaryCmGeneration = 0L;
+        private Long kafkaAncillaryCmGeneration = 0L;
 
         @SuppressWarnings("deprecation")
         /* test */ io.strimzi.operator.cluster.model.TopicOperator topicOperator;
@@ -897,7 +897,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (oldCm.getData().get("server.config") == null)  {
                             certificatesHaveToBeUpgraded = true;
                             cm = getKafkaAncialiaryCm();
-                            sts = getKafkaStatefulSet(this.ancillaryKafkaCmGeneration);
+                            sts = getKafkaStatefulSet(this.kafkaAncillaryCmGeneration);
                         } else {
                             sts = oldSts;
                             cm = oldCm;
@@ -1386,7 +1386,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, ancillaryZkCmGeneration, this.clusterCa)
+                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, zkAncillaryCmGeneration, this.clusterCa)
             ));
         }
 
@@ -1436,7 +1436,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null) {
-                    this.ancillaryZkCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.zkAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
             });
@@ -1468,7 +1468,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null) {
-                    this.ancillaryKafkaCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.kafkaAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
                 }
                 return this;
             });
@@ -2260,12 +2260,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet(this.ancillaryKafkaCmGeneration)));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet(this.kafkaAncillaryCmGeneration)));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, ancillaryKafkaCmGeneration, this.clusterCa, this.clientsCa)
+                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, kafkaAncillaryCmGeneration, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -2901,7 +2901,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             int cmAnno = Annotations.intAnnotation(pod, ANNO_STRIMZI_CM_GENERATION, -1);
 
-            boolean isPodToRestart = !isPodUpToDate || cmAnno != ancillaryCmGeneration;
+            boolean isPodToRestart = !isPodUpToDate || ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration;
             isPodToRestart |= !isCustomCertTlsListenerUpToDate;
             isPodToRestart |= !isCustomCertExternalListenerUpToDate;
             isPodToRestart |= isCaCertsChanged;
@@ -2926,7 +2926,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         reasons.add("Pod has old " + ca + " certificate generation");
                     }
                 }
-                if (cmAnno != ancillaryCmGeneration) {
+                if (ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration) {
                     reasons.add("ancillary CM change");
                 }
                 if (!isPodUpToDate) {

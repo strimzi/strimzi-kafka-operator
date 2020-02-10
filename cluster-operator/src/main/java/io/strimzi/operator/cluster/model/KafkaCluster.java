@@ -1238,7 +1238,7 @@ public class KafkaCluster extends AbstractModel {
         Map<String, String> stsAnnotations = new HashMap<>(2);
         stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
-        Map<String, String> podAnnotations = singletonMap(ANNO_STRIMZI_CM_GENERATION, Long.toString(ancillaryCmGeneration));
+        Map<String, String> podAnnotations = singletonMap(ANNO_STRIMZI_CM_GENERATION, Long.toString(ancillaryCmGeneration == null ? 0L : ancillaryCmGeneration));
 
         return createStatefulSet(
                 stsAnnotations,
