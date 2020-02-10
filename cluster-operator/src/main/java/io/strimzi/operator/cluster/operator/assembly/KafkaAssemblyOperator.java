@@ -718,7 +718,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futsts != null) {
                 return futsts.compose(sts -> {
                     if (sts != null) {
-                        // EXPECT DEPRECATION WARNING
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
                             return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
@@ -1217,8 +1216,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         private Future<Void> kafkaDowngradePhase2(StatefulSet sts, ConfigMap cm, KafkaVersionChange versionChange, String downgradedImage) {
             log.info("{}: {}, phase 2", reconciliation, versionChange);
-            // Remove the
-            // strimzi.io/from-version and strimzi.io/to-version since this is the last phase
+            // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
 
             Map<String, String> annotations = Annotations.annotations(sts);
 

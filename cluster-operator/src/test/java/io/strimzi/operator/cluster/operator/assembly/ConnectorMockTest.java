@@ -408,7 +408,7 @@ public class ConnectorMockTest {
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
-                //.addToAnnotations(AbstractConnectOperator.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    //.addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
