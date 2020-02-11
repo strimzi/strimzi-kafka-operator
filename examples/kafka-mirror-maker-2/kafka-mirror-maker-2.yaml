@@ -6,15 +6,15 @@ spec:
   version: 2.4.0
   replicas: 1
   connectCluster: "my-cluster-target"
-  config:
-    config.storage.replication.factor: 1
-    offset.storage.replication.factor: 1
-    status.storage.replication.factor: 1
   clusters:
   - alias: "my-cluster-source"
     bootstrapServers: my-cluster-source-kafka-bootstrap:9092
   - alias: "my-cluster-target"
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    config:
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
   mirrors:
   - sourceCluster: "my-cluster-source"
     targetCluster: "my-cluster-target"

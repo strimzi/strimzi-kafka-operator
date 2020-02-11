@@ -6,8 +6,6 @@ metadata:
 spec:
   replicas: 6
   connectCluster: "target"
-  config:
-    name: "bar"
   image: "foo"
   tolerations:
   - effect: "NoSchedule"

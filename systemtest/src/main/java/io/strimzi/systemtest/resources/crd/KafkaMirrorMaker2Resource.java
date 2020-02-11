@@ -57,6 +57,9 @@ public class KafkaMirrorMaker2Resource {
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaTargetClusterName)
             .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+            .addToConfig("config.storage.replication.factor", 1)
+            .addToConfig("offset.storage.replication.factor", 1)
+            .addToConfig("status.storage.replication.factor", 1)
             .build();
         
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
@@ -79,7 +82,6 @@ public class KafkaMirrorMaker2Resource {
                 .endTls()
                 .build();
         }
-    
 
         return new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
             .withNewMetadata()
