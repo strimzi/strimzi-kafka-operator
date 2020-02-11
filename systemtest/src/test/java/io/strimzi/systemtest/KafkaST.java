@@ -1078,10 +1078,10 @@ class KafkaST extends BaseST {
                 } else {
                     listNodeAddress = listNodes.stream().filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/compute"))
                             .map(p -> p.getStatus().getAddresses().get(0).getAddress()).collect(Collectors.toList());
-                    listNodeAddress.sort(Comparator.comparing( String::toString));
+                    listNodeAddress.sort(Comparator.comparing(String::toString));
                 }
                 List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
-                listStatusAddresses.sort(Comparator.comparing( String::toString));
+                listStatusAddresses.sort(Comparator.comparing(String::toString));
                 List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
                 Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
 
