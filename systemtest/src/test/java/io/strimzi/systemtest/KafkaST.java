@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -1338,19 +1339,11 @@ class KafkaST extends BaseST {
         Secret secretsWithoutExt = kubeClient().getSecret(brokerSecret);
 
         LOGGER.info("Editing kafka with external listener");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalLoadBalancer());
+        });
 
-        LOGGER.info("Waiting until secrets will change");
-        Thread.sleep(4000);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)));
 
         Secret secretsWithExt = kubeClient().getSecret(brokerSecret);
 
