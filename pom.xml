@@ -332,6 +332,36 @@
                 <version>${fasterxml.jackson-dataformat.version}</version>
             </dependency>
             <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-csv</artifactId>
+                <version>${fasterxml.jackson-dataformat.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-paranamer</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.12</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-core</artifactId>
                 <version>${vertx.version}</version>
@@ -406,6 +436,18 @@
                 <!-- transitive dep; override here to avoid buggy version -->
                 <groupId>io.netty</groupId>
                 <artifactId>netty-resolver-dns</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
