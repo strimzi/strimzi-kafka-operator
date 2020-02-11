@@ -738,7 +738,7 @@ class KafkaST extends BaseST {
         String topicName = "my-topic";
 
         //Creating topics for testing
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName);
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
