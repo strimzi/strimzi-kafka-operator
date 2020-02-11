@@ -80,7 +80,9 @@ public class TopicOperatorMockTest {
 
     @AfterAll
     public static void closeVertx() {
-        vertx.close();
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     @BeforeEach

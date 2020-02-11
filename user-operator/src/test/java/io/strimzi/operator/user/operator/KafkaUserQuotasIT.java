@@ -30,17 +30,17 @@ public class KafkaUserQuotasIT {
 
     private KafkaUserQuotas defaultQuotas;
 
-    private Vertx vertx;
+    private static Vertx vertx;
 
 
     @BeforeAll
-    public void startZk() throws IOException, InterruptedException {
+    public static void startZk() throws IOException, InterruptedException {
         vertx = Vertx.vertx();
         zkServer = new EmbeddedZooKeeper();
     }
 
     @AfterAll
-    public void stopZk() {
+    public static void stopZk() {
         vertx.close();
         zkServer.close();
     }
