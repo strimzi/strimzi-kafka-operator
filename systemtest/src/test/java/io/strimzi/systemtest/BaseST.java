@@ -108,6 +108,7 @@ public abstract class BaseST implements TestSeparator {
 
     public static final int MESSAGE_COUNT = 100;
     public static final String TOPIC_NAME = "my-topic";
+    public static final String USER_NAME = "user-name-example";
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
