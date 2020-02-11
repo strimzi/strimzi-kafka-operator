@@ -5,7 +5,7 @@
 [id='ref-ephemeral-storage-{context}']
 = Ephemeral storage
 
-Ephemeral storage uses the {K8sEmptyDir} to store data.
+Ephemeral storage uses the `{K8sEmptyDir}` volumes to store data.
 To use ephemeral storage, the `type` field should be set to `ephemeral`.
 
 IMPORTANT: `EmptyDir` volumes are not persistent and the data stored in them will be lost when the Pod is restarted.
