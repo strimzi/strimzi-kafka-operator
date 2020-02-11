@@ -6,18 +6,8 @@ package io.strimzi.systemtest.kafkaclients;
 
 public enum EClientType {
 
-    BASIC("BASIC"),
-    INTERNAL("INTERNAL"),
-    TRACING("TRACING"),
-    OAUTH("OAUTH");
-
-    private String clientType;
-
-    EClientType(String clientType) {
-        this.clientType = clientType;
-    }
-
-    public String getClientType() {
-        return this.clientType;
-    }
+    BASIC,
+    INTERNAL,
+    TRACING,
+    OAUTH
 }

@@ -42,7 +42,7 @@ public class HttpBridgeBaseST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
 
     protected WebClient client;
-    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
+    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
 
     protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
