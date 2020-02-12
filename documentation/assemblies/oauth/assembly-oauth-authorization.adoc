@@ -13,7 +13,7 @@ Authorization decides the level of access for that user.
 {ProductName} supports the use of {oauth} token-based authorization through {oauth-server} {oauth-authorization-services},
 which allows you to manage security policies and permissions centrally.
 
-Security policies and permissions defined in {oauth-server} are used to grant access to Kafka brokers.
+Security policies and permissions defined in {oauth-server} are used to grant access to resources on Kafka brokers.
 Users and clients are matched against policies that permit access to perform specific actions on Kafka brokers.
 
 Kafka allows all users full access to brokers by default,

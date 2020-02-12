@@ -7,12 +7,9 @@
 
 This procedure describes how to configure Kafka brokers to use {oauth} authorization using {oauth-server} Authorization Services.
 
-The properties used to configure authorization for Kafka brokers might already be configured for xref:proc-oauth-authentication-broker-config-{context}[{oauth} authentication].
-If so, they are also used for authorization if the equivalent authorization properties are not defined.
-
 .Before you begin
 Consider the access you require or want to limit for certain users.
-You can use a combination of groups, roles, clients, and users to configure access in {oauth-server}.
+You can use a combination of {oauth-server} _groups_, _roles_, _clients_, and _users_ to configure access in {oauth-server}.
 
 Typically, groups are used to match users based on organizational departments or geographical locations.
 And roles are used to match users based on their function.
@@ -56,7 +53,7 @@ spec:
   # ...
   authorization:
     type: *keycloak* <1>
-    tokenEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__> <2>
+    tokenEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token__> <2>
     clientId: kafka <3>
     delegateToKafkaAcls: false <4>
     disableTlsHostnameVerification: false <5>
@@ -70,15 +67,13 @@ spec:
   #...
 ----
 <1> Type `keycloak` enables {oauth-server} authorization.
-<2> URI of the {oauth-server} token introspection endpoint. For production, always use HTTPs.
+<2> URI of the {oauth-server} token endpoint. For production, always use HTTPs.
 <3> The client ID of the {oauth} client definition in {oauth-server} that has Authorization Services enabled. Typically, `kafka` is used as the ID.
-<4> Delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by {oauth-server} Authorization Services policies.
+<4> (Optional) Delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by {oauth-server} Authorization Services policies.
 The default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
-<6> Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
+<6> (Optional) Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
 <7> (Optional) Trusted certificates for TLS connection to the authorization server.
-+
-If the URI, client ID and TLS properties are not added, the equivalent properties configured for {oauth} authentication are used.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 
@@ -86,7 +81,7 @@ If the URI, client ID and TLS properties are not added, the equivalent propertie
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
+kubectl logs -f ${POD_NAME} -c kafka
 kubectl get po -w
 ----
 +

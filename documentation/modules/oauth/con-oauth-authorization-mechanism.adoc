@@ -16,5 +16,5 @@ A {oauth-server} _authorizer_ (`KeycloakRBACAuthorizer`) is provided with {Produ
 To be able to use the {oauth-server} REST endpoints for Authorization Services provided by {oauth-server},
 you configure a custom authorizer on the Kafka broker.
 
-The authorizer fetches a list of granted permissions from the authorization server one-time-only,
-and enforces authorization locally on the Kafka Broker, making rapid authorization decisions for each user session.
+The authorizer fetches a list of granted permissions from the authorization server as needed,
+and enforces authorization locally on the Kafka Broker, making rapid authorization decisions for each client request.
