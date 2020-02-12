@@ -126,8 +126,8 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         SecretUtils.waitForSecretReady(USER_NAME);
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
-        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
-                .getStatus().getConditions().get(0);
+        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
+                .get().getStatus().getConditions().get(0);
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
 
