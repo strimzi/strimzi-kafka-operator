@@ -13,6 +13,9 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -1600,8 +1603,8 @@ class KafkaST extends BaseST {
         }
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE))
         );
     }
 
@@ -1648,11 +1651,12 @@ class KafkaST extends BaseST {
 
     @Test
     void testMessagesAreStoredInDisk() throws Exception {
+        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -1677,12 +1681,12 @@ class KafkaST extends BaseST {
         String topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
-        LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         assertThat("Topic contains data", topicData, isEmptyOrNullString());
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1710,6 +1714,7 @@ class KafkaST extends BaseST {
 
     @Test
     void testConsumerOffsetFiles() throws Exception {
+        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
@@ -1722,7 +1727,7 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -1741,8 +1746,8 @@ class KafkaST extends BaseST {
         assertThat("Folder kafka-log0 has data in files", result.equals(""));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1759,7 +1764,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testLabelsAndAnnotationforPVC() {
+    void testLabelsAndAnnotationForPVC() {
         final String labelAnnotationKey = "testKey";
 
         Map<String, String> pvcLabel = new HashMap<>();
@@ -1888,6 +1893,9 @@ class KafkaST extends BaseST {
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
         super.tearDownEnvironmentAfterEach();
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).delete();
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME)).delete();
+        kubeClient().getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }
