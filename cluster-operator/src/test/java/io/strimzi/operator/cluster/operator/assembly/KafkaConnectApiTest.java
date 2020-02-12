@@ -15,6 +15,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class KafkaConnectApiTest {
 
     private KafkaCluster cluster;
-    private Vertx vertx;
+    private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
 
@@ -92,6 +93,11 @@ public class KafkaConnectApiTest {
             connect.awaitStop();
         }
         cluster.shutdown();
+    }
+
+    @AfterAll
+    public static void closeVertx() {
+        vertx.close();
     }
 
     @Test

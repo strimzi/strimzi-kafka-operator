@@ -16,6 +16,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -32,7 +34,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class K8sImplTest {
 
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
+
+    @BeforeAll
+    public static void initVertx() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void closeVertx() {
+        vertx.close();
+    }
+
 
     @Test
     public void testList(VertxTestContext context) {

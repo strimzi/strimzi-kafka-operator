@@ -26,7 +26,9 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -61,12 +63,22 @@ public class ZookeeperLeaderFinderTest {
     public static final String NAMESPACE = "testns";
     public static final String CLUSTER = "testcluster";
 
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
     private SecretOperator mock = mock(SecretOperator.class);
     private SelfSignedCertificate zkCertificate = SelfSignedCertificate.create();
     private SelfSignedCertificate coCertificate = SelfSignedCertificate.create();
 
     private static final int MAX_ATTEMPTS = 4;
+
+    @BeforeAll
+    public static void initVertx() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void closeVertx() {
+        vertx.close();
+    }
 
     class TestingZookeeperLeaderFinder extends ZookeeperLeaderFinder {
         private final int[] ports;

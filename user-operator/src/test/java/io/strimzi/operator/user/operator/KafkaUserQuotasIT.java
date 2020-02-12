@@ -30,14 +30,18 @@ public class KafkaUserQuotasIT {
 
     private KafkaUserQuotas defaultQuotas;
 
+    private static Vertx vertx;
+
 
     @BeforeAll
     public static void startZk() throws IOException, InterruptedException {
+        vertx = Vertx.vertx();
         zkServer = new EmbeddedZooKeeper();
     }
 
     @AfterAll
     public static void stopZk() {
+        vertx.close();
         zkServer.close();
     }
 
@@ -46,7 +50,7 @@ public class KafkaUserQuotasIT {
         defaultQuotas = new KafkaUserQuotas();
         defaultQuotas.setConsumerByteRate(1000);
         defaultQuotas.setProducerByteRate(2000);
-        kuq = new KafkaUserQuotasOperator(Vertx.vertx(), zkServer.getZkConnectString(), 6_000);
+        kuq = new KafkaUserQuotasOperator(vertx, zkServer.getZkConnectString(), 6_000);
     }
 
     @Test

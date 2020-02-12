@@ -35,6 +35,7 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -301,5 +302,10 @@ public class JbodStorageTest {
         Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaStsName);
         return mockClient.persistentVolumeClaims().inNamespace(namespace).withLabels(pvcSelector.toMap())
                 .list().getItems();
+    }
+
+    @AfterEach
+    public void afterEach() {
+        vertx.close();
     }
 }
