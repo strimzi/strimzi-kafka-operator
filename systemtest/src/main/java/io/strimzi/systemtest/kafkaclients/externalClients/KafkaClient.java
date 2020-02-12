@@ -26,13 +26,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class KafkaClient implements AutoCloseable, IKafkaClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
-    private Vertx vertx = Vertx.vertx();
+    private Vertx vertx;
 
     private String caCertName;
 
     @Override
     public void close() {
-        vertx.close();
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     /**
@@ -45,6 +47,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      */
     @Override
     public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
+        vertx = Vertx.vertx();
         String clientName = "sender-plain-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
@@ -138,13 +141,14 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      */
     public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol, String serviceName) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
+        vertx = Vertx.vertx();
         IntPredicate msgCntPredicate = x -> x == -1;
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
                 KafkaResources.clusterCaCertificateSecretName(clusterName), userName, securityProtocol, EClientType.BASIC, serviceName),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
+        vertx.close();
         return resultPromise;
     }
 
@@ -297,8 +301,10 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param notification notification
      */
     public void sendNotificationToClient(String clientName, String notification) {
+        vertx = Vertx.vertx();
         LOGGER.debug("Sending {} to {}", notification, clientName);
         vertx.eventBus().publish(clientName, notification);
+        vertx.close();
     }
 
     /**

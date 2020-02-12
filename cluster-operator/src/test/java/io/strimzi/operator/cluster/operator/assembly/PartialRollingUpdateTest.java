@@ -37,6 +37,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -151,6 +152,11 @@ public class PartialRollingUpdateTest {
         this.clientsCaCert = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get();
         this.clientsCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get();
         context.completeNow();
+    }
+
+    @AfterEach
+    public void afterEach() {
+        vertx.close();
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
