@@ -20,6 +20,10 @@ TLS is specified for external clients when configuring an external listener.
 
 {ProductName} components and Kafka clients use digital certificates for encryption.
 The Cluster Operator sets up certificates to enable encryption within the Kafka cluster.
+You can provide your own server certificates, referred to as _Kafka listener certificates_,
+for communication between Kafka clients and Kafka brokers, and inter-cluster communication.
+
+{ProductName} uses _Secrets_ to store the certificates and private keys required for TLS in PEM and PKCS #12 format.
 
 A TLS Certificate Authority (CA) issues certificates to authenticate the identity of a component.
 {ProductName} verifies the certificates for the components against the CA certificate.
