@@ -482,7 +482,6 @@ public abstract class BaseST implements TestSeparator {
 
         Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is("strimzi-cluster-operator"));
-        assertThat(coLabels.get("pod-template-hash").matches("\\d+"), is(true));
         assertThat(coLabels.get("strimzi.io/kind"), is("cluster-operator"));
     }
 

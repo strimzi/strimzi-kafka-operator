@@ -124,7 +124,6 @@ class AllNamespaceST extends AbstractNamespaceST {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        SecretUtils.waitForSecretReady(USER_NAME);
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
