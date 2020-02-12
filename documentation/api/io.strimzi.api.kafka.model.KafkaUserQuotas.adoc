@@ -1,13 +1,13 @@
-Kafka allows the user to enforce certain quotas to control usage of resources by clients.
-We can divide quotas to two groups:
+Kafka allows a user to enforce certain quotas to control usage of resources by clients.
+Quotas split into two categories:
 
-* network usage quotas, which as are defined as the byte rate threshold for each group of clients sharing a quota
-* CPU utilization quotas, which are defined as the percentage of time a client can utilize on request handler I/O threads and network threads of each broker within a quota window
+* _Network usage_ quotas, which are defined as the byte rate threshold for each group of clients sharing a quota
+* _CPU utilization_ quotas, which are defined as the percentage of time a client can utilize on request handler I/O threads and network threads of each broker within a quota window
 
-There are several reasons why using quotas for the Kafka clients might be reasonable.
+Using quotas for Kafka clients might be useful in a number of situations.
 Consider a wrongly configured Kafka producer which is sending requests at too high a rate.
-This is misconfiguration can cause a denial of service to other clients and the misconfigured client ought to be blocked.
-Using a network limiting quota it is possible to prevent this from significantly impacting other clients.
+Such misconfiguration can cause a denial of service to other clients, so the problematic client ought to be blocked.
+By using a network limiting quota, it is possible to prevent this situation from significantly impacting other clients.
 
 Strimzi supports user-level quotas, but not client-level quotas.
 

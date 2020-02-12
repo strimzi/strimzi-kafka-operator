@@ -6,18 +6,23 @@
 [id='overview-concepts-user-operator-{context}']
 = User Operator
 
-The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` resources that describe Kafka users and ensuring that they are configured properly in the Kafka cluster.
-For example:
+The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` resources that describe Kafka users,
+and ensuring that they are configured properly in the Kafka cluster.
 
-* if a `KafkaUser` is created, the User Operator will create the user it describes
-* if a `KafkaUser` is deleted, the User Operator will delete the user it describes
-* if a `KafkaUser` is changed, the User Operator will update the user it describes
+For example, if a `KafkaUser` is:
+
+* Created, the User Operator creates the user it describes
+* Deleted, the User Operator deletes the user it describes
+* Changed, the User Operator updates the user it describes
 
 Unlike the Topic Operator, the User Operator does not sync any changes from the Kafka cluster with the Kubernetes resources.
-Unlike the Kafka topics which might be created by applications directly in Kafka, it is not expected that the users will be managed directly in the Kafka cluster in parallel with the User Operator.
+Kafka topics can be created by applications directly in Kafka, but it is not expected that the users will be managed directly in the Kafka cluster in parallel with the User Operator.
 
-The User Operator allows you to declare a `KafkaUser` as part of your application's deployment.
+The User Operator allows you to declare a `KafkaUser` resource as part of your application's deployment.
+You can specify the authentication and authorization mechanism for the user.
+You can also configure _user quotas_ that control usage of Kafka resources to ensure, for example, that a user does not monopolize access to a broker.
+
 When the user is created, the user credentials are created in a `Secret`.
 Your application needs to use the user and its credentials for authentication and to produce or consume messages.
 
-In addition to managing credentials for authentication, the User Operator also manages authorization rules by including a description of the user's rights in the `KafkaUser` declaration.
+In addition to managing credentials for authentication, the User Operator also manages authorization rules by including a description of the user's access rights in the `KafkaUser` declaration.

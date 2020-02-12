@@ -16,9 +16,9 @@ The role of the Topic Operator is to keep a set of `KafkaTopic` Kubernetes resou
 
 Specifically, if a `KafkaTopic` is:
 
-* Created, the Operator creates the topic
-* Deleted, the Operator deletes the topic
-* Changed, the Operator updates the topic
+* Created, the Topic Operator creates the topic
+* Deleted, the Topic Operator deletes the topic
+* Changed, the Topic Operator updates the topic
 
 Working in the other direction, if a topic is:
 

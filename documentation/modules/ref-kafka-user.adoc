@@ -5,21 +5,28 @@
 [id='ref-kafka-user-{context}']
 = Kafka User resource
 
-The `KafkaUser` resource is used to declare a user with its authentication mechanism, authorization mechanism, and access rights.
+The `KafkaUser` resource is used to configure the authentication mechanism, authorization mechanism, and access rights for a user.
+
+The full schema for `KafkaUser` is described in xref:type-KafkaUser-reference[`KafkaUser` schema reference].
 
 == Authentication
 
 Authentication is configured using the `authentication` property in `KafkaUser.spec`.
-The authentication mechanism enabled for this user will be specified using the `type` field.
+The authentication mechanism enabled for this user is specified using the `type` field.
 Currently, the only supported authentication mechanisms are the TLS Client Authentication mechanism and the SCRAM-SHA-512 mechanism.
 
 When no authentication mechanism is specified, User Operator will not create the user or its credentials.
+
+.Additional resources
+
+* xref:con-mutual-tls-authentication-{context}[Mutual TLS Authentication]
+* xref:con-scram-sha-authentication-{context}[SCRAM-SHA Authentication]
 
 === TLS Client Authentication
 
 To use TLS client authentication, set the `type` field to `tls`.
 
-.An example of `KafkaUser` with enabled TLS Client Authentication
+.An example of `KafkaUser` with enabled TLS client authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -176,7 +183,7 @@ The `host` field is optional. If `host` is unspecified, the `*` value is used by
 
 For more information about the `AclRule` object, see xref:type-AclRule-reference[`AclRule` schema reference].
 
-.An example `KafkaUser`
+.An example `KafkaUser` with authorization
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -213,8 +220,28 @@ If a user is added to a list of super users in a Kafka broker configuration, the
 
 For more information on configuring super users, see xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[authentication and authorization] of Kafka brokers.
 
-== Additional resources
+== User quotas
 
-* For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
-* For more information about the TLS Client Authentication, see xref:con-mutual-tls-authentication-{context}[].
-* For more information about the SASL SCRAM-SHA-512 authentication, see xref:con-scram-sha-authentication-{context}[].
+You can configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers based on a byte threshold or a time limit of CPU utilization.
+
+.An example `KafkaUser` with user quotas
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  quotas:
+    producerByteRate: 1048576 <1>
+    consumerByteRate: 2097152 <2>
+    requestPercentage: 55 <3>
+----
+<1> Byte-per-second quota on the amount of data the user can push to a Kafka broker
+<2> Byte-per-second quota on the amount of data the user can fetch from a Kafka broker
+<3> CPU utilization limit as a percentage of time for a client group
+
+For more information on these properties, see xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference]
