@@ -14,6 +14,8 @@ Bootstrap servers:: Bootstrap servers are used for host/port connection to a Kaf
 * Kafka Bridge
 * Kafka MirrorMaker producers and consumers
 CPU and memory resources:: You request CPU and memory resources for components. Limits specify the maximum resources that can be consumed by a given container.
++
+Resource requests and limits for the Topic Operator and User Operator are set in the `Kafka` resource.
 Logging:: You define the logging level for the component. Logging can be defined directly (inline) or externally using a config map.
 Healthchecks:: Healthcheck configuration introduces _liveness_ and _readiness_ probes to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 JVM options:: JVM options provide maximum and minimum memory allocation to optimize the performance of the component according to the platform it is running on.
