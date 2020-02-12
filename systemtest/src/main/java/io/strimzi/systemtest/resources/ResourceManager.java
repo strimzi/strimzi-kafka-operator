@@ -107,6 +107,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((Kafka) resource);
                 });
@@ -117,6 +118,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
@@ -127,6 +129,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
@@ -137,6 +140,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
@@ -147,6 +151,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
@@ -185,6 +190,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
                 });
@@ -195,6 +201,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                 });
         }
