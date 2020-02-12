@@ -176,12 +176,12 @@ spec:
             jvmOptions:
               type: object
               properties:
-                -XX:
+                "-XX":
                   type: object
-                -Xms:
+                "-Xms":
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                -Xmx:
+                "-Xmx":
                   type: string
                   pattern: '[0-9]+[mMgG]?'
                 gcLoggingEnabled:

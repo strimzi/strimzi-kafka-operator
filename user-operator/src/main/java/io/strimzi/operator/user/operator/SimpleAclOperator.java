@@ -14,7 +14,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import kafka.security.auth.Acl;
 import kafka.security.auth.Resource;
-import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,13 +36,14 @@ import java.util.Set;
  * This class expects the SimpleAclAuthorizer instance to be passed from the outside.
  * That is useful for testing and is similar to how the Kubernetes client is passed around.
  */
+@SuppressWarnings("deprecation")
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
 
     private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
     private final Vertx vertx;
-    private final SimpleAclAuthorizer authorizer;
+    private final kafka.security.auth.SimpleAclAuthorizer authorizer;
 
     /**
      * Constructor
@@ -51,7 +51,7 @@ public class SimpleAclOperator {
      * @param vertx     Vertx instance
      * @param authorizer    SimpleAcAuthorizer instance
      */
-    public SimpleAclOperator(Vertx vertx, SimpleAclAuthorizer authorizer)  {
+    public SimpleAclOperator(Vertx vertx, kafka.security.auth.SimpleAclAuthorizer authorizer)  {
         this.vertx = vertx;
         this.authorizer = authorizer;
     }
