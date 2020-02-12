@@ -29,4 +29,16 @@ public class KafkaConnectS2IUtils {
             () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
         LOGGER.info("Kafka Connect S2I {} is in desired state: {}", name, status);
     }
+
+    public static void waitForRebalancingDone(String name) {
+        LOGGER.info("Waiting for Kafka Connect S2I {} to rebalance", name);
+        TestUtils.waitFor("Kafka Connect S2I rebalancing", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> {
+                String connect = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnectS2I").get(0);
+                String log = kubeClient().logs(connect);
+                // wait for second occurrence of message about finished rebalancing
+                return (log.length() - log.replace("Finished starting connectors and tasks", "").length()) / "Finished starting connectors and tasks".length() == 2;
+            });
+        LOGGER.info("Kafka Connect S2I {} rebalanced", name);
+    }
 }

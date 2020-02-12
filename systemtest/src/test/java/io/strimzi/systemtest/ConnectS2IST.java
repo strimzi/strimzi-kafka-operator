@@ -86,8 +86,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
 
         // Make sure that Connenct API is ready
-        // TODO remove this sleep when ENTMQST-1613 will be fixed
-        Thread.sleep(10_000);
+        KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
@@ -109,8 +108,7 @@ class ConnectS2IST extends BaseST {
         String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
 
         // Make sure that Connenct API is ready
-        // TODO remove this sleep when ENTMQST-1613 will be fixed
-        Thread.sleep(10_000);
+        KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
 
         KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
