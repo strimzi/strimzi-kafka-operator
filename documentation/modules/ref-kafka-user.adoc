@@ -222,7 +222,7 @@ For more information on configuring super users, see xref:assembly-kafka-authent
 
 == User quotas
 
-You can configure `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers based on a byte threshold or a time limit of CPU utilization.
+You can configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers based on a byte threshold or a time limit of CPU utilization.
 
 .An example `KafkaUser` with user quotas
 [source,yaml,subs="attributes+"]
