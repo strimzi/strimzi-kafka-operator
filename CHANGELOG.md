@@ -7,6 +7,7 @@
 * Add support for Mirror Maker 2.0
 * Add Jmxtrans deployment
 * Add public keys of TLS listeners to the status section of the Kafka CR
+* Add support for using a Kafka authorizer backed by Keycloak Authorization Services
 
 ## 0.16.0
 

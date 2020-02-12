@@ -73,8 +73,8 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.getClientType());
+    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
+    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
 
     protected static final String CLUSTER_NAME = "my-cluster";
 
@@ -483,7 +483,6 @@ public abstract class BaseST implements TestSeparator {
 
         Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is("strimzi-cluster-operator"));
-        assertThat(coLabels.get("pod-template-hash").matches("\\d+"), is(true));
         assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
     }
 

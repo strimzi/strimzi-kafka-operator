@@ -87,7 +87,7 @@ class SecurityST extends BaseST {
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
     private static final String TOPIC_NAME = "test-topic";
 
-    private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL.getClientType());
+    private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
     private int messagesCount = 200;
 
     @Test
