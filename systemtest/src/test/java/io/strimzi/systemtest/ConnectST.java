@@ -439,7 +439,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-        void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() throws Exception {
+    void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
