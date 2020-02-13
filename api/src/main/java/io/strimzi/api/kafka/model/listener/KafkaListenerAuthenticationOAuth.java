@@ -99,7 +99,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @DefaultValue("300")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getJwksRefreshSeconds() {
-        return jwksRefreshSeconds == null ? 300 : jwksRefreshSeconds;
+        return jwksRefreshSeconds == null ? Integer.valueOf(300) : jwksRefreshSeconds;
     }
 
     public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
@@ -113,7 +113,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @DefaultValue("360")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getJwksExpirySeconds() {
-        return jwksExpirySeconds == null ? 360 : jwksExpirySeconds;
+        return jwksExpirySeconds == null ? Integer.valueOf(360) : jwksExpirySeconds;
     }
 
     public void setJwksExpirySeconds(Integer jwksExpirySeconds) {
