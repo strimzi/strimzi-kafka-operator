@@ -28,7 +28,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -221,7 +220,6 @@ class LogSettingST extends BaseST {
 
     @Test
     @Order(11)
-    @Disabled("From some unknown reasons, rolling update of Kafka my-cluster never happen during an expected timeframe. Issue was raised and this test should be enabled after fix.")
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CONNECT_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(MM_NAME);

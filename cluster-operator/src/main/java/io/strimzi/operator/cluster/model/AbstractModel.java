@@ -653,7 +653,6 @@ public abstract class AbstractModel {
 
         return new ConfigMapBuilder()
                 .withNewMetadata()
-//                    .withGeneration(0L)
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
