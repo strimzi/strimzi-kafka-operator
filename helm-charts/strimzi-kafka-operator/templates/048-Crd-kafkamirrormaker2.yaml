@@ -1086,4 +1086,8 @@ spec:
                     type: string
                   class:
                     type: string
+            connectors:
+              type: array
+              items:
+                type: object
 {{- end -}}
