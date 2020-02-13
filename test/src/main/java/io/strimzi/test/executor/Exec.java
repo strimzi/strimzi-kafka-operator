@@ -212,13 +212,13 @@ public class Exec {
      * Method executes external command
      *
      * @param commands arguments for command
-     * @param timeout  timeout in ms for kill
+     * @param timeoutMs  timeout in ms for kill
      * @return returns ecode of execution
      * @throws IOException
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    public int execute(String input, List<String> commands, int timeout) throws IOException, InterruptedException, ExecutionException {
+    public int execute(String input, List<String> commands, long timeoutMs) throws IOException, InterruptedException, ExecutionException {
         LOGGER.trace("Running command - " + join(" ", commands.toArray(new String[0])));
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(commands);
@@ -236,8 +236,8 @@ public class Exec {
         Future<String> error = readStdError();
 
         int retCode = 1;
-        if (timeout > 0) {
-            if (process.waitFor(timeout, TimeUnit.MILLISECONDS)) {
+        if (timeoutMs > 0) {
+            if (process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
                 retCode = process.exitValue();
             } else {
                 process.destroyForcibly();

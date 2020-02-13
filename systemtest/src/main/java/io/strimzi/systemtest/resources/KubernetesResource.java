@@ -258,6 +258,23 @@ public class KubernetesResource {
         return new DoneableService(service);
     }
 
+    public static Service deployKeycloakNodePortHttpService(String namespace) {
+        String keycloakName = "keycloak";
+
+        Map<String, String> keycloakLabels = new HashMap<>();
+        keycloakLabels.put("app", keycloakName);
+
+        return getSystemtestsServiceResource(keycloakName + "service-http",
+                Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
+                .editSpec()
+                    .withType("NodePort")
+                    .withSelector(keycloakLabels)
+                    .editFirstPort()
+                        .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
+                    .endPort()
+                .endSpec().build();
+    }
+
     public static Service deployKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
@@ -270,7 +287,7 @@ public class KubernetesResource {
                 .withType("NodePort")
                 .withSelector(keycloakLabels)
                 .editFirstPort()
-                    .withNodePort(Constants.HTTP_JAEGER_DEFAULT_NODE_PORT)
+                    .withNodePort(Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT)
                 .endPort()
             .endSpec().build();
     }

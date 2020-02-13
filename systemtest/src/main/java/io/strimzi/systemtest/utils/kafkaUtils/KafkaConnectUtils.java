@@ -58,7 +58,8 @@ public class KafkaConnectUtils {
     }
 
     public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName) {
-        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName, "0\n1\n");
+        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName,
+                "Sending messages: Hello-world - 99");
     }
 
     public static String getCreatedConnectors(String connectPodName) {

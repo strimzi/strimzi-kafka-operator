@@ -4,11 +4,18 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
+
+import java.io.IOException;
+
+/**
+ * Interface for unifying common methods of clients
+ * @param <T> generic type which can be Future<Integer> or Integer depends on client type
+ */
 public interface IKafkaClient<T> {
 
-    T sendMessages(String topicName, String namespace, String clusterName, int messageCount) throws InterruptedException;
-    T sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) throws InterruptedException;
+    T sendMessages(String topicName, String namespace, String clusterName, int messageCount, long timeoutMs) throws IOException;
+    T sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, long timeoutMs) throws IOException;
 
-    T receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup);
-    T receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup);
+    T receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup, long timeoutMs) throws IOException;
+    T receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup, long timeoutMs) throws IOException;
 }

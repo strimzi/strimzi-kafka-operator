@@ -4,14 +4,15 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.kafkaclients.EClientType;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.security.KeyStoreException;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +24,10 @@ import java.util.function.IntPredicate;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class KafkaClient implements AutoCloseable, IKafkaClient {
+/**
+ * The KafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
+ */
+public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>> {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
     private Vertx vertx;
@@ -45,18 +49,33 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param messageCount message count
      * @return future with sent message count
      */
+    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) throws IOException {
+        return sendMessages(topicName, namespace, clusterName, messageCount, Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+
+    /**
+     * Send messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param messageCount message count
+     * @return future with sent message count
+     */
     @Override
-    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
-        vertx = Vertx.vertx();
+    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                        long timeoutMs) throws IOException {
         String clientName = "sender-plain-" + clusterName;
+        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createBasicProducerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createBasicProducerProperties(namespace, clusterName),
+                resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
-            resultPromise.get(2, TimeUnit.MINUTES);
+            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
@@ -71,25 +90,43 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param clusterName kafka cluster name
      * @param kafkaUsername user name for authorization
      * @param messageCount message count
+     * @param securityProtocol security protocol to encrypt communication
+     * @return future with sent message count
+     */
+    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                           int messageCount, String securityProtocol) throws IOException {
+        return sendMessagesTls(topicName, namespace, clusterName, kafkaUsername, messageCount, securityProtocol,
+                Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    /**
+     * Send messages to external entrypoint of the cluster with SSL security protocol setting
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param kafkaUsername user name for authorization
+     * @param messageCount message count
      * @return future with sent message count
      */
     @Override
-    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol) {
+    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                           int messageCount, String securityProtocol, long timeoutMs) throws IOException {
         String clientName = "sender-ssl" + clusterName;
         vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
+        String caCertName = this.caCertName == null ?
+                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
-                caCertName, kafkaUsername, securityProtocol, EClientType.BASIC, null),
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createBasicProducerTlsProperties(namespace, clusterName,
+                caCertName, kafkaUsername, securityProtocol),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
-            resultPromise.get(2, TimeUnit.MINUTES);
+            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
@@ -108,7 +145,8 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         }
     }
 
-    public void sendMessagesExternalTls(String clusterName, String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void sendMessagesExternalTls(String clusterName, String namespace, String topicName, int messageCount,
+                                        String userName) throws Exception {
         try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
 
@@ -119,7 +157,8 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
         }
     }
 
-    public void sendMessagesExternalScramSha(String clusterName, String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void sendMessagesExternalScramSha(String clusterName, String namespace, String topicName, int messageCount,
+                                             String userName) throws Exception {
         try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL");
 
@@ -131,25 +170,17 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
     }
 
     /**
-     * Send messages to external entrypoint until stop notification is received by producer. SSL used as a security protocol setting.
+     * Receive messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
      * @param topicName topic name
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
-     * @param userName user name for authorization
-     * @param clientName client name
-     * @return future
+     * @param messageCount message count
+     * @param consumerGroup consumer group name
+     * @return future with received message count
      */
-    public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol, String serviceName) {
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        vertx = Vertx.vertx();
-        IntPredicate msgCntPredicate = x -> x == -1;
-
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName,
-                KafkaResources.clusterCaCertificateSecretName(clusterName), userName, securityProtocol, EClientType.BASIC, serviceName),
-                resultPromise, msgCntPredicate, topicName, clientName));
-
-        vertx.close();
-        return resultPromise;
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                           String consumerGroup) throws IOException {
+        return receiveMessages(topicName, namespace, clusterName, messageCount, consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -161,17 +192,19 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @return future with received message count
      */
     @Override
-    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount,
+                                           String consumerGroup, long timeoutMs) throws IOException {
         String clientName = "receiver-plain-" + clusterName;
         vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, consumerGroup), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createBasicConsumerProperties(namespace, clusterName, consumerGroup),
+                resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
-            resultPromise.get(2, TimeUnit.MINUTES);
+            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
@@ -187,8 +220,9 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param messageCount message count
      * @return future with received message count
      */
-    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) {
-        return receiveMessages(topicName, namespace, clusterName, messageCount, "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) throws IOException {
+        return receiveMessages(topicName, namespace, clusterName, messageCount,
+                "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
     }
 
     /**
@@ -200,8 +234,10 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param messageCount message count
      * @return future with received message count
      */
-    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount, String securityProtocol) {
-        return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol, "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName,
+                                              int messageCount, String securityProtocol) throws IOException {
+        return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol,
+                "my-group-" + new Random().nextInt(Integer.MAX_VALUE), 120);
     }
 
     /**
@@ -214,22 +250,25 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @return future with received message count
      */
     @Override
-    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername, int messageCount, String securityProtocol, String consumerGroup) {
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String kafkaUsername,
+                                              int messageCount, String securityProtocol, String consumerGroup,
+                                              long timeoutMs) throws IOException {
         String clientName = "receiver-ssl-" + clusterName;
         vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ? KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
+        String caCertName = this.caCertName == null ?
+                KafkaResource.getKafkaExternalListenerCaCertName(namespace, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName,
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createBasicConsumerTlsProperties(namespace, clusterName,
                 caCertName, kafkaUsername, securityProtocol, consumerGroup),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
-            resultPromise.get(2, TimeUnit.MINUTES);
+            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
@@ -254,7 +293,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
     public void receiveMessagesExternalTls(String clusterName, String namespace, String topicName, int messageCount, String userName, String consumerGroup) throws Exception {
         try (KafkaClient testClient = new KafkaClient()) {
-            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL", consumerGroup);
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL", consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -269,7 +308,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
 
     public void receiveMessagesExternalScramSha(String clusterName, String namespace, String topicName, int messageCount, String userName, String consumerGroup) throws Exception {
         try (KafkaClient testClient = new KafkaClient()) {
-            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL", consumerGroup);
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL", consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -316,14 +355,14 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param messageCount message count which will be send and receive by consumer and producer
      * @throws Exception exception
      */
-    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName, String topicName, int messageCount) throws InterruptedException, ExecutionException, TimeoutException {
+    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName, String topicName, int messageCount) throws IOException, InterruptedException, ExecutionException, TimeoutException {
         try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
             Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
         }
@@ -338,14 +377,14 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param messageCount message count which will be send and receive by consumer and producer
      * @throws Exception exception
      */
-    public void sendAndRecvMessagesScramSha(String userName, String namespace, String clusterName, String topicName, int messageCount) throws InterruptedException, ExecutionException, TimeoutException {
+    public void sendAndRecvMessagesScramSha(String userName, String namespace, String clusterName, String topicName, int messageCount) throws InterruptedException, ExecutionException, TimeoutException, IOException {
         try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL");
             Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException | IOException e) {
             e.printStackTrace();
             throw e;
         }
@@ -359,7 +398,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param topicName topic name
      * @throws Exception exception
      */
-    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
+    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName, String topicName) throws InterruptedException, ExecutionException, TimeoutException, KeyStoreException, IOException {
         sendAndRecvMessagesTls(userName, namespace, clusterName, topicName, 50);
     }
 
@@ -370,7 +409,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient {
      * @param clusterName cluster name
      * @throws Exception exception
      */
-    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName) throws InterruptedException, ExecutionException, TimeoutException {
+    public void sendAndRecvMessagesTls(String userName, String namespace, String clusterName) throws InterruptedException, ExecutionException, TimeoutException, KeyStoreException, IOException {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         sendAndRecvMessagesTls(userName, namespace, clusterName, topicName);
     }
