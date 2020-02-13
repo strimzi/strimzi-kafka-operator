@@ -10,12 +10,14 @@ import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -62,6 +64,7 @@ class LogSettingST extends BaseST {
     private static final String GC_LOGGING_SET_NAME = "gc-set-logging";
     private static final String BRIDGE_NAME = "my-bridge";
     private static final String MM_NAME = "my-mirror-maker";
+    private static final String MM2_NAME = "my-mirror-maker-2";
     private static final String CONNECT_NAME = "my-connect";
 
     private static final String KAFKA_MAP = KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME);
@@ -70,6 +73,7 @@ class LogSettingST extends BaseST {
     private static final String UO_MAP = String.format("%s-%s", CLUSTER_NAME, "entity-user-operator-config");
     private static final String CONNECT_MAP = KafkaConnectResources.metricsAndLogConfigMapName(CONNECT_NAME);
     private static final String MM_MAP = KafkaMirrorMakerResources.metricsAndLogConfigMapName(MM_NAME);
+    private static final String MM2_MAP = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MM2_NAME);
     private static final String BRIDGE_MAP = KafkaBridgeResources.metricsAndLogConfigMapName(BRIDGE_NAME);
 
     private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
@@ -180,12 +184,18 @@ class LogSettingST extends BaseST {
 
     @Test
     @Order(7)
+    void testLoggersMirrorMaker2() {
+        assertThat("Mirror maker2's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM2_MAP), is(true));
+    }
+
+    @Test
+    @Order(8)
     void testLoggersBridge() {
         assertThat("Bridge's log level is set properly", checkLoggersLevel(BRIDGE_LOGGERS, BRIDGE_MAP), is(true));
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void testGcLoggingNonSetDisabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
@@ -195,7 +205,7 @@ class LogSettingST extends BaseST {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void testGcLoggingSetEnabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(true));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(true));
@@ -205,18 +215,21 @@ class LogSettingST extends BaseST {
 
         assertThat("Connect GC logging is enabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(true));
         assertThat("Mirror-maker GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(true));
+        assertThat("Mirror-maker-2 GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(true));
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CONNECT_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(MM_NAME);
+        String mm2Name = KafkaMirrorMaker2Resources.deploymentName(MM2_NAME);
         String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         Map<String, String> connectPods = DeploymentUtils.depSnapshot(connectName);
         Map<String, String> mmPods = DeploymentUtils.depSnapshot(mmName);
+        Map<String, String> mm2Pods = DeploymentUtils.depSnapshot(mm2Name);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
@@ -244,6 +257,9 @@ class LogSettingST extends BaseST {
         KafkaMirrorMakerResource.replaceMirrorMakerResource(MM_NAME, mm -> mm.getSpec().setJvmOptions(jvmOptions));
         DeploymentUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MM2_NAME, mm2 -> mm2.getSpec().setJvmOptions(jvmOptions));
+        DeploymentUtils.waitTillDepHasRolled(mm2Name, 1, mm2Pods);
+
         assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
         assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(false));
 
@@ -252,10 +268,11 @@ class LogSettingST extends BaseST {
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(false));
+        assertThat("Mirror-maker2 GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(false));
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void testKubectlGetStrimzi() {
         String userName = "test-user";
         String topicName = "test-topic";
@@ -268,6 +285,7 @@ class LogSettingST extends BaseST {
         assertThat(strimziCRs, containsString(CLUSTER_NAME));
         assertThat(strimziCRs, containsString(GC_LOGGING_SET_NAME));
         assertThat(strimziCRs, containsString(MM_NAME));
+        assertThat(strimziCRs, containsString(MM2_NAME));
         assertThat(strimziCRs, containsString(BRIDGE_NAME));
         assertThat(strimziCRs, containsString(CONNECT_NAME));
         assertThat(strimziCRs, containsString(userName));
@@ -425,6 +443,17 @@ class LogSettingST extends BaseST {
                     .withLoggers(BRIDGE_LOGGERS)
                 .endInlineLogging()
             .endSpec().done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(MM2_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
+            .editSpec()
+                .withNewInlineLogging()
+                    .withLoggers(MIRROR_MAKER_LOGGERS)
+                .endInlineLogging()
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
+                .endSpec()
+            .done();
     }
 
     private String startDeploymentMeasuring() {
