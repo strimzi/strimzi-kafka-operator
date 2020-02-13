@@ -1436,7 +1436,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null && rr.resource() != null) {
-                    this.zkAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.zkAncillaryCmGeneration = rr.resource().getMetadata().getGeneration() == null ? Long.valueOf(0L) : rr.resource().getMetadata().getGeneration();
+                } else {
+                    this.zkAncillaryCmGeneration = 0L;
                 }
                 return this;
             });
@@ -1468,7 +1470,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Only metrics setting changed - not triggering rolling update");
                 }
                 if (rr != null && rr.resource() != null) {
-                    this.kafkaAncillaryCmGeneration = rr.resource().getMetadata().getGeneration();
+                    this.kafkaAncillaryCmGeneration = rr.resource().getMetadata().getGeneration() == null ? Long.valueOf(0L) : rr.resource().getMetadata().getGeneration();
+                } else {
+                    this.kafkaAncillaryCmGeneration = 0L;
                 }
                 return this;
             });
@@ -2899,7 +2903,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
             }
 
-            int cmAnno = Annotations.intAnnotation(pod, ANNO_STRIMZI_CM_GENERATION, -1);
+            int cmAnno = Annotations.intAnnotation(pod, ANNO_STRIMZI_CM_GENERATION, 0);
 
             boolean isPodToRestart = !isPodUpToDate || ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration;
             isPodToRestart |= !isCustomCertTlsListenerUpToDate;
@@ -2927,7 +2931,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                 }
                 if (ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration) {
-                    reasons.add("ancillary CM change");
+                    reasons.add("ancillary CM change " + cmAnno + " vs " + ancillaryCmGeneration);
                 }
                 if (!isPodUpToDate) {
                     reasons.add("Pod has old generation");
