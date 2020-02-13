@@ -94,8 +94,7 @@ public class Environment {
     public static final String COMPONENTS_IMAGE_PULL_POLICY = System.getenv().getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
     public static final String OPERATOR_IMAGE_PULL_POLICY = System.getenv().getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
 
-    private Environment() {
-    }
+    private Environment() { }
 
     static {
         String debugFormat = "{}:{}";
