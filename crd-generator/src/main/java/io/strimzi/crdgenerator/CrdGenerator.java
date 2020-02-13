@@ -467,7 +467,7 @@ public class CrdGenerator {
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
         } else if (Schema.isJsonScalarType(returnType)
-                || Map.class.equals(returnType)) {
+                || Map.class.equals(returnType)) {            
             schema = addSimpleTypeConstraints(buildBasicTypeSchema(property, returnType), property);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(property.getType());
@@ -493,6 +493,8 @@ public class CrdGenerator {
                 || Long.class.equals(elementType)
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
+        } else if (Map.class.equals(elementType)) {
+            itemResult.put("type", "object");
         } else  {
             buildObjectSchema(itemResult, elementType, true);
         }

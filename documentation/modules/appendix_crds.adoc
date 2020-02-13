@@ -2695,5 +2695,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
+|connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
+|map array
 |====
 

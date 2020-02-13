@@ -41,6 +41,8 @@
 |integer array
 |listOfInts2             1.2+<.<|
 |integer array of dimension 2
+|listOfMaps              1.2+<.<|
+|map array
 |listOfObjects           1.2+<.<|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`] array
 |listOfPolymorphic       1.2+<.<|

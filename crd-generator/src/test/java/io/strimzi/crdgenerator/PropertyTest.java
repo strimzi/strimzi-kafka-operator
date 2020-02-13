@@ -10,6 +10,8 @@ import static io.strimzi.crdgenerator.Property.properties;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.Map;
+
 public class PropertyTest {
 
     private static PropertyType propertyType(Class<?> cls, String propertyNAme) {
@@ -55,6 +57,7 @@ public class PropertyTest {
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayDimension(), is(1));
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayDimension(), is(1));
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "listOfMaps").arrayDimension(), is(1));
     }
 
     @Test
@@ -80,6 +83,7 @@ public class PropertyTest {
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayBase().getName(), is(Number.class.getName()));
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayBase().getName(), is(Number.class.getName()));
         assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfMaps").arrayBase().getName(), is(Map.class.getName()));
     }
 
 }
