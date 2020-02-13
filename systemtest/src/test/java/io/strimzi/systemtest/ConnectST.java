@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -152,7 +153,7 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 100);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
@@ -163,7 +164,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testKafkaConnectWithPlainAndScramShaAuthentication() throws InterruptedException, ExecutionException, TimeoutException {
+    void testKafkaConnectWithPlainAndScramShaAuthentication() throws InterruptedException, ExecutionException, TimeoutException, IOException {
         // Use a Kafka with plain listener disabled
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -220,7 +221,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        kafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
+        externalBasicKafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
@@ -425,7 +426,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 100);
+        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
@@ -499,7 +500,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        kafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 100);
+        externalBasicKafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 

@@ -228,7 +228,7 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -702,7 +702,7 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
@@ -789,7 +789,7 @@ public class TracingST extends BaseST {
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);
         KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 100);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
@@ -866,7 +866,7 @@ public class TracingST extends BaseST {
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        kafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        externalBasicKafkaClient.receiveMessagesExternal(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
         verifyServiceIsPresent(JAEGER_KAFKA_BRIDGE_SERVICE);

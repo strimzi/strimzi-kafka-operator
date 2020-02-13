@@ -68,7 +68,7 @@ public class SpecificST extends BaseST {
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
 
@@ -106,7 +106,7 @@ public class SpecificST extends BaseST {
         assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
         assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(CLUSTER_NAME, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
