@@ -232,7 +232,7 @@ class UserST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

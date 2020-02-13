@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -11,6 +13,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.kafka.oauth.common.HttpUtil;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -27,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,9 +39,11 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.Properties;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.kafka.oauth.common.OAuthAuthenticator.urlencode;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -51,18 +58,95 @@ class KafkaClientProperties {
      * @param clusterName kafka cluster name
      * @return producer properties
      */
-    static Properties createBasicProducerProperties(String namespace, String clusterName) {
-        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.BASIC, null);
+    static Properties createBasicProducerProperties(String namespace, String clusterName) throws IOException {
+        return createProducerProperties(namespace, clusterName, EClientType.BASIC);
+    }
+
+    /**
+     * Create producer properties with secure communication security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param kafkaUsername kafka username
+     * @param securityProtocol security protocol
+     * @return producer properties
+     */
+    static Properties createBasicProducerTlsProperties(String namespace, String clusterName, String caCertName,
+                                                       String kafkaUsername, String securityProtocol) throws IOException {
+        return createProducerProperties(namespace, clusterName, EClientType.BASIC,
+                caCertName, kafkaUsername, securityProtocol);
+    }
+
+    /**
+     * Create tracing producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return producer properties
+     */
+    static Properties createTracingProducerProperties(String namespace, String clusterName) throws IOException {
+        return createProducerProperties(namespace, clusterName, EClientType.TRACING);
+    }
+
+    /**
+     * Create oauth producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param clientId oauth client id
+     * @param clientSecretName oauth client secret name
+     * @param oauthTokenEndpointUri uri, where client will send a request for token
+     * @return producer properties
+     */
+    static Properties createOauthProducerProperties(String namespace, String clusterName, String clientId,
+                                                    String clientSecretName, String oauthTokenEndpointUri) throws IOException {
+        return createProducerProperties(namespace, clusterName, EClientType.OAUTH, clientId, clientSecretName, oauthTokenEndpointUri);
+    }
+
+    /**
+     * Create oauth producer properties with secure communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param kafkaUsername kafka username
+     * @param securityProtocol security protocol
+     * @param clientId oauth client id
+     * @param clientSecretName oauth client secret name
+     * @param oauthTokenEndpointUri uri, where client will send a request for token
+     * @return producer properties
+     */
+    static Properties createOauthProducerTlsProperties(String namespace, String clusterName, String caCertName, String kafkaUsername,
+                                                       String securityProtocol, String clientId,
+                                                       String clientSecretName, String oauthTokenEndpointUri) throws IOException {
+        return createProducerProperties(namespace, clusterName, caCertName, kafkaUsername, securityProtocol,
+                EClientType.OAUTH, clientId, clientSecretName, oauthTokenEndpointUri);
     }
 
     /**
      * Create producer properties with PLAINTEXT security
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
+     * @param clientId oauth client id
+     * @param clientSecretName oauth client secret name
+     * @param oauthTokenEndpointUri uri, where client will send a request for token
      * @return producer properties
      */
-    static Properties createTracingProducerProperties(String namespace, String clusterName, String serviceName) {
-        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.TRACING, serviceName);
+    static Properties createProducerProperties(String namespace, String clusterName, EClientType eClientType, String clientId,
+                                               String clientSecretName, String oauthTokenEndpointUri) throws IOException {
+        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
+                "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, eClientType,
+                clientId, clientSecretName, oauthTokenEndpointUri);
+    }
+
+    /**
+     * Create producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param eClientType enum for specific type of clients
+     * @return producer properties
+     */
+    static Properties createProducerProperties(String namespace, String clusterName, EClientType eClientType) throws IOException {
+        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
+                "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, eClientType,
+                "", "", "");
     }
 
     /**
@@ -72,9 +156,15 @@ class KafkaClientProperties {
      * @param caSecretName CA secret name
      * @param userName user name for authorization
      * @param securityProtocol security protocol
+     * @param clientType enum for specific type of clients
+     * @param clientId oauth client id
+     * @param clientSecretName oauth client secret name
+     * @param oauthTokenEndpointUri uri, where client will send a request for token
      * @return producer configuration
      */
-    static Properties createProducerProperties(String namespace, String clusterName, String caSecretName, String userName, String securityProtocol, EClientType clientType, String serviceName) {
+    static Properties createProducerProperties(String namespace, String clusterName, String caSecretName, String userName,
+                                               String securityProtocol, EClientType clientType,
+                                               String clientId, String clientSecretName, String oauthTokenEndpointUri) throws IOException {
         Properties producerProperties = new Properties();
 
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getExternalBootstrapConnect(namespace, clusterName));
@@ -86,19 +176,124 @@ class KafkaClientProperties {
 
         producerProperties.putAll(sharedClientProperties(namespace, caSecretName, userName, securityProtocol));
 
-        // TODO: create Tracing client properties if (clientType == EClientType.TRACING) { setTracingProperties().... serviceName} same with Oauth
+        LOGGER.info("Username has name:{}", userName);
+
+        if (clientType == EClientType.OAUTH) {
+            if (userName.equals("")) {
+                OauthKafkaClient.setOauthClientPlainProperties(producerProperties, clientId, clientSecretName, oauthTokenEndpointUri);
+            } else {
+                OauthKafkaClient.setOauthClientTlsProperties(producerProperties, clientId, clientSecretName, oauthTokenEndpointUri);
+            }
+        }
 
         return producerProperties;
     }
 
     /**
-     * Create consumer properties with SSL security
+     * Create basic consumer properties with plain communication
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group
      * @return consumer configuration
      */
-    static Properties createConsumerProperties(String namespace, String clusterName, String consumerGroup) {
-        return createConsumerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup);
+    static Properties createBasicConsumerProperties(String namespace, String clusterName, String consumerGroup) throws IOException {
+        return createConsumerProperties(namespace, clusterName, consumerGroup, EClientType.BASIC);
+    }
+
+    /**
+     * Create producer properties with secure communication security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group name
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param kafkaUsername kafka username
+     * @param securityProtocol security protocol
+     * @return producer properties
+     */
+    static Properties createBasicConsumerTlsProperties(String namespace, String clusterName, String consumerGroup,
+                                                       String caCertName, String kafkaUsername, String securityProtocol) throws IOException {
+        return createConsumerProperties(namespace, clusterName, consumerGroup, EClientType.BASIC, caCertName,
+                kafkaUsername, securityProtocol);
+    }
+
+    /**
+     * Create tracing producer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group
+     * @return producer properties
+     */
+    static Properties createTracingConsumerProperties(String namespace, String clusterName, String consumerGroup) throws IOException {
+        return createConsumerProperties(namespace, clusterName, consumerGroup, EClientType.TRACING);
+    }
+
+    /**
+     * Create oauth consumer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group name
+     * @param clientId id of oauth client
+     * @param clientSecretName secret of oauth client
+     * @param oauthTokenEndpoinUri uri where will client points to get access token
+     * @return consumer configuration
+     */
+    static Properties createOauthConsumerProperties(String namespace, String clusterName, String consumerGroup,
+                                                    String clientId, String clientSecretName,
+                                                    String oauthTokenEndpoinUri) throws IOException {
+        return createConsumerProperties(namespace, clusterName, consumerGroup, EClientType.OAUTH, clientId, clientSecretName,
+                oauthTokenEndpoinUri);
+    }
+
+    /**
+     * Create oauth consumer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param kafkaUsername kafka username
+     * @param consumerGroup consumer group
+     * @param clientId id of oauth client
+     * @param clientSecretName secret of oauth client
+     * @param oauthTokenEndpointUri uri where will client points to get access token
+     * @return consumer configuration
+     */
+    static Properties createOauthTlsConsumerProperties(String namespace, String clusterName, String caCertName,
+                                                       String kafkaUsername, String securityProtocol, String consumerGroup,
+                                                       String clientId, String clientSecretName, String oauthTokenEndpointUri) throws IOException {
+        return createConsumerProperties(namespace, clusterName, caCertName, kafkaUsername, securityProtocol, consumerGroup,
+                EClientType.OAUTH, clientId, clientSecretName, oauthTokenEndpointUri);
+    }
+
+
+    /**
+     * Create consumer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group
+     * @param clientType enum for specific type of clients
+     * @param clientId id of oauth client
+     * @param clientSecretName secret of oauth client
+     * @param oauthTokenEndpointUri uri where will client points to get access token
+     * @return consumer configuration
+     */
+    static Properties createConsumerProperties(String namespace, String clusterName, String consumerGroup, EClientType clientType,
+                                               String clientId, String clientSecretName, String oauthTokenEndpointUri) throws IOException {
+        return createConsumerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
+                "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup, clientType, clientId,
+                clientSecretName, oauthTokenEndpointUri);
+    }
+
+    /**
+     * Create consumer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param consumerGroup consumer group
+     * @param clientType enum for specific type of clients
+     * @return consumer configuration
+     */
+    static Properties createConsumerProperties(String namespace, String clusterName, String consumerGroup, EClientType clientType) throws IOException {
+        return createConsumerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
+                "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup, clientType, "",
+                "", "");
     }
 
     /**
@@ -108,9 +303,16 @@ class KafkaClientProperties {
      * @param caSecretName CA secret name
      * @param userName user name for authorization
      * @param securityProtocol security protocol
+     * @param consumerGroup consumer group
+     * @param clientType enum for specific type of clients
+     * @param clientId id of oauth client
+     * @param clientSecretName secret of oauth client
+     * @param oauthTokenEndpointUri uri where will client points to get access token
      * @return consumer configuration
      */
-    static Properties createConsumerProperties(String namespace, String clusterName, String caSecretName, String userName, String securityProtocol, String consumerGroup) {
+    static Properties createConsumerProperties(String namespace, String clusterName, String caSecretName, String userName,
+                                               String securityProtocol, String consumerGroup, EClientType clientType,
+                                               String clientId, String clientSecretName, String oauthTokenEndpointUri) throws IOException {
         Properties consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
         consumerProperties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -121,6 +323,14 @@ class KafkaClientProperties {
         consumerProperties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         consumerProperties.putAll(sharedClientProperties(namespace, caSecretName, userName, securityProtocol));
+
+        if (clientType == EClientType.OAUTH) {
+            if (userName.equals("")) {
+                OauthKafkaClient.setOauthClientPlainProperties(consumerProperties, clientId, clientSecretName, oauthTokenEndpointUri);
+            } else {
+                OauthKafkaClient.setOauthClientTlsProperties(consumerProperties, clientId, clientSecretName, oauthTokenEndpointUri);
+            }
+        }
 
         return consumerProperties;
     }
@@ -167,7 +377,9 @@ class KafkaClientProperties {
 
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
+            LOGGER.debug("Truststore password:{}", tsPassword);
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
+            LOGGER.debug("Truststore location {}", tsFile.getAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -199,6 +411,7 @@ class KafkaClientProperties {
                         Base64.getDecoder().decode(userCaCert),
                         Base64.getDecoder().decode(userCaKey),
                         ksPassword);
+                LOGGER.debug("Keystore location:{}", ksFile.getAbsolutePath());
                 properties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
 
                 properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
@@ -291,5 +504,70 @@ class KafkaClientProperties {
         }
         keystore.deleteOnExit();
         return keystore;
+    }
+
+    /**
+     * Use Keycloak Admin API to update Authorization Services 'decisionStrategy' on 'kafka' client to AFFIRMATIVE
+     * link to bug -> https://issues.redhat.com/browse/KEYCLOAK-12640
+     * @throws IOException
+     */
+    static void fixBadlyImportedAuthzSettings() throws IOException {
+        URI masterTokenEndpoint = URI.create("http://" + kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/realms/master/protocol/openid-connect/token");
+
+        String token = loginWithUsernamePassword(masterTokenEndpoint,
+                "admin", "admin", "admin-cli");
+
+        String authorization = "Bearer " + token;
+
+        // This is quite a round-about way but here it goes
+
+        // We first need to identify the 'id' of the 'kafka' client by fetching the clients
+        JsonNode clients = HttpUtil.get(URI.create("http://" + kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/admin/realms/kafka-authz/clients"),
+                authorization, JsonNode.class);
+
+        String id = null;
+
+        // iterate over clients
+        Iterator<JsonNode> it = clients.iterator();
+        while (it.hasNext()) {
+            JsonNode client = it.next();
+            String clientId = client.get("clientId").asText();
+            if ("kafka".equals(clientId)) {
+                id = client.get("id").asText();
+                break;
+            }
+        }
+
+        if (id == null) {
+            throw new IllegalStateException("It seems that 'kafka' client isn't configured");
+        }
+
+        URI authzUri = URI.create("http://" + kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/admin/realms/kafka-authz/clients/" + id + "/authz/resource-server");
+
+        // Now we fetch from this client's resource-server the current configuration
+        ObjectNode authzConf = (ObjectNode) HttpUtil.get(authzUri, authorization, JsonNode.class);
+
+        // And we update the configuration and send it back
+        authzConf.put("decisionStrategy", "AFFIRMATIVE");
+        HttpUtil.put(authzUri, authorization, "application/json", authzConf.toString());
+    }
+
+    static String loginWithUsernamePassword(URI tokenEndpointUri, String username, String password, String clientId) throws IOException {
+        StringBuilder body = new StringBuilder("grant_type=password&username=" + urlencode(username) +
+                "&password=" + urlencode(password) + "&client_id=" + urlencode(clientId));
+
+        JsonNode result = HttpUtil.post(tokenEndpointUri,
+                null,
+                null,
+                null,
+                "application/x-www-form-urlencoded",
+                body.toString(),
+                JsonNode.class);
+
+        JsonNode token = result.get("access_token");
+        if (token == null) {
+            throw new IllegalStateException("Invalid response from authorization server: no access_token");
+        }
+        return token.asText();
     }
 }

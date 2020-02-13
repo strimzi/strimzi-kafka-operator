@@ -106,6 +106,9 @@ public abstract class BaseST implements TestSeparator {
 
     protected Random rng = new Random();
 
+    public static final int MESSAGE_COUNT = 100;
+    public static final String TOPIC_NAME = "my-topic";
+
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
     }
@@ -160,7 +163,7 @@ public abstract class BaseST implements TestSeparator {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 

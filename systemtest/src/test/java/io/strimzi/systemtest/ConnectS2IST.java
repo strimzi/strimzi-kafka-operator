@@ -222,7 +222,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("0\n1\n"));
+                containsString("Sending messages: Hello-world - 99"));
     }
 
     @Test
