@@ -48,11 +48,14 @@ public class OauthBaseST extends BaseST {
 
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
+    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";
+
 
     protected static final String CONNECT_OAUTH_SECRET = "my-connect-oauth";
     protected static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
     protected static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
+    protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected static String oauthTokenEndpointUri;
@@ -168,6 +171,7 @@ public class OauthBaseST extends BaseST {
     }
 
     private void createSecretsForDeployments() {
+        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_NAME, OAUTH_KEY, "a2Fma2EtY29ubmVjqC1xZWNyZXQ=");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");

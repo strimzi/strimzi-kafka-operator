@@ -121,7 +121,7 @@ public class OauthPlainST extends OauthBaseST {
 
         String message = "Sending messages: Hello-world - 99";
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName,  Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
                 containsString(message));
@@ -169,7 +169,7 @@ public class OauthPlainST extends OauthBaseST {
                 .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-                "my-group" +  new Random().nextInt(Integer.MAX_VALUE), 1, false)
+                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
                     .withNewConsumer()
                         .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
@@ -358,6 +358,39 @@ public class OauthPlainST extends OauthBaseST {
         });
     }
 
+    @Test
+    void testIntrospectionEndpointWithPlainCommunication() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deploying kafka...");
+
+        String introspectionKafka = CLUSTER_NAME + "intro";
+
+        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                                .withNewClientSecret()
+                                    .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                                    .withKey(OAUTH_KEY)
+                                .endClientSecret()
+                                .withAccessTokenIsJwt(false)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT);
+        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT,
+                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+    }
+
     @BeforeAll
     void setUp() {
         LOGGER.info("Replacing validIssuerUri: {} to pointing to internal realm", validIssuerUri);
@@ -382,27 +415,27 @@ public class OauthPlainST extends OauthBaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             // internal plain
             kafka.getSpec().getKafka().getListeners().setPlain(
-                new KafkaListenerPlainBuilder()
-                    .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
-                    .endKafkaListenerAuthenticationOAuth()
-                    .build());
+                    new KafkaListenerPlainBuilder()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                            .withValidIssuerUri(validIssuerUri)
+                            .withJwksEndpointUri(jwksEndpointUri)
+                            .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                            .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                            .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                            .build());
 
             // external
             kafka.getSpec().getKafka().getListeners().setExternal(
-                new KafkaListenerExternalNodePortBuilder()
-                    .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
-                    .endKafkaListenerAuthenticationOAuth()
-                    .build());
+                    new KafkaListenerExternalNodePortBuilder()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                            .withValidIssuerUri(validIssuerUri)
+                            .withJwksEndpointUri(jwksEndpointUri)
+                            .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                            .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                            .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                            .build());
 
             ((KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal()).setTls(false);
         });
