@@ -5,10 +5,10 @@
 [id='ref-ephemeral-storage-{context}']
 = Ephemeral storage
 
-Ephemeral storage uses the {K8sEmptyDir} to store data.
+Ephemeral storage uses the `{K8sEmptyDir}` volumes to store data.
 To use ephemeral storage, the `type` field should be set to `ephemeral`.
 
-IMPORTANT: `EmptyDir` volumes are not persistent and the data stored in them will be lost when the Pod is restarted.
+IMPORTANT: `emptyDir` volumes are not persistent and the data stored in them will be lost when the Pod is restarted.
 After the new pod is started, it has to recover all data from other nodes of the cluster.
 Ephemeral storage is not suitable for use with single node ZooKeeper clusters and for Kafka topics with replication factor 1, because it will lead to data loss.
 
