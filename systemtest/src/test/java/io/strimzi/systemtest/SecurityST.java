@@ -48,6 +48,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -1059,9 +1061,15 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
 
-        externalBasicKafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserWrite, numberOfMessages, "SSL");
 
-        assertThrows(ExecutionException.class, () -> externalBasicKafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
+
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserWrite,
+                    numberOfMessages, "SSL");
+            consumer.get(2, TimeUnit.MINUTES);
+        });
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
                 .editSpec()
@@ -1090,10 +1098,15 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(kafkaUserRead);
 
-        externalBasicKafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead, consumerGroupName);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME,
+                kafkaUserRead, numberOfMessages, "SSL", consumerGroupName);
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
-        assertThrows(ExecutionException.class, () -> externalBasicKafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> invalidProducer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserRead, numberOfMessages, "SSL");
+            invalidProducer.get(2, TimeUnit.MINUTES);
+        });
     }
 
     @BeforeAll
