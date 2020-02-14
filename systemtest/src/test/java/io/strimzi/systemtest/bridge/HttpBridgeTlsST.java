@@ -29,6 +29,8 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Random;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -59,7 +61,9 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
+
+        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SSL");
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
     }
 
     @Test
@@ -87,7 +91,8 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Subscribe
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Send messages to Kafka
-        kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, messageCount, userName);
+        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, name, messageCount, "SSL");
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(messageCount));
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {

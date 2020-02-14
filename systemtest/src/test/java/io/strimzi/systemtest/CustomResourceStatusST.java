@@ -48,6 +48,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
@@ -73,7 +75,13 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, TOPIC_NAME);
+
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {

@@ -67,6 +67,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1055,7 +1057,11 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1098,7 +1104,11 @@ class KafkaST extends BaseST {
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1123,7 +1133,11 @@ class KafkaST extends BaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1144,7 +1158,11 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1171,7 +1189,11 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+
+        assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
