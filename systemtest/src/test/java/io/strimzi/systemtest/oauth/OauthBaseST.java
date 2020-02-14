@@ -48,11 +48,13 @@ public class OauthBaseST extends BaseST {
 
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
+    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";
 
     protected static final String CONNECT_OAUTH_SECRET = "my-connect-oauth";
     protected static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
     protected static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
+    protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected static String oauthTokenEndpointUri;

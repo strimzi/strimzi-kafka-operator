@@ -358,6 +358,39 @@ public class OauthPlainST extends OauthBaseST {
         });
     }
 
+    @Test
+    void testIntrospectionEndpointWithPlainCommunication() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deploying kafka...");
+
+        String introspectionKafka = CLUSTER_NAME + "intro";
+
+        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
+                .editSpec()
+                .editKafka()
+                .editListeners()
+                .withNewKafkaListenerExternalNodePort()
+                .withNewKafkaListenerAuthenticationOAuth()
+                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                .withNewClientSecret()
+                .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                .withKey(OAUTH_KEY)
+                .endClientSecret()
+                .withAccessTokenIsJwt(false)
+                .endKafkaListenerAuthenticationOAuth()
+                .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .done();
+
+        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT);
+        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT,
+                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+    }
+
     @BeforeAll
     void setUp() {
         LOGGER.info("Replacing validIssuerUri: {} to pointing to internal realm", validIssuerUri);
