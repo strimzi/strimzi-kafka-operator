@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.Optional;
+
 public abstract class ReconcileResult<R> {
 
     @SuppressWarnings("unchecked")
-    private static final ReconcileResult DELETED = new ReconcileResult(null) {
+    private static final ReconcileResult DELETED = new ReconcileResult(Optional.empty()) {
         @Override
         public String toString() {
             return "DELETED";
@@ -16,7 +18,7 @@ public abstract class ReconcileResult<R> {
 
     public static class Noop<R> extends ReconcileResult<R> {
         private Noop(R resource) {
-            super(resource);
+            super(Optional.ofNullable(resource));
         }
 
         @Override
@@ -28,7 +30,7 @@ public abstract class ReconcileResult<R> {
 
     public static class Created<R> extends ReconcileResult<R> {
         private Created(R resource) {
-            super(resource);
+            super(Optional.of(resource));
         }
 
         @Override
@@ -40,7 +42,7 @@ public abstract class ReconcileResult<R> {
     public static class Patched<R> extends ReconcileResult<R> {
 
         private Patched(R resource) {
-            super(resource);
+            super(Optional.of(resource));
         }
 
         @Override
@@ -89,13 +91,17 @@ public abstract class ReconcileResult<R> {
         return new Noop<>(resource);
     }
 
-    private final R resource;
+    private final Optional<R> resource;
 
-    private ReconcileResult(R resource) {
+    private ReconcileResult(Optional<R> resource) {
         this.resource = resource;
     }
 
-    public R resource() {
+    public Optional<R> resourceOpt() {
         return this.resource;
+    }
+
+    public R resource() {
+        return resourceOpt().orElseThrow(() -> new RuntimeException("Resource was concurrently deleted"));
     }
 }

@@ -74,6 +74,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.create(any())).thenReturn(resource);
 
         Deletable mockDeletable = mock(Deletable.class);
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
