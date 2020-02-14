@@ -65,7 +65,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("rack.id=${STRIMZI_RACK_ID}"));
+        assertThat(configuration, isEquivalent("broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
-                                                                "rack.id=${STRIMZI_RACK_ID}"));
+                                                                "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @Test
