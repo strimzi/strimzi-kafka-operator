@@ -247,7 +247,7 @@ class LogSettingST extends BaseST {
             k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(zkName, 1, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(eoName, 1, eoPods);
 
@@ -354,7 +354,7 @@ class LogSettingST extends BaseST {
 
         timeMeasuringSystem.setOperationID(startDeploymentMeasuring());
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -393,7 +393,7 @@ class LogSettingST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaResource.kafkaEphemeral(GC_LOGGING_SET_NAME, 1, 3)
+        KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
