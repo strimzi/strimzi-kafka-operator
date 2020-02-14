@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
@@ -18,9 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntPredicate;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The KafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
@@ -171,7 +167,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>>
      */
     public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) throws IOException {
         return receiveMessages(topicName, namespace, clusterName, messageCount,
-                "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+                "my-group-" + new Random().nextInt(Integer.MAX_VALUE), Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -186,7 +182,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>>
     public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName,
                                               int messageCount, String securityProtocol) throws IOException {
         return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol,
-                "my-group-" + new Random().nextInt(Integer.MAX_VALUE), 120);
+                "my-group-" + new Random().nextInt(Integer.MAX_VALUE), Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**

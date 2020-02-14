@@ -154,7 +154,7 @@ class ConnectST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 2);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 2, );
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 2);
 
         assertThat(producer.get(2, TimeUnit.MINUTES), is(2));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(2));
