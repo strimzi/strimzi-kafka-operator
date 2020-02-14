@@ -1109,6 +1109,61 @@ class SecurityST extends BaseST {
         });
     }
 
+    @Test
+    void testAclWithSuperUser() throws Exception {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-ephemeral")
+            .endMetadata()
+            .editSpec()
+                .editKafka()
+                .withNewKafkaAuthorizationSimple()
+                    .withSuperUsers("CN=" + USER_NAME)
+                .endKafkaAuthorizationSimple()
+                .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                    .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.WRITE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .done();
+
+
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", USER_NAME, TOPIC_NAME);
+
+        externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+                "SSL");
+
+        LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
+                "we configured Acls with only write operation", USER_NAME, TOPIC_NAME);
+
+        externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+                "SSL");
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
