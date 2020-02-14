@@ -8,9 +8,22 @@
 
 An efficient data storage infrastructure is essential to the optimal performance of {ProductName}.
 
-{ProductName} requires block storage and is designed to work optimally with cloud-based block storage solutions, including Amazon Elastic Block Store (EBS). The use of file storage (for example, NFS) is not recommended.
+Block storage is required.
+File storage, such as NFS, does not work with Kafka.
 
-Choose local storage (local persistent volumes) when possible. If local storage is not available, you can use a Storage Area Network (SAN) accessed by a protocol such as Fibre Channel or iSCSI.
+For your block storage, you can choose, for example:
+
+* Cloud-based block storage solutions, such as {aws-ebs}
+* {K8sLocalPersistentVolumes}
+* Storage Area Network (SAN) volumes accessed by a protocol such as _Fibre Channel_ or _iSCSI_
+
+
+NOTE: Strimzi does not require Kubernetes raw block volumes.
+
+== File systems
+
+It is recommended that you configure your storage system to use the _XFS_ file system.
+{ProductName} is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
 
 == Apache Kafka and ZooKeeper storage
 Use separate disks for Apache Kafka and ZooKeeper.
@@ -26,6 +39,3 @@ For more information, see xref:assembly-storage-deployment-configuration-kafka[K
 Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously. SSDs are particularly effective with ZooKeeper, which requires fast, low latency data access.
 
 NOTE: You do not need to provision replicated storage because Kafka and ZooKeeper both have built-in data replication.
-
-== File systems
-It is recommended that you configure your storage system to use the XFS file system. {ProductName} is also compatible with the ext4 file system, but this might require additional configuration for best results.

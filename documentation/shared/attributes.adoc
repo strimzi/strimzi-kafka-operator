@@ -45,6 +45,7 @@
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server]
 
 // External links
+:aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]
 :docs-okd-s2i: link:https://docs.okd.io/3.9/creating_images/s2i.html[Source-to-Image (S2I)^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
