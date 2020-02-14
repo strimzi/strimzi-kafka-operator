@@ -6,7 +6,7 @@
 = Using {oauth} token-based authorization
 
 If you are using {oauth} with {oauth-server} for token-based authentication,
-you can also use  {oauth-server} to configure authorization rules to constrain client access to Kafka brokers.
+you can also use {oauth-server} to configure authorization rules to constrain client access to Kafka brokers.
 Authentication establishes the identity of a user.
 Authorization decides the level of access for that user.
 
