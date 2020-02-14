@@ -20,9 +20,11 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"replicas", "connectCluster", "image",
+@JsonPropertyOrder({"replicas", "version", "image", "connectCluster", 
+        "clusters", "mirrors", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", "template", "clusters", "mirrors"})
+        "affinity", "tolerations", "logging", "metrics", "tracing", 
+        "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
 

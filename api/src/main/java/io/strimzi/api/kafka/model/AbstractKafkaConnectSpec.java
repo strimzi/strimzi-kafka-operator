@@ -30,9 +30,10 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image",
+@JsonPropertyOrder({ "replicas", "version", "image", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", "template"})
+        "affinity", "tolerations", "logging", "metrics", "tracing", 
+        "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
 
@@ -97,7 +98,7 @@ public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownP
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve.")
+    @Description("The maximum limits for CPU and memory resources and the requested initial resources.")
     public ResourceRequirements getResources() {
         return resources;
     }

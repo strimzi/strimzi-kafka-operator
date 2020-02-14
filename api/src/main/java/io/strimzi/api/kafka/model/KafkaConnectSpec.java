@@ -21,9 +21,11 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image", "bootstrapServers", "config",
+@JsonPropertyOrder({ "replicas", "version", "image", 
+        "bootstrapServers", "tls", "authentication", "config", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", "template"})
+        "affinity", "tolerations", "logging", "metrics", "tracing", 
+        "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
