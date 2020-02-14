@@ -8,16 +8,19 @@
 
 An efficient data storage infrastructure is essential to the optimal performance of {ProductName}.
 
-Block storage is a good choice.
-File storage (for example, NFS) is not recommended.
+Block storage is required.
+File storage, such as NFS, does not work with Kafka.
 
-By block storage, we do not mean using Kubernetes raw block volumes.
+For your block storage, you can choose, for example:
 
-Instead, choose:
-
+* Cloud-based block storage solutions, such as {aws-ebs}
 * {K8sLocalPersistentVolumes}
 * Storage Area Network (SAN) volumes accessed by a protocol such as _Fibre Channel_ or _iSCSI_
-* Cloud-based block storage solutions, including {aws-ebs}
+
+
+NOTE: Strimzi does not require Kubernetes raw block volumes.
+
+== File systems
 
 It is recommended that you configure your storage system to use the _XFS_ file system.
 {ProductName} is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
