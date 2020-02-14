@@ -72,7 +72,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
         if (rack != null) {
             printSectionHeader("Rack ID");
-            writer.println("rack.id=${STRIMZI_RACK_ID}");
+            writer.println("broker.rack=${STRIMZI_RACK_ID}");
             writer.println();
         }
 
