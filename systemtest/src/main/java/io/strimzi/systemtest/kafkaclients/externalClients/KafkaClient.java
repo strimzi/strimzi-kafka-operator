@@ -171,7 +171,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>>
     }
 
     /**
-     * Receive messages to external entrypoint of the cluster with SSL security protocol setting
+     * Receive messages to external entry-point of the cluster with SSL security protocol setting
      * @param topicName topic name
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
@@ -183,6 +183,22 @@ public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>>
                                               int messageCount, String securityProtocol) throws IOException {
         return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol,
                 "my-group-" + new Random().nextInt(Integer.MAX_VALUE), Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    /**
+     * Receive messages to external entry-point of the cluster with SSL security protocol setting and specific consumer group
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param messageCount message count
+     * @param consumerGroup consumer group name
+     * @return future with received message count
+     */
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName,
+                                              int messageCount, String securityProtocol, String consumerGroup) throws IOException {
+        return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol,
+                consumerGroup, Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**

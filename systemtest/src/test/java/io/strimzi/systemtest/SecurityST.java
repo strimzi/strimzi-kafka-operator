@@ -1098,7 +1098,8 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(kafkaUserRead);
 
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserRead, numberOfMessages, "SSL", consumerGroupName);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME,
+                kafkaUserRead, numberOfMessages, "SSL", consumerGroupName);
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);

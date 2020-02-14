@@ -225,7 +225,13 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
+
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 

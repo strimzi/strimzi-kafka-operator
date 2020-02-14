@@ -711,7 +711,7 @@ public class TracingST extends BaseST {
 
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT, );
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
 
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
@@ -802,7 +802,7 @@ public class TracingST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,;
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
 
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));

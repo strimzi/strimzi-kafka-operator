@@ -1159,7 +1159,7 @@ class KafkaST extends BaseST {
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,;
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
 
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
