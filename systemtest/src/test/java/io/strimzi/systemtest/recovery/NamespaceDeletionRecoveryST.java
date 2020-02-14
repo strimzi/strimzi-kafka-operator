@@ -6,6 +6,8 @@ package io.strimzi.systemtest.recovery;
 
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.storage.StorageClass;
+import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -20,6 +22,9 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -29,8 +34,8 @@ import java.util.Random;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 class NamespaceDeletionRecoveryST extends BaseST {
@@ -39,6 +44,8 @@ class NamespaceDeletionRecoveryST extends BaseST {
     static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
+
+    private String storageClassName = "retain";
 
     @Test
     void testTopicAvailable() throws InterruptedException {
@@ -53,6 +60,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
         List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
+
         recreatePvcAndUpdatePv(persistentVolumeClaimList);
         recreateClusterOperator();
 
@@ -68,13 +76,13 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .editKafka()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec().done();
@@ -114,13 +122,13 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .editKafka()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
                 .withNewEntityOperator()
@@ -164,13 +172,13 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .editKafka()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withDeleteClaim(false)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec().done();
@@ -220,4 +228,27 @@ class NamespaceDeletionRecoveryST extends BaseST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
+
+    @BeforeAll
+    void createStorageClass() {
+        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+        StorageClass storageClass = new StorageClassBuilder()
+            .withNewMetadata()
+                .withName(storageClassName)
+            .endMetadata()
+            .withProvisioner("kubernetes.io/cinder")
+            .withReclaimPolicy("Retain")
+            .build();
+
+        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).createOrReplace(storageClass);
+    }
+
+    @AfterAll
+    void teardown() {
+        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+
+        kubeClient().getClient().persistentVolumes().list().getItems().stream()
+            .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))
+            .forEach(pv -> kubeClient().getClient().persistentVolumes().delete(pv));
+    }
 }
