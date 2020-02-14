@@ -221,12 +221,12 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
+        externalBasicKafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("0\n1\n"));
+                containsString("Sending messages: Hello-world - 99"));
 
         KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).cascading(true).delete();
         LOGGER.info("Topic {} deleted", CONNECT_TOPIC_NAME);
