@@ -415,27 +415,27 @@ public class OauthPlainST extends OauthBaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             // internal plain
             kafka.getSpec().getKafka().getListeners().setPlain(
-                    new KafkaListenerPlainBuilder()
-                            .withNewKafkaListenerAuthenticationOAuth()
-                            .withValidIssuerUri(validIssuerUri)
-                            .withJwksEndpointUri(jwksEndpointUri)
-                            .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                            .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                            .withUserNameClaim(userNameClaim)
-                            .endKafkaListenerAuthenticationOAuth()
-                            .build());
+                new KafkaListenerPlainBuilder()
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withValidIssuerUri(validIssuerUri)
+                        .withJwksEndpointUri(jwksEndpointUri)
+                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                        .withUserNameClaim(userNameClaim)
+                    .endKafkaListenerAuthenticationOAuth()
+                    .build());
 
             // external
             kafka.getSpec().getKafka().getListeners().setExternal(
-                    new KafkaListenerExternalNodePortBuilder()
-                            .withNewKafkaListenerAuthenticationOAuth()
-                            .withValidIssuerUri(validIssuerUri)
-                            .withJwksEndpointUri(jwksEndpointUri)
-                            .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                            .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                            .withUserNameClaim(userNameClaim)
-                            .endKafkaListenerAuthenticationOAuth()
-                            .build());
+                new KafkaListenerExternalNodePortBuilder()
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withValidIssuerUri(validIssuerUri)
+                        .withJwksEndpointUri(jwksEndpointUri)
+                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                        .withUserNameClaim(userNameClaim)
+                    .endKafkaListenerAuthenticationOAuth()
+                    .build());
 
             ((KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal()).setTls(false);
         });
