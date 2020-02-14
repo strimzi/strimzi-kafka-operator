@@ -23,7 +23,7 @@ NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Sup
 
 * {ProductName} must be configured to use {oauth} with {keycloak-server} for xref:assembly-oauth-authentication_str[token-based authentication].
 You use the same {keycloak-server} server endpoint when you set up authorization.
-* You need to understand how to manage policies and permissions for {keycloak-server} Authorization Services, as described in the {oauth-server-doc}.
+* You need to understand how to manage policies and permissions for {keycloak-server} Authorization Services, as described in the {keycloak-server-doc}.
 
 .Procedure
 

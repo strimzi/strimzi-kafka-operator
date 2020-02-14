@@ -10,7 +10,7 @@ you can also use {keycloak-server} to configure authorization rules to constrain
 Authentication establishes the identity of a user.
 Authorization decides the level of access for that user.
 
-{ProductName} supports the use of {oauth} token-based authorization through {keycloak-server} {oauth-authorization-services},
+{ProductName} supports the use of {oauth} token-based authorization through {keycloak-server} {keycloak-authorization-services},
 which allows you to manage security policies and permissions centrally.
 
 Security policies and permissions defined in {keycloak-server} are used to grant access to resources on Kafka brokers.
@@ -26,7 +26,7 @@ In addition, you can configure your Kafka brokers to use {oauth} authorization a
 
 * xref:assembly-oauth-authentication_str[Using {oauth} token based authentication]
 * xref:simple-acl-using-uo[ACL authorization]
-* {oauth-server-doc}
+* {keycloak-server-doc}
 
 include::modules/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
 include::modules/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]
