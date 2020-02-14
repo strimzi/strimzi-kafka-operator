@@ -73,7 +73,7 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
-        kafkaClient.sendAndRecvMessages(NAMESPACE, TOPIC_NAME);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, TOPIC_NAME);
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {

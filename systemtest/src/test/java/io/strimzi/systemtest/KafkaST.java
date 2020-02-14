@@ -1055,7 +1055,7 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1098,7 +1098,7 @@ class KafkaST extends BaseST {
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1123,7 +1123,7 @@ class KafkaST extends BaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test
@@ -1144,7 +1144,7 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        kafkaClient.sendAndRecvMessages(NAMESPACE);
+        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1171,7 +1171,7 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test

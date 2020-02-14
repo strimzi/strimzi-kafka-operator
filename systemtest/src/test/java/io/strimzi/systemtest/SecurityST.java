@@ -1059,9 +1059,9 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
 
-        kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
+        externalBasicKafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
 
-        assertThrows(ExecutionException.class, () -> kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
+        assertThrows(ExecutionException.class, () -> externalBasicKafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
                 .editSpec()
@@ -1090,10 +1090,10 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(kafkaUserRead);
 
-        kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead, consumerGroupName);
+        externalBasicKafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead, consumerGroupName);
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
-        assertThrows(ExecutionException.class, () -> kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
+        assertThrows(ExecutionException.class, () -> externalBasicKafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
     }
 
     @BeforeAll
