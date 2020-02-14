@@ -171,7 +171,7 @@ public class OauthBaseST extends BaseST {
     }
 
     private void createSecretsForDeployments() {
-        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_NAME, OAUTH_KEY, "a2Fma2EtY29ubmVjqC1xZWNyZXQ=");
+        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjqC1xZWNyZXQ=");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
