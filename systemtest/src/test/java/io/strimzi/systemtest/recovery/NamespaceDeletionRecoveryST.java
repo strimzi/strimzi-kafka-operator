@@ -20,24 +20,24 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
+@Tag(RECOVERY)
 class NamespaceDeletionRecoveryST extends BaseST {
 
     static final String NAMESPACE = "namespace-recovery-cluster-test";
@@ -57,7 +57,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
         // Wait till consumer offset topic is created
         Thread.sleep(30000);
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().list().getItems();
+        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
 
@@ -109,7 +109,6 @@ class NamespaceDeletionRecoveryST extends BaseST {
         // Wait till consumer offset topic is created
         Thread.sleep(30000);
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
         recreatePvcAndUpdatePv(persistentVolumeClaimList);
@@ -136,7 +135,8 @@ class NamespaceDeletionRecoveryST extends BaseST {
             .endSpec().done();
 
         // Remove all topic data from zookeeper
-        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "sh", "/opt/kafka/bin/zookeeper-shell.sh", "localhost:2181", "<<<", "'ls /config/users'");
+        String deleteZkDataCmd = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:2181 <<< \"deleteall /strimzi\"";
+        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", deleteZkDataCmd);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
