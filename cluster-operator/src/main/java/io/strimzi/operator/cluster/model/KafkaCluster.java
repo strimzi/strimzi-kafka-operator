@@ -108,6 +108,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.singletonMap;
+
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
     protected static final String INIT_NAME = "kafka-init";
@@ -808,7 +810,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
+        return singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
     /**
@@ -1226,15 +1228,21 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift      True iff this operator is operating within OpenShift.
      * @param imagePullPolicy  The image pull policy.
      * @param imagePullSecrets The image pull secrets.
+     * @param ancillaryCmGeneration The generation of ConfigMap containing configuration
      * @return The generated StatefulSet.
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        HashMap<String, String> annotations = new HashMap<>(2);
-        annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
-        annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+    public StatefulSet generateStatefulSet(boolean isOpenShift,
+                                           ImagePullPolicy imagePullPolicy,
+                                           List<LocalObjectReference> imagePullSecrets,
+                                           Long ancillaryCmGeneration) {
+        Map<String, String> stsAnnotations = new HashMap<>(2);
+        stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        Map<String, String> podAnnotations = singletonMap(ANNO_STRIMZI_CM_GENERATION, Long.toString(ancillaryCmGeneration == null ? 0L : ancillaryCmGeneration));
 
         return createStatefulSet(
-                annotations,
+                stsAnnotations,
+                podAnnotations,
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
