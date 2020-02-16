@@ -102,6 +102,8 @@ public abstract class AbstractModel {
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
 
+    public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "/cm-generation";
+
     protected final String cluster;
     protected final String namespace;
     protected final Labels labels;
@@ -727,7 +729,8 @@ public abstract class AbstractModel {
     }
 
     protected StatefulSet createStatefulSet(
-            Map<String, String> annotations,
+            Map<String, String> stsAnnotations,
+            Map<String, String> podAnnotations,
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
             Affinity affinity,
@@ -751,7 +754,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithName(templateStatefulSetLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateStatefulSetAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -764,7 +767,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeLabelsOrAnnotations(null, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())

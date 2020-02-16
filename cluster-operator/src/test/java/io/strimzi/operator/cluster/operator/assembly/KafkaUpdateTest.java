@@ -146,7 +146,7 @@ public class KafkaUpdateTest {
         states.put("sts", new ArrayList<StatefulSet>(2));
         states.put("cm", new ArrayList<ConfigMap>(2));
 
-        StatefulSet kafkaSts = initialSs != null ? initialSs : kafkaCluster.generateStatefulSet(false, null, null);
+        StatefulSet kafkaSts = initialSs != null ? initialSs : kafkaCluster.generateStatefulSet(false, null, null, -1L);
 
         when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSts));
 
