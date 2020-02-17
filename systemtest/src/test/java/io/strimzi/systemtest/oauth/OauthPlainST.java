@@ -362,7 +362,7 @@ public class OauthPlainST extends OauthBaseST {
     void testIntrospectionEndpointWithPlainCommunication() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Deploying kafka...");
 
-        String introspectionKafka = CLUSTER_NAME + "intro";
+        String introspectionKafka = CLUSTER_NAME + "-intro";
 
         KafkaResource.kafkaEphemeral(introspectionKafka, 1)
             .editSpec()
