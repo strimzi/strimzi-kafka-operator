@@ -75,7 +75,8 @@ class KafkaClientProperties {
      */
     static Properties createBasicProducerTlsProperties(String namespace, String clusterName, String caCertName,
                                                        String kafkaUsername, String securityProtocol) throws IOException {
-        return createProducerProperties(namespace, clusterName, caCertName, kafkaUsername, securityProtocol);
+        return createProducerProperties(namespace, clusterName, kafkaUsername, EClientType.BASIC,
+                caCertName, securityProtocol);
     }
 
     /**
@@ -126,27 +127,10 @@ class KafkaClientProperties {
 
     /**
      * Create producer properties with PLAINTEXT security
-     *
-     * @param namespace        kafka namespace
-     * @param clusterName      kafka cluster name
-     * @param caCertName       certificate name
-     * @param username         name of the kafka user
-     * @param securityProtocol security protocol
-     * @return producer properties
-     */
-    static Properties createProducerProperties(String namespace, String clusterName, String caCertName,
-                                               String username, String securityProtocol) throws IOException {
-        return createProducerProperties(namespace, clusterName, caCertName, username, securityProtocol, EClientType.BASIC,
-                "", "", "");
-    }
-
-    /**
-     * Create producer properties with PLAINTEXT security
-     *
-     * @param namespace             kafka namespace
-     * @param clusterName           kafka cluster name
-     * @param clientId              oauth client id
-     * @param clientSecretName      oauth client secret name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param clientId oauth client id
+     * @param clientSecretName oauth client secret name
      * @param oauthTokenEndpointUri uri, where client will send a request for token
      * @return producer properties
      */
@@ -155,6 +139,22 @@ class KafkaClientProperties {
         return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
                 "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, eClientType,
                 clientId, clientSecretName, oauthTokenEndpointUri);
+    }
+
+    /**
+     * Create producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param eClientType enum for specific type of clients
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param securityProtocol security protocol
+     * @return producer properties
+     */
+    static Properties createProducerProperties(String namespace, String clusterName, String userName, EClientType eClientType,
+                                               String caCertName, String securityProtocol) throws IOException {
+        return createProducerProperties(namespace, clusterName, caCertName, userName, securityProtocol, eClientType,
+                "", "", "");
     }
 
     /**
@@ -235,10 +235,10 @@ class KafkaClientProperties {
      * @param securityProtocol security protocol
      * @return producer properties
      */
-    static Properties createBasicConsumerTlsProperties(String namespace, String clusterName, String caCertName,
-                                                       String kafkaUsername, String securityProtocol, String consumerGroup) throws IOException {
-        return createConsumerProperties(namespace, clusterName, caCertName, kafkaUsername, consumerGroup,
-                EClientType.BASIC, securityProtocol);
+    static Properties createBasicConsumerTlsProperties(String namespace, String clusterName, String consumerGroup,
+                                                       String caCertName, String kafkaUsername, String securityProtocol) throws IOException {
+        return createConsumerProperties(namespace, clusterName, caCertName, consumerGroup, kafkaUsername, EClientType.BASIC,
+                 securityProtocol);
     }
 
     /**
@@ -291,21 +291,6 @@ class KafkaClientProperties {
                 EClientType.OAUTH, clientId, clientSecretName, oauthTokenEndpointUri);
     }
 
-    /**
-     * Create consumer properties with plain communication
-     *
-     * @param namespace     kafka namespace
-     * @param clusterName   kafka cluster name
-     * @param consumerGroup consumer group
-     * @param clientType    enum for specific type of clients
-     * @return consumer configuration
-     */
-    static Properties createConsumerProperties(String namespace, String clusterName, String caCertName, String userName,
-                                               String consumerGroup, EClientType clientType, String securityProtocol) throws IOException {
-        return createConsumerProperties(namespace, clusterName, caCertName, userName, securityProtocol,
-                consumerGroup, clientType, "", "", "");
-    }
-
 
     /**
      * Create consumer properties with plain communication
@@ -324,6 +309,24 @@ class KafkaClientProperties {
         return createConsumerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName),
                 "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup, clientType, clientId,
                 clientSecretName, oauthTokenEndpointUri);
+    }
+
+    /**
+     * Create consumer properties with plain communication
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param caCertName custom or ca certificate to use for secure communication
+     * @param consumerGroup consumer group
+     * @param userName user name for authorization
+     * @param clientType enum for specific type of clients
+     * @param securityProtocol security protocol
+     * @return consumer configuration
+     */
+    static Properties createConsumerProperties(String namespace, String clusterName, String caCertName, String consumerGroup, String userName,
+                                                EClientType clientType, String securityProtocol) throws IOException {
+        return createConsumerProperties(namespace, clusterName, caCertName,
+                userName, securityProtocol, consumerGroup, clientType, "",
+                "", "");
     }
 
     /**

@@ -15,6 +15,7 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -98,7 +99,7 @@ public class KafkaUtils {
         String secretCerts = "";
         secretCerts = kubeClient().getSecret(secretName).getData().get(certType);
         byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
-        secretCerts = new String(decodedBytes);
+        secretCerts = new String(decodedBytes, Charset.defaultCharset());
 
         return secretCerts;
     }

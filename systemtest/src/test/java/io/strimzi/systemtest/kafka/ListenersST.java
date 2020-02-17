@@ -378,12 +378,12 @@ public class ListenersST extends BaseST {
         String externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         String internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        String internalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+        //External secret cert is same as internal in this case
+        assertThat(externalSecretCerts, is(internalCerts));
 
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
@@ -423,7 +423,7 @@ public class ListenersST extends BaseST {
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -531,12 +531,12 @@ public class ListenersST extends BaseST {
         String externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         String internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        String internalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+        //External secret cert is same as internal in this case
+        assertThat(externalSecretCerts, is(internalCerts));
 
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
@@ -576,7 +576,7 @@ public class ListenersST extends BaseST {
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -684,12 +684,12 @@ public class ListenersST extends BaseST {
         String externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         String internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        String internalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+        //External secret cert is same as internal in this case
+        assertThat(externalSecretCerts, is(internalCerts));
 
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
@@ -729,7 +729,7 @@ public class ListenersST extends BaseST {
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
