@@ -180,7 +180,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-//                        .withStorageClass(storageClassName)
+                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec().done();
