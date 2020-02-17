@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.TestUtils;
@@ -14,6 +15,8 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Base64;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static io.strimzi.test.TestUtils.indent;
@@ -79,4 +82,24 @@ public class KafkaUtils {
         }
     }
 
+    public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {
+        String certs = "";
+        List<ListenerStatus> kafkaListeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
+
+        for (ListenerStatus listener : kafkaListeners) {
+            if (listener.getType().equals(listenerType))
+                certs = listener.getCertificates().toString();
+        }
+        certs = certs.substring(1, certs.length() - 1);
+        return certs;
+    }
+
+    public static String getKafkaSecretCertificates(String secretName, String certType) {
+        String secretCerts = "";
+        secretCerts = kubeClient().getSecret(secretName).getData().get(certType);
+        byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
+        secretCerts = new String(decodedBytes);
+
+        return secretCerts;
+    }
 }
