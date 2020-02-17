@@ -395,6 +395,10 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
+        validateConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
+        validateConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
+        validateConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
+
         result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
@@ -656,6 +660,18 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    private static void validateConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+        String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
+        if (kafkaClusterSpec.getConfig() != null) {
+            if (kafkaClusterSpec.getConfig().get(propertyName) != null) {
+                if (Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString()) > kafkaClusterSpec.getReplicas()) {
+                    log.warn("Kafka configuration '{}' should be set to {}{}.", propertyName, kafkaClusterSpec.getReplicas(), orLess);
+                    throw new InvalidResourceException("Kafka configuration '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + ".");
+                }
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
