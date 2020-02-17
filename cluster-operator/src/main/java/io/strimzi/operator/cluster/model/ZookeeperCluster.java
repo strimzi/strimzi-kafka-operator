@@ -183,7 +183,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
 
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
-            log.warn("Zookeeper cluster with single replica and ephemeral storage will be in defective state after any restart or rolling update. It is recommended to use at least three replicas.");
+            log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
 
         zk.setReplicas(replicas);
