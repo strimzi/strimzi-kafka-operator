@@ -1070,22 +1070,16 @@ class KafkaST extends BaseST {
         // Check that Kafka status has correct addresses in NodePort external listener part
         for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
             if (listenerStatus.getType().equals("external")) {
-                List<Node> listNodes = kubeClient().listNodes();
-                List<String> listNodeAddress = new ArrayList<>();
-                // Cluster for development has only one node and at least oc cluster up doesn't have node-role annotations
-                if (listNodes.size() == 1) {
-                    listNodeAddress.add(listNodes.get(0).getStatus().getAddresses().get(0).getAddress());
-                } else {
-                    listNodeAddress = listNodes.stream().filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/compute"))
-                            .map(p -> p.getStatus().getAddresses().get(0).getAddress()).collect(Collectors.toList());
-                    listNodeAddress.sort(Comparator.comparing(String::toString));
-                }
                 List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
                 listStatusAddresses.sort(Comparator.comparing(String::toString));
                 List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
                 Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
 
-                assertThat(listStatusAddresses, is(listNodeAddress));
+                List<String> nodeIps = kubeClient().listPods(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels())
+                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
+                nodeIps.sort(Comparator.comparing(String::toString));
+
+                assertThat(listStatusAddresses, is(nodeIps));
                 for (Integer port : listStatusPorts) {
                     assertThat(port, is(nodePort));
                 }
