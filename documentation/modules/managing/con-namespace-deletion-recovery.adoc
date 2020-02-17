@@ -15,8 +15,45 @@ If the reclaim policy is set as:
 *  _Delete_ (default), PVs are deleted when PVCs are deleted within a namespace
 * _Retain_, PVs are not deleted when a namespace is deleted
 
-To ensure that you can recover from a PV if a namespace is deleted unintentionally, the policy must be reset from _Delete_ to _Retain_.
-You can also configure the `StorageClass` property used for dynamic volume allocation so that it creates the volumes with the appropriate reclaim policy.
+To ensure that you can recover from a PV if a namespace is deleted unintentionally, the policy must be reset from _Delete_ to _Retain_ in the PV specification using the `persistentVolumeReclaimPolicy` property:
+
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: PersistentVolume
+# ...
+spec:
+  # ...
+  *persistentVolumeReclaimPolicy: Retain*
+----
+
+Alternatively, PVs can inherit the reclaim policy of an associated storage class.
+Storage classes are used for dynamic volume allocation.
+
+By configuring the `reclaimPolicy` property for the storage class, PVs that use the storage class are created with the appropriate reclaim policy.
+The storage class is configured for the PV using the `storageClassName` property.
+
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: StorageClass
+metadata:
+  *name: gp2-retain*
+parameters:
+  # ...
+# ...
+*reclaimPolicy: Retain*
+----
+
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: PersistentVolume
+# ...
+spec:
+  # ...
+  *storageClassName: gp2-retain*
+----
 
 NOTE: If you are using _Retain_ as the reclaim policy, but you want to delete an entire cluster, you need to delete the PVs manually.
 Otherwise they will not be deleted, and may cause unnecessary expenditure on resources.
