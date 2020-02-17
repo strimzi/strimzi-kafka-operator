@@ -1190,9 +1190,9 @@ class SecurityST extends BaseST {
         externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
                 "SSL");
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-
+        
         LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
-                " ACLs on only write operation", USER_NAME, TOPIC_NAME);
+                " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
 
         assertThrows(ExecutionException.class, () -> {
             Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
