@@ -1117,15 +1117,15 @@ class SecurityST extends BaseST {
             .endMetadata()
             .editSpec()
                 .editKafka()
-                .withNewKafkaAuthorizationSimple()
-                    .withSuperUsers("CN=" + USER_NAME)
-                .endKafkaAuthorizationSimple()
-                .editListeners()
-                    .withNewKafkaListenerExternalNodePort()
-                        .withNewKafkaListenerAuthenticationTlsAuth()
-                        .endKafkaListenerAuthenticationTlsAuth()
-                    .endKafkaListenerExternalNodePort()
-                .endListeners()
+                    .withNewKafkaAuthorizationSimple()
+                        .withSuperUsers("CN=" + USER_NAME)
+                    .endKafkaAuthorizationSimple()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
                 .endKafka()
             .endSpec()
             .done();
@@ -1154,14 +1154,53 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", USER_NAME, TOPIC_NAME);
 
-        externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
                 "SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
                 "we configured Acls with only write operation", USER_NAME, TOPIC_NAME);
 
-        externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
                 "SSL");
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        String nonSuperuserName = USER_NAME + "-non-super-user";
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, nonSuperuserName)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.WRITE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, TOPIC_NAME);
+
+        externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
+                "SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+
+        LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
+                " ACLs on only write operation", USER_NAME, TOPIC_NAME);
+
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
+                    "SSL");
+            invalidConsumer.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
+        });
     }
 
     @BeforeAll
