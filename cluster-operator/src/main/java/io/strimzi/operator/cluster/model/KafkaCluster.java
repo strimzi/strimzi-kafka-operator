@@ -108,6 +108,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
@@ -182,6 +183,11 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
 
+    /**
+     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
+     */
+    public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "/broker-configuration-hash";
+
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-tls-listener-thumbprint";
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-external-listener-thumbprint";
 
@@ -189,9 +195,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
     // Name of the broker configuration file in the config map
-    private static final String BROKER_CONFIGURATION_FILENAME = "server.config";
-    private static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
-    private static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
+    public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
+    public static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
+    public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
 
     // Kafka configuration
     private String zookeeperConnect;
@@ -1228,21 +1234,18 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift      True iff this operator is operating within OpenShift.
      * @param imagePullPolicy  The image pull policy.
      * @param imagePullSecrets The image pull secrets.
-     * @param ancillaryCmGeneration The generation of ConfigMap containing configuration
      * @return The generated StatefulSet.
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift,
                                            ImagePullPolicy imagePullPolicy,
-                                           List<LocalObjectReference> imagePullSecrets,
-                                           Long ancillaryCmGeneration) {
+                                           List<LocalObjectReference> imagePullSecrets) {
         Map<String, String> stsAnnotations = new HashMap<>(2);
         stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
-        Map<String, String> podAnnotations = singletonMap(ANNO_STRIMZI_CM_GENERATION, Long.toString(ancillaryCmGeneration == null ? 0L : ancillaryCmGeneration));
 
         return createStatefulSet(
                 stsAnnotations,
-                podAnnotations,
+                emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),

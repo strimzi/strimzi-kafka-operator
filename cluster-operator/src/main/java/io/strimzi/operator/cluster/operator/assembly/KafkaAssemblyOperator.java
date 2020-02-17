@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
@@ -28,7 +27,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
-import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
@@ -118,13 +116,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_CM_GENERATION;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -387,8 +382,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Set<String> kafkaExternalAdvertisedHostnames = new LinkedHashSet<>();
         private Set<String> kafkaExternalAdvertisedPorts = new LinkedHashSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
-        private Long zkAncillaryCmGeneration = 0L;
-        private Long kafkaAncillaryCmGeneration = 0L;
+
+        private String zkLoggingHash = "";
+        private String kafkaLoggingHash = "";
+        private String kafkaBrokerConfigurationHash = "";
 
         @SuppressWarnings("deprecation")
         /* test */ io.strimzi.operator.cluster.model.TopicOperator topicOperator;
@@ -897,7 +894,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (oldCm.getData().get("server.config") == null)  {
                             certificatesHaveToBeUpgraded = true;
                             cm = getKafkaAncialiaryCm();
-                            sts = getKafkaStatefulSet(this.kafkaAncillaryCmGeneration);
+                            sts = getKafkaStatefulSet();
                         } else {
                             sts = oldSts;
                             cm = oldCm;
@@ -1279,6 +1276,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(cm);
                         this.zkMetricsAndLogsConfigMap = zkCluster.generateMetricsAndLogConfigMap(logAndMetricsConfigMap);
 
+                        String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                        this.zkLoggingHash = getStringHash(loggingConfiguration);
+
                         return Future.succeededFuture(this);
                     });
         }
@@ -1312,33 +1312,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.reconcile(namespace, zkCluster.getHeadlessServiceName(), zkHeadlessService));
         }
 
-        Future<ReconciliationState> getReconciliationStateOfConfigMap(AbstractModel cluster, ConfigMap configMap, BiFunction<Boolean, Future<ReconcileResult<ConfigMap>>, Future<ReconciliationState>> function) {
-            Promise<ReconciliationState> resultPromise = Promise.promise();
-
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<Boolean>executeBlocking(
-                future -> {
-                    ConfigMap current = configMapOperations.get(namespace, cluster.getAncillaryConfigName());
-                    boolean onlyMetricsSettingChanged = onlyMetricsSettingChanged(current, configMap);
-                    future.complete(onlyMetricsSettingChanged);
-                }, res -> {
-                    if (res.succeeded()) {
-                        boolean onlyMetricsSettingChanged = res.result();
-                        function.apply(onlyMetricsSettingChanged, configMapOperations.reconcile(namespace, cluster.getAncillaryConfigName(), configMap)).setHandler(res2 -> {
-                            if (res2.succeeded()) {
-                                resultPromise.complete(res2.result());
-                            } else {
-                                resultPromise.fail(res2.cause());
-                            }
-                        });
-                    } else {
-                        resultPromise.fail(res.cause());
-                    }
-                });
-            return resultPromise.future();
-        }
-
         Future<ReconciliationState> zkAncillaryCm() {
-            return getReconciliationStateOfConfigMap(zkCluster, zkMetricsAndLogsConfigMap, this::withZkAncillaryCmChanged);
+            return withVoid(configMapOperations.reconcile(namespace, zkCluster.getAncillaryConfigName(), zkMetricsAndLogsConfigMap));
         }
 
         /**
@@ -1381,12 +1356,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, zkAncillaryCmGeneration, this.clusterCa)
+                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)
             ));
         }
 
@@ -1430,20 +1406,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.endpointReadiness(namespace, zkHeadlessService, 1_000, operationTimeoutMs));
         }
 
-        Future<ReconciliationState> withZkAncillaryCmChanged(boolean onlyMetricsSettingChanged, Future<ReconcileResult<ConfigMap>> r) {
-            return r.map(rr -> {
-                if (onlyMetricsSettingChanged) {
-                    log.debug("Only metrics setting changed - not triggering rolling update");
-                }
-                if (rr != null && rr.resource() != null && rr.resource().getMetadata() != null) {
-                    this.zkAncillaryCmGeneration = rr.resource().getMetadata().getGeneration() == null ? Long.valueOf(0L) : rr.resource().getMetadata().getGeneration();
-                } else {
-                    this.zkAncillaryCmGeneration = 0L;
-                }
-                return this;
-            });
-        }
-
         /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
             return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
                     .compose(sts -> {
@@ -1460,20 +1422,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> withKafkaDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
                 this.kafkaDiffs = rr;
-                return this;
-            });
-        }
-
-        Future<ReconciliationState> withKafkaAncillaryCmChanged(boolean onlyMetricsSettingChanged, Future<ReconcileResult<ConfigMap>> r) {
-            return r.map(rr -> {
-                if (onlyMetricsSettingChanged) {
-                    log.debug("Only metrics setting changed - not triggering rolling update");
-                }
-                if (rr != null && rr.resource() != null && rr.resource().getMetadata() != null) {
-                    this.kafkaAncillaryCmGeneration = rr.resource().getMetadata().getGeneration() == null ? Long.valueOf(0L) : rr.resource().getMetadata().getGeneration();
-                } else {
-                    this.kafkaAncillaryCmGeneration = 0L;
-                }
                 return this;
             });
         }
@@ -2077,11 +2025,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 loggingCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
             }
 
-            return kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+            ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+
+            String brokerConfiguration = brokerCm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME);
+            brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
+            brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
+            this.kafkaBrokerConfigurationHash = getStringHash(brokerConfiguration);
+
+            String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+            this.kafkaLoggingHash = getStringHash(loggingConfiguration);
+
+            return brokerCm;
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
-            return getReconciliationStateOfConfigMap(kafkaCluster, getKafkaAncialiaryCm(), this::withKafkaAncillaryCmChanged);
+            return withVoid(configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigName(), getKafkaAncialiaryCm()));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -2235,8 +2193,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return maybeResizeReconcilePvcs(pvcs, kafkaCluster);
         }
 
-        StatefulSet getKafkaStatefulSet(Long ancillaryCmGeneration)   {
-            StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, ancillaryCmGeneration);
+        StatefulSet getKafkaStatefulSet()   {
+            StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
 
             // Annotations with CA generations to help with rolling updates when CA changes
@@ -2246,6 +2204,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
+
+            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, kafkaLoggingHash);
+            Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
             if (tlsListenerCustomCertificateThumbprint != null) {
@@ -2264,12 +2225,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet(this.kafkaAncillaryCmGeneration)));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, kafkaAncillaryCmGeneration, this.clusterCa, this.clientsCa)
+                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -2889,7 +2850,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private boolean isPodToRestart(StatefulSet sts, Pod pod,
                                        boolean nodeCertsChange,
-                                       Long ancillaryCmGeneration,
                                        Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
@@ -2903,9 +2863,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
             }
 
-            int cmAnno = Annotations.intAnnotation(pod, ANNO_STRIMZI_CM_GENERATION, 0);
-
-            boolean isPodToRestart = !isPodUpToDate || ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration;
+            boolean isPodToRestart = !isPodUpToDate;
             isPodToRestart |= !isCustomCertTlsListenerUpToDate;
             isPodToRestart |= !isCustomCertExternalListenerUpToDate;
             isPodToRestart |= isCaCertsChanged;
@@ -2929,9 +2887,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (!isPodCaCertUpToDate(pod, ca)) {
                         reasons.add("Pod has old " + ca + " certificate generation");
                     }
-                }
-                if (ancillaryCmGeneration == null || cmAnno != ancillaryCmGeneration) {
-                    reasons.add("ancillary CM change " + cmAnno + " vs " + ancillaryCmGeneration);
                 }
                 if (!isPodUpToDate) {
                     reasons.add("Pod has old generation");
@@ -3270,23 +3225,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new Date();
     }
 
-    /**
-     * @param current Current ConfigMap
-     * @param desired Desired ConfigMap
-     * @return Returns true if only metrics settings has been changed
-     */
-    public boolean onlyMetricsSettingChanged(ConfigMap current, ConfigMap desired) {
-        if ((current == null && desired != null) || (current != null && desired == null)) {
-            // Metrics were added or deleted. We want rolling update
-            return false;
-        }
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
-        boolean onlyMetricsSettingChanged = false;
-        for (JsonNode d : diff) {
-            if (d.get("path").asText().equals("/data/metrics-config.yml") && d.get("op").asText().equals("replace")) {
-                onlyMetricsSettingChanged = true;
+    private String getStringHash(String toBeHashed)  {
+        try {
+            MessageDigest hashFunc = MessageDigest.getInstance("SHA-512");
+
+            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
+
+            StringBuffer stringHash = new StringBuffer();
+
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if (hex.length() == 1) stringHash.append('0');
+                stringHash.append(hex);
             }
+
+            return stringHash.toString();
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to create SHA-512 MessageDigest instance");
         }
-        return onlyMetricsSettingChanged && diff.size() == 1;
     }
 }
