@@ -66,7 +66,7 @@ The `tls` property is _true_ by default, so it can be left out.
 
 When you've defined the type of authentication as {oauth}, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
 
-The procedure to configure {oauth} for listeners, with descriptions and examples, is described in xref:proc-oauth-broker-config-{context}[Configuring {oauth} support for Kafka brokers].
+The procedure to configure {oauth} for listeners, with descriptions and examples, is described in xref:proc-oauth-authentication-broker-config-{context}[Configuring {oauth} support for Kafka brokers].
 
 [[con-oauth-authentication-broker-fast-local]]
 == Fast local JWT token validation configuration

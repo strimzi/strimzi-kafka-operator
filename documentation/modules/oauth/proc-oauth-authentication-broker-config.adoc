@@ -2,7 +2,7 @@
 //
 // con-oauth-config.adoc
 
-[id='proc-oauth-broker-config-{context}']
+[id='proc-oauth-authentication-broker-config-{context}']
 = Configuring {oauth} support for Kafka brokers
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.

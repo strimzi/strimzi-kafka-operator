@@ -10,11 +10,11 @@
 In order to use {oauth} for {ProductName}, you must:
 
 . xref:proc-oauth-server-config-{context}[Configure an {oauth} authorization server for the {ProductName} cluster and Kafka clients]
-. xref:proc-oauth-broker-config-{context}[Deploy or update the Kafka cluster with Kafka broker listeners configured to use {oauth}]
+. xref:proc-oauth-authentication-broker-config-{context}[Deploy or update the Kafka cluster with Kafka broker listeners configured to use {oauth}]
 . xref:proc-oauth-client-config-{context}[Update your Java-based Kafka clients to use {oauth}]
 . xref:proc-oauth-kafka-config-{context}[Update Kafka component clients to use {oauth}]
 
 include::proc-oauth-server-config.adoc[leveloffset=+1]
-include::proc-oauth-broker-config.adoc[leveloffset=+1]
+include::proc-oauth-authentication-broker-config.adoc[leveloffset=+1]
 include::proc-oauth-client-config.adoc[leveloffset=+1]
 include::proc-oauth-kafka-config.adoc[leveloffset=+1]

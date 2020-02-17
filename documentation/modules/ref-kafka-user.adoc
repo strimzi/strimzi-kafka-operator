@@ -108,11 +108,12 @@ echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
 [id='simple-acl-{context}']
 == Authorization
 
-Authorization is configured using the `authorization` property in `KafkaUser.spec`.
+Simple authorization is configured using the `authorization` property in `KafkaUser.spec`.
 The authorization type enabled for a user is specified using the `type` field.
-Currently, the only supported authorization type is simple authorization.
 
 If no authorization is specified, the User Operator does not provision any access rights for the user.
+
+Additionally, if you are using {oauth} token based authentication, you can also xref:assembly-oauth-authorization_str[configure {oauth} authorization].
 
 === Simple authorization
 

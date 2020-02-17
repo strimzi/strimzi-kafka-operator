@@ -18,7 +18,7 @@ The following types of listeners are supported:
 
 .{oauth}
 If you are using {oauth} token-based authentication, you can configure the listeners to connect to your authorization server.
-For more information, see xref:assembly-oauth-str[Using {oauth} token-based authentication].
+For more information, see xref:assembly-oauth-authentication_str[Using {oauth} token-based authentication].
 
 .Listener certificates
 You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled. 
