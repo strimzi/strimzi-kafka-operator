@@ -46,6 +46,14 @@ public class KafkaTopicUtils {
         );
     }
 
+    public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
+        LOGGER.info("Waiting for Kafka topic creation {}", topicNamePrefix);
+        TestUtils.waitFor("Waits for Kafka topic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+            Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
+                .list().getItems().stream().filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix)).findFirst().get().getStatus().getConditions().get(0).getType().equals("Ready")
+        );
+    }
+
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
         TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->

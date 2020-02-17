@@ -18,9 +18,9 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -50,12 +50,11 @@ class NamespaceDeletionRecoveryST extends BaseST {
     @Test
     void testTopicAvailable() throws InterruptedException {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-        int messageCount = 100;
 
-        prepareEnvironmentForRecovery(topicName, messageCount);
+        prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
 
         // Wait till consumer offset topic is created
-        Thread.sleep(30000);
+        KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix("consumer-offsets");
         // Get list of topics and list of PVC needed for recovery
         List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
@@ -95,19 +94,18 @@ class NamespaceDeletionRecoveryST extends BaseST {
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, consumerGroup);
-        assertThat(consumed, is(messageCount));
+        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, consumerGroup);
+        assertThat(consumed, is(MESSAGE_COUNT));
     }
 
     @Test
     void testTopicNotAvailable() throws InterruptedException {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-        int messageCount = 100;
 
-        prepareEnvironmentForRecovery(topicName, messageCount);
+        prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
 
         // Wait till consumer offset topic is created
-        Thread.sleep(30000);
+        KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix("consumer-offsets");
         // Get list of topics and list of PVC needed for recovery
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
@@ -134,12 +132,13 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .endEntityOperator()
             .endSpec().done();
 
+        // Wait some time after kafka is ready before delete topics files
         Thread.sleep(60000);
         // Remove all topic data from zookeeper
         String deleteZkDataCmd = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:2181 <<< \"deleteall /strimzi\"";
-        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", deleteZkDataCmd);
-
-        Thread.sleep(60000);
+        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", deleteZkDataCmd);
+        // Wait till exec result will be finish
+        Thread.sleep(30000);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
@@ -158,8 +157,8 @@ class NamespaceDeletionRecoveryST extends BaseST {
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount, consumerGroup);
-        assertThat(consumed, is(messageCount));
+        Integer consumed = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, consumerGroup);
+        assertThat(consumed, is(MESSAGE_COUNT));
     }
 
     private void prepareEnvironmentForRecovery(String topicName, int messageCount) throws InterruptedException {
