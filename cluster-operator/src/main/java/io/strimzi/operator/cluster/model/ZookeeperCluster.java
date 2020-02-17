@@ -181,6 +181,11 @@ public class ZookeeperCluster extends AbstractModel {
         if (replicas <= 0) {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
+
+        if (replicas == 1 && zookeeperClusterSpec.getStorage().getType().equals("ephemeral")) {
+            log.warn("Zookeeper cluster with single replica and ephemeral storage will be in defective state after any restart or rolling update. It is recommended to use at least three replicas.");
+        }
+
         zk.setReplicas(replicas);
 
         String image = zookeeperClusterSpec.getImage();
