@@ -18,7 +18,6 @@
 :ContextProduct: strimzi
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
-:oauth: OAuth 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
 :KafkaVersionLower: 2.3.1
@@ -38,11 +37,15 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
+:oauth: OAuth 2.0
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
 :oauth-artifact-version: 0.2.0
-:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}]
-:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the {oauth} authorization server]
-:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server]
+:keycloak-server: Keycloak
+:keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
+:keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
+:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}^]
+:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the {oauth} authorization server^]
+:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server^]
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
