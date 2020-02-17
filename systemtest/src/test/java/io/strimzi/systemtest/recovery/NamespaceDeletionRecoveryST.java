@@ -134,10 +134,12 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .endEntityOperator()
             .endSpec().done();
 
+        Thread.sleep(60000);
         // Remove all topic data from zookeeper
         String deleteZkDataCmd = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:2181 <<< \"deleteall /strimzi\"";
         ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", deleteZkDataCmd);
 
+        Thread.sleep(60000);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
@@ -178,7 +180,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withNewSize("100")
-                        .withStorageClass(storageClassName)
+//                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec().done();
