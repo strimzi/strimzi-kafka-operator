@@ -9,6 +9,9 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -185,7 +188,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+    void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
@@ -229,14 +232,35 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setReplicas(scaleTo);
+
+            JbodStorage jbodStorage =  new JbodStorageBuilder()
+                    .withVolumes(
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(2).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(3).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(4).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(5).withSize("10").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(6).withSize("10").build()
+                    ).build();
+
+            kafka.getSpec().getKafka().setStorage(jbodStorage);
+        });
+
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
+
         LOGGER.info("Scaling to {} finished", scaleTo);
 
         internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+
+        assertThat((int) kubeClient().listPersistentVolumeClaims().stream().filter(
+            pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(scaleTo));
 
         // scale down
         LOGGER.info("Scaling down to {}", initialReplicas);
@@ -247,6 +271,9 @@ class RollingUpdateST extends BaseST {
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
+
+        assertThat((int) kubeClient().listPersistentVolumeClaims().stream()
+            .filter(pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(initialReplicas));
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
@@ -318,7 +345,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testZookeeperScaleUpScaleDown() throws Exception {
+    void testZookeeperScaleUpScaleDown() {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -392,7 +419,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testManualTriggeringRollingUpdate() throws Exception {
+    void testManualTriggeringRollingUpdate() {
         // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         ResourceManager.setClassResources();
