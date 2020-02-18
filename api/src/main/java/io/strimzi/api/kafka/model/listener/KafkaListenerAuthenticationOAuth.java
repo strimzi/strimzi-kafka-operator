@@ -34,8 +34,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
     private String jwksEndpointUri;
-    private Integer jwksRefreshSeconds;
-    private Integer jwksExpirySeconds;
+    private int jwksRefreshSeconds;
+    private int jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
     private boolean checkAccessTokenType = true;
@@ -94,11 +94,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
             "The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. " +
             "Defaults to 300 seconds.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getJwksRefreshSeconds() {
-        return jwksRefreshSeconds == null ? Integer.valueOf(300) : jwksRefreshSeconds;
+    public int getJwksRefreshSeconds() {
+        return jwksRefreshSeconds;
     }
 
-    public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
+    public void setJwksRefreshSeconds(int jwksRefreshSeconds) {
         this.jwksRefreshSeconds = jwksRefreshSeconds;
     }
 
@@ -106,11 +106,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
             "The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. " +
             "Defaults to 360 seconds.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getJwksExpirySeconds() {
-        return jwksExpirySeconds == null ? Integer.valueOf(360) : jwksExpirySeconds;
+    public int getJwksExpirySeconds() {
+        return jwksExpirySeconds;
     }
 
-    public void setJwksExpirySeconds(Integer jwksExpirySeconds) {
+    public void setJwksExpirySeconds(int jwksExpirySeconds) {
         this.jwksExpirySeconds = jwksExpirySeconds;
     }
 
