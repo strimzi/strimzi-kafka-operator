@@ -225,7 +225,7 @@ public class KafkaClient implements AutoCloseable, IKafkaClient<Future<Integer>>
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createBasicConsumerTlsProperties(namespace, clusterName,
-                caCertName, kafkaUsername, securityProtocol, consumerGroup),
+                consumerGroup, caCertName, kafkaUsername, securityProtocol),
                 resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
