@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,7 +97,7 @@ public class StatefulSetOperatorTest
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new StatefulSetOperator(vertx, mockClient, 60_000L) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -112,7 +112,7 @@ public class StatefulSetOperatorTest
     protected StatefulSetOperator createResourceOperationsWithMockedReadiness(Vertx vertx, KubernetesClient mockClient) {
         return new StatefulSetOperator(vertx, mockClient, 60_000L) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -169,7 +169,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -180,7 +180,7 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
             .setHandler(context.succeeding(v -> a.flag()));
     }
 
@@ -220,7 +220,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -231,7 +231,7 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
             .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 a.flag();
@@ -268,7 +268,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
             @Override
@@ -278,7 +278,7 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(resource, "my-pod-0", pod -> true).setHandler(context.failing(e -> context.verify(() -> {
+        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll").setHandler(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             a.flag();
         })));
@@ -313,7 +313,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
             @Override
@@ -323,7 +323,7 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
             .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e.getMessage(), is("reconcile failed"));
                 a.flag();
@@ -409,7 +409,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -458,7 +458,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -502,7 +502,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -542,7 +542,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -582,7 +582,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 

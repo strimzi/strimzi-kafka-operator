@@ -352,7 +352,13 @@ public class KafkaRollerTest {
                                     Collection<Integer> podsToRestart,
                                     List<Integer> expected) {
         Checkpoint async = testContext.checkpoint();
-        kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
+        kafkaRoller.rollingRestart(pod -> {
+            if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
+                return "roll";
+            } else {
+                return null;
+            }
+        })
             .setHandler(testContext.succeeding(v -> {
                 testContext.verify(() -> assertThat(restarted(), is(expected)));
                 assertNoUnclosedAdminClient(testContext, kafkaRoller);
@@ -373,7 +379,13 @@ public class KafkaRollerTest {
                                  Class<? extends Throwable> exception, String message,
                                  List<Integer> expectedRestart) throws InterruptedException {
         CountDownLatch async = new CountDownLatch(1);
-        kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
+        kafkaRoller.rollingRestart(pod -> {
+            if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
+                return "roll";
+            } else {
+                return null;
+            }
+        })
             .setHandler(testContext.failing(e -> testContext.verify(() -> {
                 assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
                 assertThat("The exception message was not as expected", e.getMessage(), is(message));

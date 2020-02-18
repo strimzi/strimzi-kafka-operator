@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 
 /**
@@ -67,7 +67,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
@@ -78,7 +78,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
             Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
-            zkRoll |= podRestart.test(pod);
+            zkRoll |= podRestart.apply(pod) != null && !podRestart.apply(pod).isEmpty();
             pods.add(pod);
         }
 
