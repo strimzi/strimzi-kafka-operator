@@ -264,8 +264,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
         String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
+
+        if (!isUseResources(connect))    {
+            return Future.succeededFuture();
+        }
+
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        boolean useResources = isUseResources(connect);
+
         return CompositeFuture.join(
                 apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
@@ -278,15 +283,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             log.debug("{}: Setting list of connector plugins in Kafka Connect status", reconciliation);
             connectStatus.setConnectorPlugins(connectorPlugins);
 
-            log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
             log.debug("{}: {} cluster: delete connectors: {}", reconciliation, kind(), deleteConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, null)
+                reconcileConnector(reconciliation, host, apiClient, true, connectorName, null)
             );
+
+            log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
             Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                    .map(connector -> reconcileConnector(reconciliation, host, apiClient, useResources, connector.getMetadata().getName(), connector));
+                    .map(connector -> reconcileConnector(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
+
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
     }

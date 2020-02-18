@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -1248,5 +1250,25 @@ public class KafkaMirrorMaker2ClusterTest {
 
             KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         });
+    }
+
+    @Test
+    public void testNetworkPolicy() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .build();
+        KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true);
+
+        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabelsAsMap()));
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.REST_API_PORT));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector().getMatchLabels(), is(emptyMap()));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }
 }

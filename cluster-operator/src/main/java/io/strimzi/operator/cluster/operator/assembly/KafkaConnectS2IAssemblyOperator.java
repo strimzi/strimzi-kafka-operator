@@ -32,6 +32,7 @@ import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
@@ -58,6 +59,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
+    private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperations;
 
@@ -83,6 +85,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.connectOperations = supplier.connectOperator;
         this.versions = config.versions();
 
@@ -138,6 +141,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     }
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
+                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnectS2I))))
                 .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
