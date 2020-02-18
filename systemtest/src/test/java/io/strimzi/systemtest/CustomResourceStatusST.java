@@ -55,6 +55,8 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -288,6 +290,15 @@ class CustomResourceStatusST extends BaseST {
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
+    }
+
+    @Test
+    void testKafkaStatusCertificate() {
+        String certs = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
+        String secretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
+
+        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        assertThat(secretCerts, is(certs));
     }
 
     @BeforeAll
