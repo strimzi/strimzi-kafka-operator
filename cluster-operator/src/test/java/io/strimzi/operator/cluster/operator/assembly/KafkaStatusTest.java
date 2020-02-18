@@ -424,7 +424,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, -1L)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -538,7 +538,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, -1L)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -642,7 +642,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, -1L)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -743,7 +743,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, -1L)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -843,7 +843,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, -1L)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
