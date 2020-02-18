@@ -47,6 +47,8 @@ public interface Constants {
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
+    long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
+
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(80).toMillis();
@@ -82,6 +84,8 @@ public interface Constants {
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
     int HTTP_JAEGER_DEFAULT_TCP_PORT = 5778;
     int HTTP_JAEGER_DEFAULT_NODE_PORT = 32480;
+    int HTTPS_KEYCLOAK_DEFAULT_NODE_PORT = 32481;
+    int HTTP_KEYCLOAK_DEFAULT_NODE_PORT = 32482;
 
     /**
      * Default value which allows execution of tests with any tags

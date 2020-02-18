@@ -25,6 +25,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ public class TopicOperatorMockTest {
     private KubernetesClient kubeClient;
     private Session session;
     private KafkaCluster kafkaCluster;
-    private Vertx vertx;
+    private static Vertx vertx;
     private String deploymentId;
     private AdminClient adminClient;
     private TopicConfigsWatcher topicsConfigWatcher;
@@ -75,6 +76,13 @@ public class TopicOperatorMockTest {
         }
         if (kafkaCluster != null) {
             kafkaCluster.shutdown();
+        }
+    }
+
+    @AfterAll
+    public static void closeVertx() {
+        if (vertx != null) {
+            vertx.close();
         }
     }
 

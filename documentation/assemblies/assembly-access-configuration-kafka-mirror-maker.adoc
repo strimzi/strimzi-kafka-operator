@@ -11,7 +11,7 @@ Configure Kafka Mirror Maker encryption and authentication using supported mecha
 * Authentication:
 ** TLS client authentication
 ** SASL SCRAM-SHA-512 and PLAIN authentication
-** xref:assembly-oauth-str[{oauth} token-based authentication]
+** xref:assembly-oauth-authentication_str[{oauth} token-based authentication]
 +
 For more information on the TLS and SASL authentication mechanisms, see xref:con-kafka-mirror-maker-authentication-{context}[Authentication].
 

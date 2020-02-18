@@ -77,7 +77,7 @@ Here we see the `status` property specified for a Kafka custom resource.
 .Kafka custom resource with status
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
 spec:

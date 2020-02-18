@@ -73,7 +73,7 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
+    protected KafkaClient externalBasicKafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
     protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
 
     protected static final String CLUSTER_NAME = "my-cluster";
@@ -106,6 +106,10 @@ public abstract class BaseST implements TestSeparator {
     protected String testName;
 
     protected Random rng = new Random();
+
+    public static final int MESSAGE_COUNT = 100;
+    public static final String TOPIC_NAME = "my-topic";
+    public static final String USER_NAME = "user-name-example";
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
@@ -161,7 +165,7 @@ public abstract class BaseST implements TestSeparator {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 

@@ -32,6 +32,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -67,9 +69,19 @@ public class KafkaUpdateTest {
 
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;
@@ -134,7 +146,7 @@ public class KafkaUpdateTest {
         states.put("sts", new ArrayList<StatefulSet>(2));
         states.put("cm", new ArrayList<ConfigMap>(2));
 
-        StatefulSet kafkaSts = initialSs != null ? initialSs : kafkaCluster.generateStatefulSet(false, null, null);
+        StatefulSet kafkaSts = initialSs != null ? initialSs : kafkaCluster.generateStatefulSet(false, null, null, -1L);
 
         when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSts));
 

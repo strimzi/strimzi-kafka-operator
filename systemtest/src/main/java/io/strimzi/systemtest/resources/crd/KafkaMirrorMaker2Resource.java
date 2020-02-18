@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -56,6 +57,9 @@ public class KafkaMirrorMaker2Resource {
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaTargetClusterName)
             .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+            .addToConfig("config.storage.replication.factor", 1)
+            .addToConfig("offset.storage.replication.factor", 1)
+            .addToConfig("status.storage.replication.factor", 1)
             .build();
         
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
@@ -78,7 +82,6 @@ public class KafkaMirrorMaker2Resource {
                 .endTls()
                 .build();
         }
-    
 
         return new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
             .withNewMetadata()
@@ -90,7 +93,11 @@ public class KafkaMirrorMaker2Resource {
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withReplicas(kafkaMirrorMaker2Replicas)
                 .withConnectCluster(kafkaTargetClusterName)
-                .withClusters(targetClusterSpec, sourceClusterSpec)                
+                .withClusters(targetClusterSpec, sourceClusterSpec)
+                .editFirstMirror()
+                    .withSourceCluster(kafkaSourceClusterName)
+                    .withTargetCluster(kafkaTargetClusterName)
+                .endMirror()
             .endSpec();
     }
 
@@ -129,7 +136,7 @@ public class KafkaMirrorMaker2Resource {
 
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
         LOGGER.info("Waiting for Kafka MirrorMaker2 {}", kafkaMirrorMaker2.getMetadata().getName());
-        DeploymentUtils.waitForDeploymentReady(kafkaMirrorMaker2.getMetadata().getName() + "-mirrormaker2", kafkaMirrorMaker2.getSpec().getReplicas());
+        DeploymentUtils.waitForDeploymentReady(KafkaMirrorMaker2Resources.deploymentName(kafkaMirrorMaker2.getMetadata().getName()), kafkaMirrorMaker2.getSpec().getReplicas());
         LOGGER.info("Kafka MirrorMaker2 {} is ready", kafkaMirrorMaker2.getMetadata().getName());
         return kafkaMirrorMaker2;
     }

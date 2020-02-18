@@ -1,0 +1,27 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth-authorization.adoc
+
+[id='con-oauth-authorization-intro_{context}']
+If you are using {oauth} with {keycloak-server} for token-based authentication,
+you can also use {keycloak-server} to configure authorization rules to constrain client access to Kafka brokers.
+Authentication establishes the identity of a user.
+Authorization decides the level of access for that user.
+
+{ProductName} supports the use of {oauth} token-based authorization through {keycloak-server} {keycloak-authorization-services},
+which allows you to manage security policies and permissions centrally.
+
+Security policies and permissions defined in {keycloak-server} are used to grant access to resources on Kafka brokers.
+Users and clients are matched against policies that permit access to perform specific actions on Kafka brokers.
+
+Kafka allows all users full access to brokers by default,
+and also provides the `SimpleACLAuthorizer` plugin to configure authorization based on Access Control Lists (ACLs).
+ZooKeeper stores ACL rules that grant or deny access to resources based on _username_.
+However, {oauth} token-based authorization with  {keycloak-server} offers far greater flexibility on how you wish to implement access control to Kafka brokers.
+In addition, you can configure your Kafka brokers to use {oauth} authorization and ACLs.
+
+.Additional resources
+
+* xref:assembly-oauth-authentication_str[Using {oauth} token based authentication]
+* xref:simple-acl-using-uo[ACL authorization]
+* {keycloak-server-doc}

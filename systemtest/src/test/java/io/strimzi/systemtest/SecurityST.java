@@ -50,6 +50,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -1059,9 +1061,15 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
 
-        kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserWrite, numberOfMessages, "SSL");
 
-        assertThrows(ExecutionException.class, () -> kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
+
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserWrite,
+                    numberOfMessages, "SSL");
+            consumer.get(2, TimeUnit.MINUTES);
+        });
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
                 .editSpec()
@@ -1090,10 +1098,107 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(kafkaUserRead);
 
-        kafkaClient.receiveMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead, consumerGroupName);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME,
+                kafkaUserRead, numberOfMessages, "SSL", consumerGroupName);
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
-        assertThrows(ExecutionException.class, () -> kafkaClient.sendMessagesExternalTls(CLUSTER_NAME, NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> invalidProducer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserRead, numberOfMessages, "SSL");
+            invalidProducer.get(2, TimeUnit.MINUTES);
+        });
+    }
+
+    @Test
+    void testAclWithSuperUser() throws Exception {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-ephemeral")
+            .endMetadata()
+            .editSpec()
+                .editKafka()
+                    .withNewKafkaAuthorizationSimple()
+                        .withSuperUsers("CN=" + USER_NAME)
+                    .endKafkaAuthorizationSimple()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.WRITE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", USER_NAME, TOPIC_NAME);
+
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+                "SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
+                "we configured Acls with only write operation", USER_NAME, TOPIC_NAME);
+
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT,
+                "SSL");
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        String nonSuperuserName = USER_NAME + "-non-super-user";
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, nonSuperuserName)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.WRITE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(TOPIC_NAME)
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, TOPIC_NAME);
+
+        externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
+                "SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        
+        LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
+                " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
+
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
+                    "SSL");
+            invalidConsumer.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
+        });
     }
 
     @BeforeAll

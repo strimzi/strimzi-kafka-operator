@@ -34,7 +34,6 @@ public abstract class AbstractNamespaceST extends BaseST {
 
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
-    static final String TOPIC_NAME = "my-topic";
     static final String USER_NAME = "my-user";
     private static final String TOPIC_EXAMPLES_DIR = "../examples/topic/kafka-topic.yaml";
 
@@ -88,7 +87,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         cluster.setNamespace(CO_NAMESPACE);
     }
 
-    void deployKafkaConnectorWithSink(String clusterName, String namespace, String topicName, String connectLabel) throws InterruptedException {
+    void deployKafkaConnectorWithSink(String clusterName, String namespace, String topicName, String connectLabel) {
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
@@ -109,7 +108,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
         internalKafkaClient.setPodName(kafkaClientsPodName);
-        int sent = internalKafkaClient.sendMessages(topicName, namespace, clusterName, 10);
+        int sent = internalKafkaClient.sendMessages(topicName, namespace, clusterName, 100);
         assertThat(sent, Matchers.is(10));
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
     }
