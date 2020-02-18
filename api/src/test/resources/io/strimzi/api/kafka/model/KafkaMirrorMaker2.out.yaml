@@ -5,22 +5,8 @@ metadata:
   name: "test-kafka-mirror-maker-2"
 spec:
   replicas: 6
-  connectCluster: "target"
-  config:
-    name: "bar"
   image: "foo"
-  tolerations:
-  - effect: "NoSchedule"
-    key: "key1"
-    operator: "Equal"
-    value: "value1"
-  - effect: "NoSchedule"
-    key: "key2"
-    operator: "Equal"
-    value: "value2"
-  logging:
-    type: "inline"
-    loggers: {}
+  connectCluster: "target"
   clusters:
   - alias: "source"
     bootstrapServers: "my-source-kafka:9092"
@@ -46,6 +32,18 @@ spec:
         heartbeats.topic.replication.factor: 1
     topics: "my-topic"
     groups: "my-group"
+  tolerations:
+  - effect: "NoSchedule"
+    key: "key1"
+    operator: "Equal"
+    value: "value1"
+  - effect: "NoSchedule"
+    key: "key2"
+    operator: "Equal"
+    value: "value2"
+  logging:
+    type: "inline"
+    loggers: {}
   externalConfiguration:
     env:
     - name: "SOME_VARIABLE"

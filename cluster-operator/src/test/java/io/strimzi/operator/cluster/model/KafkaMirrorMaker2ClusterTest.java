@@ -93,11 +93,11 @@ public class KafkaMirrorMaker2ClusterTest {
     private final KafkaMirrorMaker2ClusterSpec targetCluster = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(targetClusterAlias)
             .withBootstrapServers(bootstrapServers)
+            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .build();
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .withImage(image)
             .withReplicas(replicas)
             .withReadinessProbe(new Probe(healthDelay, healthTimeout))

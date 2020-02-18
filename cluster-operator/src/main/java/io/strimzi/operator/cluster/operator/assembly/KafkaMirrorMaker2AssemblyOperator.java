@@ -137,6 +137,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
+        log.info("{}: Updating Kafka MirrorMaker 2.0 cluster {} in {}", reconciliation, name, namespace);
+        log.info("{}: Updating Kafka MirrorMaker 2.0 generatePodDisruptionBudget {}", reconciliation, mirrorMaker2Cluster.generatePodDisruptionBudget());
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
