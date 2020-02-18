@@ -44,10 +44,125 @@ spec:
           properties:
             replicas:
               type: integer
-            config:
-              type: object
+            version:
+              type: string
             image:
               type: string
+            bootstrapServers:
+              type: string
+            tls:
+              type: object
+              properties:
+                trustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
+            authentication:
+              type: object
+              properties:
+                accessToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                accessTokenIsJwt:
+                  type: boolean
+                certificateAndKey:
+                  type: object
+                  properties:
+                    certificate:
+                      type: string
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - certificate
+                  - key
+                  - secretName
+                clientId:
+                  type: string
+                clientSecret:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                disableTlsHostnameVerification:
+                  type: boolean
+                maxTokenExpirySeconds:
+                  type: integer
+                passwordSecret:
+                  type: object
+                  properties:
+                    password:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - password
+                  - secretName
+                refreshToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                tlsTrustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
+                tokenEndpointUri:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                  - tls
+                  - scram-sha-512
+                  - plain
+                  - oauth
+                username:
+                  type: string
+              required:
+              - type
+            config:
+              type: object
+            resources:
+              type: object
+              properties:
+                limits:
+                  type: object
+                requests:
+                  type: object
             livenessProbe:
               type: object
               properties:
@@ -685,97 +800,6 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
-            authentication:
-              type: object
-              properties:
-                accessToken:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - key
-                  - secretName
-                accessTokenIsJwt:
-                  type: boolean
-                certificateAndKey:
-                  type: object
-                  properties:
-                    certificate:
-                      type: string
-                    key:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - certificate
-                  - key
-                  - secretName
-                clientId:
-                  type: string
-                clientSecret:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - key
-                  - secretName
-                disableTlsHostnameVerification:
-                  type: boolean
-                maxTokenExpirySeconds:
-                  type: integer
-                passwordSecret:
-                  type: object
-                  properties:
-                    password:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - password
-                  - secretName
-                refreshToken:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - key
-                  - secretName
-                tlsTrustedCertificates:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                      secretName:
-                        type: string
-                    required:
-                    - certificate
-                    - secretName
-                tokenEndpointUri:
-                  type: string
-                type:
-                  type: string
-                  enum:
-                  - tls
-                  - scram-sha-512
-                  - plain
-                  - oauth
-                username:
-                  type: string
-              required:
-              - type
-            bootstrapServers:
-              type: string
             externalConfiguration:
               type: object
               properties:
@@ -859,30 +883,6 @@ spec:
                             type: string
                     required:
                     - name
-            resources:
-              type: object
-              properties:
-                limits:
-                  type: object
-                requests:
-                  type: object
-            tls:
-              type: object
-              properties:
-                trustedCertificates:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                      secretName:
-                        type: string
-                    required:
-                    - certificate
-                    - secretName
-            version:
-              type: string
           required:
           - bootstrapServers
         status:

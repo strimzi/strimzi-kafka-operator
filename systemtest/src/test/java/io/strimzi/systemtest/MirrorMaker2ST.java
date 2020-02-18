@@ -229,6 +229,9 @@ class MirrorMaker2ST extends BaseST {
                 .withNewTls()
                     .withTrustedCertificates(certSecretTarget)
                 .endTls()
+                .addToConfig("config.storage.replication.factor", 1)
+                .addToConfig("offset.storage.replication.factor", 1)
+                .addToConfig("status.storage.replication.factor", 1)
                 .build();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
@@ -364,6 +367,9 @@ class MirrorMaker2ST extends BaseST {
                 .withNewTls()
                     .withTrustedCertificates(certSecretTarget)
                 .endTls()
+                .addToConfig("config.storage.replication.factor", 1)
+                .addToConfig("offset.storage.replication.factor", 1)
+                .addToConfig("status.storage.replication.factor", 1)
                 .build();
 
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)

@@ -6,8 +6,6 @@ spec:
   image: foo
   replicas: 6
   connectCluster: target
-  config:
-    name: bar
   tolerations:
     - key: "key1"
       operator: "Equal"
