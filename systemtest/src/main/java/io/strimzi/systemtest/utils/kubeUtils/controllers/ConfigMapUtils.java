@@ -4,13 +4,17 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ConfigMapUtils {
@@ -65,5 +69,23 @@ public class ConfigMapUtils {
             );
             LOGGER.info("Kafka configMap label {} change to {}", labelKey, null);
         }
+    }
+
+    public static void waitUntilConfigMapDeletion(String clusterName) {
+        LOGGER.info("Waiting till ConfigMaps deletion for cluster {}", clusterName);
+        TestUtils.waitFor("Waiting till ConfigMaps will be deleted {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                List<ConfigMap> cmList = kubeClient().listConfigMaps().stream().filter(cm -> cm.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+                if (cmList.isEmpty()) {
+                    return true;
+                } else {
+                    for (ConfigMap cm : cmList) {
+                        LOGGER.warn("ConfigMap {} is not deleted yet! Triggering force delete by cmd client!", cm.getMetadata().getName());
+                        cmdKubeClient().deleteByName("configmap", cm.getMetadata().getName());
+                    }
+                    return false;
+                }
+            });
+        LOGGER.info("ConfigMaps for cluster {} were deleted", clusterName);
     }
 }
