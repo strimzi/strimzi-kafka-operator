@@ -918,4 +918,4 @@ spec:
                     type: string
                   class:
                     type: string
-  {{- end -}}
+{{- end -}}

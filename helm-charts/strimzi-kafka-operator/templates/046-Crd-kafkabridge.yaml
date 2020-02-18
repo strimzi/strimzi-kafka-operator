@@ -616,4 +616,4 @@ spec:
               type: integer
             url:
               type: string
-  {{- end -}}
+{{- end -}}
