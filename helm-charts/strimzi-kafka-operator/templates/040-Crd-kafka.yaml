@@ -158,8 +158,10 @@ spec:
                               type: string
                             jwksExpirySeconds:
                               type: integer
+                              minimum: 1
                             jwksRefreshSeconds:
                               type: integer
+                              minimum: 1
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -266,8 +268,10 @@ spec:
                               type: string
                             jwksExpirySeconds:
                               type: integer
+                              minimum: 1
                             jwksRefreshSeconds:
                               type: integer
+                              minimum: 1
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -390,8 +394,10 @@ spec:
                               type: string
                             jwksExpirySeconds:
                               type: integer
+                              minimum: 1
                             jwksRefreshSeconds:
                               type: integer
+                              minimum: 1
                             tlsTrustedCertificates:
                               type: array
                               items:

@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
@@ -34,8 +36,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
     private String jwksEndpointUri;
-    private int jwksRefreshSeconds;
-    private int jwksExpirySeconds;
+    private Integer jwksRefreshSeconds;
+    private Integer jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
     private boolean checkAccessTokenType = true;
@@ -93,24 +95,28 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Description("Configures how often are the JWKS certificates refreshed. " +
             "The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. " +
             "Defaults to 300 seconds.")
+    @Minimum(1)
+    @DefaultValue("300")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public int getJwksRefreshSeconds() {
+    public Integer getJwksRefreshSeconds() {
         return jwksRefreshSeconds;
     }
 
-    public void setJwksRefreshSeconds(int jwksRefreshSeconds) {
+    public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
         this.jwksRefreshSeconds = jwksRefreshSeconds;
     }
 
     @Description("Configures how often are the JWKS certificates considered valid. " +
             "The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. " +
             "Defaults to 360 seconds.")
+    @Minimum(1)
+    @DefaultValue("360")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public int getJwksExpirySeconds() {
+    public Integer getJwksExpirySeconds() {
         return jwksExpirySeconds;
     }
 
-    public void setJwksExpirySeconds(int jwksExpirySeconds) {
+    public void setJwksExpirySeconds(Integer jwksExpirySeconds) {
         this.jwksExpirySeconds = jwksExpirySeconds;
     }
 
