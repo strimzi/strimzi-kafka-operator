@@ -61,6 +61,7 @@ public class OauthBaseST extends BaseST {
     protected static String oauthTokenEndpointUri;
     protected static String validIssuerUri;
     protected static String jwksEndpointUri;
+    protected static String introspectionEndpointUri;
     protected static String userNameClaim;
     protected static final int JWKS_EXPIRE_SECONDS = 500;
     protected static final int JWKS_REFRESH_SECONDS = 400;
@@ -115,6 +116,7 @@ public class OauthBaseST extends BaseST {
         validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal";
         jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";
         oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token";
+        introspectionEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token/introspect";
         userNameClaim = "preferred_username";
 
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();

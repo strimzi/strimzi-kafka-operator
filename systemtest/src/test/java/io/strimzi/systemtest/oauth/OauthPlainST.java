@@ -376,7 +376,10 @@ public class OauthPlainST extends OauthBaseST {
                                     .withKey(OAUTH_KEY)
                                 .endClientSecret()
                                 .withAccessTokenIsJwt(false)
+                                .withValidIssuerUri(validIssuerUri)
+                                .withIntrospectionEndpointUri(introspectionEndpointUri)
                             .endKafkaListenerAuthenticationOAuth()
+                            .withTls(false)
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
@@ -400,6 +403,7 @@ public class OauthPlainST extends OauthBaseST {
         validIssuerUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal";
         jwksEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/certs";
         oauthTokenEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token";
+        introspectionEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token/introspect";
 
         LOGGER.info("Setting producer and consumer properties");
 
