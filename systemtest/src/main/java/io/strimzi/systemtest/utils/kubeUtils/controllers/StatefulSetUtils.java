@@ -119,7 +119,6 @@ public class StatefulSetUtils {
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         waitTillSsHasRolled(name, snapshot);
         waitForAllStatefulSetPodsReady(name, expectedPods);
-        LOGGER.info("StatefulSet {} rolling update finished", name);
         return ssSnapshot(name);
     }
 
