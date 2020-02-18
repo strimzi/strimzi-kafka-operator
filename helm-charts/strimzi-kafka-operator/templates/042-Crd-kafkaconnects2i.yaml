@@ -929,4 +929,4 @@ spec:
                     type: string
             buildConfigName:
               type: string
-{{- end -}}
+  {{- end -}}

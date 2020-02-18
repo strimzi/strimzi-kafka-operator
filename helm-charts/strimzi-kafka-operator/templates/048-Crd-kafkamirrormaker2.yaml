@@ -1090,4 +1090,4 @@ spec:
               type: array
               items:
                 type: object
-{{- end -}}
+  {{- end -}}

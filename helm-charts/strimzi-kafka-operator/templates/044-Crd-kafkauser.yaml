@@ -150,4 +150,4 @@ spec:
               type: string
             secret:
               type: string
-{{- end -}}
+  {{- end -}}

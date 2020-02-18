@@ -65,4 +65,4 @@ spec:
               type: integer
             connectorStatus:
               type: object
-{{- end -}}
+  {{- end -}}

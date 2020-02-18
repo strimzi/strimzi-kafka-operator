@@ -956,4 +956,4 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-{{- end -}}
+  {{- end -}}
