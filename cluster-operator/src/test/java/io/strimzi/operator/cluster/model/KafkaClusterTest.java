@@ -3320,4 +3320,33 @@ public class KafkaClusterTest {
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
     }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationNok() {
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap("offsets.topic.replication.factor", replicas + 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertThat(KafkaCluster.validateConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(false));
+    }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationOk() {
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap("offsets.topic.replication.factor", replicas - 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertThat(KafkaCluster.validateConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(true));
+    }
+
 }

@@ -662,16 +662,25 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
-    private static void validateConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+    protected static boolean validateConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+        /* test */
+        boolean isOk = true;
         String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
         if (kafkaClusterSpec.getConfig() != null) {
             if (kafkaClusterSpec.getConfig().get(propertyName) != null) {
-                if (Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString()) > kafkaClusterSpec.getReplicas()) {
-                    log.warn("Kafka configuration '{}' should be set to {}{}.", propertyName, kafkaClusterSpec.getReplicas(), orLess);
-                    throw new InvalidResourceException("Kafka configuration '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + ".");
+                try {
+                    int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
+                    if (propertyVal > kafkaClusterSpec.getReplicas()) {
+                        isOk = false;
+                        log.warn("Kafka configuration '{}' should be set to {}{} because 'spec.kafka.replicas' is {}", propertyName, kafkaClusterSpec.getReplicas(), orLess, kafkaClusterSpec.getReplicas());
+                    }
+                } catch (NumberFormatException e) {
+                    isOk = false;
+                    e.printStackTrace();
                 }
             }
         }
+        return isOk;
     }
 
     @SuppressWarnings("deprecation")
