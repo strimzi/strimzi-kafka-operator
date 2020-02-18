@@ -74,18 +74,18 @@ public class ConfigMapUtils {
     public static void waitUntilConfigMapDeletion(String clusterName) {
         LOGGER.info("Waiting till ConfigMaps deletion for cluster {}", clusterName);
         TestUtils.waitFor("Waiting till ConfigMaps will be deleted {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-                () -> {
-                    List<ConfigMap> cmList = kubeClient().listConfigMaps().stream().filter(cm -> cm.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
-                    if (cmList.isEmpty()) {
-                        return true;
-                    } else {
-                        for (ConfigMap cm : cmList) {
-                            LOGGER.warn("ConfigMap {} is not deleted yet! Triggering force delete by cmd client!", cm.getMetadata().getName());
-                            cmdKubeClient().deleteByName("configmap", cm.getMetadata().getName());
-                        }
-                        return false;
+            () -> {
+                List<ConfigMap> cmList = kubeClient().listConfigMaps().stream().filter(cm -> cm.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+                if (cmList.isEmpty()) {
+                    return true;
+                } else {
+                    for (ConfigMap cm : cmList) {
+                        LOGGER.warn("ConfigMap {} is not deleted yet! Triggering force delete by cmd client!", cm.getMetadata().getName());
+                        cmdKubeClient().deleteByName("configmap", cm.getMetadata().getName());
                     }
-                });
+                    return false;
+                }
+            });
         LOGGER.info("ConfigMaps for cluster {} were deleted", clusterName);
     }
 }
