@@ -3332,7 +3332,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(KafkaCluster.validateConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(false));
+        assertThat(KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(false));
     }
 
     @Test
@@ -3346,7 +3346,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(KafkaCluster.validateConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(true));
+        assertThat(KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(true));
     }
 
 }

@@ -395,9 +395,9 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
-        validateConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
-        validateConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
-        validateConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
+        validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
 
         result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
 
@@ -662,25 +662,23 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
-    protected static boolean validateConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
-        /* test */
-        boolean isOk = true;
+    protected static boolean validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
         String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
         if (kafkaClusterSpec.getConfig() != null) {
             if (kafkaClusterSpec.getConfig().get(propertyName) != null) {
                 try {
                     int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
                     if (propertyVal > kafkaClusterSpec.getReplicas()) {
-                        isOk = false;
                         log.warn("Kafka configuration '{}' should be set to {}{} because 'spec.kafka.replicas' is {}", propertyName, kafkaClusterSpec.getReplicas(), orLess, kafkaClusterSpec.getReplicas());
+                        return false;
                     }
                 } catch (NumberFormatException e) {
-                    isOk = false;
-                    e.printStackTrace();
+                    log.warn("Property {} should be an integer", propertyName);
+                    return false;
                 }
             }
         }
-        return isOk;
+        return true;
     }
 
     @SuppressWarnings("deprecation")
