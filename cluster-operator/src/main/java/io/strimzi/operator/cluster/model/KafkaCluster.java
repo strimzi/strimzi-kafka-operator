@@ -402,6 +402,10 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
+        validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
+
         result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
@@ -663,6 +667,20 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+        String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
+        if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
+            try {
+                int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
+                if (propertyVal > kafkaClusterSpec.getReplicas()) {
+                    throw new InvalidResourceException("Kafka configuration option '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + " because 'spec.kafka.replicas' is " + kafkaClusterSpec.getReplicas());
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidResourceException("Property " + propertyName + " should be an integer");
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
