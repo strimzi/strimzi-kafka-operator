@@ -235,19 +235,6 @@ class RollingUpdateST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setReplicas(scaleTo);
-
-            JbodStorage jbodStorage =  new JbodStorageBuilder()
-                    .withVolumes(
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(2).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(3).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(4).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(5).withSize("10").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(6).withSize("10").build()
-                    ).build();
-
-            kafka.getSpec().getKafka().setStorage(jbodStorage);
         });
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
