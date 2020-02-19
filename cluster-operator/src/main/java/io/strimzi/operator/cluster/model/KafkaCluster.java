@@ -662,23 +662,18 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
-    protected static boolean validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
         String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
-        if (kafkaClusterSpec.getConfig() != null) {
-            if (kafkaClusterSpec.getConfig().get(propertyName) != null) {
-                try {
-                    int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
-                    if (propertyVal > kafkaClusterSpec.getReplicas()) {
-                        log.warn("Kafka configuration '{}' should be set to {}{} because 'spec.kafka.replicas' is {}", propertyName, kafkaClusterSpec.getReplicas(), orLess, kafkaClusterSpec.getReplicas());
-                        return false;
-                    }
-                } catch (NumberFormatException e) {
-                    log.warn("Property {} should be an integer", propertyName);
-                    return false;
+        if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
+            try {
+                int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
+                if (propertyVal > kafkaClusterSpec.getReplicas()) {
+                    throw new InvalidResourceException("Kafka configuration option '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + " because 'spec.kafka.replicas' is " + kafkaClusterSpec.getReplicas());
                 }
+            } catch (NumberFormatException e) {
+                throw new InvalidResourceException("Property " + propertyName + " should be an integer");
             }
         }
-        return true;
     }
 
     @SuppressWarnings("deprecation")

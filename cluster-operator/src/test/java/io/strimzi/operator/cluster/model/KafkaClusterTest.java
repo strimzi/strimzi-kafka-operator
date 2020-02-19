@@ -3323,16 +3323,19 @@ public class KafkaClusterTest {
 
     @Test
     public void testReplicasAndRelatedOptionsValidationNok() {
-
+        String propertyName = "offsets.topic.replication.factor";
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withConfig(singletonMap("offsets.topic.replication.factor", replicas + 1))
+                        .withConfig(singletonMap(propertyName, replicas + 1))
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka());
+        });
+        assertThat(ex.getMessage().equals("Kafka configuration option '" + propertyName + "' should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas), is(true));
     }
 
     @Test
@@ -3346,7 +3349,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka()), is(true));
+        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka());
     }
 
 }
