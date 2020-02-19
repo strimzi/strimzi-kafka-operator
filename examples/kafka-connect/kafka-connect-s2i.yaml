@@ -15,3 +15,8 @@ spec:
     trustedCertificates:
       - secretName: my-cluster-cluster-ca-cert
         certificate: ca.crt
+  config:
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
