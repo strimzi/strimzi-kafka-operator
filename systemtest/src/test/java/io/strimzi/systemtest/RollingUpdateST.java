@@ -313,7 +313,6 @@ class RollingUpdateST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
 
-
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
@@ -348,13 +347,13 @@ class RollingUpdateST extends BaseST {
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(initialZkReplicas, is(3));
 
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
-
         assertThat(sent, is(messageCount));
 
         Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
@@ -660,14 +659,9 @@ class RollingUpdateST extends BaseST {
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
-    void deployTestSpecificResources() {
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
-    }
-
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
-        deployTestSpecificResources();
     }
 
     @BeforeAll
@@ -678,6 +672,5 @@ class RollingUpdateST extends BaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
-        deployTestSpecificResources();
     }
 }
