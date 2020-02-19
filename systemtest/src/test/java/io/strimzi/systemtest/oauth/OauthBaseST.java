@@ -48,16 +48,19 @@ public class OauthBaseST extends BaseST {
 
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
+    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";
 
     protected static final String CONNECT_OAUTH_SECRET = "my-connect-oauth";
     protected static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
     protected static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
+    protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected static String oauthTokenEndpointUri;
     protected static String validIssuerUri;
     protected static String jwksEndpointUri;
+    protected static String introspectionEndpointUri;
     protected static String userNameClaim;
     protected static final int JWKS_EXPIRE_SECONDS = 500;
     protected static final int JWKS_REFRESH_SECONDS = 400;
@@ -112,6 +115,7 @@ public class OauthBaseST extends BaseST {
         validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal";
         jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";
         oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token";
+        introspectionEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token/introspect";
         userNameClaim = "preferred_username";
 
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
@@ -167,7 +171,12 @@ public class OauthBaseST extends BaseST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, OAUTH_CLIENT_NAME).done();
     }
 
+    /**
+     * Auxiliary method, which creating kubernetes secrets
+     * f.e name kafka-broker-secret -> will be encoded to base64 format and use as a key.
+     */
     private void createSecretsForDeployments() {
+        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");

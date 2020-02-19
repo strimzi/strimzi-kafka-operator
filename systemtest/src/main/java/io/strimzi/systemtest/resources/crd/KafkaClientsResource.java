@@ -447,7 +447,7 @@ public class KafkaClientsResource {
                         .withContainers()
                         .addNewContainer()
                             .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak")
+                            .withImage("jboss/keycloak:8.0.1")
                             .withPorts(
                                 new ContainerPortBuilder()
                                     .withName("http")
