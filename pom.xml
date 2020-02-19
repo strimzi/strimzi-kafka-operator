@@ -89,7 +89,7 @@
         <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
         <kafka.version>2.4.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.12.8</scala-library.version>
+        <scala-library.version>2.12.10</scala-library.version>
         <zookeeper.version>3.5.6</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
@@ -332,6 +332,36 @@
                 <version>${fasterxml.jackson-dataformat.version}</version>
             </dependency>
             <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-csv</artifactId>
+                <version>${fasterxml.jackson-dataformat.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-paranamer</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.12</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-core</artifactId>
                 <version>${vertx.version}</version>
@@ -409,6 +439,18 @@
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-web-common</artifactId>
                 <version>${vertx.version}</version>
@@ -432,23 +474,19 @@
                 <groupId>io.debezium</groupId>
                 <artifactId>debezium-core</artifactId>
                 <version>${debezium.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.debezium</groupId>
                 <artifactId>debezium-core</artifactId>
                 <version>${debezium.version}</version>
                 <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-unit</artifactId>
-                <version>${vertx.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -531,6 +569,30 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
                 <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apiguardian</groupId>
+                        <artifactId>apiguardian-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-junit5</artifactId>
+                <version>${vertx-juni5.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
