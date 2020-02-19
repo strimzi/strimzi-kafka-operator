@@ -162,6 +162,6 @@ public class HttpUtils {
                         future.completeExceptionally(ar.cause());
                     }
                 });
-        return future.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+        return future.get(1, TimeUnit.MINUTES);
     }
 }
