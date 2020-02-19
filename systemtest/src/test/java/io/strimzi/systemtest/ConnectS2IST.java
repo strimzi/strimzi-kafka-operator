@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -32,12 +33,14 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -58,9 +61,11 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils.waitForConnectS2IStatus;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -75,6 +80,8 @@ class ConnectS2IST extends BaseST {
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
+    private static final String CONNECT_S2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
+    private String customCertServer = "custom-certificate-server";
 
     private String kafkaClientsPodName;
 
@@ -488,6 +495,80 @@ class ConnectS2IST extends BaseST {
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
+    @Disabled
+    @Test
+    void testUpdateKafkaForConnectS2I() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect-s2i")
+                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .done();
+
+        Map<String, String> connectSnapshot =
+                DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME));
+
+        LOGGER.info("===== SCALING UP AND DOWN =====");
+
+        final int initialReplicas = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).
+                withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getReplicas();
+        assertThat(initialReplicas, is(1));
+
+        final int scaleReplicasTo = initialReplicas + 3;
+
+        //scale up
+        LOGGER.info("Scaling up to {}", scaleReplicasTo);
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+                cs2i.getSpec().setReplicas(scaleReplicasTo));
+        waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+
+        int actualReplicas = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE)
+                .withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getReplicas();
+        assertThat(actualReplicas, is(scaleReplicasTo));
+        LOGGER.info("Scaling to {} finished", scaleReplicasTo);
+
+        //scale down
+        LOGGER.info("Scaling down to {}", initialReplicas);
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+                cs2i.getSpec().setReplicas(initialReplicas));
+        waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+
+        actualReplicas = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE)
+                .withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getReplicas();
+        assertThat(actualReplicas, is(initialReplicas));
+
+        LOGGER.info("Scaling to {} finished", initialReplicas);
+
+        LOGGER.info("===== UPDATE CERTIFICATE =====");
+
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer).delete();
+
+        SecretUtils.createCustomSecret(customCertServer, CLUSTER_NAME, NAMESPACE,
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem").getFile(),
+                getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key").getFile());
+
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                            .withSecretName(customCertServer)
+                            .withKey("ca.key")
+                            .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+        });
+
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+
+        LOGGER.info("something");
+    }
+
+    private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName) {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
