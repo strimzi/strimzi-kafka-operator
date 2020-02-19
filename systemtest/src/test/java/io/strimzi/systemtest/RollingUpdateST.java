@@ -586,6 +586,7 @@ class RollingUpdateST extends BaseST {
                 .withName(configMapLoggersName)
             .endMetadata()
             .addToData("log4j.properties", loggersConfig)
+            .addToData("log4j2.properties", loggersConfig)
             .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
@@ -610,12 +611,12 @@ class RollingUpdateST extends BaseST {
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
         configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("INFO", "DEBUG"));
+        configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        // TODO EO rolling update is not performed atm (bug), issue was raised. The following line should be uncommented after the fix
-        // DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
     }
 
     @Test
