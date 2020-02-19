@@ -51,6 +51,7 @@ public interface Constants {
 
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
+    long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(80).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();

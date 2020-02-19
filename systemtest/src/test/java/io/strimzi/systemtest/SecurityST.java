@@ -77,8 +77,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -1064,7 +1064,6 @@ class SecurityST extends BaseST {
         LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUserWrite, numberOfMessages, "SSL");
-
         assertThat(producer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
 
         assertThrows(ExecutionException.class, () -> {
@@ -1225,6 +1224,11 @@ class SecurityST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS");
+        assertThat(sent, is(messagesCount));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(sent));
+
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
@@ -1249,7 +1253,7 @@ class SecurityST extends BaseST {
                     && p.getMetadata().getLabels().containsKey("strimzi.io/kind")
                     && p.getMetadata().getLabels().containsValue("Kafka"))
             .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
-        assertThat(podStatuses, contains("Pending"));
+        assertThat(podStatuses, hasItem("Pending"));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
@@ -1266,10 +1270,15 @@ class SecurityST extends BaseST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-        );
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(sent));
+
+        // Try to send and receive messages with new certificates
+        topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS");
+        assertThat(sent, is(messagesCount));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(sent));
     }
 
     @BeforeAll
@@ -1279,6 +1288,6 @@ class SecurityST extends BaseST {
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM).done();
     }
 }
