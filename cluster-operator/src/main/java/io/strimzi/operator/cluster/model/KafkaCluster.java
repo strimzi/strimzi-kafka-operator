@@ -90,7 +90,6 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -108,6 +107,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
@@ -182,6 +182,11 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "to-version";
 
+    /**
+     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
+     */
+    public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
+
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-tls-listener-thumbprint";
     public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-external-listener-thumbprint";
 
@@ -189,9 +194,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
     // Name of the broker configuration file in the config map
-    private static final String BROKER_CONFIGURATION_FILENAME = "server.config";
-    private static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
-    private static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
+    public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
+    public static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
+    public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
 
     // Kafka configuration
     private String zookeeperConnect;
@@ -1228,21 +1233,18 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift      True iff this operator is operating within OpenShift.
      * @param imagePullPolicy  The image pull policy.
      * @param imagePullSecrets The image pull secrets.
-     * @param ancillaryCmGeneration The generation of ConfigMap containing configuration
      * @return The generated StatefulSet.
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift,
                                            ImagePullPolicy imagePullPolicy,
-                                           List<LocalObjectReference> imagePullSecrets,
-                                           Long ancillaryCmGeneration) {
+                                           List<LocalObjectReference> imagePullSecrets) {
         Map<String, String> stsAnnotations = new HashMap<>(2);
         stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
-        Map<String, String> podAnnotations = singletonMap(ANNO_STRIMZI_CM_GENERATION, Long.toString(ancillaryCmGeneration == null ? 0L : ancillaryCmGeneration));
 
         return createStatefulSet(
                 stsAnnotations,
-                podAnnotations,
+                emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
@@ -1738,6 +1740,9 @@ public class KafkaCluster extends AbstractModel {
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth, String listener) {
+        boolean hasJwksRefreshSecondsValidInput =  oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
+        boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
+
         if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
             log.error("{}: Introspection endpoint URI or JWKS endpoint URI has to be specified", listener);
             throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
@@ -1753,14 +1758,14 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
         }
 
-        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
+        if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
             log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
             throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
         }
 
-        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
-                (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
-                (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
+        if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
+                (!hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
+                (hasJwksExpirySecondsValidInput && !hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
             log.error("{}: The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`", listener);
             throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
@@ -1784,30 +1789,6 @@ public class KafkaCluster extends AbstractModel {
             log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
             throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
         }
-    }
-
-    /**
-     * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but as a secret
-     * reference to keep it secure.
-     *
-     * @param oauth     OAuth type authentication object
-     * @return  JAAS configuration string ith the public variables
-     */
-    protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
-        List<String> options = new ArrayList<>(5);
-
-        if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
-        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
-        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
-        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
-        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
-        if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-
-        return String.join(" ", options);
     }
 
     protected List<EnvVar> getTlsSidevarEnvVars() {

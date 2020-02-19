@@ -104,6 +104,7 @@ public abstract class AbstractModel {
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
 
     public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
+    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     protected final String cluster;
     protected final String namespace;
