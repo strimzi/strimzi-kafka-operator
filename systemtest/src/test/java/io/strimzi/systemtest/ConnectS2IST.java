@@ -180,7 +180,7 @@ class ConnectS2IST extends BaseST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .withNewTls()
+                    .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
                             .withCertificate("ca.crt")
@@ -199,7 +199,7 @@ class ConnectS2IST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
