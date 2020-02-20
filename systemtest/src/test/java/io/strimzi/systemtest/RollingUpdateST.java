@@ -61,7 +61,7 @@ class RollingUpdateST extends BaseST {
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
-    void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
+    void testRecoveryDuringZookeeperRollingUpdate() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
@@ -120,7 +120,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testRecoveryDuringKafkaRollingUpdate() throws Exception {
+    void testRecoveryDuringKafkaRollingUpdate() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
