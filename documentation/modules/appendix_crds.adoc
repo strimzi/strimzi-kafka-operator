@@ -931,7 +931,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |====
 |Property                         |Description
 |statefulset               1.2+<.<|Template for Kafka `StatefulSet`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |pod                       1.2+<.<|Template for Kafka `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |bootstrapService          1.2+<.<|Template for Kafka bootstrap `Service`.
@@ -962,23 +962,25 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
-[id='type-ResourceTemplate-{context}']
-### `ResourceTemplate` schema reference
+[id='type-StatefulSetTemplate-{context}']
+### `StatefulSetTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Property         |Description
-|metadata  1.2+<.<|Metadata which should be applied to the resource.
+|Property                    |Description
+|metadata             1.2+<.<|Metadata which should be applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|podManagementPolicy  1.2+<.<|PodManagementPolicy which will be used for this StatefulSet. Valid values are `Parallel` and `OrderedReady`. Defaults to `Parallel`.
+|string (one of [OrderedReady, Parallel])
 |====
 
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 
 [options="header"]
@@ -1023,6 +1025,19 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|====
+
+[id='type-ResourceTemplate-{context}']
+### `ResourceTemplate` schema reference
+
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|metadata  1.2+<.<|Metadata which should be applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |====
 
 [id='type-ExternalServiceTemplate-{context}']
@@ -1138,7 +1153,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |====
 |Property                      |Description
 |statefulset            1.2+<.<|Template for ZooKeeper `StatefulSet`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |pod                    1.2+<.<|Template for ZooKeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |clientService          1.2+<.<|Template for ZooKeeper client `Service`.

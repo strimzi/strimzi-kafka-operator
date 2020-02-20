@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -172,6 +173,7 @@ public abstract class AbstractModel {
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
+    protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -760,7 +762,7 @@ public abstract class AbstractModel {
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodManagementPolicy("Parallel")
+                    .withPodManagementPolicy(templatePodManagementPolicy.toValue())
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                     .withServiceName(headlessServiceName)

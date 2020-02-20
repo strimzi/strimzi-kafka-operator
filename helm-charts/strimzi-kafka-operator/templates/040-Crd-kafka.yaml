@@ -1403,6 +1403,14 @@ spec:
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
                           description: Metadata which should be applied to the resource.
+                        podManagementPolicy:
+                          type: string
+                          enum:
+                          - OrderedReady
+                          - Parallel
+                          description: PodManagementPolicy which will be used for
+                            this StatefulSet. Valid values are `Parallel` and `OrderedReady`.
+                            Defaults to `Parallel`.
                       description: Template for Kafka `StatefulSet`.
                     pod:
                       type: object
@@ -2549,6 +2557,14 @@ spec:
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
                           description: Metadata which should be applied to the resource.
+                        podManagementPolicy:
+                          type: string
+                          enum:
+                          - OrderedReady
+                          - Parallel
+                          description: PodManagementPolicy which will be used for
+                            this StatefulSet. Valid values are `Parallel` and `OrderedReady`.
+                            Defaults to `Parallel`.
                       description: Template for ZooKeeper `StatefulSet`.
                     pod:
                       type: object
