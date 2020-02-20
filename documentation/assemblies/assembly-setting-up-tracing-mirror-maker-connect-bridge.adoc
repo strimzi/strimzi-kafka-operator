@@ -2,13 +2,13 @@
 //
 // assembly-tracing.adoc
 [id='assembly-setting-up-tracing-mirror-maker-connect-bridge-{context}']
-= Setting up tracing for Mirror Maker, Kafka Connect, and the Kafka Bridge
+= Setting up tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge
 
-Distributed tracing is supported for Mirror Maker, Kafka Connect (including Kafka Connect with Source2Image support), and the {ProductName} Kafka Bridge.
+Distributed tracing is supported for MirrorMaker, Kafka Connect (including Kafka Connect with Source2Image support), and the {ProductName} Kafka Bridge.
 
-.Tracing in Mirror Maker
+.Tracing in MirrorMaker
 
-For Mirror Maker, messages are traced from the source cluster to the target cluster; the trace data records messages entering and leaving the Mirror Maker component.
+For MirrorMaker, messages are traced from the source cluster to the target cluster; the trace data records messages entering and leaving the MirrorMaker component.
 
 .Tracing in Kafka Connect
 

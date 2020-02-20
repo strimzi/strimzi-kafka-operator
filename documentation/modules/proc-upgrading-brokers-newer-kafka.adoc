@@ -117,10 +117,10 @@ See xref:con-strategies-for-upgrading-clients-str[]
 WARNING: You cannot downgrade after completing this step. If you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[].
 
 +
-If required, set the version property for Kafka Connect and Mirror Maker as the new version of Kafka:
+If required, set the version property for Kafka Connect and MirrorMaker as the new version of Kafka:
 +
 .. For Kafka Connect, update `KafkaConnect.spec.version`
-.. For Mirror Maker, update `KafkaMirrorMaker.spec.version`
+.. For MirrorMaker, update `KafkaMirrorMaker.spec.version`
 
 . If the `log.message.format.version` identified in step 1 is the same as the new version proceed to the next step.
 +

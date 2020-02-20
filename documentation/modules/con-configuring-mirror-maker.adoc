@@ -4,9 +4,9 @@
 
 [id='con-configuring-mirror-maker-{context}']
 
-= Kafka Mirror Maker configuration properties
+= Kafka MirrorMaker configuration properties
 
-Use the `spec` configuration properties of the `KafkaMirrorMaker` resource to set up your Mirror Maker deployment.
+Use the `spec` configuration properties of the `KafkaMirrorMaker` resource to set up your MirrorMaker deployment.
 
 Supported properties are described here for your reference.
 

@@ -23,7 +23,7 @@ The Cluster Operator watches for changes to the following resources:
 * `KafkaConnect` for the Kafka Connect cluster.
 * `KafkaConnectS2I` for the Kafka Connect cluster with Source2Image support.
 * `KafkaConnector` for creating and managing connectors in a Kafka Connect cluster.
-* `KafkaMirrorMaker` for the Kafka Mirror Maker instance.
+* `KafkaMirrorMaker` for the Kafka MirrorMaker instance.
 * `KafkaBridge` for the Kafka Bridge instance
 
 When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
