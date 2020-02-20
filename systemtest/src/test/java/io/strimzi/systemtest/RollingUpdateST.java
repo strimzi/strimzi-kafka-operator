@@ -185,7 +185,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+    void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
 
@@ -229,14 +229,22 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setReplicas(scaleTo);
+        });
+
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
+
         LOGGER.info("Scaling to {} finished", scaleTo);
 
         internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+
+        assertThat((int) kubeClient().listPersistentVolumeClaims().stream().filter(
+            pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(scaleTo));
 
         // scale down
         LOGGER.info("Scaling down to {}", initialReplicas);
@@ -247,6 +255,9 @@ class RollingUpdateST extends BaseST {
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
+
+        assertThat((int) kubeClient().listPersistentVolumeClaims().stream()
+            .filter(pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(initialReplicas));
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
@@ -318,7 +329,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testZookeeperScaleUpScaleDown() throws Exception {
+    void testZookeeperScaleUpScaleDown() {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -392,7 +403,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testManualTriggeringRollingUpdate() throws Exception {
+    void testManualTriggeringRollingUpdate() {
         // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         ResourceManager.setClassResources();
