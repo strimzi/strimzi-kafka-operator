@@ -763,6 +763,8 @@ public class TracingST extends BaseST {
         Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
         configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
+        configOfKafkaConnectS2I.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
