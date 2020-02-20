@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -252,5 +253,9 @@ public class KafkaResource {
 
         return kafkaListenerExternalConfiguration == null ?
                 KafkaResources.clusterCaCertificateSecretName(clusterName) : kafkaListenerExternalConfiguration.getBrokerCertChainAndKey().getSecretName();
+    }
+
+    public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
+        return kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
     }
 }
