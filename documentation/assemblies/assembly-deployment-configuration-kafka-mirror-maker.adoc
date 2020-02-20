@@ -11,30 +11,59 @@
 :parent-context-deployment-configuration-kafka-mirror-maker: {context}
 
 [id='assembly-deployment-configuration-kafka-mirror-maker-{context}']
-= Kafka Mirror Maker configuration
+= Kafka MirrorMaker configuration
 
 :context: deployment-configuration-kafka-mirror-maker
 
-This chapter describes how to configure the `KafkaMirrorMaker` resource to support a Kafka Mirror Maker deployment in your cluster.
+This chapter describes how to configure a Kafka MirrorMaker deployment in your cluster.
 
-The following procedures show how the resource is configured:
+You can use {ProductName} with MirrorMaker or {MirrorMaker}.
 
-* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker]
+[discrete]
+== MirrorMaker
+
+If you are using MirrorMaker, you configure the `KafkaMirrorMaker` resource.
+
+The following procedure shows how the resource is configured:
+
+* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka MirrorMaker]
 
 Supported properties are also described in more detail for your reference:
 
-* xref:con-configuring-mirror-maker-{context}[Kafka Mirror Maker configuration properties]
+* xref:con-configuring-mirror-maker-{context}[Kafka MirrorMaker configuration properties]
 
 The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[KafkaMirrorMaker schema reference].
 
-NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka Mirror Maker.
+NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
 This provides a convenient mechanism for resources to be labeled as required.
+
+[discrete]
+== {MirrorMaker}
+
+If you are using {MirrorMaker}, you configure the `KafkaMirrorMaker2` resource.
+
+{MirrorMaker} introduces an entirely new way of replicating data in clusters.
+
+As a result, the resource configuration differs from the previous version of MirrorMaker.
+If you choose to use {MirrorMaker}, there is currently no legacy support, so any resources must be manually converted into the new format.
+
+How {MirrorMaker} replicates data is described here:
+
+* xref:con-mirrormaker-{context}[{MirrorMaker} data replication]
+
+The following procedure shows how the resource is configured for {MirrorMaker}:
+
+* xref:proc-mirrormaker-replication-{context}[Synchronizing data between Kafka clusters]
+
+The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
 
 include::../modules/proc-configuring-mirror-maker.adoc[leveloffset=+1]
 
 include::../modules/con-configuring-mirror-maker.adoc[leveloffset=+1]
 
 include::../modules/ref-list-of-kafka-mirror-maker-resources.adoc[leveloffset=+1]
+
+include::mirrormaker/assembly-mirrormaker.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context-deployment-configuration-kafka-mirror-maker}
