@@ -79,7 +79,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() throws Exception {
+    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
@@ -94,7 +94,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() throws Exception {
+    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
@@ -120,7 +120,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    void testUserInDifferentNamespace() throws Exception {
+    void testUserInDifferentNamespace() {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 

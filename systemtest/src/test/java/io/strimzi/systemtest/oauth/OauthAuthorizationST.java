@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.security.KeyStoreException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -60,21 +60,21 @@ public class OauthAuthorizationST extends OauthBaseST {
 
     @Description("As a member of team A, I should be able to read and write to all topics starting with a-")
     @Test
-    void smokeTestForClients() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void smokeTestForClients() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
         Future<Integer> consumer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL", "a_consumer_group");
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As a member of team A, I should be able to write to topics that starts with x- on any cluster and " +
             "and should also write and read to topics starting with 'a-'")
     @Test
-    void testTeamAWriteToTopic() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testTeamAWriteToTopic() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
 
         LOGGER.info("Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'");
@@ -94,25 +94,25 @@ public class OauthAuthorizationST extends OauthBaseST {
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(topicXName, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
-        assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_A);
 
         producer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
-        assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As a member of team A, I should be able only read from consumer that starts with a_")
     @Test
-    void testTeamAReadFromTopic() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testTeamAReadFromTopic() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_A);
 
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
-        assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         assertThrows(Exception.class, () -> {
             Future<Integer> invalidConsumer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME,
@@ -123,13 +123,13 @@ public class OauthAuthorizationST extends OauthBaseST {
         Future<Integer> consumerWithCorrectConsumerGroup = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL", "a_correct_consumer_group");
 
-        assertThat(consumerWithCorrectConsumerGroup.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumerWithCorrectConsumerGroup.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
     }
 
     @Description("As a member of team B, I should be able to write and read from topics that starts with b-")
     @Test
-    void testTeamBWriteToTopic() throws IOException, KeyStoreException, ExecutionException, InterruptedException, TimeoutException {
+    void testTeamBWriteToTopic() throws IOException, ExecutionException, InterruptedException, TimeoutException {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
 
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
@@ -144,18 +144,18 @@ public class OauthAuthorizationST extends OauthBaseST {
         Future<Integer> producer = teamBOauthKafkaClient.sendMessagesTls(TOPIC_B, NAMESPACE, CLUSTER_NAME, TEAM_B_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         Future<Integer> consumer = teamBOauthKafkaClient.receiveMessagesTls(TOPIC_B, NAMESPACE, CLUSTER_NAME, TEAM_B_CLIENT,
                 MESSAGE_COUNT, "SSL", "x_" + CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
             "as a member of team B can read from topics starting with 'x-'")
     @Test
-    void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // only write means that Team A can not create new topic 'x-.*'
         String topicName = TOPIC_X + "-example";
 
@@ -164,12 +164,12 @@ public class OauthAuthorizationST extends OauthBaseST {
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         Future<Integer> consumer = teamBOauthKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, TEAM_B_CLIENT,
                 MESSAGE_COUNT, "SSL", "x_consumer_group_b");
 
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Disabled("Will be implemented in next PR")

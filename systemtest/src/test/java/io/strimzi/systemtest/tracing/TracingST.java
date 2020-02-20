@@ -709,7 +709,6 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
 
@@ -801,7 +800,8 @@ public class TracingST extends BaseST {
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);
-        KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME,
+                KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);

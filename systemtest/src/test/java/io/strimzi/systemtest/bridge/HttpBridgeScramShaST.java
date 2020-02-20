@@ -55,7 +55,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     private String userName = "bob";
 
-
     @Test
     void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
@@ -68,18 +67,17 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
         Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(messageCount));
     }
 
     @Test
     void testReceiveSimpleMessageTlsScramSha() throws Exception {
-        int messageCount = 50;
         String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(messageCount));
+        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         String name = "kafka-consumer-simple-receive";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -105,7 +103,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
 
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
         assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }

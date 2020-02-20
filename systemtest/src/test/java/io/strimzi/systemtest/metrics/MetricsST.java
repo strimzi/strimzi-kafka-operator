@@ -8,9 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.executor.Exec;
@@ -48,8 +45,6 @@ import static org.hamcrest.Matchers.not;
 public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
-
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.BASIC);
 
     public static final String NAMESPACE = "metrics-cluster-test";
     private final Object lock = new Object();

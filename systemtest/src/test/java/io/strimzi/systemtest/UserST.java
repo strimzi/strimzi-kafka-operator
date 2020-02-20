@@ -187,17 +187,20 @@ class UserST extends BaseST {
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
+
         int numberOfUsers = 100;
 
         for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
+
             if (typeOfUser.equals("TLS")) {
                 KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
             } else {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
-            SecretUtils.waitForSecretReady(userName);
+
+            KafkaUserUtils.waitForKafkaUserCreation(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);

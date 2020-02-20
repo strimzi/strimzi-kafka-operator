@@ -74,7 +74,6 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
     @Test
     void testReceiveSimpleMessage() throws Exception {
-        int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -97,14 +96,14 @@ class HttpBridgeST extends HttpBridgeBaseST {
         // Subscribe
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Send messages to Kafka
-        kafkaClient.sendMessages(CLUSTER_NAME, NAMESPACE, topicName, messageCount);
+        kafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
             bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
         assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }
