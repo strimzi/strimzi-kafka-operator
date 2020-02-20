@@ -292,7 +292,7 @@ class SecurityST extends BaseST {
         LOGGER.info("Checking consumed messages to pod:{}", internalKafkaClient.getPodName());
         internalKafkaClient.checkProducedAndConsumedMessages(
             messagesCount,
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, bobUserName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
         );
 
         if (!zkShouldRoll) {
@@ -446,7 +446,7 @@ class SecurityST extends BaseST {
         LOGGER.info("Checking consumed messages to pod:{}", internalKafkaClient.getPodName());
         internalKafkaClient.checkProducedAndConsumedMessages(
             messagesCount,
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, aliceUserName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, bobUserName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
         );
 
         SecretUtils.waitForSecretReady(bobUserName);
@@ -520,10 +520,7 @@ class SecurityST extends BaseST {
     @Test
     void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
         // 1. Create the Secrets already, and a certificate that's already expired
-        String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
-        String clientsCaKey = createSecret("clients-ca.key", clientsCaKeySecretName(CLUSTER_NAME), "ca.key");
-        String clientsCaCert = createSecret("clients-ca.crt", clientsCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // 2. Now create a cluster
@@ -555,6 +552,10 @@ class SecurityST extends BaseST {
         waitForClusterStability();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(messagesCount));
+
+        topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
             internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
@@ -1247,6 +1248,10 @@ class SecurityST extends BaseST {
         });
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(received, is(sent));
+
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         List<String> podStatuses = kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
