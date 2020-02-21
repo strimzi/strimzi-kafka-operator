@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka Mirror Maker resources.
+ * Representation of a template for Kafka MirrorMaker resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -36,7 +36,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
     private ContainerTemplate mirrorMakerContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Kafka Mirror Maker `Deployment`.")
+    @Description("Template for Kafka MirrorMaker `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getDeployment() {
         return deployment;
@@ -46,7 +46,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka Mirror Maker `Pods`.")
+    @Description("Template for Kafka MirrorMaker `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -56,7 +56,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
         this.pod = pod;
     }
 
-    @Description("Template for Kafka Mirror Maker `PodDisruptionBudget`.")
+    @Description("Template for Kafka MirrorMaker `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;
@@ -66,7 +66,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for Kafka Mirror Maker container")
+    @Description("Template for Kafka MirrorMaker container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getMirrorMakerContainer() {
         return mirrorMakerContainer;
