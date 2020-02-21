@@ -81,13 +81,13 @@ no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the
 The `ImagePullPolicy` which will be applied to containers in all pods managed by {ProductName} Cluster Operator.
 The valid values are `Always`, `IfNotPresent`, and `Never`.
 If not specified, the Kubernetes defaults will be used.
-Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
+Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
 
 `STRIMZI_IMAGE_PULL_SECRETS`:: Optional.
 A comma-separated list of `Secret` names.
 The secrets referenced here contain the credentials to the container registries where the container images are pulled from.
 The secrets are used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
-Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
+Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
 
 `STRIMZI_KUBERNETES_VERSION`:: Optional.
 Overrides the Kubernetes version information detected from the API server.

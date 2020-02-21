@@ -28,7 +28,7 @@ The brokers and clients communicate with the {oauth} authorization server, as ne
 For a deployment of {ProductName}, {oauth} integration provides:
 
 * Server-side {oauth} support for Kafka brokers
-* Client-side {oauth} support for Kafka Mirror Maker, Kafka Connect and the Kafka Bridge
+* Client-side {oauth} support for Kafka MirrorMaker, Kafka Connect and the Kafka Bridge
 
 .Additional resources
 

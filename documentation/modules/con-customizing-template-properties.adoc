@@ -108,12 +108,12 @@ xref:type-KafkaExporterTemplate-reference[].
 
 xref:type-KafkaConnectTemplate-reference[].
 
-== Supported template properties for Kafka Mirror Maker
+== Supported template properties for Kafka MirrorMaker
 
-`deployment`:: Configures the Kafka Mirror Maker `Deployment`.
-`pod`:: Configures the Kafka Mirror Maker `Pods` created by the `Deployment`.
-`podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Mirror Maker `Deployment`.
-`mirrorMakerContainer`:: Configures the container used to run Kafka Mirror Maker, including custom environment variables.
+`deployment`:: Configures the Kafka MirrorMaker `Deployment`.
+`pod`:: Configures the Kafka MirrorMaker `Pods` created by the `Deployment`.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka MirrorMaker `Deployment`.
+`mirrorMakerContainer`:: Configures the container used to run Kafka MirrorMaker, including custom environment variables.
 
 .Additional resources
 
