@@ -691,7 +691,7 @@ class RollingUpdateST extends BaseST {
 
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
     @Test
-    void testTriggerRollingUpdateAfterOverrideBootstrap() throws FileNotFoundException, CertificateException {
+    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
