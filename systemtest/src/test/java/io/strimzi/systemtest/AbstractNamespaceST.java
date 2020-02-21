@@ -110,6 +110,6 @@ public abstract class AbstractNamespaceST extends BaseST {
         internalKafkaClient.setPodName(kafkaClientsPodName);
         int sent = internalKafkaClient.sendMessages(topicName, namespace, clusterName, MESSAGE_COUNT);
         assertThat(sent, Matchers.is(MESSAGE_COUNT));
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
     }
 }

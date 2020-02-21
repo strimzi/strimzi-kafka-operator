@@ -80,12 +80,12 @@ class ConnectST extends BaseST {
 
     @Test
     void testDeployUndeploy() {
-        Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=connect-cluster\n" +
+        Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=" + KafkaConnectResources.deploymentName(CLUSTER_NAME) + "\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-                "config.storage.topic=connect-cluster-configs\n" +
-                "status.storage.topic=connect-cluster-status\n" +
-                "offset.storage.topic=connect-cluster-offsets\n");
+                "config.storage.topic=" + KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME) + "\n" +
+                "status.storage.topic=" + KafkaConnectResources.configStorageTopicStatus(CLUSTER_NAME) + "\n" +
+                "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(CLUSTER_NAME) + "\n");
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
