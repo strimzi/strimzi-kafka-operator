@@ -13,12 +13,12 @@
 * Target cluster configuration to output data to the target cluster
 
 {MirrorMaker} is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
-{MirrorMaker} `SourceConnector` replicates topics from a source cluster to a target cluster.
+A {MirrorMaker} `SourceConnector` replicates topics from a source cluster to a target cluster.
 
 The process of _mirroring_ data from one cluster to another cluster is asynchronous.
 The recommended pattern is for messages to be produced locally alongside the source Kafka cluster, then consumed remotely close to the target Kafka cluster.
 
-{MirrorMaker} can support more than two active clusters.
+{MirrorMaker} can be used with more than one source cluster.
 
 .Replication across two clusters
 image::mirrormaker.png[{MirrorMaker} replication]
@@ -28,7 +28,7 @@ image::mirrormaker.png[{MirrorMaker} replication]
 You can use {MirrorMaker} in _active/passive_ or _active/active_ cluster configurations.
 
 * In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
-* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want  to make the same data available locally in different geographical locations.
+* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
 
 The expectation is that producers and consumers connect to active clusters only.
 
@@ -67,8 +67,8 @@ Only {MirrorMaker} can write to remote topics.
 == Offset tracking
 {MirrorMaker} tracks offsets for consumer groups using _internal topics_.
 
-* _offset sync_ maps the source and target offsets for replicated topic partitions from record metadata
-* _checkpoint_ maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
+* The _offset sync_ topic maps the source and target offsets for replicated topic partitions from record metadata
+* The _checkpoint_ topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
 
 Offsets for the _checkpoint_ topic are tracked at predetermined intervals through configuration.
 Both topics enable replication to be fully restored from the correct offset position on failover.

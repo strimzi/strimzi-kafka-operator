@@ -15,7 +15,7 @@
 
 :context: deployment-configuration-kafka-mirror-maker
 
-This chapter describes how to configure a Kafka MirrorMaker deployment in your cluster.
+This chapter describes how to configure a Kafka MirrorMaker deployment in your {ProductName} cluster to replicate data between Kafka clusters.
 
 You can use {ProductName} with MirrorMaker or {MirrorMaker}.
 

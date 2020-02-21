@@ -33,7 +33,7 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Procedure
 
-. Edit the `spec` properties for the `KafkaMirrorMaker` resource.
+. Edit the `spec` properties for the `KafkaMirrorMaker2` resource.
 +
 The properties you can configure are shown in this example configuration:
 +
