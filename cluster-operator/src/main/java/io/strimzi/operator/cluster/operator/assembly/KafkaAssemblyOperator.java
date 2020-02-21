@@ -110,12 +110,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -379,8 +379,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Service kafkaHeadlessService;
         /* test */ ReconcileResult<StatefulSet> kafkaDiffs;
         private Set<String> kafkaExternalBootstrapDnsName = new HashSet<>();
-        private Set<String> kafkaExternalAdvertisedHostnames = new LinkedHashSet<>();
-        private Set<String> kafkaExternalAdvertisedPorts = new LinkedHashSet<>();
+        private Set<String> kafkaExternalAdvertisedHostnames = new TreeSet<>();
+        private Set<String> kafkaExternalAdvertisedPorts = new TreeSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
 
         private String zkLoggingHash = "";
