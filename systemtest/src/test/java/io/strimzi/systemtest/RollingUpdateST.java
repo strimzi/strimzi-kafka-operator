@@ -688,7 +688,8 @@ class RollingUpdateST extends BaseST {
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
-    @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
+    @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
+            " new bootstrap DNS is appended inside certificate in subject alternative names property.")
     @Test
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
@@ -710,7 +711,7 @@ class RollingUpdateST extends BaseST {
                 .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
                 .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
 
-        Map<String, String> secretData = kubeClient().getSecret("my-cluster-kafka-brokers").getData();
+        Map<String, String> secretData = kubeClient().getSecret(KafkaResources.brokersServiceName(CLUSTER_NAME)).getData();
 
         for (Map.Entry<String, String> item : secretData.entrySet()) {
             if (item.getKey().endsWith(".crt")) {
@@ -726,6 +727,8 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Verifying that new DNS is inside kafka CR");
         assertThat(bootstrapAddressDns, is(bootstrapDns));
+
+        // TODO: send and recv messages via this new bootstrap (after client builder) https://github.com/strimzi/strimzi-kafka-operator/pull/2520
     }
 
     @Override
