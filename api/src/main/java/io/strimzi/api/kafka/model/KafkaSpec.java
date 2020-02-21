@@ -42,6 +42,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
     private KafkaExporterSpec kafkaExporter;
+    private CruiseControlSpec cruiseControl;
 
     private CertificateAuthority clientsCa;
     private List<String> maintenanceTimeWindows;
@@ -124,6 +125,15 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
 
     public void setKafkaExporter(KafkaExporterSpec kafkaExporter) {
         this.kafkaExporter = kafkaExporter;
+    }
+
+    @Description("Configuration of Cruise Control.")
+    public CruiseControlSpec getCruiseControl() {
+        return cruiseControl;
+    }
+
+    public void setCruiseControl(CruiseControlSpec cruiseControl) {
+        this.cruiseControl = cruiseControl;
     }
 
     @Override

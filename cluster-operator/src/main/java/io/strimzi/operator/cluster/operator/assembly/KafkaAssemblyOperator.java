@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
@@ -122,6 +123,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
+import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -138,7 +140,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
@@ -329,6 +331,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
+                .compose(state -> state.getCruiseControlDescription())
+                .compose(state -> state.cruiseControlServiceAccount())
+                .compose(state -> state.cruiseControlAncillaryCm())
+                .compose(state -> state.cruiseControlSecret(this::dateSupplier))
+                .compose(state -> state.cruiseControlDeployment())
+                .compose(state -> state.cruiseControlService())
+                .compose(state -> state.cruiseControlReady())
+
                 .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
                 .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
@@ -389,6 +399,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
+
+        CruiseControl cruiseControl;
+        Deployment ccDeployment = null;
+        private ConfigMap cruiseControlMetricsAndLogsConfigMap;
 
         /* test */ KafkaExporter kafkaExporter;
         /* test */ Deployment exporterDeployment = null;
@@ -2843,6 +2857,68 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, stsGeneration);
             return stsGeneration == podGeneration;
+        }
+
+        private final Future<ReconciliationState> getCruiseControlDescription() {
+            CruiseControl cruiseControl = CruiseControl.fromCrd(kafkaAssembly, versions);
+            if (cruiseControl != null) {
+                ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(
+                        cruiseControl.getLogging() instanceof ExternalLogging ?
+                                configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
+                                null);
+                Map<String, String> annotations = new HashMap<>();
+                annotations.put(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
+
+                this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
+                this.cruiseControl = cruiseControl;
+
+                this.ccDeployment = cruiseControl.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
+        Future<ReconciliationState> cruiseControlServiceAccount() {
+            return withVoid(serviceAccountOperations.reconcile(namespace,
+                    CruiseControl.cruiseControlServiceAccountName(name),
+                    ccDeployment != null ? cruiseControl.generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> cruiseControlAncillaryCm() {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    ccDeployment != null && cruiseControl != null ?
+                            cruiseControl.getAncillaryConfigName() : CruiseControl.metricAndLogConfigsName(name),
+                    cruiseControlMetricsAndLogsConfigMap));
+        }
+
+        Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
+            return withVoid(secretOperations.reconcile(namespace, CruiseControl.secretName(name), cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
+        }
+
+        Future<ReconciliationState> cruiseControlDeployment() {
+            if (this.cruiseControl != null && ccDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.reconcile(namespace, this.cruiseControl.getName(), ccDeployment));
+                }).map(i -> this);
+            } else {
+                return withVoid(deploymentOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), null));
+            }
+        }
+
+        Future<ReconciliationState> cruiseControlService() {
+            return withVoid(serviceOperations.reconcile(namespace, this.cruiseControl.getServiceName(), this.cruiseControl.generateService()));
+        }
+
+        Future<ReconciliationState> cruiseControlReady() {
+            if (this.cruiseControl != null && ccDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.waitForObserved(namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
+                }).map(i -> this);
+            }
+            return withVoid(Future.succeededFuture());
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

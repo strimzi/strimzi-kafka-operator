@@ -87,6 +87,16 @@ kafkaExporter:
     repository: strimzi
     name: kafka
     tagPrefix: latest
+cruiseControl:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+tlsSidecarCruiseControl:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
 resources:
   limits:
     memory: 256Mi
