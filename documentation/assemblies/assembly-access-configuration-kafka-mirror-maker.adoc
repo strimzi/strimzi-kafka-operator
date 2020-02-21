@@ -3,9 +3,9 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-access-configuration-kafka-mirror-maker-{context}']
-= Configuring Kafka Mirror Maker encryption and authentication
+= Configuring Kafka MirrorMaker encryption and authentication
 
-Configure Kafka Mirror Maker encryption and authentication using supported mechanisms:
+Configure Kafka MirrorMaker encryption and authentication using supported mechanisms:
 
 * TLS encryption
 * Authentication:

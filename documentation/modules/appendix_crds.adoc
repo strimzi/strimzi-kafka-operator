@@ -2186,9 +2186,9 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Property       |Description
-|spec    1.2+<.<|The specification of Kafka Mirror Maker.
+|spec    1.2+<.<|The specification of Kafka MirrorMaker.
 |xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
-|status  1.2+<.<|The status of Kafka Mirror Maker.
+|status  1.2+<.<|The status of Kafka MirrorMaker.
 |xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`]
 |====
 
@@ -2223,19 +2223,19 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|logging         1.2+<.<|Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging         1.2+<.<|Logging configuration for MirrorMaker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
-|tracing         1.2+<.<|The configuration of tracing in Kafka Mirror Maker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|tracing         1.2+<.<|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
-|template        1.2+<.<|Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.
+|template        1.2+<.<|Template to specify how Kafka MirrorMaker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|version         1.2+<.<|The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
+|version         1.2+<.<|The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
 
@@ -2258,9 +2258,9 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
-|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes.
+|config                1.2+<.<|The MirrorMaker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes.
 |map
-|tls                   1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
+|tls                   1.2+<.<|TLS configuration for connecting MirrorMaker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 
@@ -2289,13 +2289,13 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |Property                   |Description
 |bootstrapServers    1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |string
-|abortOnSendFailure  1.2+<.<|Flag to set the Mirror Maker to exit on a failed send. Default value is `true`.
+|abortOnSendFailure  1.2+<.<|Flag to set the MirrorMaker to exit on a failed send. Default value is `true`.
 |boolean
 |authentication      1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
-|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security., interceptor.classes.
+|config              1.2+<.<|The MirrorMaker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security., interceptor.classes.
 |map
-|tls                 1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
+|tls                 1.2+<.<|TLS configuration for connecting MirrorMaker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 
@@ -2308,13 +2308,13 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 [options="header"]
 |====
 |Property                     |Description
-|deployment            1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
+|deployment            1.2+<.<|Template for Kafka MirrorMaker `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                   1.2+<.<|Template for Kafka Mirror Maker `Pods`.
+|pod                   1.2+<.<|Template for Kafka MirrorMaker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|mirrorMakerContainer  1.2+<.<|Template for Kafka Mirror Maker container.
+|mirrorMakerContainer  1.2+<.<|Template for Kafka MirrorMaker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|podDisruptionBudget   1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
+|podDisruptionBudget   1.2+<.<|Template for Kafka MirrorMaker `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 

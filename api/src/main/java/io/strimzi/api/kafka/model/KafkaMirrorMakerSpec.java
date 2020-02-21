@@ -69,7 +69,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.replicas = replicas;
     }
 
-    @Description("The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. " +
             "Consult the documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
@@ -133,7 +133,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The configuration of tracing in Kafka Mirror Maker.")
+    @Description("The configuration of tracing in Kafka MirrorMaker.")
     public Tracing getTracing() {
         return tracing;
     }
@@ -142,7 +142,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.tracing = tracing;
     }
 
-    @Description("Logging configuration for Mirror Maker.")
+    @Description("Logging configuration for MirrorMaker.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;
@@ -220,7 +220,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.readinessProbe = readinessProbe;
     }
 
-    @Description("Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.")
+    @Description("Template to specify how Kafka MirrorMaker resources, `Deployments` and `Pods`, are generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaMirrorMakerTemplate getTemplate() {
         return template;

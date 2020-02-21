@@ -3,9 +3,9 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='con-kafka-mirror-maker-logging-{context}']
-= Kafka Mirror Maker loggers
+= Kafka MirrorMaker loggers
 
-Kafka Mirror Maker has its own configurable logger:
+Kafka MirrorMaker has its own configurable logger:
 
 * `mirrormaker.root.logger`
 

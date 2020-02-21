@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker-authentication.adoc
 
 [id='proc-configuring-kafka-mirror-maker-authentication-tls-{context}']
-= Configuring TLS client authentication in Kafka Mirror Maker
+= Configuring TLS client authentication in Kafka MirrorMaker
 
 .Prerequisites
 
@@ -13,7 +13,7 @@
 
 .Procedure
 
-As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure TLS client authentication for one or both of the clusters.
+As the Kafka MirrorMaker connects to two Kafka clusters (source and target), you can choose to configure TLS client authentication for one or both of the clusters.
 The following steps describe how to configure TLS client authentication on the consumer side for connecting to the source Kafka cluster:
 
 . (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`:

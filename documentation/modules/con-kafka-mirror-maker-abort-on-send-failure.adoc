@@ -12,9 +12,9 @@
 
 Use the `producer.abortOnSendFailure` property to configure how to handle message send failure from the producer.
 
-By default, if an error occurs when sending a message from Kafka Mirror Maker to a Kafka cluster:
+By default, if an error occurs when sending a message from Kafka MirrorMaker to a Kafka cluster:
 
-* The Kafka Mirror Maker container is terminated in Kubernetes.
+* The Kafka MirrorMaker container is terminated in Kubernetes.
 * The container is then recreated.
 
 If the `abortOnSendFailure` option is set to `false`, message sending errors are ignored.

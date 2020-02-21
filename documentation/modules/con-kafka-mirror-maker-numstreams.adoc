@@ -13,5 +13,5 @@
 Use the `consumer.numStreams` property to configure the number of streams for the consumer.
 
 You can increase the throughput in mirroring topics by increasing the number of consumer threads.
-Consumer threads belong to the consumer group specified for Kafka Mirror Maker.
+Consumer threads belong to the consumer group specified for Kafka MirrorMaker.
 Topic partitions are assigned across the consumer threads, which consume messages in parallel.

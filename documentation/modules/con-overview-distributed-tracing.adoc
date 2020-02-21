@@ -36,7 +36,7 @@ image:image_con-overview-distributed-tracing.png[Simple Jaeger query]
 In {ProductName}, distributed tracing is supported in:
 
 * Kafka Connect (including Kafka Connect with Source2Image support)
-* Mirror Maker
+* MirrorMaker
 * The {ProductName} Kafka Bridge
 
 You enable and configure distributed tracing for these components by setting template configuration properties in the relevant custom resource (for example, `KafkaConnect` and `KafkaBridge`).

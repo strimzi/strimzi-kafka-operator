@@ -11,7 +11,7 @@
 
 * Kafka (including ZooKeeper, Entity Operator and Kafka Exporter)
 * Kafka Connect
-* Kafka Mirror Maker
+* Kafka MirrorMaker
 * Kafka Bridge
 
 Custom resources are used to deploy the clusters.

@@ -28,7 +28,7 @@ public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security., interceptor.classes";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
 
-    @Description("Flag to set the Mirror Maker to exit on a failed send. Default value is `true`.")
+    @Description("Flag to set the MirrorMaker to exit on a failed send. Default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean getAbortOnSendFailure() {
         return abortOnSendFailure;
@@ -39,7 +39,7 @@ public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     }
 
     @Override
-    @Description("The Mirror Maker producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The MirrorMaker producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }

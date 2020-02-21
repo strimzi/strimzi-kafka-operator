@@ -12,18 +12,18 @@ public class KafkaMirrorMakerResources {
     protected KafkaMirrorMakerResources() { }
 
     /**
-     * Returns the name of the Kafka Mirror Maker {@code Deployment} for a {@code KafkaMirrorMaker} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker {@code Deployment} for a {@code KafkaMirrorMaker} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker} resource.
-     * @return The name of the corresponding Kafka Mirror Maker {@code Deployment}.
+     * @return The name of the corresponding Kafka MirrorMaker {@code Deployment}.
      */
     public static String deploymentName(String clusterName) {
         return clusterName + "-mirror-maker";
     }
 
     /**
-     * Returns the name of the Kafka Mirror Maker {@code ServiceAccount} for a {@code KafkaMirrorMaker} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker {@code ServiceAccount} for a {@code KafkaMirrorMaker} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker} resource.
-     * @return The name of the corresponding Kafka Mirror Maker {@code ServiceAccount}.
+     * @return The name of the corresponding Kafka MirrorMaker {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
         return deploymentName(clusterName);
@@ -39,9 +39,9 @@ public class KafkaMirrorMakerResources {
     }
 
     /**
-     * Returns the name of the Kafka Mirror Maker metrics and log {@code ConfigMap} for a {@code KafkaMirrorMaker} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker metrics and log {@code ConfigMap} for a {@code KafkaMirrorMaker} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker} resource.
-     * @return The name of the corresponding Kafka Mirror Maker metrics and log {@code ConfigMap}.
+     * @return The name of the corresponding Kafka MirrorMaker metrics and log {@code ConfigMap}.
      */
     public static String metricsAndLogConfigMapName(String clusterName) {
         return clusterName + "-mirror-maker-config";

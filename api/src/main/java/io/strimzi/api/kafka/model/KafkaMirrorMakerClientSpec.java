@@ -52,7 +52,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
         this.config = config;
     }
 
-    @Description("TLS configuration for connecting Mirror Maker to the cluster.")
+    @Description("TLS configuration for connecting MirrorMaker to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaMirrorMakerTls getTls() {
         return tls;
