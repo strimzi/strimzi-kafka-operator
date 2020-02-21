@@ -153,7 +153,7 @@ public class StUtils {
             actual.load(new StringReader(keyValuePairs));
             return (Map) actual;
         } catch (IOException e) {
-            throw new AssertionError("Invalid Properties definiton", e);
+            throw new AssertionError("Invalid Properties definition", e);
         }
     }
 

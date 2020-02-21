@@ -135,7 +135,7 @@ public class MirrorMakerST extends BaseST {
      */
     @Test
     @Tag(ACCEPTANCE)
-    void testMirrorMakerTlsAuthenticated() throws Exception {
+    void testMirrorMakerTlsAuthenticated() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
@@ -241,7 +241,7 @@ public class MirrorMakerST extends BaseST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    void testMirrorMakerTlsScramSha() throws InterruptedException {
+    void testMirrorMakerTlsScramSha() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaUserSource = "my-user-source";
@@ -361,7 +361,7 @@ public class MirrorMakerST extends BaseST {
     }
 
     @Test
-    void testWhiteList() throws InterruptedException {
+    void testWhiteList() {
         String topicName = "whitelist-topic";
         String topicNotInWhitelist = "non-whitelist-topic";
 
