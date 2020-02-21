@@ -35,11 +35,12 @@ The expectation is that producers and consumers connect to active clusters only.
 == Bidirectional replication
 
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration.
+A MirrorMaker 2.0 cluster is required at each target destination.
 
 Each cluster replicates the data of the other cluster using the concept of _source_ and _remote_ topics.
 As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2.0 to represent the source cluster.
 
-.Topic renaming in a bidirectional architecture
+.Topic renaming
 image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
 
 By flagging the originating cluster, topics are not replicated back to that cluster.

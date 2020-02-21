@@ -18,10 +18,6 @@ Data replication across clusters supports scenarios that require:
 
 NOTE: MirrorMaker 2.0 has features not supported by the previous version of MirrorMaker.
 
-.Additional resources
-
-* {kafkaDoc}
-
 //Describes the underlying archiecture and how it is used in replication
 include::modules/con-mirrormaker-replication.adoc[leveloffset=+1]
 
