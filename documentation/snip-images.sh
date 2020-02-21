@@ -32,7 +32,7 @@ a|
 
 * Kafka Broker
 * Kafka Connect / S2I
-* Kafka Mirror Maker
+* Kafka MirrorMaker
 * ZooKeeper
 * TLS Sidecars
 

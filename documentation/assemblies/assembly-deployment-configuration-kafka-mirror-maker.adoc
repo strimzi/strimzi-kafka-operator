@@ -11,23 +11,23 @@
 :parent-context-deployment-configuration-kafka-mirror-maker: {context}
 
 [id='assembly-deployment-configuration-kafka-mirror-maker-{context}']
-= Kafka Mirror Maker configuration
+= Kafka MirrorMaker configuration
 
 :context: deployment-configuration-kafka-mirror-maker
 
-This chapter describes how to configure the `KafkaMirrorMaker` resource to support a Kafka Mirror Maker deployment in your cluster.
+This chapter describes how to configure the `KafkaMirrorMaker` resource to support a Kafka MirrorMaker deployment in your cluster.
 
 The following procedures show how the resource is configured:
 
-* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker]
+* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka MirrorMaker]
 
 Supported properties are also described in more detail for your reference:
 
-* xref:con-configuring-mirror-maker-{context}[Kafka Mirror Maker configuration properties]
+* xref:con-configuring-mirror-maker-{context}[Kafka MirrorMaker configuration properties]
 
 The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[KafkaMirrorMaker schema reference].
 
-NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka Mirror Maker.
+NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::../modules/proc-configuring-mirror-maker.adoc[leveloffset=+1]

@@ -10,7 +10,7 @@ This procedure describes how to configure Kafka components to use {oauth} authen
 You can configure authentication for:
 
 * Kafka Connect
-* Kafka Mirror Maker
+* Kafka MirrorMaker
 * Kafka Bridge
 
 In this scenario, the Kafka component and the authorization server are running in the same cluster.
