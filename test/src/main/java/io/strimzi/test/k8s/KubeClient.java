@@ -213,6 +213,13 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).delete(pod);
     }
 
+    /**
+     * Deletes pod
+     */
+    public Boolean deletePod(LabelSelector labelSelector) {
+        return client.pods().inNamespace(getNamespace()).withLabelSelector(labelSelector).delete();
+    }
+
     public Date getCreationTimestampForPod(String podName) {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss'Z'");
         Pod pod = getPod(podName);
