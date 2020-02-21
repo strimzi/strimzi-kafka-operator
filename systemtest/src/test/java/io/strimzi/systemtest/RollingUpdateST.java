@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -29,6 +29,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
+import jdk.vm.ci.meta.Constant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +37,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -45,6 +46,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -691,22 +696,31 @@ class RollingUpdateST extends BaseST {
 
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
     @Test
-    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
+    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException, IOException, InterruptedException, ExecutionException, TimeoutException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         Map<String, String> kafkaPods =  StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(
-                new KafkaListenerExternalLoadBalancerBuilder()
-                    .withNewOverrides()
-                        .withNewBootstrap()
-                            .withAddress(bootstrapDns)
-                        .endBootstrap()
-                    .endOverrides()
-                    .build());
+
+            KafkaListenerExternalNodePort kafkaListenerExternalNodePort = (KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal();
+
+            LOGGER.info("Adding new bootstrap dns:{} to external listeners", bootstrapDns);
+            kafkaListenerExternalNodePort.getOverrides().getBootstrap().setAddress(bootstrapDns);
+
+            kafka.getSpec().getKafka().getListeners().setExternal(kafkaListenerExternalNodePort);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
@@ -725,10 +739,12 @@ class RollingUpdateST extends BaseST {
                 CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                 Certificate certificate = certificateFactory.generateCertificate(publicCert);
 
+                LOGGER.info("Verifying that new DNS is in certificate subject alternative names");
                 assertThat(certificate.toString(), containsString(bootstrapAddressDns));
             }
         }
 
+        LOGGER.info("Verifying that new DNS is inside kafka CR");
         assertThat(bootstrapAddressDns, is(bootstrapDns));
     }
 
