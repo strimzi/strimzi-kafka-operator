@@ -376,6 +376,7 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaStatefulSetName(clusterName)));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-operator"));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "kafka-exporter"));
+            superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
             configureAuthorization(clusterName, superUsers, authorization);
