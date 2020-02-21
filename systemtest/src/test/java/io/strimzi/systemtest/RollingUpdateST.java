@@ -29,7 +29,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
-import jdk.vm.ci.meta.Constant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +36,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -46,10 +44,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -696,31 +690,17 @@ class RollingUpdateST extends BaseST {
 
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
     @Test
-    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException, IOException, InterruptedException, ExecutionException, TimeoutException {
+    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
         Map<String, String> kafkaPods =  StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
 
-            KafkaListenerExternalNodePort kafkaListenerExternalNodePort = (KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal();
-
             LOGGER.info("Adding new bootstrap dns:{} to external listeners", bootstrapDns);
-            kafkaListenerExternalNodePort.getOverrides().getBootstrap().setAddress(bootstrapDns);
-
-            kafka.getSpec().getKafka().getListeners().setExternal(kafkaListenerExternalNodePort);
+            ((KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal()).getOverrides().getBootstrap().setAddress(bootstrapDns);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
