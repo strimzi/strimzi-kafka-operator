@@ -24,7 +24,7 @@ import java.util.List;
 public class ZkTopicStore implements TopicStore {
 
     private final static Logger LOGGER = LogManager.getLogger(ZkTopicStore.class);
-    public static final String TOPICS_PATH = "/strimzi/topics";
+    public static final String TOPICS_PATH = Config.TC_TOPICS_PATH;
 
     private final Zk zk;
 
