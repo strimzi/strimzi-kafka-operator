@@ -214,7 +214,7 @@ class KafkaST extends BaseST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
                     .withNewTlsSidecar()
