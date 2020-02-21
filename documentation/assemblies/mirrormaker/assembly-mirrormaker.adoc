@@ -3,11 +3,11 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='assembly-mirrormaker-{context}']
-= Using {ProductName} with {MirrorMaker}.
+= Using {ProductName} with MirrorMaker 2.0.
 
-This section describes using {ProductName} with {MirrorMaker}.
+This section describes using {ProductName} with MirrorMaker 2.0.
 
-{MirrorMaker} is used to replicate data between two or more active Kafka clusters, within or across data centers.
+MirrorMaker 2.0 is used to replicate data between two or more active Kafka clusters, within or across data centers.
 
 Data replication across clusters supports scenarios that require:
 
@@ -16,7 +16,7 @@ Data replication across clusters supports scenarios that require:
 * Restriction of data access to a specific cluster
 * Provision of data at a specific location to improve latency
 
-NOTE: {MirrorMaker} has features not supported by the previous version of MirrorMaker.
+NOTE: MirrorMaker 2.0 has features not supported by the previous version of MirrorMaker.
 
 .Additional resources
 

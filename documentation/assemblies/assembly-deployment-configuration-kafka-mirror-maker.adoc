@@ -17,7 +17,8 @@
 
 This chapter describes how to configure a Kafka MirrorMaker deployment in your {ProductName} cluster to replicate data between Kafka clusters.
 
-You can use {ProductName} with MirrorMaker or {MirrorMaker}.
+You can use {ProductName} with MirrorMaker or MirrorMaker 2.0.
+MirrorMaker 2.0 is the latest version, and offers a more efficient way to mirror data between Kafka clusters.
 
 [discrete]
 == MirrorMaker
@@ -38,20 +39,20 @@ NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Ku
 This provides a convenient mechanism for resources to be labeled as required.
 
 [discrete]
-== {MirrorMaker}
+== MirrorMaker 2.0
 
-If you are using {MirrorMaker}, you configure the `KafkaMirrorMaker2` resource.
+If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
 
-{MirrorMaker} introduces an entirely new way of replicating data in clusters.
+MirrorMaker 2.0 introduces an entirely new way of replicating data between clusters.
 
 As a result, the resource configuration differs from the previous version of MirrorMaker.
-If you choose to use {MirrorMaker}, there is currently no legacy support, so any resources must be manually converted into the new format.
+If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.
 
-How {MirrorMaker} replicates data is described here:
+How MirrorMaker 2.0 replicates data is described here:
 
-* xref:con-mirrormaker-{context}[{MirrorMaker} data replication]
+* xref:con-mirrormaker-{context}[MirrorMaker 2.0 data replication]
 
-The following procedure shows how the resource is configured for {MirrorMaker}:
+The following procedure shows how the resource is configured for MirrorMaker 2.0:
 
 * xref:proc-mirrormaker-replication-{context}[Synchronizing data between Kafka clusters]
 

@@ -3,13 +3,13 @@
 // assembly-mirrormaker.adoc
 
 [id='proc-mirrormaker-replication-{context}']
-= Synchronizing data between Kafka clusters
+= Synchronizing data between Kafka clusters using MirrorMaker 2.0
 
-Use {MirrorMaker} to synchronize data between Kafka clusters through configuration.
+Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
 
-The previous version of {MirrorMaker} continues to be supported.
+The previous version of MirrorMaker 2.0 continues to be supported.
 If you wish to use the resources configured for the previous version,
-they must be updated to the format supported by {MirrorMaker}.
+they must be updated to the format supported by MirrorMaker 2.0.
 
 The configuration must specify:
 
@@ -21,7 +21,7 @@ The configuration must specify:
 * Replication rules
 * Committed offset tracking intervals
 
-Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka {MirrorMaker} deployment.
+Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
 
 You can configure access control for source and target clusters using TLS or SASL authentication.
 This procedure shows a configuration that uses TLS encryption and authentication for the source and target cluster.
@@ -83,9 +83,9 @@ spec:
 <8> Bootstrap server for connection to the target Kafka cluster.
 <9> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}.
-<10> {MirrorMaker} connectors.
-<11> The alias of the source cluster used by the {MirrorMaker} connectors.
-<12> The alias of the target cluster used by the {MirrorMaker} connectors.
+<10> MirrorMaker 2.0 connectors.
+<11> The alias of the source cluster used by the MirrorMaker 2.0 connectors.
+<12> The alias of the target cluster used by the MirrorMaker 2.0 connectors.
 <13> The configuration for the `sourceConnector` that creates remote topics.
 <14> The replication factor for the `sourceConnector`.
 <15> The replication factor for the `sourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.

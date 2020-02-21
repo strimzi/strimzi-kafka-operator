@@ -18,7 +18,6 @@
 :ContextProduct: strimzi
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
-:MirrorMaker: MirrorMaker 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 2.4.0
