@@ -10,9 +10,12 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -25,13 +28,19 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
+import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -50,6 +59,7 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
@@ -676,6 +686,49 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("{} pods statutes: {}", stableComponent, statusCount);
 
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
+    }
+
+    @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
+            " new bootstrap DNS is appended inside certificate in subject alternative names property.")
+    @Test
+    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
+        String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+
+        Map<String, String> kafkaPods =  StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+
+            LOGGER.info("Adding new bootstrap dns:{} to external listeners", bootstrapDns);
+            ((KafkaListenerExternalNodePort) kafka.getSpec().getKafka().getListeners().getExternal()).getOverrides().getBootstrap().setAddress(bootstrapDns);
+        });
+
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+
+        String bootstrapAddressDns = ((KafkaListenerExternalLoadBalancer) Crds.kafkaOperation(kubeClient().getClient())
+                .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
+                .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
+
+        Map<String, String> secretData = kubeClient().getSecret(KafkaResources.brokersServiceName(CLUSTER_NAME)).getData();
+
+        for (Map.Entry<String, String> item : secretData.entrySet()) {
+            if (item.getKey().endsWith(".crt")) {
+                LOGGER.info("Encoding {} cert", item.getKey());
+                ByteArrayInputStream publicCert = new ByteArrayInputStream(Base64.getDecoder().decode(item.getValue().getBytes()));
+                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+                Certificate certificate = certificateFactory.generateCertificate(publicCert);
+
+                LOGGER.info("Verifying that new DNS is in certificate subject alternative names");
+                assertThat(certificate.toString(), containsString(bootstrapAddressDns));
+            }
+        }
+
+        LOGGER.info("Verifying that new DNS is inside kafka CR");
+        assertThat(bootstrapAddressDns, is(bootstrapDns));
+
+        // TODO: send and recv messages via this new bootstrap (after client builder) https://github.com/strimzi/strimzi-kafka-operator/pull/2520
     }
 
     @Override
