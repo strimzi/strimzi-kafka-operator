@@ -16,10 +16,10 @@ spec:
       - secretName: my-cluster-cluster-ca-cert
         certificate: ca.crt
   config:
-    group.id: my-connect-cluster
-    offset.storage.topic: my-connect-cluster-offsets
-    config.storage.topic: my-connect-cluster-configs
-    status.storage.topic: my-connect-cluster-status
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
     config.storage.replication.factor: 1
     offset.storage.replication.factor: 1
     status.storage.replication.factor: 1
