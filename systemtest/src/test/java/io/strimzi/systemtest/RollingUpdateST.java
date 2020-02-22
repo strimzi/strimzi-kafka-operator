@@ -294,15 +294,14 @@ class RollingUpdateST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, initialReplicas);
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
-
-        assertThat((int) kubeClient().listPersistentVolumeClaims().stream()
-            .filter(pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(initialReplicas));
-
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
+
+        assertThat((int) kubeClient().listPersistentVolumeClaims().stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(initialReplicas));
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
