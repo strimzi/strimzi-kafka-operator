@@ -15,7 +15,7 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
 fi
 
 rm /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
-export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
+export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 
 if [ "$KAFKA_JMX_ENABLED" = "true" ]; then
   KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
