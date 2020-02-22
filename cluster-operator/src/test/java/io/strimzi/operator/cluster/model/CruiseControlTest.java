@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CC_DEFAULT_PROPERTIES_MAP;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -58,10 +57,12 @@ public class CruiseControlTest {
     private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
-    private final Map<String, Object> ccConfig = new HashMap<String, Object>() {{
-            putAll(CC_DEFAULT_PROPERTIES_MAP);
+
+    CruiseControlConfiguration configuration = new CruiseControlConfiguration(new HashMap<String, Object>() {{
+            putAll(configuration.getCruiseControlDefaultPropertiesMap());
             put("num.partition.metrics.windows", "2");
-        }};
+        }}.entrySet()
+    );
     private final Storage kafkaStorage = new EphemeralStorage();
     private final SingleVolumeStorage zkStorage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
@@ -79,7 +80,7 @@ public class CruiseControlTest {
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
             .withReplicas(replicas)
-            .withConfig(ccConfig)
+            .withConfig((Map) configuration.asOrderedProperties().asMap())
             .build();
 
     private final Kafka resource =
@@ -124,7 +125,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(new CruiseControlConfiguration(ccConfig.entrySet()).getConfiguration()).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(configuration.getConfiguration()).build());
 
         return expected;
     }

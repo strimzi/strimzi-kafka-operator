@@ -11,7 +11,7 @@ public class RebalanceOptions {
     private boolean isDryRun;
     private List<String> goals;
     private boolean verbose;
-    private final boolean json = true;
+    private boolean json = true;
 
     public boolean isDryRun() {
         return isDryRun;
@@ -25,9 +25,14 @@ public class RebalanceOptions {
         return goals;
     }
 
+    public boolean isJson() {
+        return json;
+    }
+
     private RebalanceOptions(RebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
         this.goals = builder.goals;
+        this.verbose = builder.verbose;
     }
 
     public static class RebalanceOptionsBuilder {
