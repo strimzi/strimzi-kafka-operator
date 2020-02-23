@@ -57,6 +57,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
+import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -516,7 +517,7 @@ class KafkaST extends BaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    void testSendMessagesPlainAnonymous() throws InterruptedException {
+    void testSendMessagesPlainAnonymous() {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -535,13 +536,20 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
             internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
         );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("port\" : 9092"));
+        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("tls\" : false"));
+        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("protocol\" : kafka"));
+        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("auth\" : none"));
     }
 
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    void testSendMessagesTlsAuthenticated() throws InterruptedException {
+    void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -550,7 +558,7 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
+                        .editListeners()
                             .withNewTls()
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
@@ -574,6 +582,11 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS"),
             internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "tls"), is(serviceDiscoveryArray));
     }
 
     /**
@@ -583,7 +596,6 @@ class KafkaST extends BaseST {
     @Tag(ACCEPTANCE)
     void testSendMessagesPlainScramSha() throws InterruptedException {
         String kafkaUsername = "my-user";
-        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Use a Kafka with plain listener disabled
@@ -625,13 +637,18 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50),
             internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
         );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo(9092,"kafka", "scram-sha-512"), is(serviceDiscoveryArray));
     }
 
     /**
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    void testSendMessagesTlsScramSha() throws InterruptedException {
+    void testSendMessagesTlsScramSha() {
         String kafkaUsername = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -663,6 +680,11 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS"),
             internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512"), is(serviceDiscoveryArray));
     }
 
     @Test
@@ -1907,6 +1929,22 @@ class KafkaST extends BaseST {
             assertThat("editedTestValue", is(pvc.getMetadata().getLabels().get("testKey")));
             assertThat("editedTestValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
         }
+    }
+
+    @Test
+    void testKafkaOffsetsReplicationFactorHigherThanReplicas() {
+        int replicas = 3;
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, replicas, 1)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("offsets.topic.replication.factor", 4)
+                    .addToConfig("transaction.state.log.min.isr", 4)
+                    .addToConfig("transaction.state.log.replication.factor", 4)
+                .endKafka()
+            .endSpec().build());
+
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
+                "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
