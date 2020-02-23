@@ -125,15 +125,17 @@ public class HttpUtils {
                         if (response.body().size() > 0) {
                             for (int i = 0; i < response.body().size(); i++) {
                                 JsonObject jsonResponse = response.body().getJsonObject(i);
+                                LOGGER.info("This is jsonResponse object {}", jsonResponse.toString());
                                 String kafkaTopic = jsonResponse.getString("topic");
                                 int kafkaPartition = jsonResponse.getInteger("partition");
                                 String key = jsonResponse.getString("key");
-                                int value = jsonResponse.getInteger("value");
+                                String value = jsonResponse.getString("value");
                                 long offset = jsonResponse.getLong("offset");
                                 LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                             }
                             LOGGER.info("Received {} messages from the bridge", response.body().size());
                         } else {
+                            LOGGER.info("Received body:{}", response.body());
                             LOGGER.debug("Received 0 messages, going to consume again");
                         }
                         future.complete(response.body());

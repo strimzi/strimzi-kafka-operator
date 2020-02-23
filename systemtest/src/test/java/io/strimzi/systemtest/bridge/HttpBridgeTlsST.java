@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
@@ -53,55 +54,53 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     @Test
     void testSendSimpleMessageTls() throws Exception {
-        int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+        JsonObject records = HttpUtils.generateHttpMessages(MESSAGE_COUNT);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        KafkaBridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
-        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SSL");
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Test
     void testReceiveSimpleMessageTls() throws Exception {
-        int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
 
-        String name = "my-kafka-consumer";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
-        config.put("name", name);
+        config.put("name", userName);
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
         JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
-        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(userName));
         // Create topics json
         JsonArray topic = new JsonArray();
         topic.add(topicName);
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, userName, client), is(true));
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, name, messageCount, "SSL");
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(messageCount));
+        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, userName, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, userName, client);
         }
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, userName), is(true));
     }
 
     @BeforeAll
@@ -114,7 +113,6 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
                 .editKafka()
                     .editListeners()
                         .withNewKafkaListenerExternalNodePort()
-                            .withTls(true)
                         .endKafkaListenerExternalNodePort()
                         .withNewTls()
                         .endTls()
@@ -134,10 +132,11 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
-            .withNewTls()
-            .withTrustedCertificates(certSecret)
-            .endTls()
-            .endSpec().done();
+                .withNewTls()
+                    .withTrustedCertificates(certSecret)
+                .endTls()
+            .endSpec()
+            .done();
 
         Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
