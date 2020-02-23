@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -714,7 +714,7 @@ class RollingUpdateST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
-        String bootstrapAddressDns = ((KafkaListenerExternalLoadBalancer) Crds.kafkaOperation(kubeClient().getClient())
+        String bootstrapAddressDns = ((KafkaListenerExternalNodePort) Crds.kafkaOperation(kubeClient().getClient())
                 .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
                 .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
 
