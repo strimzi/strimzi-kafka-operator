@@ -363,10 +363,10 @@ public abstract class AbstractModel {
             newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (externalCm != null) {
+            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
                 return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
-                log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
+                log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.", ((ExternalLogging) getLogging()).getName(), getAncillaryConfigMapKeyLogConfig());
                 return createPropertiesString(getDefaultLogConfig());
             }
 

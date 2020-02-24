@@ -62,7 +62,7 @@ import static java.util.Collections.unmodifiableList;
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
-                                description = "The desired number of Kafka Mirror Maker replicas",
+                                description = "The desired number of Kafka MirrorMaker replicas",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
                         ),
@@ -137,7 +137,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of Kafka Mirror Maker.")
+    @Description("The specification of Kafka MirrorMaker.")
     public KafkaMirrorMakerSpec getSpec() {
         return spec;
     }
@@ -147,7 +147,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     }
 
     @Override
-    @Description("The status of Kafka Mirror Maker.")
+    @Description("The status of Kafka MirrorMaker.")
     public KafkaMirrorMakerStatus getStatus() {
         return status;
     }

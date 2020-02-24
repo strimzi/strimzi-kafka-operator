@@ -47,7 +47,25 @@ public class KafkaConnectResources {
      * @return The name of the corresponding KafkaConnect metrics and log {@code ConfigMap}.
      */
     public static String metricsAndLogConfigMapName(String clusterName) {
-        return clusterName + "-connect-config";
+        return deploymentName(clusterName) + "-config";
+    }
+
+    /**
+     * Returns the name of the Kafka Connect config offsets for a {@code KafkaConnect} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @return The name of the corresponding KafkaConnect config offsets value.
+     */
+    public static String configStorageTopicOffsets(String clusterName) {
+        return deploymentName(clusterName) + "-offsets";
+    }
+
+    /**
+     * Returns the name of the Kafka Connect config status for a {@code KafkaConnect} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @return The name of the corresponding KafkaConnect config status value.
+     */
+    public static String configStorageTopicStatus(String clusterName) {
+        return deploymentName(clusterName) + "-status";
     }
 
     /**

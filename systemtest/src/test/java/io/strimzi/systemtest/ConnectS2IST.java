@@ -147,7 +147,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
-    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
+    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -161,13 +161,10 @@ class ConnectS2IST extends BaseST {
             .endSpec()
             .done();
 
-
         final String userName = "user-example-one";
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         SecretUtils.waitForSecretReady(userName);
 
@@ -178,6 +175,8 @@ class ConnectS2IST extends BaseST {
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -214,15 +213,14 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPod, CONNECT_S2I_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL"),
-                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL", "my-group-" + new Random().nextInt(Integer.MAX_VALUE))
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
+                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
         );
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("Sending messages: Hello-world - 99"));
+                containsString("99"));
     }
 
     @Test

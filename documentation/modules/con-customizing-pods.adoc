@@ -39,7 +39,7 @@ If not specified, the default scheduler will be used.
 
 |===
 
-These fields are effective on each type of cluster (Kafka and ZooKeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka Mirror Maker).
+These fields are effective on each type of cluster (Kafka and ZooKeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka MirrorMaker).
 
 The following example shows these customized fields on a `template` property:
 

@@ -11,7 +11,7 @@ In order to use custom resources, custom resource definitions must first be defi
 Custom resource definitions (CRDs) extend the Kubernetes API, providing definitions to add custom resources to a Kubernetes cluster.
 Custom resources are created as instances of the APIs added by CRDs.
 
-In {ProductName}, CRDs introduce custom resources specific to {ProductName} to a Kubernetes cluster, such as Kafka, Kafka Connect, Kafka Mirror Maker, and users and topics custom resources.  CRDs provide configuration instructions, defining the schemas used to instantiate and manage the {ProductName}-specific resources. CRDs also allow {ProductName} resources to benefit from native Kubernetes features like CLI accessibility and configuration validation.
+In {ProductName}, CRDs introduce custom resources specific to {ProductName} to a Kubernetes cluster, such as Kafka, Kafka Connect, Kafka MirrorMaker, and users and topics custom resources.  CRDs provide configuration instructions, defining the schemas used to instantiate and manage the {ProductName}-specific resources. CRDs also allow {ProductName} resources to benefit from native Kubernetes features like CLI accessibility and configuration validation.
 
 CRDs require a one-time installation in a cluster. Depending on the cluster setup, installation typically requires cluster admin privileges.
 
