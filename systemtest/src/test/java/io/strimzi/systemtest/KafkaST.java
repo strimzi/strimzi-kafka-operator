@@ -1434,7 +1434,7 @@ class KafkaST extends BaseST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editMetadata()
                     .withLabels(labels)
                 .endMetadata()
