@@ -641,7 +641,7 @@ class KafkaST extends BaseST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo(9092,"kafka", "scram-sha-512"), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512"), is(serviceDiscoveryArray));
     }
 
     /**
