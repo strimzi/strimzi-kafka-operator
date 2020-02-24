@@ -64,7 +64,7 @@ include::../modules/con-configuring-mirror-maker.adoc[leveloffset=+1]
 
 include::../modules/ref-list-of-kafka-mirror-maker-resources.adoc[leveloffset=+1]
 
-include::mirrormaker/assembly-mirrormaker.adoc[leveloffset=+1]
+include::mirrormaker2/assembly-mirrormaker.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context-deployment-configuration-kafka-mirror-maker}
