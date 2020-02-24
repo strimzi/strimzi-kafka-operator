@@ -4,6 +4,7 @@ metadata:
   name: kafkabridges.kafka.strimzi.io
   labels:
     app: strimzi
+    strimzi.io/crd-install: "true"
 spec:
   group: kafka.strimzi.io
   versions:

@@ -5,6 +5,7 @@ metadata:
   name: kafkaconnectors.kafka.strimzi.io
   labels:
     app: '{{ template "strimzi.name" . }}'
+    strimzi.io/crd-install: "true"
     chart: '{{ template "strimzi.chart" . }}'
     component: kafkaconnectors.kafka.strimzi.io-crd
     release: '{{ .Release.Name }}'
