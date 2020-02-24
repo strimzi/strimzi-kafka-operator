@@ -13,7 +13,7 @@ MirrorMaker 2.0 uses:
 * Target cluster configuration to output data to the target cluster
 
 MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
-A MirrorMaker 2.0 `SourceConnector` replicates topics from a source cluster to a target cluster.
+A MirrorMaker 2.0 `MirrorSourceConnector` replicates topics from a source cluster to a target cluster.
 
 The process of _mirroring_ data from one cluster to another cluster is asynchronous.
 The recommended pattern is for messages to be produced locally alongside the source Kafka cluster, then consumed remotely close to the target Kafka cluster.
@@ -76,7 +76,7 @@ MirrorMaker 2.0 tracks offsets for consumer groups using _internal topics_.
 Offsets for the _checkpoint_ topic are tracked at predetermined intervals through configuration.
 Both topics enable replication to be fully restored from the correct offset position on failover.
 
-MirrorMaker 2.0 uses its `checkpointConnector` to emit _checkpoints_ for offset tracking.
+MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for offset tracking.
 
 == Connectivity checks
 
@@ -89,4 +89,4 @@ Target clusters use the topic to check:
 * The connector managing connectivity between clusters is running
 * The source cluster is available
 
-MirrorMaker 2.0 uses its `heartbeatConnector` to emit _heartbeats_ that perform these checks.
+MirrorMaker 2.0 uses its `MirrorHeartbeatConnector` to emit _heartbeats_ that perform these checks.

@@ -7,7 +7,7 @@
 
 Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
 
-The previous version of MirrorMaker 2.0 continues to be supported.
+The previous version of MirrorMaker continues to be supported.
 If you wish to use the resources configured for the previous version,
 they must be updated to the format supported by MirrorMaker 2.0.
 
@@ -18,10 +18,31 @@ The configuration must specify:
 * The replication flow and direction
 ** Cluster to cluster
 ** Topic to topic
-* Replication rules
-* Committed offset tracking intervals
 
 Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
+
+MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
+A minimal configuration, with defaults left unchanged, would be something like this example:
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+  spec:
+    version: {DefaultKafkaVersion}
+    connectCluster: "my-cluster-target"
+    clusters:
+    - alias: "my-cluster-source"
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+    - alias: "my-cluster-target"
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector: {}
+----
 
 You can configure access control for source and target clusters using TLS or SASL authentication.
 This procedure shows a configuration that uses TLS encryption and authentication for the source and target cluster.
@@ -86,14 +107,14 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <10> MirrorMaker 2.0 connectors.
 <11> The alias of the source cluster used by the MirrorMaker 2.0 connectors.
 <12> The alias of the target cluster used by the MirrorMaker 2.0 connectors.
-<13> The configuration for the `sourceConnector` that creates remote topics.
-<14> The replication factor for the `sourceConnector`.
-<15> The replication factor for the `sourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
-<16> When enabled, ACLs are applied to synchronized topics. The default is `false`.
-<17> The configuration for the `heartbeatConnector` that performs connectivity checks.
-<18> The replication factor for the `heartbeatConnector`.
-<19> The configuration for the `checkpointConnector` that tracks offsets.
-<20> The replication factor for the `checkpointConnector`.
+<13> The configuration for the `MirrorSourceConnector` that creates remote topics. The `config` overrides the default configuration options.
+<14> The replication factor for mirrored topics created at the target cluster.
+<15> The replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
+<16> When enabled, ACLs are applied to synchronized topics. The default is `true`.
+<17> The configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. The `config` overrides the default configuration options.
+<18> The replication factor for the heartbeat topic created at the target cluster.
+<19> The configuration for the `MirrorCheckpointConnector` that tracks offsets. The `config` overrides the default configuration options.
+<20> The replication factor for the checkpoints topic created at the target cluster.
 <21> Topic replication from the source cluster defined as regular expression patterns. Here we request all topics.
 <22> Consumer group replication from the source cluster defined as regular expression patterns. Here we request three consumer groups by name.
 You can use comma-separated lists.
