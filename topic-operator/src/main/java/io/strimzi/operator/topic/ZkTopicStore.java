@@ -24,16 +24,16 @@ import java.util.List;
 public class ZkTopicStore implements TopicStore {
 
     private final static Logger LOGGER = LogManager.getLogger(ZkTopicStore.class);
-    
-    private final Config config;
-    public final String TOPICS_PATH = config.get(Config.TOPICS_PATH);
+
+    private final String topicsPath;
 
     private final Zk zk;
 
     private final List<ACL> acl;
 
-    public ZkTopicStore(Zk zk) {
+    public ZkTopicStore(Zk zk, String topicsPath) {
         this.zk = zk;
+        this.topicsPath = topicsPath;
         acl = new AclBuilder().setWorld(AclBuilder.Permission.values()).build();
         createStrimziTopicsPath();
     }
@@ -46,10 +46,10 @@ public class ZkTopicStore implements TopicStore {
                     throw new RuntimeException(result.cause());
                 }
             }
-            zk.create(TOPICS_PATH, null, acl, CreateMode.PERSISTENT, result2 -> {
+            zk.create(topicsPath, null, acl, CreateMode.PERSISTENT, result2 -> {
                 if (result2.failed()) {
                     if (!(result2.cause() instanceof ZkNodeExistsException)) {
-                        LOGGER.error("Error creating {}", TOPICS_PATH, result2.cause());
+                        LOGGER.error("Error creating {}", topicsPath, result2.cause());
                         throw new RuntimeException(result2.cause());
                     }
                 }
@@ -58,8 +58,8 @@ public class ZkTopicStore implements TopicStore {
     }
 
 
-    private static String getTopicPath(TopicName name) {
-        return TOPICS_PATH + "/" + name;
+    private String getTopicPath(TopicName name) {
+        return topicsPath + "/" + name;
     }
 
     @Override

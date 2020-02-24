@@ -41,7 +41,7 @@ public class ZkTopicStoreTest {
             throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
         zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
-        this.store = new ZkTopicStore(zk);
+        this.store = new ZkTopicStore(zk, "/strimzi/topics");
     }
 
     @AfterEach
