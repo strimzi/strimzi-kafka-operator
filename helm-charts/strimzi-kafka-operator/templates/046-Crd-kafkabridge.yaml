@@ -5,6 +5,7 @@ metadata:
   name: kafkabridges.kafka.strimzi.io
   labels:
     app: '{{ template "strimzi.name" . }}'
+    strimzi.io/crd-install: "true"
     chart: '{{ template "strimzi.chart" . }}'
     component: kafkabridges.kafka.strimzi.io-crd
     release: '{{ .Release.Name }}'
