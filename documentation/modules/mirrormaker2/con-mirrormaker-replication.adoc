@@ -53,9 +53,11 @@ Consumers can subscribe to source and remote topics within the same cluster, wit
 Topic configuration is automatically synchronized between source and target clusters.
 By synchronizing configuration properties, the need for rebalancing is reduced.
 
-== ACL access to remote topics
+== ACL rules synchronization
 
-If `SimpleAclAuthorizer` is being used, ACL rules that manage access to brokers also apply to remote topics.
+ACL access to remote topics is possible if you are *not* using the User Operator.
+
+If `SimpleAclAuthorizer` is being used, without the User Operator, ACL rules that manage access to brokers also apply to remote topics.
 Users that can read a source topic can read its remote equivalent.
 
 NOTE: {oauth} authorization does not support access to remote topics in this way.
