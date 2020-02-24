@@ -396,7 +396,7 @@ class SecurityST extends BaseST {
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (1)...");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         }
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (1)...");
