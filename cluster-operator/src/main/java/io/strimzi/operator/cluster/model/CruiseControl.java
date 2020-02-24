@@ -94,7 +94,6 @@ public class CruiseControl extends AbstractModel {
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
 
     private boolean isDeployed;
-    private String kafkaBootstrapServers;
 
     /**
      * Constructor
@@ -118,7 +117,6 @@ public class CruiseControl extends AbstractModel {
         this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
 
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
-        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
     }
 
     public static String metricAndLogConfigsName(String cluster) {
@@ -159,7 +157,7 @@ public class CruiseControl extends AbstractModel {
                 tlsSidecar = new TlsSidecar();
             }
 
-            String tlsSideCarImage = tlsSidecar != null ? tlsSidecar.getImage() : null;
+            String tlsSideCarImage = tlsSidecar.getImage();
             if (tlsSideCarImage == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
                 tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
@@ -201,9 +199,9 @@ public class CruiseControl extends AbstractModel {
 
     public static CruiseControl updateConfiguration(CruiseControlSpec spec, CruiseControl cruiseControl) {
         CruiseControlConfiguration configuration = new CruiseControlConfiguration(spec.getConfig().entrySet());
-        for (String key : CruiseControlConfiguration.CC_DEFAULT_PROPERTIES_MAP.keySet()) {
-            if (configuration.getConfigOption(key) == null) {
-                configuration.setConfigOption(key, CruiseControlConfiguration.CC_DEFAULT_PROPERTIES_MAP.get(key).toString());
+        for (Map.Entry<String, String> entry : configuration.getCruiseControlDefaultPropertiesMap().entrySet()) {
+            if (configuration.getConfigOption(entry.getKey()) == null) {
+                configuration.setConfigOption(entry.getKey(), entry.getValue());
             }
         }
         cruiseControl.setConfiguration(configuration);
