@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.IKafkaClient;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,8 +67,10 @@ public class InternalKafkaClient implements IKafkaClient<Integer> {
         producer.setArguments(producerArguments);
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
-        boolean hasPassed = producer.run(timeoutMs);
-        LOGGER.info("Producer finished correctly: {}", hasPassed);
+        TestUtils.waitFor("Sending messages", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CLIENTS_TIMEOUT, () -> {
+            LOGGER.info("Sending {} messages to pod {}", messageCount, podName);
+            return producer.run(timeoutMs);
+        });
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 

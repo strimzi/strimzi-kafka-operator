@@ -11,7 +11,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.TracingKafkaClient;
 
 public class ClientFactory {
 
-    public static IKafkaClient getClient(EClientType clientType) {
+    public static IKafkaClient<?> getClient(EClientType clientType) {
 
         switch (clientType) {
             case BASIC:
