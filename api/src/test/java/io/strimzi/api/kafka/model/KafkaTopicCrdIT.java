@@ -10,10 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -54,14 +50,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
                 createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.partitions in body is required"),
-                        containsStringIgnoringCase("spec.replicas in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.partitions: Required value"),
-                        containsStringIgnoringCase("spec.replicas: Required value"))
-                ));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.partitions", "spec.replicas");
     }
 
     @BeforeAll
