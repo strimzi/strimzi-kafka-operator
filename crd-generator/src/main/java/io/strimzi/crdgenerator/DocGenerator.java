@@ -164,7 +164,7 @@ public class DocGenerator {
                     err(property + " is not documented");
                 }
             } else {
-                out.append(getDescription(property, description2));
+                out.append(getDescription(description2));
             }
             KubeLink kubeLink = property.getAnnotation(KubeLink.class);
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
@@ -209,8 +209,8 @@ public class DocGenerator {
         return msg;
     }
 
-    private String getDescription(Object property, Description description2) {
-        String doc = description2.value();
+    static String getDescription(Description description) {
+        String doc = description.value();
         if (!doc.trim().matches(".*[.!?]$")) {
             doc = doc + ".";
         }
@@ -286,7 +286,7 @@ public class DocGenerator {
 
             out.append("include::../" + filename + "[leveloffset=+1]").append(NL);
         } else if (description != null) {
-            out.append(getDescription(cls, description)).append(NL);
+            out.append(getDescription(description)).append(NL);
         }
         out.append(NL);
     }
