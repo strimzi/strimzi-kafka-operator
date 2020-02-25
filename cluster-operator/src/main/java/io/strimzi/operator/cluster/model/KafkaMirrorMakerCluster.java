@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaMirrorMakerCluster extends AbstractModel {
+    protected static final String COMPONENT = "kafka-mirror-maker";
+
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
     protected static final String TLS_CERTS_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-certs/";
@@ -299,6 +301,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 annotations,

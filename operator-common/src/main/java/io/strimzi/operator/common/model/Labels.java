@@ -65,6 +65,7 @@ public class Labels {
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
+    public static final String KUBERNETES_COMPONENT_LABEL = KUBERNETES_DOMAIN + "component";
 
     public static final String KUBERNETES_NAME = "strimzi";
 
@@ -267,6 +268,15 @@ public class Labels {
      */
     public Labels withKubernetesManagedBy(String operatorName) {
         return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code component} for the {@code app.kubernetes.io/component} key.
+     * @param component The component os Strimzi.
+     * @return A new instance with the given kubernetes component this is.
+     */
+    public Labels withKubernetesComponent(String component) {
+        return with(Labels.KUBERNETES_COMPONENT_LABEL, component);
     }
 
     /**

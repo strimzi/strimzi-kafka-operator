@@ -45,6 +45,7 @@ import static java.util.Collections.singletonList;
 @Deprecated
 @SuppressWarnings("deprecation")
 public class TopicOperator extends AbstractModel {
+    protected static final String COMPONENT = "topic-operator";
 
     protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-topic-operator";
@@ -262,6 +263,7 @@ public class TopicOperator extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

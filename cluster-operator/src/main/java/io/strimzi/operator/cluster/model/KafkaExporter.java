@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class KafkaExporter extends AbstractModel {
+    protected static final String COMPONENT = "kafka-exporter";
+
     // Configuration for mounting certificates
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_NAME = "kafka-exporter-certs";
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_MOUNT = "/etc/kafka-exporter/kafka-exporter-certs/";
@@ -200,6 +202,7 @@ public class KafkaExporter extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

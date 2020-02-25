@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaBridgeCluster extends AbstractModel {
+    public static final String COMPONENT = "kafka-bridge";
 
     // Port configuration
     public static final int DEFAULT_REST_API_PORT = 8080;
@@ -317,6 +318,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 annotations,

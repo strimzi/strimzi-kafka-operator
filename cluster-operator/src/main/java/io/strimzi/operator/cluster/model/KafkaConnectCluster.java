@@ -54,6 +54,7 @@ import java.util.Map;
 import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 
 public class KafkaConnectCluster extends AbstractModel {
+    protected static final String COMPONENT = "kafka-connect";
 
     // Port configuration
     public static final int REST_API_PORT = 8083;
@@ -399,6 +400,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 annotations,

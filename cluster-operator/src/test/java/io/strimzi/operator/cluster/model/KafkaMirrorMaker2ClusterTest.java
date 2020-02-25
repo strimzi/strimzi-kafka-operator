@@ -136,6 +136,13 @@ public class KafkaMirrorMaker2ClusterTest {
         return expectedLabels(KafkaMirrorMaker2Resources.deploymentName(cluster));
     }
 
+    private Map<String, String> expectedDeploymentLabels()    {
+        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaMirrorMaker2Resources.deploymentName(cluster));
+        expectedDeploymentLabels.put(Labels.KUBERNETES_COMPONENT_LABEL, KafkaMirrorMaker2Cluster.COMPONENT);
+
+        return expectedDeploymentLabels;
+    }
+
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration.asPairs()).build());
@@ -231,11 +238,11 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(dep.getMetadata().getName(), is(KafkaMirrorMaker2Resources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        Map<String, String> expectedLabels = expectedLabels();
-        assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
+        Map<String, String> expectedDeploymentLabels = expectedDeploymentLabels();
+        assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
         assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
-        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         Container cont = getContainer(dep);
         assertThat(cont.getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.cluster)));

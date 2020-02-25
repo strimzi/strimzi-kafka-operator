@@ -44,6 +44,7 @@ import java.util.Map;
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
 public class JmxTrans extends AbstractModel {
+    private static final String COMPONENT = "jmx-trans";
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
@@ -144,6 +145,7 @@ public class JmxTrans extends AbstractModel {
                 .build();
 
         return createDeployment(
+                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

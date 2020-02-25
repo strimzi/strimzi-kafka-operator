@@ -56,6 +56,7 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
+    protected static final String COMPONENT = "zookeeper";
 
     protected static final int CLIENT_PORT = 2181;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -437,6 +438,7 @@ public class ZookeeperCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         return createStatefulSet(
+                COMPONENT,
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
