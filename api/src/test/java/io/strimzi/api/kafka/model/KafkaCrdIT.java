@@ -6,13 +6,11 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
@@ -57,13 +55,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.zookeeper in body is required"),
-                        containsStringIgnoringCase("spec.kafka in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.kafka: Required value"),
-                        containsStringIgnoringCase("spec.zookeeper: Required value"))));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.zookeeper", "spec.kafka");
     }
 
     @Test
@@ -163,8 +155,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "JmxTrans-output-definition-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.outputDefinitions.outputType in body is required"));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.outputDefinitions.name in body is required"));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.jmxTrans.outputDefinitions.outputType", "spec.jmxTrans.outputDefinitions.name");
     }
 
     @Test
@@ -175,9 +166,10 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "JmxTrans-queries-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.attributes in body is required"));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.targetMBean in body is required"));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.jmxTrans.kafkaQueries.outputs in body is required"));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(),
+                "spec.jmxTrans.kafkaQueries.targetMBean",
+                "spec.jmxTrans.kafkaQueries.attributes",
+                "spec.jmxTrans.kafkaQueries.outputs");
     }
 
     @BeforeAll

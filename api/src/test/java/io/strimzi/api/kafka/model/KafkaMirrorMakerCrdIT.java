@@ -10,10 +10,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -55,16 +51,10 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.consumer.bootstrapServers in body is required"),
-                        containsStringIgnoringCase("spec.producer in body is required"),
-                        containsStringIgnoringCase("spec.whitelist in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.consumer.bootstrapServers: Required value"),
-                        containsStringIgnoringCase("spec.whitelist: Required value"),
-                        containsStringIgnoringCase("spec.producer: Required value"))
-                ));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(),
+                "spec.consumer.bootstrapServers",
+                "spec.producer",
+                "spec.whitelist");
     }
 
     @Test
@@ -85,15 +75,10 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.certificate in body is required"),
-                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.key in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.certificate: Required value"),
-                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.key: Required value"),
-                        containsStringIgnoringCase("spec.whitelist: Required value"))
-        ));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(),
+                "spec.producer.authentication.certificateAndKey.certificate",
+                "spec.producer.authentication.certificateAndKey.key",
+                "spec.whitelist");
     }
 
     @Test
