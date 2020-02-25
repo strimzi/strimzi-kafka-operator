@@ -414,6 +414,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingKafkaCertsChanged = false;
         private boolean existingKafkaExporterCertsChanged = false;
         private boolean existingEntityOperatorCertsChanged = false;
+        private boolean existingCruiseControlCertsChanged = false;
 
         // Custom Listener certificates
         private String tlsListenerCustomCertificateThumbprint;
@@ -2872,7 +2873,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                 this.cruiseControl = cruiseControl;
 
-                this.ccDeployment = cruiseControl.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
             }
             return withVoid(Future.succeededFuture());
         }
@@ -2891,22 +2892,40 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return withVoid(secretOperations.reconcile(namespace, CruiseControl.secretName(name), cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingCruiseControlCertsChanged = changed;
+                        return this;
+                    });
         }
 
         Future<ReconciliationState> cruiseControlDeployment() {
             if (this.cruiseControl != null && ccDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
                 return future.compose(dep -> {
-                    return withVoid(deploymentOperations.reconcile(namespace, this.cruiseControl.getName(), ccDeployment));
-                }).map(i -> this);
+                    return deploymentOperations.reconcile(namespace, this.cruiseControl.getName(), ccDeployment);
+                }).compose(recon -> {
+                    if (recon instanceof ReconcileResult.Noop)   {
+                        // Lets check if we need to roll the deployment manually
+                        if (existingCruiseControlCertsChanged) {
+                            return cruiseControlRollingUpdate();
+                        }
+                    }
+
+                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
+                    return Future.succeededFuture(this);
+                });
             } else {
                 return withVoid(deploymentOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), null));
             }
         }
 
+        Future<ReconciliationState> cruiseControlRollingUpdate() {
+            return withVoid(deploymentOperations.rollingUpdate(namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs));
+        }
+
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(namespace, this.cruiseControl.getServiceName(), this.cruiseControl.generateService()));
+            return withVoid(serviceOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), cruiseControl != null ? cruiseControl.generateService() : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {

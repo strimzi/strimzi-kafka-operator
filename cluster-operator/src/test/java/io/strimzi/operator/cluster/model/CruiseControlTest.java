@@ -139,7 +139,7 @@ public class CruiseControlTest {
 
     @Test
     public void testGenerateDeployment() {
-        Deployment dep = cc.generateDeployment(null, true, null, null);
+        Deployment dep = cc.generateDeployment(true, null, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -203,12 +203,12 @@ public class CruiseControlTest {
 
     @Test
     public void testImagePullPolicy() {
-        Deployment dep = cc.generateDeployment(null, true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = cc.generateDeployment(true, null, ImagePullPolicy.ALWAYS, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = cc.generateDeployment(null, true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = cc.generateDeployment(true, null,  ImagePullPolicy.IFNOTPRESENT, null);
         containers = dep.getSpec().getTemplate().getSpec().getContainers();
         ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
@@ -287,7 +287,7 @@ public class CruiseControlTest {
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         try {
-            assertThat(cc.generateDeployment(null, true, null, null), is(nullValue()));
+            assertThat(cc.generateDeployment(true, null, null, null), is(nullValue()));
             assertThat(cc.generateService(), is(nullValue()));
             assertThat(cc.generateSecret(null, true), is(nullValue()));
         } catch (Throwable expected) {
@@ -368,7 +368,7 @@ public class CruiseControlTest {
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = cc.generateDeployment(depAnots, true, null, null);
+        Deployment dep = cc.generateDeployment(true, depAnots, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 
@@ -407,7 +407,7 @@ public class CruiseControlTest {
                         .build();
 
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
-        Deployment dep = cc.generateDeployment(null, true, null, null);
+        Deployment dep = cc.generateDeployment(true,  null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
 
@@ -441,7 +441,7 @@ public class CruiseControlTest {
                 .build();
 
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
-        Deployment dep = cc.generateDeployment(null, true, null, null);
+        Deployment dep = cc.generateDeployment(true, null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
 
@@ -474,7 +474,7 @@ public class CruiseControlTest {
                 .build();
 
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
-        Deployment dep = cc.generateDeployment(null, true, null, null);
+        Deployment dep = cc.generateDeployment(true, null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
         // checks on the main Cruise Control container

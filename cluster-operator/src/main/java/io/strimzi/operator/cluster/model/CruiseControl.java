@@ -305,7 +305,7 @@ public class CruiseControl extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (!isDeployed()) {
             return null;
         }
