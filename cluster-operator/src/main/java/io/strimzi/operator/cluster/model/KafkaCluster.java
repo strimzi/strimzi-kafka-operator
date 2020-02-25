@@ -272,6 +272,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "strimzi/operator:latest");
+        setComponent(COMPONENT);
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -1236,7 +1237,6 @@ public class KafkaCluster extends AbstractModel {
         annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
         return createStatefulSet(
-                COMPONENT,
                 annotations,
                 getVolumes(isOpenShift),
                 getVolumeClaims(),

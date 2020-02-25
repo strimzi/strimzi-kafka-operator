@@ -117,6 +117,8 @@ public class TopicOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
+
+        setComponent(COMPONENT);
     }
 
 
@@ -263,7 +265,6 @@ public class TopicOperator extends AbstractModel {
                 .build();
 
         return createDeployment(
-                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

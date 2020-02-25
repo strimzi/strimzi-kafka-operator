@@ -127,6 +127,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
+
+        setComponent(COMPONENT);
     }
 
     public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
@@ -301,7 +303,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
-                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 annotations,

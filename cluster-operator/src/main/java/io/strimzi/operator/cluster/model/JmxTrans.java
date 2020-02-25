@@ -93,6 +93,8 @@ public class JmxTrans extends AbstractModel {
 
         // Metrics must be enabled as JmxTrans is all about gathering JMX metrics from the Kafka brokers and pushing it to remote sources.
         this.isMetricsEnabled = true;
+
+        setComponent(COMPONENT);
     }
 
     public static JmxTrans fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -145,7 +147,6 @@ public class JmxTrans extends AbstractModel {
                 .build();
 
         return createDeployment(
-                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

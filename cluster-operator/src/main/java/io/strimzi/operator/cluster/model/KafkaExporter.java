@@ -86,6 +86,8 @@ public class KafkaExporter extends AbstractModel {
 
         // Kafka Exporter is all about metrics - they are always enabled
         this.isMetricsEnabled = true;
+
+        setComponent(COMPONENT);
     }
 
     public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -202,7 +204,6 @@ public class KafkaExporter extends AbstractModel {
                 .build();
 
         return createDeployment(
-                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

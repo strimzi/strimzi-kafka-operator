@@ -134,6 +134,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
+        setComponent(COMPONENT);
     }
 
     public static KafkaBridgeCluster fromCrd(KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
@@ -318,7 +319,6 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
-                COMPONENT,
                 updateStrategy,
                 Collections.emptyMap(),
                 annotations,
