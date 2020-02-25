@@ -107,7 +107,7 @@ public class KafkaUserCrdOperatorIT {
 
     protected KafkaUser getResource() {
         return new KafkaUserBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(KafkaUser.RESOURCE_GROUP + "/" + KafkaUser.V1BETA1)
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)

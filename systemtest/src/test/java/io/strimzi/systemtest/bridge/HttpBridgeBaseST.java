@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
@@ -96,9 +97,9 @@ public class HttpBridgeBaseST extends BaseST {
 
     protected void deployBridgeNodePortService() throws InterruptedException {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", CLUSTER_NAME);
-        map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
+        map.put(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
+        map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
+        map.put(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-bridge");
 
         // Create node port service for expose bridge outside openshift
         Service service = KubernetesResource.getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace(), "TCP")

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -54,7 +55,7 @@ public class TopicST extends BaseST {
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName));
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
         String errorMessage = "Replication factor: 5 larger than available brokers: 3";
 
         PodUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);

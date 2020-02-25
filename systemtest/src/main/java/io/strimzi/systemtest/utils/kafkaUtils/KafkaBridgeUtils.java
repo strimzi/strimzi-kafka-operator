@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.Constants;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -36,9 +37,9 @@ public class KafkaBridgeUtils {
 
     public static Service createBridgeNodePortService(String clusterName, String namespace, String serviceName) {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", clusterName);
-        map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", clusterName + "-bridge");
+        map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
+        map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
         return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")

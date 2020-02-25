@@ -153,7 +153,7 @@ public class LabelsTest {
             Map userLabelsWithStrimzi = new HashMap<String, String>(2);
             userLabelsWithStrimzi.put("key1", "value1");
             userLabelsWithStrimzi.put("key2", "value2");
-            userLabelsWithStrimzi.put("strimzi.io/something", "value3");
+            userLabelsWithStrimzi.put(Labels.STRIMZI_DOMAIN + "something", "value3");
 
             Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
         });

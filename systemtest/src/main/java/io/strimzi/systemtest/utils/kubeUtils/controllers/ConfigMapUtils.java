@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +50,7 @@ public class ConfigMapUtils {
     public static void waitForKafkaConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
-            boolean isStrimziTag = entry.getKey().startsWith("strimzi.io/");
+            boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Kafka config map label change {} -> {}", entry.getKey(), entry.getValue());

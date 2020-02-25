@@ -6,6 +6,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
@@ -17,7 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 public class StatusUtils {
-    private static final String V1ALPHA1 = "kafka.strimzi.io/v1alpha1";
+    private static final String V1ALPHA1 = Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1;
 
     /**
      * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".

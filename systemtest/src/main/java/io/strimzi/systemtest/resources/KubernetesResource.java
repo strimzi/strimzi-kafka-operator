@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
@@ -294,9 +295,9 @@ public class KubernetesResource {
 
     public static Service deployBridgeNodePortService(String bridgeExternalService, String namespace, String clusterName) {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", clusterName);
-        map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", clusterName + "-bridge");
+        map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
+        map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside the cluster
         return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")

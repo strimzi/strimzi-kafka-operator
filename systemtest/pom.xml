@@ -20,6 +20,10 @@
             <artifactId>api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>operator-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.valid4j</groupId>
             <artifactId>json-path-matchers</artifactId>
             <scope>compile</scope>

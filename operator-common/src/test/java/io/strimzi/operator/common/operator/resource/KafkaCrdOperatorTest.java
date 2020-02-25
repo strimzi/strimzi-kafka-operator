@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -48,7 +49,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     @Override
     protected Kafka resource() {
         return new KafkaBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
                 .withName(RESOURCE_NAME)
                 .withNamespace(NAMESPACE)
@@ -116,7 +117,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockClient.getMasterUrl()).thenReturn(fakeUrl);
         Call mockCall = mock(Call.class);
         when(mockOkHttp.newCall(any(Request.class))).thenReturn(mockCall);
-        ResponseBody body = ResponseBody.create(OperationSupport.JSON, "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"Kafka.kafka.strimzi.io \\\"my-cluster\\\" is invalid: apiVersion: Invalid value: \\\"kafka.strimzi.io/v1alpha1\\\": must be kafka.strimzi.io/v1beta1\",\"reason\":\"Invalid\",\"details\":{\"name\":\"my-cluster\",\"group\":\"kafka.strimzi.io\",\"kind\":\"Kafka\",\"causes\":[{\"reason\":\"FieldValueInvalid\",\"message\":\"Invalid value: \\\"kafka.strimzi.io/v1alpha1\\\": must be kafka.strimzi.io/v1beta1\",\"field\":\"apiVersion\"}]},\"code\":422}");
+        ResponseBody body = ResponseBody.create(OperationSupport.JSON, "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"Kafka." + Constants.RESOURCE_GROUP_NAME + " \\\"my-cluster\\\" is invalid: apiVersion: Invalid value: \\\"" + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1 + "\\\": must be " + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1BETA1 + "\",\"reason\":\"Invalid\",\"details\":{\"name\":\"my-cluster\",\"group\":\"" + Constants.RESOURCE_GROUP_NAME + "\",\"kind\":\"Kafka\",\"causes\":[{\"reason\":\"FieldValueInvalid\",\"message\":\"Invalid value: \\\"" + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1 + "\\\": must be " + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1BETA1 + "\",\"field\":\"apiVersion\"}]},\"code\":422}");
         Response response = new Response.Builder().code(422).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Unprocessable Entity").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
@@ -138,7 +139,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockClient.getMasterUrl()).thenReturn(fakeUrl);
         Call mockCall = mock(Call.class);
         when(mockOkHttp.newCall(any(Request.class))).thenReturn(mockCall);
-        ResponseBody body = ResponseBody.create(OperationSupport.JSON, "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"Kafka.kafka.strimzi.io \\\"my-cluster\\\" is invalid: apiVersion: Invalid value: \\\"kafka.strimzi.io/v1alpha1\\\": must be kafka.strimzi.io/v1beta1\",\"reason\":\"Invalid\",\"details\":{\"name\":\"my-cluster\",\"group\":\"kafka.strimzi.io\",\"kind\":\"Kafka\",\"causes\":[{\"reason\":\"FieldValueInvalid\",\"message\":\"Invalid value: \\\"kafka.strimzi.io/v1alpha1\\\": must be kafka.strimzi.io/v1beta1\",\"field\":\"someOtherField\"}]},\"code\":422}");
+        ResponseBody body = ResponseBody.create(OperationSupport.JSON, "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"Kafka." + Constants.RESOURCE_GROUP_NAME + " \\\"my-cluster\\\" is invalid: apiVersion: Invalid value: \\\"" + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1 + "\\\": must be " + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1BETA1 + "\",\"reason\":\"Invalid\",\"details\":{\"name\":\"my-cluster\",\"group\":\"" + Constants.RESOURCE_GROUP_NAME + "\",\"kind\":\"Kafka\",\"causes\":[{\"reason\":\"FieldValueInvalid\",\"message\":\"Invalid value: \\\"" + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1 + "\\\": must be " + Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1BETA1 + "\",\"field\":\"someOtherField\"}]},\"code\":422}");
         Response response = new Response.Builder().code(422).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Unprocessable Entity").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 

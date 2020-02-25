@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +54,7 @@ public class KafkaUserResource {
                 .withClusterName(clusterName)
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels("strimzi.io/cluster", clusterName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
             .endMetadata();
     }
 

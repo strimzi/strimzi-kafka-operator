@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -87,7 +88,7 @@ public class SecretUtils {
         LOGGER.info("Waiting for Kafka cluster {} secrets deletion", clusterName);
         TestUtils.waitFor("Expected secrets for Kafka cluster " + clusterName + " will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> {
-                List<Secret> secretList = kubeClient().listSecrets("strimzi.io/cluster", clusterName);
+                List<Secret> secretList = kubeClient().listSecrets(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
                 if (secretList.isEmpty()) {
                     return true;
                 } else {
@@ -103,8 +104,8 @@ public class SecretUtils {
 
     public static void createCustomSecret(String name, String clusterName, String namespace, String certPath, String keyPath) {
         Map<String, String> secretLabels = new HashMap<>();
-        secretLabels.put("strimzi.io/cluster", clusterName);
-        secretLabels.put("strimzi.io/kind", "Kafka");
+        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
 
         Map<String, String> certsPaths = new HashMap<>();
         certsPaths.put("ca.crt", certPath);

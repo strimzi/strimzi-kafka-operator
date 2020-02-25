@@ -108,7 +108,7 @@ public class KafkaMirrorMakerCrdOperatorIT {
 
     protected KafkaMirrorMaker getResource() {
         return new KafkaMirrorMakerBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(KafkaMirrorMaker.RESOURCE_GROUP + "/" + KafkaMirrorMaker.V1BETA1)
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)
