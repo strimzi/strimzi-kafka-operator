@@ -67,7 +67,7 @@ spec:
                       type: integer
                       minimum: 0
                       description: Storage identification number. It is mandatory
-                        only for storage volumes defined in a storage of type 'jbod'
+                        only for storage volumes defined in a storage of type 'jbod'.
                     overrides:
                       type: array
                       items:
@@ -79,7 +79,7 @@ spec:
                               allocation for this broker.
                           broker:
                             type: integer
-                            description: Id of the kafka broker (broker identifier)
+                            description: Id of the kafka broker (broker identifier).
                       description: Overrides for individual brokers. The `overrides`
                         field allows to specify a different configuration for different
                         brokers.
@@ -124,7 +124,7 @@ spec:
                             minimum: 0
                             description: Storage identification number. It is mandatory
                               only for storage volumes defined in a storage of type
-                              'jbod'
+                              'jbod'.
                           overrides:
                             type: array
                             items:
@@ -136,7 +136,7 @@ spec:
                                     volume allocation for this broker.
                                 broker:
                                   type: integer
-                                  description: Id of the kafka broker (broker identifier)
+                                  description: Id of the kafka broker (broker identifier).
                             description: Overrides for individual brokers. The `overrides`
                               field allows to specify a different configuration for
                               different brokers.
@@ -166,7 +166,7 @@ spec:
                         required:
                         - type
                       description: List of volumes as Storage objects representing
-                        the JBOD disks array
+                        the JBOD disks array.
                   required:
                   - type
                   description: Storage configuration (disk). Cannot be updated.
@@ -482,7 +482,7 @@ spec:
                               description: Reference to the `Secret` which holds the
                                 certificate and private key pair. The certificate
                                 can optionally contain the whole chain.
-                          description: Configuration of TLS listener
+                          description: Configuration of TLS listener.
                         networkPolicyPeers:
                           type: array
                           items:
@@ -652,7 +652,7 @@ spec:
                               description: URI of the token issuer used for authentication.
                           required:
                           - type
-                          description: Authentication configuration for Kafka brokers
+                          description: Authentication configuration for Kafka brokers.
                         class:
                           type: string
                           description: Configures the `Ingress` class that defines
@@ -680,7 +680,7 @@ spec:
                                     field will be used in the Ingress resource.
                               required:
                               - host
-                              description: External bootstrap ingress configuration
+                              description: External bootstrap ingress configuration.
                             brokers:
                               type: array
                               items:
@@ -688,15 +688,15 @@ spec:
                                 properties:
                                   broker:
                                     type: integer
-                                    description: Id of the kafka broker (broker identifier)
+                                    description: Id of the kafka broker (broker identifier).
                                   advertisedHost:
                                     type: string
                                     description: The host name which will be used
-                                      in the brokers' `advertised.brokers`
+                                      in the brokers' `advertised.brokers`.
                                   advertisedPort:
                                     type: integer
                                     description: The port number which will be used
-                                      in the brokers' `advertised.brokers`
+                                      in the brokers' `advertised.brokers`.
                                   host:
                                     type: string
                                     description: Host for the broker ingress. This
@@ -709,7 +709,7 @@ spec:
                                       such as External DNS.
                                 required:
                                 - host
-                              description: External broker ingress configuration
+                              description: External broker ingress configuration.
                             brokerCertChainAndKey:
                               type: object
                               properties:
@@ -732,7 +732,7 @@ spec:
                               description: Reference to the `Secret` which holds the
                                 certificate and private key pair. The certificate
                                 can optionally contain the whole chain.
-                          description: External listener configuration
+                          description: External listener configuration.
                         networkPolicyPeers:
                           type: array
                           items:
@@ -808,8 +808,8 @@ spec:
                                     configure DNS providers such as External DNS.
                                 nodePort:
                                   type: integer
-                                  description: Node port for the bootstrap service
-                              description: External bootstrap service configuration
+                                  description: Node port for the bootstrap service.
+                              description: External bootstrap service configuration.
                             brokers:
                               type: array
                               items:
@@ -817,27 +817,27 @@ spec:
                                 properties:
                                   broker:
                                     type: integer
-                                    description: Id of the kafka broker (broker identifier)
+                                    description: Id of the kafka broker (broker identifier).
                                   advertisedHost:
                                     type: string
                                     description: The host name which will be used
-                                      in the brokers' `advertised.brokers`
+                                      in the brokers' `advertised.brokers`.
                                   advertisedPort:
                                     type: integer
                                     description: The port number which will be used
-                                      in the brokers' `advertised.brokers`
+                                      in the brokers' `advertised.brokers`.
                                   nodePort:
                                     type: integer
-                                    description: Node port for the broker service
+                                    description: Node port for the broker service.
                                   dnsAnnotations:
                                     type: object
                                     description: Annotations that will be added to
                                       the `Service` resources for individual brokers.
                                       You can use this field to configure DNS providers
                                       such as External DNS.
-                              description: External broker services configuration
+                              description: External broker services configuration.
                           description: Overrides for external bootstrap and broker
-                            services and externally advertised addresses
+                            services and externally advertised addresses.
                         tls:
                           type: boolean
                           description: Enables TLS encryption on the listener. By
@@ -854,11 +854,11 @@ spec:
                             \ \n\n* `route` type uses OpenShift Routes to expose Kafka.*\
                             \ `loadbalancer` type uses LoadBalancer type services\
                             \ to expose Kafka.* `nodeport` type uses NodePort type\
-                            \ services to expose Kafka."
+                            \ services to expose Kafka.."
                       required:
                       - type
                       description: Configures external listener on port 9094.
-                  description: Configures listeners of Kafka brokers
+                  description: Configures listeners of Kafka brokers.
                 authorization:
                   type: object
                   properties:
@@ -911,14 +911,14 @@ spec:
                         `kafka.security.auth.SimpleAclAuthorizer` class for authorization.
                   required:
                   - type
-                  description: Authorization configuration for Kafka brokers
+                  description: Authorization configuration for Kafka brokers.
                 config:
                   type: object
                   description: 'The kafka broker config. Properties with the following
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
-                    zookeeper.set.acl, authorizer., super.user'
+                    zookeeper.set.acl, authorizer., super.user.'
                 rack:
                   type: object
                   properties:
@@ -1219,15 +1219,15 @@ spec:
                   properties:
                     "-XX":
                       type: object
-                      description: A map of -XX options to the JVM
+                      description: A map of -XX options to the JVM.
                     "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                      description: -Xms option to to the JVM
+                      description: -Xms option to to the JVM.
                     "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                      description: -Xmx option to to the JVM
+                      description: -Xmx option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging
@@ -1245,7 +1245,7 @@ spec:
                             description: The system property value.
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
-                  description: JVM Options for pods
+                  description: JVM Options for pods.
                 jmxOptions:
                   type: object
                   properties:
@@ -1262,8 +1262,8 @@ spec:
                       required:
                       - type
                       description: Authentication configuration for connecting to
-                        the Kafka JMX port
-                  description: JMX Options for Kafka brokers
+                        the Kafka JMX port.
+                  description: JMX Options for Kafka brokers.
                 resources:
                   type: object
                   properties:
@@ -1294,13 +1294,13 @@ spec:
                       description: Logging type, must be either 'inline' or 'external'.
                   required:
                   - type
-                  description: Logging configuration for Kafka
+                  description: Logging configuration for Kafka.
                 tlsSidecar:
                   type: object
                   properties:
                     image:
                       type: string
-                      description: The docker image for the container
+                      description: The docker image for the container.
                     livenessProbe:
                       type: object
                       properties:
@@ -1376,7 +1376,7 @@ spec:
                         requests:
                           type: object
                       description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration
+                  description: TLS sidecar configuration.
                 template:
                   type: object
                   properties:
@@ -1794,7 +1794,7 @@ spec:
                             specified CIDR ranges. This field is applicable only for
                             loadbalancer type services and is ignored if the cloud
                             provider does not support the feature. For more information,
-                            see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
+                            see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
                       description: Template for Kafka external bootstrap `Service`.
                     perPodService:
                       type: object
@@ -1837,7 +1837,7 @@ spec:
                             specified CIDR ranges. This field is applicable only for
                             loadbalancer type services and is ignored if the cloud
                             provider does not support the feature. For more information,
-                            see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
+                            see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
                       description: Template for Kafka per-pod `Services` used for
                         access from outside of Kubernetes.
                     externalBootstrapRoute:
@@ -1982,7 +1982,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Kafka broker container
+                      description: Template for the Kafka broker container.
                     tlsSidecarContainer:
                       type: object
                       properties:
@@ -1999,7 +1999,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Kafka broker TLS sidecar container
+                      description: Template for the Kafka broker TLS sidecar container.
                     initContainer:
                       type: object
                       properties:
@@ -2016,7 +2016,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Kafka init container
+                      description: Template for the Kafka init container.
                   description: Template for Kafka cluster resources. The template
                     allows users to specify how are the `StatefulSet`, `Pods` and
                     `Services` generated.
@@ -2029,7 +2029,7 @@ spec:
               - replicas
               - storage
               - listeners
-              description: Configuration of the Kafka cluster
+              description: Configuration of the Kafka cluster.
             zookeeper:
               type: object
               properties:
@@ -2054,7 +2054,7 @@ spec:
                       type: integer
                       minimum: 0
                       description: Storage identification number. It is mandatory
-                        only for storage volumes defined in a storage of type 'jbod'
+                        only for storage volumes defined in a storage of type 'jbod'.
                     overrides:
                       type: array
                       items:
@@ -2066,7 +2066,7 @@ spec:
                               allocation for this broker.
                           broker:
                             type: integer
-                            description: Id of the kafka broker (broker identifier)
+                            description: Id of the kafka broker (broker identifier).
                       description: Overrides for individual brokers. The `overrides`
                         field allows to specify a different configuration for different
                         brokers.
@@ -2098,7 +2098,7 @@ spec:
                   type: object
                   description: 'The ZooKeeper broker config. Properties with the following
                     prefixes cannot be set: server., dataDir, dataLogDir, clientPort,
-                    authProvider, quorum.auth, requireClientAuthScheme'
+                    authProvider, quorum.auth, requireClientAuthScheme.'
                 affinity:
                   type: object
                   properties:
@@ -2383,15 +2383,15 @@ spec:
                   properties:
                     "-XX":
                       type: object
-                      description: A map of -XX options to the JVM
+                      description: A map of -XX options to the JVM.
                     "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                      description: -Xms option to to the JVM
+                      description: -Xms option to to the JVM.
                     "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                      description: -Xmx option to to the JVM
+                      description: -Xmx option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging
@@ -2409,7 +2409,7 @@ spec:
                             description: The system property value.
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
-                  description: JVM Options for pods
+                  description: JVM Options for pods.
                 resources:
                   type: object
                   properties:
@@ -2440,13 +2440,13 @@ spec:
                       description: Logging type, must be either 'inline' or 'external'.
                   required:
                   - type
-                  description: Logging configuration for ZooKeeper
+                  description: Logging configuration for ZooKeeper.
                 tlsSidecar:
                   type: object
                   properties:
                     image:
                       type: string
-                      description: The docker image for the container
+                      description: The docker image for the container.
                     livenessProbe:
                       type: object
                       properties:
@@ -2522,7 +2522,7 @@ spec:
                         requests:
                           type: object
                       description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration
+                  description: TLS sidecar configuration.
                 template:
                   type: object
                   properties:
@@ -2963,7 +2963,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the ZooKeeper container
+                      description: Template for the ZooKeeper container.
                     tlsSidecarContainer:
                       type: object
                       properties:
@@ -2980,14 +2980,14 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Kafka broker TLS sidecar container
+                      description: Template for the Kafka broker TLS sidecar container.
                   description: Template for ZooKeeper cluster resources. The template
                     allows users to specify how are the `StatefulSet`, `Pods` and
                     `Services` generated.
               required:
               - replicas
               - storage
-              description: Configuration of the ZooKeeper cluster
+              description: Configuration of the ZooKeeper cluster.
             topicOperator:
               type: object
               properties:
@@ -2996,7 +2996,7 @@ spec:
                   description: The namespace the Topic Operator should watch.
                 image:
                   type: string
-                  description: The image to use for the Topic Operator
+                  description: The image to use for the Topic Operator.
                 reconciliationIntervalSeconds:
                   type: integer
                   minimum: 0
@@ -3004,7 +3004,7 @@ spec:
                 zookeeperSessionTimeoutSeconds:
                   type: integer
                   minimum: 0
-                  description: Timeout for the ZooKeeper session
+                  description: Timeout for the ZooKeeper session.
                 affinity:
                   type: object
                   properties:
@@ -3225,13 +3225,13 @@ spec:
                 topicMetadataMaxAttempts:
                   type: integer
                   minimum: 0
-                  description: The number of attempts at getting topic metadata
+                  description: The number of attempts at getting topic metadata.
                 tlsSidecar:
                   type: object
                   properties:
                     image:
                       type: string
-                      description: The docker image for the container
+                      description: The docker image for the container.
                     livenessProbe:
                       type: object
                       properties:
@@ -3307,7 +3307,7 @@ spec:
                         requests:
                           type: object
                       description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration
+                  description: TLS sidecar configuration.
                 logging:
                   type: object
                   properties:
@@ -3326,7 +3326,7 @@ spec:
                       description: Logging type, must be either 'inline' or 'external'.
                   required:
                   - type
-                  description: Logging configuration
+                  description: Logging configuration.
                 jvmOptions:
                   type: object
                   properties:
@@ -3334,7 +3334,7 @@ spec:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging
                         is enabled. The default is false.
-                  description: JVM Options for pods
+                  description: JVM Options for pods.
                 livenessProbe:
                   type: object
                   properties:
@@ -3389,7 +3389,7 @@ spec:
                       minimum: 0
                       description: The timeout for each attempted health check.
                   description: Pod readiness checking.
-              description: Configuration of the Topic Operator
+              description: Configuration of the Topic Operator.
             entityOperator:
               type: object
               properties:
@@ -3401,7 +3401,7 @@ spec:
                       description: The namespace the Topic Operator should watch.
                     image:
                       type: string
-                      description: The image to use for the Topic Operator
+                      description: The image to use for the Topic Operator.
                     reconciliationIntervalSeconds:
                       type: integer
                       minimum: 0
@@ -3409,7 +3409,7 @@ spec:
                     zookeeperSessionTimeoutSeconds:
                       type: integer
                       minimum: 0
-                      description: Timeout for the ZooKeeper session
+                      description: Timeout for the ZooKeeper session.
                     livenessProbe:
                       type: object
                       properties:
@@ -3475,7 +3475,7 @@ spec:
                     topicMetadataMaxAttempts:
                       type: integer
                       minimum: 0
-                      description: The number of attempts at getting topic metadata
+                      description: The number of attempts at getting topic metadata.
                     logging:
                       type: object
                       properties:
@@ -3494,7 +3494,7 @@ spec:
                           description: Logging type, must be either 'inline' or 'external'.
                       required:
                       - type
-                      description: Logging configuration
+                      description: Logging configuration.
                     jvmOptions:
                       type: object
                       properties:
@@ -3502,8 +3502,8 @@ spec:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
                             is enabled. The default is false.
-                      description: JVM Options for pods
-                  description: Configuration of the Topic Operator
+                      description: JVM Options for pods.
+                  description: Configuration of the Topic Operator.
                 userOperator:
                   type: object
                   properties:
@@ -3512,7 +3512,7 @@ spec:
                       description: The namespace the User Operator should watch.
                     image:
                       type: string
-                      description: The image to use for the User Operator
+                      description: The image to use for the User Operator.
                     reconciliationIntervalSeconds:
                       type: integer
                       minimum: 0
@@ -3520,7 +3520,7 @@ spec:
                     zookeeperSessionTimeoutSeconds:
                       type: integer
                       minimum: 0
-                      description: Timeout for the ZooKeeper session
+                      description: Timeout for the ZooKeeper session.
                     livenessProbe:
                       type: object
                       properties:
@@ -3601,7 +3601,7 @@ spec:
                           description: Logging type, must be either 'inline' or 'external'.
                       required:
                       - type
-                      description: Logging configuration
+                      description: Logging configuration.
                     jvmOptions:
                       type: object
                       properties:
@@ -3609,8 +3609,8 @@ spec:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
                             is enabled. The default is false.
-                      description: JVM Options for pods
-                  description: Configuration of the User Operator
+                      description: JVM Options for pods.
+                  description: Configuration of the User Operator.
                 affinity:
                   type: object
                   properties:
@@ -3841,7 +3841,7 @@ spec:
                   properties:
                     image:
                       type: string
-                      description: The docker image for the container
+                      description: The docker image for the container.
                     livenessProbe:
                       type: object
                       properties:
@@ -3917,7 +3917,7 @@ spec:
                         requests:
                           type: object
                       description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration
+                  description: TLS sidecar configuration.
                 template:
                   type: object
                   properties:
@@ -4272,7 +4272,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Entity Operator TLS sidecar container
+                      description: Template for the Entity Operator TLS sidecar container.
                     topicOperatorContainer:
                       type: object
                       properties:
@@ -4289,7 +4289,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Entity Topic Operator container
+                      description: Template for the Entity Topic Operator container.
                     userOperatorContainer:
                       type: object
                       properties:
@@ -4306,10 +4306,10 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Entity User Operator container
+                      description: Template for the Entity User Operator container.
                   description: Template for Entity Operator resources. The template
                     allows users to specify how is the `Deployment` and `Pods` generated.
-              description: Configuration of the Entity Operator
+              description: Configuration of the Entity Operator.
             clusterCa:
               type: object
               properties:
@@ -4341,7 +4341,7 @@ spec:
                   description: How should CA certificate expiration be handled when
                     `generateCertificateAuthority=true`. The default is for a new
                     CA certificate to be generated reusing the existing private key.
-              description: Configuration of the cluster certificate authority
+              description: Configuration of the cluster certificate authority.
             clientsCa:
               type: object
               properties:
@@ -4373,13 +4373,13 @@ spec:
                   description: How should CA certificate expiration be handled when
                     `generateCertificateAuthority=true`. The default is for a new
                     CA certificate to be generated reusing the existing private key.
-              description: Configuration of the clients certificate authority
+              description: Configuration of the clients certificate authority.
             jmxTrans:
               type: object
               properties:
                 image:
                   type: string
-                  description: The image to use for the JmxTrans
+                  description: The image to use for the JmxTrans.
                 outputDefinitions:
                   type: array
                   items:
@@ -4389,7 +4389,7 @@ spec:
                         type: string
                         description: Template for setting the format of the data that
                           will be pushed.For more information see https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans
-                          OutputWriters]
+                          OutputWriters].
                       host:
                         type: string
                         description: The DNS/hostname of the remote host that the
@@ -4408,7 +4408,7 @@ spec:
                           type: string
                         description: Template for filtering data to be included in
                           response to a wildcard query. For more information see https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans
-                          queries]
+                          queries].
                       name:
                         type: string
                         description: Template for setting the name of the output definition.
@@ -4424,7 +4424,7 @@ spec:
                   type: string
                   description: Sets the logging level of the JmxTrans deployment.For
                     more information see, https://github.com/jmxtrans/jmxtrans-agent/wiki/Troubleshooting[JmxTrans
-                    Logging Level]
+                    Logging Level].
                 kafkaQueries:
                   type: array
                   items:
@@ -4441,14 +4441,14 @@ spec:
                         items:
                           type: string
                         description: Determine which attributes of the targeted MBean
-                          should be included
+                          should be included.
                       outputs:
                         type: array
                         items:
                           type: string
                         description: List of the names of output definitions specified
                           in the spec.kafka.jmxTrans.outputDefinitions that have defined
-                          where JMX metrics are pushed to, and in which data format
+                          where JMX metrics are pushed to, and in which data format.
                     required:
                     - targetMBean
                     - attributes
@@ -4471,7 +4471,7 @@ spec:
               description: Configuration for JmxTrans. When the property is present
                 a JmxTrans deployment is created for gathering JMX metrics from each
                 Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans
-                GitHub]
+                GitHub].
             kafkaExporter:
               type: object
               properties:
@@ -4876,7 +4876,7 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
-                      description: Template for the Kafka Exporter container
+                      description: Template for the Kafka Exporter container.
                   description: Customization of deployment templates and pods.
                 livenessProbe:
                   type: object
@@ -4965,7 +4965,7 @@ spec:
                     type: string
                     description: Last time the condition of a type changed from one
                       status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                      in the UTC time zone
+                      in the UTC time zone.
                   reason:
                     type: string
                     description: The reason for the condition's last transition (a
@@ -4974,7 +4974,7 @@ spec:
                     type: string
                     description: Human-readable message indicating details about the
                       condition's last transition.
-              description: List of status conditions
+              description: List of status conditions.
             observedGeneration:
               type: integer
               description: The generation of the CRD that was last reconciled by the
@@ -4996,10 +4996,10 @@ spec:
                         host:
                           type: string
                           description: The DNS name or IP address of Kafka bootstrap
-                            service
+                            service.
                         port:
                           type: integer
-                          description: The port of the Kafka bootstrap service
+                          description: The port of the Kafka bootstrap service.
                     description: A list of the addresses for this listener.
                   certificates:
                     type: array
@@ -5008,5 +5008,5 @@ spec:
                     description: A list of TLS certificates which can be used to verify
                       the identity of the server when connecting to the given listener.
                       Set only for `tls` and `external` listeners.
-              description: Addresses of the internal and external listeners
+              description: Addresses of the internal and external listeners.
           description: The status of the Kafka and ZooKeeper clusters, and Topic Operator.

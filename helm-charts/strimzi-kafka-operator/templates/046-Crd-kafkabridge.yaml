@@ -73,7 +73,7 @@ spec:
                     required:
                     - certificate
                     - secretName
-                  description: Trusted certificates for TLS connection
+                  description: Trusted certificates for TLS connection.
               description: TLS configuration for connecting Kafka Bridge to the cluster.
             authentication:
               type: object
@@ -242,7 +242,7 @@ spec:
                   description: 'The Kafka producer configuration used for producer
                     instances created by the bridge. Properties with the following
                     prefixes cannot be set: ssl., bootstrap.servers, sasl., security.'
-              description: Kafka producer related configuration
+              description: Kafka producer related configuration.
             resources:
               type: object
               properties:
@@ -256,15 +256,15 @@ spec:
               properties:
                 -XX:
                   type: object
-                  description: A map of -XX options to the JVM
+                  description: A map of -XX options to the JVM.
                 -Xms:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                  description: -Xms option to to the JVM
+                  description: -Xms option to to the JVM.
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                  description: -Xmx option to to the JVM
+                  description: -Xmx option to to the JVM.
                 gcLoggingEnabled:
                   type: boolean
                   description: Specifies whether the Garbage Collection logging is
@@ -282,7 +282,7 @@ spec:
                         description: The system property value.
                   description: A map of additional system properties which will be
                     passed using the `-D` option to the JVM.
-              description: '**Currently not supported** JVM Options for pods'
+              description: '**Currently not supported** JVM Options for pods.'
             logging:
               type: object
               properties:
@@ -730,7 +730,7 @@ spec:
                             description: The environment variable value.
                       description: Environment variables which should be applied to
                         the container.
-                  description: Template for the Kafka Bridge container
+                  description: Template for the Kafka Bridge container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -768,7 +768,7 @@ spec:
                   enum:
                   - jaeger
                   description: Type of the tracing used. Currently the only supported
-                    type is `jaeger` for Jaeger tracing
+                    type is `jaeger` for Jaeger tracing.
               required:
               - type
               description: The configuration of tracing in Kafka Bridge.
@@ -795,7 +795,7 @@ spec:
                     type: string
                     description: Last time the condition of a type changed from one
                       status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                      in the UTC time zone
+                      in the UTC time zone.
                   reason:
                     type: string
                     description: The reason for the condition's last transition (a
@@ -804,7 +804,7 @@ spec:
                     type: string
                     description: Human-readable message indicating details about the
                       condition's last transition.
-              description: List of status conditions
+              description: List of status conditions.
             observedGeneration:
               type: integer
               description: The generation of the CRD that was last reconciled by the

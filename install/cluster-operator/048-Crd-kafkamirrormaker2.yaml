@@ -87,7 +87,7 @@ spec:
                           required:
                           - certificate
                           - secretName
-                        description: Trusted certificates for TLS connection
+                        description: Trusted certificates for TLS connection.
                     description: TLS configuration for connecting MirrorMaker 2.0
                       connectors to a cluster.
                   authentication:
@@ -259,11 +259,11 @@ spec:
                       tasksMax:
                         type: integer
                         minimum: 1
-                        description: The maximum number of tasks for the Kafka Connector
+                        description: The maximum number of tasks for the Kafka Connector.
                       config:
                         type: object
                         description: 'The Kafka Connector configuration. The following
-                          properties cannot be set: connector.class, tasks.max'
+                          properties cannot be set: connector.class, tasks.max.'
                       pause:
                         type: boolean
                         description: Whether the connector should be paused. Defaults
@@ -276,11 +276,11 @@ spec:
                       tasksMax:
                         type: integer
                         minimum: 1
-                        description: The maximum number of tasks for the Kafka Connector
+                        description: The maximum number of tasks for the Kafka Connector.
                       config:
                         type: object
                         description: 'The Kafka Connector configuration. The following
-                          properties cannot be set: connector.class, tasks.max'
+                          properties cannot be set: connector.class, tasks.max.'
                       pause:
                         type: boolean
                         description: Whether the connector should be paused. Defaults
@@ -293,11 +293,11 @@ spec:
                       tasksMax:
                         type: integer
                         minimum: 1
-                        description: The maximum number of tasks for the Kafka Connector
+                        description: The maximum number of tasks for the Kafka Connector.
                       config:
                         type: object
                         description: 'The Kafka Connector configuration. The following
-                          properties cannot be set: connector.class, tasks.max'
+                          properties cannot be set: connector.class, tasks.max.'
                       pause:
                         type: boolean
                         description: Whether the connector should be paused. Defaults
@@ -307,8 +307,8 @@ spec:
                   topicsPattern:
                     type: string
                     description: A regular expression matching the topics to be mirrored,
-                      for example, "topic1|topic2|topic3". Comma-separated lists are
-                      also supported.
+                      for example, "topic1\|topic2\|topic3". Comma-separated lists
+                      are also supported.
                   topicsBlacklistPattern:
                     type: string
                     description: A regular expression matching the topics to exclude
@@ -393,15 +393,15 @@ spec:
               properties:
                 "-XX":
                   type: object
-                  description: A map of -XX options to the JVM
+                  description: A map of -XX options to the JVM.
                 "-Xms":
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                  description: -Xms option to to the JVM
+                  description: -Xms option to to the JVM.
                 "-Xmx":
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                  description: -Xmx option to to the JVM
+                  description: -Xmx option to to the JVM.
                 gcLoggingEnabled:
                   type: boolean
                   description: Specifies whether the Garbage Collection logging is
@@ -419,7 +419,7 @@ spec:
                         description: The system property value.
                   description: A map of additional system properties which will be
                     passed using the `-D` option to the JVM.
-              description: JVM Options for pods
+              description: JVM Options for pods.
             affinity:
               type: object
               properties:
@@ -663,7 +663,7 @@ spec:
                   description: Logging type, must be either 'inline' or 'external'.
               required:
               - type
-              description: Logging configuration for Kafka Connect
+              description: Logging configuration for Kafka Connect.
             metrics:
               type: object
               description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
@@ -676,7 +676,7 @@ spec:
                   enum:
                   - jaeger
                   description: Type of the tracing used. Currently the only supported
-                    type is `jaeger` for Jaeger tracing
+                    type is `jaeger` for Jaeger tracing.
               required:
               - type
               description: The configuration of tracing in Kafka Connect.
@@ -1049,7 +1049,7 @@ spec:
                             description: The environment variable value.
                       description: Environment variables which should be applied to
                         the container.
-                  description: Template for the Kafka Connect container
+                  description: Template for the Kafka Connect container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -1207,7 +1207,7 @@ spec:
                     type: string
                     description: Last time the condition of a type changed from one
                       status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                      in the UTC time zone
+                      in the UTC time zone.
                   reason:
                     type: string
                     description: The reason for the condition's last transition (a
@@ -1216,7 +1216,7 @@ spec:
                     type: string
                     description: Human-readable message indicating details about the
                       condition's last transition.
-              description: List of status conditions
+              description: List of status conditions.
             observedGeneration:
               type: integer
               description: The generation of the CRD that was last reconciled by the

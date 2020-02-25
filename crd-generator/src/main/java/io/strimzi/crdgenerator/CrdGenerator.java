@@ -521,7 +521,7 @@ public class CrdGenerator {
     private void addDescription(ObjectNode result, AnnotatedElement element) {
         if (element.isAnnotationPresent(Description.class)) {
             Description description = element.getAnnotation(Description.class);
-            result.put("description", description.value());
+            result.put("description", DocGenerator.getDescription(description));
         }
     }
 

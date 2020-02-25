@@ -295,7 +295,7 @@ spec:
           example: "42"
           minimum: 42
           deprecated: true
-          description: "An example int property"
+          description: "An example int property."
         listOfArray:
           type: "array"
           items:
@@ -349,10 +349,10 @@ spec:
                 - "right"
               leftProperty:
                 type: "string"
-                description: "when descrim=left, the left-hand property"
+                description: "when descrim=left, the left-hand property."
               rightProperty:
                 type: "string"
-                description: "when descrim=right, the right-hand property"
+                description: "when descrim=right, the right-hand property."
             required:
             - "discrim"
         listOfRawList:
@@ -392,7 +392,7 @@ spec:
           type: "integer"
           example: "42"
           minimum: 42
-          description: "An example long property"
+          description: "An example long property."
         mapProperty:
           type: "object"
         normalEnum:
@@ -419,10 +419,10 @@ spec:
               - "right"
             leftProperty:
               type: "string"
-              description: "when descrim=left, the left-hand property"
+              description: "when descrim=left, the left-hand property."
             rightProperty:
               type: "string"
-              description: "when descrim=right, the right-hand property"
+              description: "when descrim=right, the right-hand property."
           required:
           - "discrim"
         rawList:

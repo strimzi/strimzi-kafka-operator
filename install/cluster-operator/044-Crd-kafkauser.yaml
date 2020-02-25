@@ -184,7 +184,7 @@ spec:
                     type: string
                     description: Last time the condition of a type changed from one
                       status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                      in the UTC time zone
+                      in the UTC time zone.
                   reason:
                     type: string
                     description: The reason for the condition's last transition (a
@@ -193,15 +193,15 @@ spec:
                     type: string
                     description: Human-readable message indicating details about the
                       condition's last transition.
-              description: List of status conditions
+              description: List of status conditions.
             observedGeneration:
               type: integer
               description: The generation of the CRD that was last reconciled by the
                 operator.
             username:
               type: string
-              description: Username
+              description: Username.
             secret:
               type: string
-              description: The name of `Secret` where the credentials are stored
+              description: The name of `Secret` where the credentials are stored.
           description: The status of the Kafka User.
