@@ -31,7 +31,7 @@ import java.util.Map;
 public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate statefulset;
+    private StatefulSetTemplate statefulset;
     private PodTemplate pod;
     private ResourceTemplate clientService;
     private ResourceTemplate nodesService;
@@ -43,11 +43,11 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     @Description("Template for ZooKeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getStatefulset() {
+    public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }
 
-    public void setStatefulset(ResourceTemplate statefulset) {
+    public void setStatefulset(StatefulSetTemplate statefulset) {
         this.statefulset = statefulset;
     }
 

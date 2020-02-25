@@ -260,9 +260,15 @@ public class ZookeeperCluster extends AbstractModel {
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null && template.getStatefulset().getMetadata() != null)  {
-                zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+            if (template.getStatefulset() != null) {
+                if (template.getStatefulset().getPodManagementPolicy() != null) {
+                    zk.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
+                }
+
+                if (template.getStatefulset().getMetadata() != null) {
+                    zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
+                    zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+                }
             }
 
             ModelUtils.parsePodTemplate(zk, template.getPod());

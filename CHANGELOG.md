@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.18.0
+
+* Make it possible to configure PodManagementPolicy for StatefulSets
+
 ## 0.17.0
 
 * Add possibility to set Java System Properties via CR yaml
