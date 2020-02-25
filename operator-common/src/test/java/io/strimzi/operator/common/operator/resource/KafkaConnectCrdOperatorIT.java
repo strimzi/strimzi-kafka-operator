@@ -107,7 +107,7 @@ public class KafkaConnectCrdOperatorIT {
 
     protected KafkaConnect getResource() {
         return new KafkaConnectBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
                 .withNewMetadata()
                 .withName(RESOURCE_NAME)
                 .withNamespace(namespace)

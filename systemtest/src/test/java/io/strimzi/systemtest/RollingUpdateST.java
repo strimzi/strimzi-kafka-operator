@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -326,7 +328,7 @@ class RollingUpdateST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
-                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
         // Wait for first reconciliation
@@ -451,19 +453,19 @@ class RollingUpdateST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(kafkaName).cascading(false).edit()
             .editMetadata()
-                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
         // check annotation to trigger rolling update
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
+                .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
-                    || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+                    || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
@@ -473,19 +475,19 @@ class RollingUpdateST extends BaseST {
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zkName).cascading(false).edit()
             .editMetadata()
-                .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
         // check annotation to trigger rolling update
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(zkName)
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
+                .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
         StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
 
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
-                    || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+                    || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
 
@@ -666,7 +668,7 @@ class RollingUpdateST extends BaseST {
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
         List<String> podStatuses = kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(rolledComponent)
-                        && p.getMetadata().getLabels().containsKey("strimzi.io/kind")
+                        && p.getMetadata().getLabels().containsKey(Labels.STRIMZI_KIND_LABEL)
                         && p.getMetadata().getLabels().containsValue("Kafka"))
                 .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 

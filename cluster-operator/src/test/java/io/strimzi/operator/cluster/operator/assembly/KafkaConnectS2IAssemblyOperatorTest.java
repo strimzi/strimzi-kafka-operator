@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
@@ -186,7 +187,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             DeploymentConfig dc = capturedDc.get(0);
             context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
             Map annotations = new HashMap();
-            annotations.put("strimzi.io/logging", LOGGING_CONFIG);
+            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
             context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(connect.generateDeploymentConfig(annotations, true, null, null))));
 
             // Verify Build Config
@@ -500,7 +501,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             DeploymentConfig dc = capturedDc.get(0);
             context.verify(() -> assertThat(dc.getMetadata().getName(), is(compareTo.getName())));
             Map annotations = new HashMap();
-            annotations.put("strimzi.io/logging", LOGGING_CONFIG);
+            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
             context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(compareTo.generateDeploymentConfig(annotations, true, null, null))));
 
             // Verify Build Config
@@ -968,7 +969,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             DeploymentConfig dc = capturedDc.get(0);
             context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
             Map annotations = new HashMap();
-            annotations.put("strimzi.io/logging", LOGGING_CONFIG);
+            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
             context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(connect.generateDeploymentConfig(annotations, true, null, null))));
 
             // Verify Build Config
