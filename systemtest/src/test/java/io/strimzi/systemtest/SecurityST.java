@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
+import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -90,8 +92,6 @@ class SecurityST extends BaseST {
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
     private static final String TOPIC_NAME = "test-topic";
-    public static final String STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
-    public static final String STRIMZI_IO_FORCE_REPLACE = "strimzi.io/force-replace";
 
     private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
     private int messagesCount = 200;
@@ -242,10 +242,10 @@ class SecurityST extends BaseST {
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
-                    .addToAnnotations(STRIMZI_IO_FORCE_RENEW, "true")
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
                     .endMetadata()
                     .build();
-            LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_RENEW);
+            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW);
             kubeClient().patchSecret(secretName, annotated);
         }
 
@@ -383,10 +383,10 @@ class SecurityST extends BaseST {
             initialCaKeys.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
-                    .addToAnnotations(STRIMZI_IO_FORCE_REPLACE, "true")
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
                     .endMetadata()
                     .build();
-            LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_REPLACE);
+            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_REPLACE);
             kubeClient().patchSecret(secretName, annotated);
         }
 
@@ -624,8 +624,8 @@ class SecurityST extends BaseST {
                 .withNewMetadata()
                     .withName(secretName)
                     .addToLabels(map(
-                        "strimzi.io/cluster", CLUSTER_NAME,
-                        "strimzi.io/kind", "Kafka"))
+                        Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME,
+                        Labels.STRIMZI_KIND_LABEL, "Kafka"))
                 .endMetadata()
                 .withData(singletonMap(keyName, Base64.getEncoder().encodeToString(certAsString.getBytes(StandardCharsets.US_ASCII))))
             .build();
@@ -668,7 +668,7 @@ class SecurityST extends BaseST {
         LOGGER.info("Annotate secret {} with secret force-renew annotation", secretName);
         Secret secret = new SecretBuilder(kubeClient().getSecret(secretName))
             .editMetadata()
-                .addToAnnotations("strimzi.io/force-renew", "true")
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
             .endMetadata().build();
         kubeClient().patchSecret(secretName, secret);
 

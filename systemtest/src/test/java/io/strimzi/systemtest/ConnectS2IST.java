@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -350,7 +351,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
                 .editSpec()
                 .addToConfig("group.id", connectClusterName)
@@ -363,7 +364,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
                 .addToConfig("group.id", connectS2IClusterName)
@@ -412,7 +413,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME, kc -> {
-            kc.getMetadata().getAnnotations().remove("strimzi.io/use-connector-resources");
+            kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
@@ -440,7 +441,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .done();
 

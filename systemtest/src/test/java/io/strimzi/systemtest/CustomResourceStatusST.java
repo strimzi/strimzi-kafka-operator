@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -124,7 +126,7 @@ class CustomResourceStatusST extends BaseST {
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
-        String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String eoPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);
@@ -194,7 +196,7 @@ class CustomResourceStatusST extends BaseST {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
@@ -214,12 +216,12 @@ class CustomResourceStatusST extends BaseST {
         assertKafkaConnectStatus(3, connectUrl);
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
@@ -232,7 +234,7 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> {
-                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME));
+                kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME));
                 kc.getSpec().setClassName(defaultClass);
             });
 
@@ -246,7 +248,7 @@ class CustomResourceStatusST extends BaseST {
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);

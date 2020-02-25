@@ -107,7 +107,7 @@ public class KafkaCrdOperatorIT {
 
     protected Kafka getResource() {
         return new KafkaBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)
