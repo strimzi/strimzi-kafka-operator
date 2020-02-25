@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -212,6 +213,23 @@ public class ZookeeperClusterTest {
     }
 
     @Test
+    public void testGenerateStatefulSetWithPodManagementPolicy() {
+        Kafka editZooAssembly = new KafkaBuilder(ka)
+                        .editSpec()
+                            .editZookeeper()
+                                .withNewTemplate()
+                                    .withNewStatefulset()
+                                        .withPodManagementPolicy(PodManagementPolicy.ORDERED_READY)
+                                    .endStatefulset()
+                                .endTemplate()
+                            .endZookeeper()
+                        .endSpec().build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(editZooAssembly, VERSIONS);
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
+    }
+
+    @Test
     public void testInvalidVersion() {
         assertThrows(InvalidResourceException.class, () -> {
             Kafka ka = new KafkaBuilder(this.ka)
@@ -246,6 +264,7 @@ public class ZookeeperClusterTest {
 
         // checks on the main Zookeeper container
         assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image + "-zk"));
         assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
         assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
