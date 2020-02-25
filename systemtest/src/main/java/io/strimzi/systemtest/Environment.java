@@ -62,6 +62,10 @@ public class Environment {
      * CO reconciliation interval.
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    /**
+     * IMage with OLM manigests name
+     */
+    private static final String OLM_MANIFESTS_IMAGE_NAME_ENV = "OLM_MANIFESTS_IMAGE_NAME";
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
@@ -75,6 +79,7 @@ public class Environment {
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
+    public static final String OLM_MANIFESTS_IMAGE_NAME_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/operator/" + STRIMZI_TAG_DEFAULT;
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
@@ -93,6 +98,8 @@ public class Environment {
     // Image pull policy variables
     public static final String COMPONENTS_IMAGE_PULL_POLICY = System.getenv().getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
     public static final String OPERATOR_IMAGE_PULL_POLICY = System.getenv().getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
+    // Image name with OLM manifests
+    public static final String OLM_MANIFESTS_IMAGE_NAME = System.getenv().getOrDefault(OLM_MANIFESTS_IMAGE_NAME_ENV, OLM_MANIFESTS_IMAGE_NAME_DEFAULT);
 
     private Environment() { }
 
@@ -110,5 +117,6 @@ public class Environment {
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
         LOGGER.info(debugFormat, COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY);
         LOGGER.info(debugFormat, OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY);
+        LOGGER.info(debugFormat, OLM_MANIFESTS_IMAGE_NAME_ENV, OLM_MANIFESTS_IMAGE_NAME);
     }
 }

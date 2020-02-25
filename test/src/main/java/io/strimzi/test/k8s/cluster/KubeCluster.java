@@ -87,4 +87,11 @@ public interface KubeCluster {
         }
         return cluster;
     }
+
+
+    /**
+     * Return default OLM namespace
+     * @return
+     */
+    String defaultOlmNamespace();
 }
