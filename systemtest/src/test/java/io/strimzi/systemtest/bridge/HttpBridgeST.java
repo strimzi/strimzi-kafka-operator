@@ -205,7 +205,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         Service bridgeService = kubeClient().getService(KafkaBridgeResources.serviceName(CLUSTER_NAME));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo(9092, "http", "none"), is(serviceDiscoveryArray));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none")));
     }
 
     @BeforeAll

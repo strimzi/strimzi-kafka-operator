@@ -539,10 +539,8 @@ class KafkaST extends BaseST {
 
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("port\" : 9092"));
-        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("tls\" : false"));
-        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("protocol\" : kafka"));
-        assertThat(kafkaServiceDiscoveryAnnotation, CoreMatchers.containsString("auth\" : none"));
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
     }
 
     /**
@@ -641,7 +639,7 @@ class KafkaST extends BaseST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512"), is(serviceDiscoveryArray));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512")));
     }
 
     /**
@@ -684,7 +682,7 @@ class KafkaST extends BaseST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512"), is(serviceDiscoveryArray));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512")));
     }
 
     @Test
