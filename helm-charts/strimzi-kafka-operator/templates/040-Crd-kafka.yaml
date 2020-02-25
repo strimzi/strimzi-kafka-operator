@@ -3355,6 +3355,19 @@ spec:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging
                         is enabled. The default is false.
+                    javaSystemProperties:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: The system property name.
+                          value:
+                            type: string
+                            description: The system property value.
+                      description: A map of additional system properties which will
+                        be passed using the `-D` option to the JVM.
                   description: JVM Options for pods.
                 livenessProbe:
                   type: object
@@ -3523,6 +3536,19 @@ spec:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
                             is enabled. The default is false.
+                        javaSystemProperties:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The system property name.
+                              value:
+                                type: string
+                                description: The system property value.
+                          description: A map of additional system properties which
+                            will be passed using the `-D` option to the JVM.
                       description: JVM Options for pods.
                   description: Configuration of the Topic Operator.
                 userOperator:
@@ -3630,6 +3656,19 @@ spec:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
                             is enabled. The default is false.
+                        javaSystemProperties:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The system property name.
+                              value:
+                                type: string
+                                description: The system property value.
+                          description: A map of additional system properties which
+                            will be passed using the `-D` option to the JVM.
                       description: JVM Options for pods.
                   description: Configuration of the User Operator.
                 affinity:

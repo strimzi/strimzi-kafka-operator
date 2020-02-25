@@ -218,6 +218,9 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                if (topicOperatorSpec.getJvmOptions() != null) {
+                    result.setJavaSystemProperties(topicOperatorSpec.getJvmOptions().getJavaSystemProperties());
+                }
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
@@ -259,6 +262,9 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
+        }
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

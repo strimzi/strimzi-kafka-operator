@@ -811,7 +811,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 [id='type-SystemProperty-{context}']
 ### `SystemProperty` schema reference
 
-Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
+Used in: xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`], xref:type-JvmOptions-{context}[`JvmOptions`]
 
 
 [options="header"]
@@ -1215,9 +1215,11 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 
 [options="header"]
 |====
-|Property                 |Description
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
+|Property                     |Description
+|gcLoggingEnabled      1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
+|javaSystemProperties  1.2+<.<|A map of additional system properties which will be passed using the `-D` option to the JVM.
+|xref:type-SystemProperty-{context}[`SystemProperty`] array
 |====
 
 [id='type-EntityOperatorSpec-{context}']

@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +29,7 @@ public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Seri
     private static final long serialVersionUID = 1L;
 
     private boolean gcLoggingEnabled = false;
+    protected List<SystemProperty> javaSystemProperties = null;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -38,6 +40,15 @@ public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Seri
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
+        this.javaSystemProperties = javaSystemProperties;
+    }
+
+    @Description("A map of additional system properties which will be passed using the `-D` option to the JVM.")
+    public List<SystemProperty> getJavaSystemProperties() {
+        return javaSystemProperties;
     }
 
     @Override
