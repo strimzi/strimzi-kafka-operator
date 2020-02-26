@@ -21,6 +21,6 @@ public class NamespaceUtils {
         LOGGER.info("Waiting when Namespace {} to be deleted", name);
 
         TestUtils.waitFor("namespace " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getNamespaceStatus(name));
+            () -> kubeClient().getNamespace(name) == null);
     }
 }

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 
@@ -19,9 +20,9 @@ public class TracingUtils {
 
     public static Service createJaegerHostNodePortService(String clusterName, String namespace, String serviceName) {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", clusterName);
-        map.put("strimzi.io/kind", "Kafka");
-        map.put("strimzi.io/name", clusterName + "-tracing");
+        map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        map.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+        map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-tracing");
 
         // Create node port service for expose bridge outside Kubernetes
         return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_JAEGER_DEFAULT_TCP_PORT, namespace, "TCP")

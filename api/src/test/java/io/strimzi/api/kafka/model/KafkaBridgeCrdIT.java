@@ -10,7 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,10 +49,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
             });
 
-        assertThat(exception.getMessage(),
-                anyOf(
-                        containsStringIgnoringCase("spec.bootstrapServers in body is required"),
-                        containsStringIgnoringCase("spec.bootstrapServers: Required value")));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
     }
 
     @Test
@@ -74,13 +70,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate in body is required"),
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate: Required value"),
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key: Required value"))));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate",
+                "spec.authentication.certificateAndKey.key");
     }
 
     @Test
@@ -119,9 +110,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.tracing.type in body is required"),
-                containsStringIgnoringCase("spec.tracing.type: Required value")));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.tracing.type");
     }
 
     @BeforeAll

@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker-authentication.adoc
 
 [id='proc-configuring-kafka-mirror-maker-authentication-scram-sha-512-{context}']
-= Configuring SASL authentication in Kafka Mirror Maker
+= Configuring SASL authentication in Kafka MirrorMaker
 
 .Prerequisites
 
@@ -14,7 +14,7 @@
 
 .Procedure
 
-As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure SCRAM-SHA-512 authentication for one or both of the clusters.
+As the Kafka MirrorMaker connects to two Kafka clusters (source and target), you can choose to configure SCRAM-SHA-512 authentication for one or both of the clusters.
 The following steps describe how to configure SCRAM-SHA-512 authentication on the consumer side for connecting to the source Kafka cluster.
 
 If you want to use SASL PLAIN authentication, the steps are the same as shown here but you set the `authentication.type` property to `plain`.

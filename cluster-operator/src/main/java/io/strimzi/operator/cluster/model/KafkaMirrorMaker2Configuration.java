@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +22,8 @@ public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_OPTIONS = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIXES.split(", "));
+        EXCEPTIONS = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
         DEFAULTS = new HashMap<>();
         DEFAULTS.put("group.id", "mirrormaker2-cluster");

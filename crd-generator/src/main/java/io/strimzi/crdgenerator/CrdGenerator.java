@@ -474,6 +474,7 @@ public class CrdGenerator {
         } else {
             schema = buildObjectSchema(property, returnType);
         }
+        addDescription(schema, property);
         return schema;
     }
 
@@ -515,6 +516,13 @@ public class CrdGenerator {
 
 
         return result;
+    }
+
+    private void addDescription(ObjectNode result, AnnotatedElement element) {
+        if (element.isAnnotationPresent(Description.class)) {
+            Description description = element.getAnnotation(Description.class);
+            result.put("description", DocGenerator.getDescription(description));
+        }
     }
 
     @SuppressWarnings("unchecked")

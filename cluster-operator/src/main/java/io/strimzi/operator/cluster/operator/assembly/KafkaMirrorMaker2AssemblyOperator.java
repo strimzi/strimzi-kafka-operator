@@ -11,6 +11,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
@@ -65,6 +68,7 @@ import io.vertx.core.Vertx;
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Status> {
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
+    private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
 
     public static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
@@ -105,6 +109,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.versions = config.versions();
     }
 
@@ -134,10 +139,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 null);
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
+        log.info("{}: Updating Kafka MirrorMaker 2.0 cluster {} in {}", reconciliation, name, namespace);
+        log.info("{}: Updating Kafka MirrorMaker 2.0 generatePodDisruptionBudget {}", reconciliation, mirrorMaker2Cluster.generatePodDisruptionBudget());
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
+                .compose(i -> networkPolicyOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), true)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirrorMaker2Cluster.getAncillaryConfigName(), logAndMetricsConfigMap))

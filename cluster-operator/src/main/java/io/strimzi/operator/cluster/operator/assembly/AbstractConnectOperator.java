@@ -80,8 +80,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         extends AbstractOperator<T, CrdOperator<C, T, L, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
-    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = "strimzi.io/use-connector-resources";
-    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -246,7 +244,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     public static boolean isUseResources(HasMetadata connect) {
-        return Annotations.booleanAnnotation(connect, STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
+        return Annotations.booleanAnnotation(connect, Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
 
     private static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
@@ -264,8 +262,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
         String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
+
+        if (!isUseResources(connect))    {
+            return Future.succeededFuture();
+        }
+
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        boolean useResources = isUseResources(connect);
+
         return CompositeFuture.join(
                 apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
@@ -278,15 +281,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             log.debug("{}: Setting list of connector plugins in Kafka Connect status", reconciliation);
             connectStatus.setConnectorPlugins(connectorPlugins);
 
-            log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
             log.debug("{}: {} cluster: delete connectors: {}", reconciliation, kind(), deleteConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, null)
+                reconcileConnector(reconciliation, host, apiClient, true, connectorName, null)
             );
+
+            log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
             Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                    .map(connector -> reconcileConnector(reconciliation, host, apiClient, useResources, connector.getMetadata().getName(), connector));
+                    .map(connector -> reconcileConnector(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
+
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
     }
@@ -311,7 +316,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
             if (!useResources) {
                 return maybeUpdateConnectorStatus(reconciliation, connector, null,
-                        new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + STRIMZI_IO_USE_CONNECTOR_RESOURCES));
+                        new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
                 Promise<Void> promise = Promise.promise();
                 createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec())

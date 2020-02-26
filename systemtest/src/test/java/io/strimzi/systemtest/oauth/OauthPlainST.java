@@ -53,11 +53,9 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 
 @Tag(OAUTH)
@@ -71,7 +69,7 @@ public class OauthPlainST extends OauthBaseST {
             "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @Test
-    void testProducerConsumer() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumer() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
@@ -82,7 +80,7 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As an oauth kafka connect, I should be able to sink messages from kafka broker topic.")
     @Test
-    void testProducerConsumerConnect() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
@@ -119,18 +117,13 @@ public class OauthPlainST extends OauthBaseST {
 
         KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        String message = "Sending messages: Hello-world - 99";
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName,  Constants.DEFAULT_SINK_FILE_NAME);
-
-        assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString(message));
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
     }
 
     @Disabled("MM doesn't replicate messages to target cluster. Investigate in the next PR")
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
-    void testProducerConsumerMirrorMaker() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumerMirrorMaker() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
@@ -169,7 +162,7 @@ public class OauthPlainST extends OauthBaseST {
                 .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-                "my-group" +  new Random().nextInt(Integer.MAX_VALUE), 1, false)
+                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
                     .withNewConsumer()
                         .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
@@ -358,6 +351,42 @@ public class OauthPlainST extends OauthBaseST {
         });
     }
 
+    @Test
+    void testIntrospectionEndpointWithPlainCommunication() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deploying kafka...");
+
+        String introspectionKafka = CLUSTER_NAME + "-intro";
+
+        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                                .withNewClientSecret()
+                                    .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                                    .withKey(OAUTH_KEY)
+                                .endClientSecret()
+                                .withAccessTokenIsJwt(false)
+                                .withValidIssuerUri(validIssuerUri)
+                                .withIntrospectionEndpointUri(introspectionEndpointUri)
+                            .endKafkaListenerAuthenticationOAuth()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT);
+        Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT,
+                CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+    }
+
     @BeforeAll
     void setUp() {
         LOGGER.info("Replacing validIssuerUri: {} to pointing to internal realm", validIssuerUri);
@@ -367,6 +396,7 @@ public class OauthPlainST extends OauthBaseST {
         validIssuerUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal";
         jwksEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/certs";
         oauthTokenEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token";
+        introspectionEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token/introspect";
 
         LOGGER.info("Setting producer and consumer properties");
 

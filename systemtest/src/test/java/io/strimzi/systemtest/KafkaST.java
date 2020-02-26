@@ -13,6 +13,9 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -25,12 +28,21 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.status.ListenerAddress;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -52,14 +64,9 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,6 +74,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -206,7 +215,7 @@ class KafkaST extends BaseST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
                     .withNewTlsSidecar()
@@ -1026,7 +1035,7 @@ class KafkaST extends BaseST {
         assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
         String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
         assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
 
@@ -1055,7 +1064,30 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
+        // Check that Kafka status has correct addresses in NodePort external listener part
+        for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
+            if (listenerStatus.getType().equals("external")) {
+                List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
+                listStatusAddresses.sort(Comparator.comparing(String::toString));
+                List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
+                Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
+
+                List<String> nodeIps = kubeClient().listPods(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels())
+                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
+                nodeIps.sort(Comparator.comparing(String::toString));
+
+                assertThat(listStatusAddresses, is(nodeIps));
+                for (Integer port : listStatusPorts) {
+                    assertThat(port, is(nodePort));
+                }
+            }
+        }
     }
 
     @Test
@@ -1098,7 +1130,11 @@ class KafkaST extends BaseST {
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1123,7 +1159,11 @@ class KafkaST extends BaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1144,7 +1184,11 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1171,7 +1215,11 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+
+        assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1261,9 +1309,9 @@ class KafkaST extends BaseST {
                     String volumeName = volume.getMetadata().getName();
                     pvcs.add(volumeName);
                     LOGGER.info("Checking labels for volume:" + volumeName);
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/cluster"), is(CLUSTER_NAME));
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/name"), is(CLUSTER_NAME.concat("-kafka")));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
                     assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
                 });
 
@@ -1387,7 +1435,7 @@ class KafkaST extends BaseST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editMetadata()
                     .withLabels(labels)
                 .endMetadata()
@@ -1620,15 +1668,15 @@ class KafkaST extends BaseST {
 
     void verifyAppLabels(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label strimzi.io/cluster is present", labels.containsKey("strimzi.io/cluster"));
-        assertThat("Label strimzi.io/kind is present", labels.containsKey("strimzi.io/kind"));
-        assertThat("Label strimzi.io/name is present", labels.containsKey("strimzi.io/name"));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
+        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
     }
 
     void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label strimzi.io/cluster is present", labels.containsKey("strimzi.io/cluster"));
-        assertThat("Label strimzi.io/kind is present", labels.containsKey("strimzi.io/kind"));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
     }
 
     @Test
@@ -1645,27 +1693,28 @@ class KafkaST extends BaseST {
         SecretUtils.waitForSecretReady(userName);
 
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
-        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
+        String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
         String uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOLogs, containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED"));
 
         LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
-        entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
+        entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
         uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOLogs, not(containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED")));
 
         LOGGER.info("Verifying that user belongs to {} cluster", firstClusterName);
         String kafkaUserResource = cmdKubeClient().getResourceAsYaml("kafkauser", userName);
-        assertThat(kafkaUserResource, containsString("strimzi.io/cluster: " + firstClusterName));
+        assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
     @Test
     void testMessagesAreStoredInDisk() throws Exception {
+        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -1690,12 +1739,12 @@ class KafkaST extends BaseST {
         String topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
-        LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         assertThat("Topic contains data", topicData, isEmptyOrNullString());
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1723,6 +1772,7 @@ class KafkaST extends BaseST {
 
     @Test
     void testConsumerOffsetFiles() throws Exception {
+        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
@@ -1735,7 +1785,7 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -1754,8 +1804,8 @@ class KafkaST extends BaseST {
         assertThat("Folder kafka-log0 has data in files", result.equals(""));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1772,7 +1822,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testLabelsAndAnnotationforPVC() {
+    void testLabelsAndAnnotationForPVC() {
         final String labelAnnotationKey = "testKey";
 
         Map<String, String> pvcLabel = new HashMap<>();
@@ -1901,6 +1951,7 @@ class KafkaST extends BaseST {
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
         super.tearDownEnvironmentAfterEach();
+        kubeClient().getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

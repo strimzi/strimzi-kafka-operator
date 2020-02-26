@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-mirror-maker-resources-{context}']
-= Upgrading Kafka Mirror Maker resources
+= Upgrading Kafka MirrorMaker resources
 
 .Prerequisites
 

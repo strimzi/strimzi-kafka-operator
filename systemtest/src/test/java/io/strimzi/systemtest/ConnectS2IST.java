@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -147,7 +148,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
-    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
+    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -161,13 +162,10 @@ class ConnectS2IST extends BaseST {
             .endSpec()
             .done();
 
-
         final String userName = "user-example-one";
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         SecretUtils.waitForSecretReady(userName);
 
@@ -178,6 +176,8 @@ class ConnectS2IST extends BaseST {
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -214,15 +214,14 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPod, CONNECT_S2I_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL"),
-                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, 2, "SASL-SSL", "my-group-" + new Random().nextInt(Integer.MAX_VALUE))
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
+                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
         );
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("Sending messages: Hello-world - 99"));
+                containsString("99"));
     }
 
     @Test
@@ -352,7 +351,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
                 .editSpec()
                 .addToConfig("group.id", connectClusterName)
@@ -365,7 +364,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
                 .addToConfig("group.id", connectS2IClusterName)
@@ -414,7 +413,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME, kc -> {
-            kc.getMetadata().getAnnotations().remove("strimzi.io/use-connector-resources");
+            kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
@@ -442,7 +441,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .done();
 

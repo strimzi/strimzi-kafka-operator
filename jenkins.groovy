@@ -20,11 +20,70 @@ def downloadOcOrigin() {
     sh(script: "sudo rm -rf openshift.tar.gz")
 }
 
+def downloadCRC() {
+    downloadOcOrigin()
+    def crcBundleUrl = "https://mirror.openshift.com/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz"
+    withCredentials([string(credentialsId: 'crc-secret', variable: 'secret')]) {
+        sh(script: "echo \'${secret}\' > ${WORKSPACE}/crcSecret")
+    }
+    sh(script: "mkdir -p /tmp/crc")
+
+    timeout(time: 40, unit: 'MINUTES') {
+        status = sh(
+                script: "wget ${crcBundleUrl} -O crc.tar.xz -q",
+                returnStatus: true
+        )
+    }
+    //////////////////////////////////////////////////
+
+    sh(script: "tar xvf crc.tar.xz -C /tmp/crc --strip-components 1")
+    sh(script: "sudo cp /tmp/crc/crc /usr/bin/crc")
+    sh(script: "sudo rm -rf /tmp/crc/")
+    sh(script: "sudo rm -rf crc.tar.xz")
+}
+
+def createUserCRC(String url, String kubeadmPasswd) {
+    println("Create user in on CRC cluster admin")
+    login(url, "kubeadmin", kubeadmPasswd)
+
+    sh(script: 'echo \'admin:$2y$05$e4L09O0hldfkIi8iKa0bV.Ai/HePB.fOHJRsYfZxOhkbtUR.oeKsW\' > users.htpasswd')
+    sh(script: 'echo \'user:$2y$05$EuxM25KPffYEGop7Fo7kaeet3/AxRjpvpXVDVnUVz7JnGWO3AxrDe\' >> users.htpasswd')
+
+    sh(script: 'echo "apiVersion: config.openshift.io/v1" > auth.yaml')
+    sh(script: 'echo "kind: OAuth" >> auth.yaml')
+    sh(script: 'echo "metadata:" >> auth.yaml')
+    sh(script: 'echo "  name: cluster" >> auth.yaml')
+    sh(script: 'echo "spec:" >> auth.yaml')
+    sh(script: 'echo "  identityProviders:" >> auth.yaml')
+    sh(script: 'echo "  - name: htpasswd" >> auth.yaml')
+    sh(script: 'echo "    mappingMethod: claim" >> auth.yaml')
+    sh(script: 'echo "    type: HTPasswd" >> auth.yaml')
+    sh(script: 'echo "    htpasswd:" >> auth.yaml')
+    sh(script: 'echo "      fileData:" >> auth.yaml')
+    sh(script: 'echo "        name: htpass-secret-custom" >> auth.yaml')
+
+    sh(script: "oc create secret generic htpass-secret-custom --from-file=htpasswd=./users.htpasswd -n openshift-config")
+    sh(script: "oc apply -f auth.yaml")
+    sh(script: "oc adm policy add-cluster-role-to-user cluster-admin admin --rolebinding-name=cluster-admin")
+}
+
+def startCRC() {
+    sh(script: "sudo yum -y install NetworkManager")
+    downloadCRC()
+    sh(script: "crc setup")
+    println("Run crc start")
+    sh(script: "crc start -m 24200 -p \"${WORKSPACE}/crcSecret\"")
+    def kubeadmPasswd = sh(script: "crc console --credentials | awk 'NR==2' | awk 'match(\$0,/[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-9]+/) {print substr(\$0,RSTART,RLENGTH)}'", returnStdout: true).trim()
+    sh(script: "sleep 120")
+    createUserCRC("https://api.crc.testing:6443", kubeadmPasswd)
+    login("https://api.crc.testing:6443", "${env.TEST_CLUSTER_ADMIN}", "${env.TEST_CLUSTER_ADMIN}")
+}
+
 
 /**
  * Prepare and start origin environment.
  */
-def startOrigin(String username = "developer", String password = "developer") {
+def startOrigin() {
     downloadOcOrigin()
     timeout(time: 15, unit: 'MINUTES') {
         status = sh(
@@ -33,8 +92,8 @@ def startOrigin(String username = "developer", String password = "developer") {
         )
     }
     def url = sh(script: "echo \"\$(hostname -I | awk '{print \$1}')\"", returnStdout: true).trim()
-    createUserOrigin("${username}", "https://${url}:8443")
-    login("https://${url}:8443", "${username}", "${password}")
+    createUserOrigin("${env.TEST_CLUSTER_ADMIN}", "https://${url}:8443")
+    login("https://${url}:8443", "${env.TEST_CLUSTER_ADMIN}", "${env.TEST_CLUSTER_ADMIN}")
     fixPVOnOrigin()
 }
 

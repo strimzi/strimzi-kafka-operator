@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -48,11 +50,15 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -73,7 +79,13 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, TOPIC_NAME);
+
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -114,7 +126,7 @@ class CustomResourceStatusST extends BaseST {
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
-        String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String eoPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);
@@ -184,7 +196,7 @@ class CustomResourceStatusST extends BaseST {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
@@ -204,12 +216,12 @@ class CustomResourceStatusST extends BaseST {
         assertKafkaConnectStatus(3, connectUrl);
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
@@ -222,7 +234,7 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> {
-                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME));
+                kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME));
                 kc.getSpec().setClassName(defaultClass);
             });
 
@@ -236,7 +248,7 @@ class CustomResourceStatusST extends BaseST {
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
@@ -280,6 +292,15 @@ class CustomResourceStatusST extends BaseST {
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
+    }
+
+    @Test
+    void testKafkaStatusCertificate() {
+        String certs = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
+        String secretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
+
+        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        assertThat(secretCerts, is(certs));
     }
 
     @BeforeAll

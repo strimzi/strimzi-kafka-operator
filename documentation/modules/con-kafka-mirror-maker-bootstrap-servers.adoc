@@ -12,7 +12,7 @@
 
 Use the `consumer.bootstrapServers` and `producer.bootstrapServers` properties to configure lists of bootstrap servers for the consumer and producer.
 
-Kafka Mirror Maker always works together with two Kafka clusters (source and target).
+Kafka MirrorMaker always works together with two Kafka clusters (source and target).
 The source and the target Kafka clusters are specified in the form of two lists of comma-separated list of `_<hostname>_:‍_<port>_` pairs.
 Each comma-separated list contains one or more Kafka brokers or a `Service` pointing to Kafka brokers specified as a `<hostname>:<port>` pairs.
 
@@ -22,4 +22,4 @@ They can even refer to a Kafka cluster not deployed by {ProductName}, or deploye
 If on the same Kubernetes cluster, each list must ideally contain the Kafka cluster bootstrap service which is named `_<cluster-name>_-kafka-bootstrap` and a port of 9092 for plain traffic or 9093 for encrypted traffic.
 If deployed by {ProductName} but on different Kubernetes clusters, the list content depends on the approach used for exposing the clusters (routes, nodeports or loadbalancers).
 
-When using Kafka Mirror Maker with a Kafka cluster not managed by {ProductName}, you can specify the bootstrap servers list according to the configuration of the given cluster.
+When using Kafka MirrorMaker with a Kafka cluster not managed by {ProductName}, you can specify the bootstrap servers list according to the configuration of the given cluster.

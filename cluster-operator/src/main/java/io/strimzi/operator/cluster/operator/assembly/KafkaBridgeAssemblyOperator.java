@@ -46,7 +46,6 @@ import java.util.Map;
  */
 public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> {
     private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
-    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
@@ -91,7 +90,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 null);
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation, name, namespace);
         kafkaBridgeServiceAccount(namespace, bridge)

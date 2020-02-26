@@ -67,6 +67,7 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -400,6 +401,24 @@ public class KafkaClusterTest {
         checkStatefulSet(sts, editKafkaAssembly, false);
     }
 
+    @Test
+    public void testGenerateStatefulSetWithPodManagementPolicy() {
+        Kafka editKafkaAssembly =
+                new KafkaBuilder(kafkaAssembly)
+                        .editSpec()
+                            .editKafka()
+                                .withNewTemplate()
+                                    .withNewStatefulset()
+                                        .withPodManagementPolicy(PodManagementPolicy.ORDERED_READY)
+                                    .endStatefulset()
+                                .endTemplate()
+                            .endKafka()
+                        .endSpec().build();
+        KafkaCluster kc = KafkaCluster.fromCrd(editKafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
+    }
+
     private void checkStatefulSet(StatefulSet sts, Kafka cm, boolean isOpenShift) {
         assertThat(sts.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(cluster)));
         // ... in the same namespace ...
@@ -416,6 +435,7 @@ public class KafkaClusterTest {
 
         // checks on the main Kafka container
         assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image));
         assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
         assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
@@ -3321,4 +3341,36 @@ public class KafkaClusterTest {
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
     }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationNok() {
+        String propertyName = "offsets.topic.replication.factor";
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap(propertyName, replicas + 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka());
+        });
+        assertThat(ex.getMessage().equals("Kafka configuration option '" + propertyName + "' should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas), is(true));
+    }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationOk() {
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap("offsets.topic.replication.factor", replicas - 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka());
+    }
+
 }

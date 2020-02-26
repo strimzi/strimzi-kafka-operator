@@ -184,6 +184,11 @@ public class ZookeeperCluster extends AbstractModel {
         if (replicas <= 0) {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
+
+        if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
+            log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
+        }
+
         zk.setReplicas(replicas);
 
         String image = zookeeperClusterSpec.getImage();
@@ -258,9 +263,15 @@ public class ZookeeperCluster extends AbstractModel {
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null && template.getStatefulset().getMetadata() != null)  {
-                zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+            if (template.getStatefulset() != null) {
+                if (template.getStatefulset().getPodManagementPolicy() != null) {
+                    zk.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
+                }
+
+                if (template.getStatefulset().getMetadata() != null) {
+                    zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
+                    zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+                }
             }
 
             ModelUtils.parsePodTemplate(zk, template.getPod());
@@ -441,6 +452,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                Collections.emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),

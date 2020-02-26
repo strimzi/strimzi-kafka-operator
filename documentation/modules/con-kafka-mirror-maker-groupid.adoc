@@ -12,6 +12,6 @@
 
 Use the `consumer.groupId` property to configure a consumer group identifier for the consumer.
 
-Kafka Mirror Maker uses a Kafka consumer to consume messages, behaving like any other Kafka consumer client.
+Kafka MirrorMaker uses a Kafka consumer to consume messages, behaving like any other Kafka consumer client.
 Messages consumed from the source Kafka cluster are mirrored to a target Kafka cluster.
 A group identifier is required, as the consumer needs to be part of a consumer group for the assignment of partitions.

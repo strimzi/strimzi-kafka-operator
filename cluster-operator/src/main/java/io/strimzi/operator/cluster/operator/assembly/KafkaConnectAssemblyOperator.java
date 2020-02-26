@@ -25,9 +25,11 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
@@ -50,6 +52,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
+    private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
 
@@ -72,6 +75,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
         this.connectS2IOperations = supplier.connectS2IOperator;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
+
         this.versions = config.versions();
     }
 
@@ -102,7 +107,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 null);
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
 
@@ -125,6 +130,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     }
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
+                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect))))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))

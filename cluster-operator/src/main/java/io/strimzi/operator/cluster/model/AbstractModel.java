@@ -57,6 +57,8 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -96,11 +98,14 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
-    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */
-    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
+    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     @Deprecated
-    public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
+    public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+
+    public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
+    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     protected final String cluster;
     protected final String namespace;
@@ -172,6 +177,7 @@ public abstract class AbstractModel {
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
+    protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -385,10 +391,10 @@ public abstract class AbstractModel {
             newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (externalCm != null) {
+            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
                 return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
-                log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
+                log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.", ((ExternalLogging) getLogging()).getName(), getAncillaryConfigMapKeyLogConfig());
                 return createPropertiesString(getDefaultLogConfig());
             }
 
@@ -751,7 +757,8 @@ public abstract class AbstractModel {
     }
 
     protected StatefulSet createStatefulSet(
-            Map<String, String> annotations,
+            Map<String, String> stsAnnotations,
+            Map<String, String> podAnnotations,
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
             Affinity affinity,
@@ -775,11 +782,11 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithNameAndComponent(templateStatefulSetLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateStatefulSetAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodManagementPolicy("Parallel")
+                    .withPodManagementPolicy(templatePodManagementPolicy.toValue())
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                     .withServiceName(headlessServiceName)
@@ -788,7 +795,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithNameAndComponent(templatePodLabels))
-                            .withAnnotations(mergeLabelsOrAnnotations(null, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())

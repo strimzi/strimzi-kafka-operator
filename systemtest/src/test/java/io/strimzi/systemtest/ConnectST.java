@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -80,12 +82,12 @@ class ConnectST extends BaseST {
 
     @Test
     void testDeployUndeploy() {
-        Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=connect-cluster\n" +
+        Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=" + KafkaConnectResources.deploymentName(CLUSTER_NAME) + "\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-                "config.storage.topic=connect-cluster-configs\n" +
-                "status.storage.topic=connect-cluster-status\n" +
-                "offset.storage.topic=connect-cluster-offsets\n");
+                "config.storage.topic=" + KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME) + "\n" +
+                "status.storage.topic=" + KafkaConnectResources.configStorageTopicStatus(CLUSTER_NAME) + "\n" +
+                "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(CLUSTER_NAME) + "\n");
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -110,7 +112,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Verifying docker image names");
         Map<String, String> imgFromDeplConf = getImagesFromConfig();
         //Verifying docker image for kafka connect
-        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
+        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, "KafkaConnect").
                 get(0).getMetadata().getName());
 
         String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getVersion();
@@ -143,6 +145,8 @@ class ConnectST extends BaseST {
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
@@ -153,7 +157,11 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessages(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
@@ -202,6 +210,8 @@ class ConnectST extends BaseST {
                     .endKafkaClientAuthenticationScramSha512()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withVersion(Environment.ST_KAFKA_VERSION)
                     .withReplicas(1)
                 .endSpec()
@@ -221,12 +231,13 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessagesScramSha(USER_NAME, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
-
-        assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("Sending messages: Hello-world - 99"));
 
         KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).cascading(true).delete();
         LOGGER.info("Topic {} deleted", CONNECT_TOPIC_NAME);
@@ -252,7 +263,7 @@ class ConnectST extends BaseST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
@@ -331,7 +342,7 @@ class ConnectST extends BaseST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
 
         // kafka cluster Connect already deployed
-        List<String> connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         int initialReplicas = connectPods.size();
         assertThat(initialReplicas, is(1));
         final int scaleTo = initialReplicas + 1;
@@ -339,7 +350,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));
         DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
-        connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
         for (String pod : connectPods) {
             PodUtils.waitForPod(pod);
@@ -352,7 +363,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
         DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas);
-        connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(initialReplicas));
         for (String pod : connectPods) {
             String uid = kubeClient().getPodUid(pod);
@@ -395,6 +406,8 @@ class ConnectST extends BaseST {
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(CLUSTER_NAME + "-cluster-ca-cert")
@@ -426,12 +439,13 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
-
-        assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
-                containsString("Sending messages: Hello-world - 99"));
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
@@ -471,6 +485,8 @@ class ConnectST extends BaseST {
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(CLUSTER_NAME + "-cluster-ca-cert")
@@ -500,12 +516,13 @@ class ConnectST extends BaseST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPodName, CONNECT_TOPIC_NAME);
         KafkaConnectUtils.createFileSinkConnector(execPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        externalBasicKafkaClient.sendAndRecvMessagesScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
-
-        assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
-                containsString("Sending messages: Hello-world - 99"));
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
@@ -610,7 +627,7 @@ class ConnectST extends BaseST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
                 .addToConfig("group.id", connectClusterName)
@@ -623,7 +640,7 @@ class ConnectST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
                 .addToConfig("group.id", connectS2IClusterName)
@@ -672,7 +689,7 @@ class ConnectST extends BaseST {
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
-            kc.getMetadata().getAnnotations().remove("strimzi.io/use-connector-resources");
+            kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
