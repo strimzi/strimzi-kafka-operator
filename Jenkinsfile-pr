@@ -1,11 +1,23 @@
 #!/usr/bin/env groovy
 
 def lib
+def NODE_LABEL = null
+
+node('master') {
+    stage('Set agent label') {
+        echo "Github PR comment: ${env.ghprbCommentBody}"
+        if (env.ghprbCommentBody.contains('crc') || env.ghprbCommentBody.contains('ocp4')) {
+            NODE_LABEL = "strimzi-crc"
+        } else {
+            NODE_LABEL = 'strimzi-pr'
+        }
+    }
+}
 
 pipeline {
     agent {
         node {
-            label 'strimzi-pr'
+            label "${NODE_LABEL}"
         }
     }
     parameters {
@@ -22,6 +34,7 @@ pipeline {
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
         ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
         KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
+        TEST_CLUSTER_ADMIN = "admin"
     }
     stages {
         stage('Clean WS') {
@@ -41,6 +54,7 @@ pipeline {
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
                     env.EXCLUDE_GROUPS = params.EXCLUDE
+                    env.OC_VERSION = NODE_LABEL == 'strimzi-crc' ? "4" : "3"
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
@@ -62,7 +76,7 @@ pipeline {
                     } else {
                         env.TEST_ONLY = false
                         env.DOCKER_ORG="strimzi"
-                        env.DOCKER_REGISTRY="172.30.1.1:5000"
+                        env.DOCKER_REGISTRY = env.OC_VERSION == "3" ? "172.30.1.1:5000" : "default-route-openshift-image-registry.apps-crc.testing"
                         env.DOCKER_TAG="pr"
                     }
                     env.BUILD_PROJECT_STATUS = false
@@ -76,10 +90,14 @@ pipeline {
         }
         stage('Start Openshift') {
             steps {
-                timeout(time: 25, unit: 'MINUTES') {
+                timeout(time: 50, unit: 'MINUTES') {
                     script {
                         lib = evaluate readFile('./jenkins.groovy')
-                        lib.startOrigin()
+                        if (env.OC_VERSION == "3") {
+                            lib.startOrigin()
+                        } else {
+                            lib.startCRC()
+                        }
                     }
                 }
             }
@@ -109,6 +127,9 @@ pipeline {
             steps {
                 script {
                     catchError {
+                        if (env.OC_VERSION == "4" && !env.ghprbCommentBody.contains('test_only')) {
+                            env.DOCKER_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
+                        }
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
