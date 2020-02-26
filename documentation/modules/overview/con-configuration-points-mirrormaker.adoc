@@ -13,7 +13,6 @@ You can use {ProductName} with MirrorMaker or MirrorMaker 2.0.
 == MirrorMaker
 
 MirrorMaker uses producers and consumers to replicate data across clusters.
-MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
 
 MirrorMaker uses:
 
@@ -26,6 +25,8 @@ A _whitelist_ defines the topics to mirror from a source to a target cluster.
 
 [discrete]
 == MirrorMaker 2.0
+
+MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
 
 MirrorMaker 2.0 uses:
 
