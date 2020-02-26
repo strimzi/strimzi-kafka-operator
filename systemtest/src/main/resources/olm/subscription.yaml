@@ -6,8 +6,9 @@ metadata:
   labels:
     app: strimzi
 spec:
-  name: strimzi
+  name: ${OLM_OPERATOR_NAME}
   source: strimzi-source
-  sourceNamespace: ${OPERATOR_NAMESPACE}
-  startingCSV: ${APP_BUNDLE_PREFIX}.${OLM_VERSION}
-  channel: ${OLM_PACKAGE_CHANNEL}
+  sourceNamespace: openshift-marketplace
+  startingCSV: ${OLM_APP_BUNDLE_PREFIX}.${OLM_OPERATOR_VERSION}
+  channel: stable
+  installPlanApproval: Automatic

@@ -82,7 +82,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         List<String> result = new ArrayList<>();
         result.add(cmd());
         result.add("--namespace");
-        LOGGER.info("XXX {}", namespace);
         result.add(namespace);
         result.addAll(rest);
         return result;
@@ -233,7 +232,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         List<String> cmd = new ArrayList<>();
         cmd.add(cmd());
         cmd.addAll(asList(command));
-        return Exec.exec(asList(command));
+        return Exec.exec(cmd);
     }
 
     @Override

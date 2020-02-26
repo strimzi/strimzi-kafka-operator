@@ -32,14 +32,10 @@ public class OlmST extends BaseST {
     void setup() throws Exception {
         ResourceManager.setClassResources();
         cluster.setNamespace(cluster.getDefaultOlmvNamespace());
-        OlmResource.clusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, cluster.getDefaultOlmvNamespace());
+        OlmResource.clusterOperator(cluster.getDefaultOlmvNamespace());
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
     }
 }
