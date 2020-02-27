@@ -9,19 +9,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -39,10 +35,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ModelUtils {
 
@@ -162,7 +160,7 @@ public class ModelUtils {
                 .withCommand(command)
                 .endExec()
                 .build();
-        AbstractModel.log.trace("Created exec probe {}", probe);
+        log.trace("Created exec probe {}", probe);
         return probe;
     }
 
@@ -332,16 +330,6 @@ public class ModelUtils {
         return isPersistentClaimStorage;
     }
 
-    /**
-     * Returns the prefix used for volumes and persistent volume claims
-     *
-     * @param id identification number of the persistent storage
-     * @return The volume prefix.
-     */
-    public static String getVolumePrefix(Integer id) {
-        return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
-    }
-
     public static Storage decodeStorageFromJson(String json) {
         try {
             return new ObjectMapper().readValue(json, Storage.class);
@@ -400,77 +388,19 @@ public class ModelUtils {
         return false;
     }
 
-    public static List<VolumeMount> getDataVolumeMountPaths(Storage storage, String mountPath)   {
-        List<VolumeMount> volumeMounts = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    volumeMounts.addAll(getDataVolumeMountPaths(volume, mountPath));
-                }
-            } else {
-                Integer id;
-
-                if (storage instanceof EphemeralStorage) {
-                    id = ((EphemeralStorage) storage).getId();
-                } else if (storage instanceof PersistentClaimStorage) {
-                    id = ((PersistentClaimStorage) storage).getId();
-                } else {
-                    throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
-                }
-
-                String name = getVolumePrefix(id);
-                String namedMountPath = mountPath + "/" + name;
-                volumeMounts.add(AbstractModel.createVolumeMount(name, namedMountPath));
-            }
-        }
-
-        return volumeMounts;
+    public static <T> List<T> asListOrEmptyList(List<T> list) {
+        return Optional.ofNullable(list)
+                .orElse(Collections.emptyList());
     }
 
-    public static List<PersistentVolumeClaim> getDataPersistentVolumeClaims(Storage storage)   {
-        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(getDataPersistentVolumeClaims(volume));
-                }
-            } else if (storage instanceof PersistentClaimStorage) {
-                Integer id = ((PersistentClaimStorage) storage).getId();
-                String name = getVolumePrefix(id);
-                pvcs.add(AbstractModel.createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
-            }
+    public static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
+        if (javaSystemProperties == null) {
+            return null;
         }
-
-        return pvcs;
-    }
-
-    public static List<Volume> getDataVolumes(Storage storage)   {
-        List<Volume> volumes = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    volumes.addAll(getDataVolumes(volume));
-                }
-            } else if (storage instanceof EphemeralStorage) {
-                Integer id = ((EphemeralStorage) storage).getId();
-                String name = getVolumePrefix(id);
-                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(AbstractModel.createEmptyDirVolume(name, sizeLimit));
-            }
+        List<String> javaSystemPropertiesList = new ArrayList<>();
+        for (SystemProperty property: javaSystemProperties) {
+            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
         }
-
-        return volumes;
+        return String.join(" ", javaSystemPropertiesList);
     }
 }

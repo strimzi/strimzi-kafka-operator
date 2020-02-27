@@ -12,7 +12,7 @@
 
 Use the `consumer.config` and `producer.config` properties to configure Kafka options for the consumer and producer.
 
-The `config` property contains the Kafka Mirror Maker consumer and producer configuration options as keys, with values set in one of the following JSON types:
+The `config` property contains the Kafka MirrorMaker consumer and producer configuration options as keys, with values set in one of the following JSON types:
 
 * String
 * Number
@@ -40,8 +40,8 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `group.id`
 
 When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Custer Operator log file.
-All other options are passed to Kafka Mirror Maker.
+All other options are passed to Kafka MirrorMaker.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
-When an invalid configuration is provided, the Kafka Mirror Maker might not start or might become unstable.
-In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` or `KafkaMirrorMaker.spec.producer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka Mirror Maker.
+When an invalid configuration is provided, the Kafka MirrorMaker might not start or might become unstable.
+In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` or `KafkaMirrorMaker.spec.producer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka MirrorMaker.

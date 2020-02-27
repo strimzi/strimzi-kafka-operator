@@ -3,15 +3,15 @@
 // assembly-kafka-mirror-maker.adoc
 
 [id='deploying-kafka-mirror-maker-{context}']
-= Deploying Kafka Mirror Maker
+= Deploying Kafka MirrorMaker
 
 .Prerequisites
 
-* Before deploying Kafka Mirror Maker, the Cluster Operator must be deployed.
+* Before deploying Kafka MirrorMaker, the Cluster Operator must be deployed.
 
 .Procedure
 
-* Create a Kafka Mirror Maker cluster from the command-line:
+* Create a Kafka MirrorMaker cluster from the command-line:
 +
 [source,shell,subs="attributes+"]
 ----

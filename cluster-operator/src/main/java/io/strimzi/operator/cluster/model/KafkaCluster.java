@@ -41,6 +41,8 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -56,6 +58,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -87,7 +90,6 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -104,6 +106,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
@@ -155,11 +160,11 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka";
 
-    private static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
-    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-    private static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
-    private static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
+    protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
+    protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
+    protected static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
+    protected static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
 
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
@@ -167,26 +172,31 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Records the Kafka version currently running inside Kafka StatefulSet
      */
-    public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "/kafka-version";
+    public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "kafka-version";
     /**
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
-    public static final String ANNO_STRIMZI_IO_FROM_VERSION = Annotations.STRIMZI_DOMAIN + "/from-version";
+    public static final String ANNO_STRIMZI_IO_FROM_VERSION = Annotations.STRIMZI_DOMAIN + "from-version";
     /**
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
-    public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
+    public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "to-version";
 
-    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-tls-listener-thumbprint";
-    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-external-listener-thumbprint";
+    /**
+     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
+     */
+    public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
+
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-tls-listener-thumbprint";
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "custom-cert-external-listener-thumbprint";
 
     // Env vars for JMX service
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
     // Name of the broker configuration file in the config map
-    private static final String BROKER_CONFIGURATION_FILENAME = "server.config";
-    private static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
-    private static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
+    public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
+    public static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
+    public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
 
     // Kafka configuration
     private String zookeeperConnect;
@@ -392,6 +402,10 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
+        validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
+        validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
+
         result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
@@ -414,6 +428,9 @@ public class KafkaCluster extends AbstractModel {
         result.setLogging(logging == null ? new InlineLogging() : logging);
 
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        if (kafkaClusterSpec.getJvmOptions() != null) {
+            result.setJavaSystemProperties(kafkaClusterSpec.getJvmOptions().getJavaSystemProperties());
+        }
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
@@ -488,12 +505,14 @@ public class KafkaCluster extends AbstractModel {
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);
 
+        boolean isListenerOAuth = false;
         if (listeners != null) {
             if (listeners.getPlain() != null) {
                 if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
                     throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
                 } else if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth(), "Plain listener");
+                    isListenerOAuth = true;
                 }
             }
 
@@ -502,11 +521,13 @@ public class KafkaCluster extends AbstractModel {
                     throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
                 } else if (listeners.getExternal().getAuth() != null && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth(), "External listener");
+                    isListenerOAuth = true;
                 }
             }
 
             if (listeners.getTls() != null && listeners.getTls().getAuth() != null && listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                 validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth(), "TLS listener");
+                isListenerOAuth = true;
             }
 
             if (listeners.getExternal() != null) {
@@ -540,14 +561,32 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
+            if (!isListenerOAuth) {
+                throw new InvalidResourceException("You cannot configure Keycloak Authorization without any listener with OAuth based authentication");
+            } else {
+                KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
+                if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
+                    log.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                }
+            }
+        }
+
         result.setAuthorization(kafkaClusterSpec.getAuthorization());
 
         if (kafkaClusterSpec.getTemplate() != null) {
             KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null && template.getStatefulset().getMetadata() != null) {
-                result.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+            if (template.getStatefulset() != null) {
+                if (template.getStatefulset().getPodManagementPolicy() != null) {
+                    result.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
+                }
+
+                if (template.getStatefulset().getMetadata() != null) {
+                    result.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
+                    result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+                }
             }
 
             ModelUtils.parsePodTemplate(result, template.getPod());
@@ -634,6 +673,20 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
+        String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
+        if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
+            try {
+                int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
+                if (propertyVal > kafkaClusterSpec.getReplicas()) {
+                    throw new InvalidResourceException("Kafka configuration option '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + " because 'spec.kafka.replicas' is " + kafkaClusterSpec.getReplicas());
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidResourceException("Property " + propertyName + " should be an integer");
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -786,7 +839,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
+        return singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
     /**
@@ -1206,13 +1259,16 @@ public class KafkaCluster extends AbstractModel {
      * @param imagePullSecrets The image pull secrets.
      * @return The generated StatefulSet.
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        HashMap<String, String> annotations = new HashMap<>(2);
-        annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
-        annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+    public StatefulSet generateStatefulSet(boolean isOpenShift,
+                                           ImagePullPolicy imagePullPolicy,
+                                           List<LocalObjectReference> imagePullSecrets) {
+        Map<String, String> stsAnnotations = new HashMap<>(2);
+        stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
         return createStatefulSet(
-                annotations,
+                stsAnnotations,
+                emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
@@ -1317,9 +1373,9 @@ public class KafkaCluster extends AbstractModel {
      *                related volume mount paths
      */
     private void setDataVolumesClaimsAndMountPaths(Storage storage) {
-        dataVolumeMountPaths = ModelUtils.getDataVolumeMountPaths(storage, mountPath);
-        dataPvcs = ModelUtils.getDataPersistentVolumeClaims(storage);
-        dataVolumes = ModelUtils.getDataVolumes(storage);
+        dataVolumeMountPaths = VolumeUtils.getDataVolumeMountPaths(storage, mountPath);
+        dataPvcs = VolumeUtils.getDataPersistentVolumeClaims(storage);
+        dataVolumes = VolumeUtils.getDataVolumes(storage);
     }
 
     /**
@@ -1336,7 +1392,7 @@ public class KafkaCluster extends AbstractModel {
         if (storage != null) {
             if (storage instanceof PersistentClaimStorage) {
                 Integer id = ((PersistentClaimStorage) storage).getId();
-                String pvcBaseName = ModelUtils.getVolumePrefix(id) + "-" + name;
+                String pvcBaseName = VolumeUtils.getVolumePrefix(id) + "-" + name;
 
                 for (int i = 0; i < replicas; i++) {
                     pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, (PersistentClaimStorage) storage));
@@ -1359,19 +1415,19 @@ public class KafkaCluster extends AbstractModel {
         volumeList.addAll(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME, null));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
         }
 
-        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
 
         if (secretSourceExternal != null) {
             Map<String, String> items = new HashMap<>(2);
             items.put(secretSourceExternal.getKey(), "tls.key");
             items.put(secretSourceExternal.getCertificate(), "tls.crt");
 
-            volumeList.add(createSecretVolume("custom-external-9094-certs", this.secretSourceExternal.getSecretName(), items, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume("custom-external-9094-certs", this.secretSourceExternal.getSecretName(), items, isOpenShift));
         }
 
         if (secretSourceTls != null) {
@@ -1379,7 +1435,7 @@ public class KafkaCluster extends AbstractModel {
             items.put(secretSourceTls.getKey(), "tls.key");
             items.put(secretSourceTls.getCertificate(), "tls.crt");
 
-            volumeList.add(createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
@@ -1413,6 +1469,11 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (authorization instanceof KafkaAuthorizationKeycloak) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
+        }
+
         return volumeList;
     }
 
@@ -1426,22 +1487,22 @@ public class KafkaCluster extends AbstractModel {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.addAll(dataVolumeMountPaths);
 
-        volumeMountList.add(createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(createVolumeMount("ready-files", "/var/opt/kafka"));
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (secretSourceExternal != null) {
-            volumeMountList.add(createVolumeMount("custom-external-9094-certs", "/opt/kafka/certificates/custom-external-9094-certs"));
+            volumeMountList.add(VolumeUtils.createVolumeMount("custom-external-9094-certs", "/opt/kafka/certificates/custom-external-9094-certs"));
         }
 
         if (secretSourceTls != null) {
-            volumeMountList.add(createVolumeMount("custom-tls-9093-certs", "/opt/kafka/certificates/custom-tls-9093-certs"));
+            volumeMountList.add(VolumeUtils.createVolumeMount("custom-tls-9093-certs", "/opt/kafka/certificates/custom-tls-9093-certs"));
         }
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeMountList.add(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
         if (listeners != null) {
@@ -1471,6 +1532,11 @@ public class KafkaCluster extends AbstractModel {
                     }
                 }
             }
+        }
+
+        if (authorization instanceof KafkaAuthorizationKeycloak) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs"));
         }
 
         return volumeMountList;
@@ -1556,7 +1622,7 @@ public class KafkaCluster extends AbstractModel {
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .build();
 
@@ -1604,8 +1670,8 @@ public class KafkaCluster extends AbstractModel {
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidevarEnvVars())
-                .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
-                        createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
+                        VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop()
                         .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
@@ -1628,6 +1694,9 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
+        }
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
@@ -1695,6 +1764,9 @@ public class KafkaCluster extends AbstractModel {
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth, String listener) {
+        boolean hasJwksRefreshSecondsValidInput =  oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
+        boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
+
         if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
             log.error("{}: Introspection endpoint URI or JWKS endpoint URI has to be specified", listener);
             throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
@@ -1710,14 +1782,14 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
         }
 
-        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
+        if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
             log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
             throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
         }
 
-        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
-                (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
-                (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
+        if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
+                (!hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
+                (hasJwksExpirySecondsValidInput && !hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
             log.error("{}: The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`", listener);
             throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
@@ -1741,30 +1813,6 @@ public class KafkaCluster extends AbstractModel {
             log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
             throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
         }
-    }
-
-    /**
-     * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but as a secret
-     * reference to keep it secure.
-     *
-     * @param oauth     OAuth type authentication object
-     * @return  JAAS configuration string ith the public variables
-     */
-    protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
-        List<String> options = new ArrayList<>(5);
-
-        if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
-        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
-        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
-        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
-        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
-        if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-
-        return String.join(" ", options);
     }
 
     protected List<EnvVar> getTlsSidevarEnvVars() {
@@ -1869,34 +1917,50 @@ public class KafkaCluster extends AbstractModel {
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
+        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
+                .addNewPort()
+                    .withNewPort(REPLICATION_PORT)
+                .endPort()
+                .build();
+
         // Restrict access to 9091 / replication port
         if (namespaceAndPodSelectorNetworkPolicySupported) {
-            rules.add(new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort().withNewPort(REPLICATION_PORT).endPort()
-                    .addNewFrom()
-                        .withNewPodSelector() // cluster operator
-                            .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                        .endPodSelector()
-                        .withNewNamespaceSelector().endNamespaceSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // kafka cluster
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
-                        .endPodSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // entity operator
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
-                        .endPodSelector()
-                    .endFrom()
-                    .addNewFrom()
-                        .withNewPodSelector() // cluster operator
-                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
-                        .endPodSelector()
-                    .endFrom().build());
+            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                    .endPodSelector()
+                    .withNewNamespaceSelector()
+                    .endNamespaceSelector()
+                    .build();
+
+            NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // kafka cluster
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // entity operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                    .endPodSelector()
+                    .build();
+
+            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
+            clientsPortPeers.add(clusterOperatorPeer);
+            clientsPortPeers.add(kafkaClusterPeer);
+            clientsPortPeers.add(entityOperatorPeer);
+            clientsPortPeers.add(kafkaExporterPeer);
+
+            replicationRule.setFrom(clientsPortPeers);
         }
 
-
+        rules.add(replicationRule);
 
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {
@@ -2310,7 +2374,7 @@ public class KafkaCluster extends AbstractModel {
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper()
-                .withLogDirs(ModelUtils.getDataVolumeMountPaths(storage, mountPath))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
                 .withUserConfiguration(configuration)

@@ -47,4 +47,3 @@ public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable 
         this.additionalProperties.put(name, value);
     }
 }
-

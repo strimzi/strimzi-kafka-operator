@@ -30,7 +30,7 @@ public class ZookeeperSetOperatorTest {
 
     @BeforeEach
     public void before() {
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
         a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
         b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
     }

@@ -81,8 +81,18 @@ kafkaBridge:
   image:
     repository: strimzi
     name: kafka-bridge
-    tag: 0.15.0
+    tag: 0.15.2
 kafkaExporter:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+jmxTrans:
+  image:
+    repository: strimzi
+    name: jmxtrans
+    tag: latest
+kafkaMirrorMaker2:
   image:
     repository: strimzi
     name: kafka

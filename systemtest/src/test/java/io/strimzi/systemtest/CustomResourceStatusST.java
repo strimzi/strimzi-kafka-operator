@@ -15,15 +15,18 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -47,11 +50,17 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -59,7 +68,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 
 @Tag(REGRESSION)
-class CustomResourceStatusST extends MessagingBaseST {
+class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String TOPIC_NAME = "status-topic";
@@ -70,7 +79,13 @@ class CustomResourceStatusST extends MessagingBaseST {
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
-        waitForClusterAvailability(NAMESPACE, TOPIC_NAME);
+
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -111,7 +126,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
-        String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String eoPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);
@@ -181,7 +196,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
@@ -201,12 +216,12 @@ class CustomResourceStatusST extends MessagingBaseST {
         assertKafkaConnectStatus(3, connectUrl);
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME)));
         waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
@@ -219,7 +234,7 @@ class CustomResourceStatusST extends MessagingBaseST {
 
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
             kc -> {
-                kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME));
+                kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME));
                 kc.getSpec().setClassName(defaultClass);
             });
 
@@ -233,7 +248,7 @@ class CustomResourceStatusST extends MessagingBaseST {
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
@@ -251,6 +266,20 @@ class CustomResourceStatusST extends MessagingBaseST {
     }
 
     @Test
+    void testKafkaConnectorWithoutClusterConfig() {
+        // This test check NPE when connect cluster is not specified in labels
+        // Check for NPE in CO logs is performed after every test in BaseST
+        KafkaConnectorResource.kafkaConnectorWithoutWait(KafkaConnectorResource.defaultKafkaConnector(CLUSTER_NAME, CLUSTER_NAME, 2)
+            .withNewMetadata()
+                .withName(CLUSTER_NAME)
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+            .endMetadata()
+            .build());
+
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+    }
+
+    @Test
     void testKafkaTopicStatus() {
         waitForKafkaTopic("Ready", TOPIC_NAME);
         // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
@@ -263,6 +292,15 @@ class CustomResourceStatusST extends MessagingBaseST {
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
+    }
+
+    @Test
+    void testKafkaStatusCertificate() {
+        String certs = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
+        String secretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
+
+        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        assertThat(secretCerts, is(certs));
     }
 
     @BeforeAll
@@ -416,13 +454,27 @@ class CustomResourceStatusST extends MessagingBaseST {
         KafkaConnectStatus kafkaConnectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("Kafka Connect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
+
+        validateConnectPlugins(kafkaConnectStatus.getConnectorPlugins());
     }
 
     void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
-        KafkaConnectS2Istatus kafkaConnectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getStatus();
+        KafkaConnectS2IStatus kafkaConnectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECTS2I_CLUSTER_NAME).get().getStatus();
         assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
+
+        validateConnectPlugins(kafkaConnectS2IStatus.getConnectorPlugins());
+    }
+
+    void validateConnectPlugins(List<ConnectorPlugin> pluginsList) {
+        assertThat(pluginsList, notNullValue());
+        List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
+        assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
+                "org.apache.kafka.connect.file.FileStreamSourceConnector",
+                "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
+                "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
+                "org.apache.kafka.connect.mirror.MirrorSourceConnector"));
     }
 
     @SuppressWarnings("unchecked")

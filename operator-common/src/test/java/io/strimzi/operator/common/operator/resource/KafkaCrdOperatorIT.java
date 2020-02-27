@@ -107,7 +107,7 @@ public class KafkaCrdOperatorIT {
 
     protected Kafka getResource() {
         return new KafkaBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)
@@ -136,7 +136,7 @@ public class KafkaCrdOperatorIT {
     private Future<Void> deleteResource()    {
         // The resource has to be deleted this was and not using reconcile due to https://github.com/fabric8io/kubernetes-client/pull/1325
         // Fix this override when project is using fabric8 version > 4.1.1
-        kafkaOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).delete();
+        kafkaOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).cascading(true).delete();
 
         return kafkaOperator.waitFor(namespace, RESOURCE_NAME, 1_000, 60_000, (ignore1, ignore2) -> {
             Kafka deletion = kafkaOperator.get(namespace, RESOURCE_NAME);

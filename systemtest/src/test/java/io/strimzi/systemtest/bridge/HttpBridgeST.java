@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -61,7 +63,9 @@ class HttpBridgeST extends HttpBridgeBaseST {
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+
+        Future<Integer> consumer = kafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
@@ -70,7 +74,6 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
     @Test
     void testReceiveSimpleMessage() throws Exception {
-        int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -93,14 +96,14 @@ class HttpBridgeST extends HttpBridgeBaseST {
         // Subscribe
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Send messages to Kafka
-        sendMessagesExternal(NAMESPACE, topicName, messageCount);
+        kafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
             bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
         assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }

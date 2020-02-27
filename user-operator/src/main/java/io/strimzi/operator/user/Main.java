@@ -22,14 +22,19 @@ import io.strimzi.operator.user.operator.SimpleAclOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
+
 @SuppressFBWarnings("DM_EXIT")
+@SuppressWarnings("deprecation")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 
@@ -45,9 +50,14 @@ public class Main {
     public static void main(String[] args) {
         log.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
-        Vertx vertx = Vertx.vertx();
+        //Setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        Vertx vertx = Vertx.vertx(options);
         KubernetesClient client = new DefaultKubernetesClient();
-        SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
+        kafka.security.auth.SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
 
         run(vertx, client, authorizer, config).setHandler(ar -> {
             if (ar.failed()) {
@@ -57,8 +67,11 @@ public class Main {
         });
     }
 
-    static Future<String> run(Vertx vertx, KubernetesClient client, SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
+    static Future<String> run(Vertx vertx, KubernetesClient client, kafka.security.auth.SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
         printEnvInfo();
+        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
+        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
+
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
@@ -91,17 +104,17 @@ public class Main {
         return promise.future();
     }
 
-    private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
+    private static kafka.security.auth.SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
         log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
         Map<String, Object> authorizerConfig = new HashMap<>();
         // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
         // See the comments in the SimpleAclAuthorizer.scala class for more details
-        authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
+        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
         authorizerConfig.put("zookeeper.connect", config.getZookeperConnect());
-        authorizerConfig.put(SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
-        authorizerConfig.put(SimpleAclAuthorizer.ZkSessionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkSessionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
 
-        SimpleAclAuthorizer authorizer = new SimpleAclAuthorizer();
+        kafka.security.auth.SimpleAclAuthorizer authorizer = new kafka.security.auth.SimpleAclAuthorizer();
         authorizer.configure(authorizerConfig);
         return authorizer;
     }

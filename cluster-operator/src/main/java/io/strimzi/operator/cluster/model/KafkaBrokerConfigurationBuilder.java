@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
@@ -71,7 +72,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
         if (rack != null) {
             printSectionHeader("Rack ID");
-            writer.println("rack.id=${STRIMZI_RACK_ID}");
+            writer.println("broker.rack=${STRIMZI_RACK_ID}");
             writer.println();
         }
 
@@ -347,8 +348,9 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
         if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
         if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.isEnableECDSA()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, true));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
         if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
@@ -369,30 +371,61 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization)  {
         if (authorization != null) {
             List<String> superUsers = new ArrayList<>();
-            String authorizerClass = "";
 
             // Broker super users
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaStatefulSetName(clusterName)));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-operator"));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "kafka-exporter"));
-
-            // User configured super users
-            if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
-                KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
-                authorizerClass = KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME;
-
-                if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
-                    superUsers.addAll(simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
-                }
-            }
+            superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            writer.println("authorizer.class.name=" + authorizerClass);
+            configureAuthorization(clusterName, superUsers, authorization);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }
 
         return this;
+    }
+
+    /**
+     * Configures authorization for the Kafka brokers. This method is used only internally.
+     *
+     * @param clusterName Name of the cluster
+     * @param superUsers Super users list who have all the rights on the cluster
+     * @param authorization The authorization configuration from the Kafka CR
+     */
+    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
+        if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
+            KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
+            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+
+            // User configured super users
+            if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
+                superUsers.addAll(simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
+            }
+        } else if (KafkaAuthorizationKeycloak.TYPE_KEYCLOAK.equals(authorization.getType())) {
+            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+            writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
+            writer.println("principal.builder.class=" + KafkaAuthorizationKeycloak.PRINCIPAL_BUILDER_CLASS_NAME);
+            writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
+            writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
+            writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
+            writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
+
+            if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {
+                writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
+                writer.println("strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+                writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
+                writer.println("strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG");
+                String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
+                writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
+            }
+
+            // User configured super users
+            if (keycloakAuthz.getSuperUsers() != null && keycloakAuthz.getSuperUsers().size() > 0) {
+                superUsers.addAll(keycloakAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
+            }
+        }
     }
 
     /**

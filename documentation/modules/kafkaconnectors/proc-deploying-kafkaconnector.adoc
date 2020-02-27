@@ -19,10 +19,10 @@ Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: kafka.strimzi.io/v1alpha1
-kind: `KafkaConnector`
+kind: KafkaConnector
 metadata:
   name: my-source-connector <1>
-  labels:   
+  labels:
     strimzi.io/cluster: my-connect-cluster <2>
 spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
@@ -43,12 +43,12 @@ spec:
 +
 [source,shell,subs="+quotes"]
 ----
-oc apply -f examples/connector/source-connector.yaml
+kubectl apply -f examples/connector/source-connector.yaml
 ----
 
 . Check that the resource was created:
 +
 [source,shell,subs="+quotes"]
 ----
-oc get all --selector strimzi.io/cluster: my-connect-cluster -o name
+kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
 ----

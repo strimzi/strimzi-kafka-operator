@@ -71,6 +71,18 @@ function get_kafka_formats {
     eval formats="$(yq read $VERSIONS_FILE '*.format' -j | tr '[],' '() ')"
 }
 
+function get_kafka_does_not_support {
+    eval does_not_support="$(yq read $VERSIONS_FILE '*.unsupported-features' -j | tr '[],' '() ')"
+
+    get_kafka_versions
+
+    declare -Ag version_does_not_support
+    for i in "${!versions[@]}"
+    do 
+        version_does_not_support[${versions[$i]}]=${does_not_support[$i]}
+    done
+}
+
 # Parses the Kafka versions file and creates three associative arrays:
 # "version_binary_urls": Maps from version string to url from which the kafka source 
 # tar will be downloaded.

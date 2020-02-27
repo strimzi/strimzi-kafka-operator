@@ -145,6 +145,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
+        if (spec.getJvmOptions() != null) {
+            kafkaBridgeCluster.setJavaSystemProperties(spec.getJvmOptions().getJavaSystemProperties());
+        }
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
@@ -270,7 +273,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
@@ -283,7 +286,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -292,7 +295,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume mount with same Secret name was already added
                     if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
+                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
                                 TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                     }
                 }
@@ -352,6 +355,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
+        }
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));

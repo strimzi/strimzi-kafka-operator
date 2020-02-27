@@ -12,15 +12,11 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KeyToPath;
-import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -33,8 +29,6 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
-import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
@@ -44,8 +38,6 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -60,10 +52,13 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -72,7 +67,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,13 +95,17 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
-    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */
-    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
+    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     @Deprecated
-    public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
+    public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+
+    public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
+    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     protected final String cluster;
     protected final String namespace;
@@ -152,6 +150,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
+    protected List<SystemProperty> javaSystemProperties = null;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -174,6 +173,7 @@ public abstract class AbstractModel {
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
+    protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -295,6 +295,10 @@ public abstract class AbstractModel {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
+    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
+        this.javaSystemProperties = javaSystemProperties;
+    }
+
     protected abstract String getDefaultLogConfigFileName();
 
     /**
@@ -363,10 +367,10 @@ public abstract class AbstractModel {
             newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (externalCm != null) {
+            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
                 return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
-                log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
+                log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.", ((ExternalLogging) getLogging()).getName(), getAncillaryConfigMapKeyLogConfig());
                 return createPropertiesString(getDefaultLogConfig());
             }
 
@@ -564,15 +568,6 @@ public abstract class AbstractModel {
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected static VolumeMount createVolumeMount(String name, String path) {
-        VolumeMount volumeMount = new VolumeMountBuilder()
-                .withName(name)
-                .withMountPath(path)
-                .build();
-        log.trace("Created volume mount {}", volumeMount);
-        return volumeMount;
-    }
-
     protected ContainerPort createContainerPort(String name, int port, String protocol) {
         ContainerPort containerPort = new ContainerPortBuilder()
                 .withName(name)
@@ -601,32 +596,6 @@ public abstract class AbstractModel {
         ServicePort servicePort = builder.build();
         log.trace("Created service port {}", servicePort);
         return servicePort;
-    }
-
-    protected static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
-        requests.put("storage", new Quantity(storage.getSize(), null));
-
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
-        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
-                    .withNewResources()
-                        .withRequests(requests)
-                    .endResources()
-                    .withStorageClassName(storage.getStorageClass())
-                    .withSelector(selector)
-                .endSpec()
-                .build();
-
-        return pvc;
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
@@ -670,20 +639,6 @@ public abstract class AbstractModel {
         return pvc;
     }
 
-    protected static Volume createEmptyDirVolume(String name, String sizeLimit) {
-        EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
-        if (sizeLimit != null && !sizeLimit.isEmpty()) {
-            emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
-        }
-
-        Volume volume = new VolumeBuilder()
-            .withName(name)
-                .withEmptyDir(emptyDirVolumeSource)
-            .build();
-        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
-        return volume;
-    }
-
     protected Volume createConfigMapVolume(String name, String configMapName) {
 
         ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
@@ -709,56 +664,6 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withData(data)
                 .build();
-    }
-
-    protected static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
-        int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
-
-        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
-                .withDefaultMode(mode)
-                .withSecretName(secretName)
-                .build();
-
-        Volume volume = new VolumeBuilder()
-                .withName(name)
-                .withSecret(secretVolumeSource)
-                .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
-        return volume;
-    }
-
-    protected static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
-        int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
-
-        List<KeyToPath> keysPaths = new ArrayList<>();
-
-        for (Map.Entry<String, String> item : items.entrySet()) {
-            KeyToPath keyPath = new KeyToPathBuilder()
-                    .withNewKey(item.getKey())
-                    .withNewPath(item.getValue())
-                    .build();
-
-            keysPaths.add(keyPath);
-        }
-
-        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
-                .withDefaultMode(mode)
-                .withSecretName(secretName)
-                .withItems(keysPaths)
-                .build();
-
-        Volume volume = new VolumeBuilder()
-                .withName(name)
-                .withSecret(secretVolumeSource)
-                .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
-        return volume;
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {
@@ -828,7 +733,8 @@ public abstract class AbstractModel {
     }
 
     protected StatefulSet createStatefulSet(
-            Map<String, String> annotations,
+            Map<String, String> stsAnnotations,
+            Map<String, String> podAnnotations,
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
             Affinity affinity,
@@ -852,11 +758,11 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithName(templateStatefulSetLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateStatefulSetAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodManagementPolicy("Parallel")
+                    .withPodManagementPolicy(templatePodManagementPolicy.toValue())
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                     .withServiceName(headlessServiceName)
@@ -865,7 +771,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeLabelsOrAnnotations(null, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())

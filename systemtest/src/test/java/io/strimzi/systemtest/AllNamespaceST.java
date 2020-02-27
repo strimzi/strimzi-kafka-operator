@@ -7,26 +7,30 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -76,12 +80,32 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    void testDeployKafkaConnectInOtherNamespaceThanCO() {
+    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
-        // Check that Kafka Connect was deployed
-        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
+        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata().done();
+        // Deploy Kafka Connector
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect");
+
+        cluster.setNamespace(previousNamespace);
+    }
+
+    @Test
+    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        // Deploy Kafka Connect in other namespace than CO
+        KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata().done();
+        // Deploy Kafka Connector
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect-s2i");
+
         cluster.setNamespace(previousNamespace);
     }
 
@@ -97,14 +121,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    void testUserInDifferentNamespace() throws Exception {
+    void testUserInDifferentNamespace() {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        SecretUtils.waitForSecretReady(USER_NAME);
-        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
-                .getStatus().getConditions().get(0);
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
+                .get().getStatus().getConditions().get(0);
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
 
@@ -112,13 +135,27 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
 
+        cluster.setNamespace(THIRD_NAMESPACE);
+
         for (Secret s : secretsOfSecondNamespace) {
             if (s.getMetadata().getName().equals(USER_NAME)) {
                 LOGGER.info("Copying secret {} from namespace {} to namespace {}", s, SECOND_NAMESPACE, THIRD_NAMESPACE);
                 copySecret(s, THIRD_NAMESPACE, USER_NAME);
             }
         }
-        waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking produceed and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS"),
+                internalKafkaClient.receiveMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         cluster.setNamespace(startingNamespace);
     }
@@ -151,12 +188,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
                 .editEntityOperator()
                     .editTopicOperator()
                         .withWatchedNamespace(SECOND_NAMESPACE)
@@ -183,6 +214,8 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         teardownEnvForOperator();
+        ResourceManager.setClassResources();
         deployTestSpecificResources();
+        ResourceManager.setMethodResources();
     }
 }

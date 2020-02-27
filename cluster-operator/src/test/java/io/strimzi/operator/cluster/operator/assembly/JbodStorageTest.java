@@ -22,8 +22,8 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -35,6 +35,7 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -63,6 +64,7 @@ public class JbodStorageTest {
             KafkaVersionTestUtils.getKafkaImageMap(),
             emptyMap(),
             emptyMap(),
+            emptyMap(), 
             emptyMap()) { };
 
     private Vertx vertx;
@@ -143,7 +145,7 @@ public class JbodStorageTest {
                 for (SingleVolumeStorage volume : this.volumes) {
                     if (volume instanceof PersistentClaimStorage) {
                         context.verify(() -> assertThat(pvcs.stream().anyMatch(pvc -> {
-                            String pvcName = ModelUtils.getVolumePrefix(volume.getId()) + "-"
+                            String pvcName = VolumeUtils.getVolumePrefix(volume.getId()) + "-"
                                     + KafkaCluster.kafkaPodName(NAME, podId);
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
 
@@ -300,5 +302,10 @@ public class JbodStorageTest {
         Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaStsName);
         return mockClient.persistentVolumeClaims().inNamespace(namespace).withLabels(pvcSelector.toMap())
                 .list().getItems();
+    }
+
+    @AfterEach
+    public void afterEach() {
+        vertx.close();
     }
 }

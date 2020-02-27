@@ -7,27 +7,33 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import org.hamcrest.Matchers;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public abstract class AbstractNamespaceST extends MessagingBaseST {
+public abstract class AbstractNamespaceST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);
 
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
-    static final String TOPIC_NAME = "my-topic";
     static final String USER_NAME = "my-user";
     private static final String TOPIC_EXAMPLES_DIR = "../examples/topic/kafka-topic.yaml";
 
@@ -79,5 +85,31 @@ public abstract class AbstractNamespaceST extends MessagingBaseST {
         cluster.setNamespace(namespace);
         cmdKubeClient().deleteByName("KafkaTopic", topic);
         cluster.setNamespace(CO_NAMESPACE);
+    }
+
+    void deployKafkaConnectorWithSink(String clusterName, String namespace, String topicName, String connectLabel) {
+        // Deploy Kafka Connector
+        Map<String, Object> connectorConfig = new HashMap<>();
+        connectorConfig.put("topics", topicName);
+        connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_NAME);
+        connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
+        connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+
+        KafkaConnectorResource.kafkaConnector(clusterName)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .withConfig(connectorConfig)
+            .endSpec().done();
+        KafkaConnectUtils.waitForConnectorReady(clusterName);
+
+        String kafkaConnectPodName = kubeClient().listPods("type", connectLabel).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+
+        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        internalKafkaClient.setPodName(kafkaClientsPodName);
+        int sent = internalKafkaClient.sendMessages(topicName, namespace, clusterName, MESSAGE_COUNT);
+        assertThat(sent, Matchers.is(MESSAGE_COUNT));
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
     }
 }

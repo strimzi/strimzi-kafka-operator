@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,6 +68,15 @@ public abstract class AbstractCrdIT {
             throw thrown;
         } else if (thrown2 != null) {
             throw thrown2;
+        }
+    }
+
+    protected void assertMissingRequiredPropertiesMessage(String message, String... requiredProperties) {
+        for (String requiredProperty: requiredProperties) {
+            assertThat("Could not find" + requiredProperty + " in message: " + message, message, anyOf(
+                    containsStringIgnoringCase(requiredProperty + " in body is required"),
+                    containsStringIgnoringCase(requiredProperty + ": Required value")
+            ));
         }
     }
 

@@ -165,7 +165,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
@@ -178,7 +178,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock the SecretOperator
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -226,7 +226,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
@@ -290,7 +290,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
@@ -303,7 +303,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock the SecretOperator
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -365,7 +365,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
@@ -378,7 +378,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock the SecretOperator
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -422,8 +422,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.reconcileCas(this::dateSupplier)
                     .compose(state -> state.getKafkaClusterDescription())
-                    .compose(state -> state.getCustomTlsListenerThumbprint())
-                    .compose(state -> state.getCustomExternalListenerThumbprint())
+                    .compose(state -> state.customTlsListenerCertificate())
+                    .compose(state -> state.customExternalListenerCertificate())
                     .compose(state -> state.kafkaStatefulSet())
                     .compose(state -> state.kafkaRollingUpdate())
                     .map((Void) null);

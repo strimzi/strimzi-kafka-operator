@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -158,7 +159,7 @@ class UserST extends BaseST {
         String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
 
         // Checking UO logs
-        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOlogs.contains(messageUserWasAdded), is(true));
 
@@ -171,26 +172,36 @@ class UserST extends BaseST {
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
 
+        String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:21810 <<< 'ls /config/users'";
+        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+        assertThat(zkResult.out().contains(userName), is(true));
+
+        // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(userName);
 
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), emptyString());
 
+        ExecResult zkDeleteResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+        assertThat(zkDeleteResult.out().contains(userName), is(false));
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
+
         int numberOfUsers = 100;
 
         for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
+
             if (typeOfUser.equals("TLS")) {
                 KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
             } else {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
-            SecretUtils.waitForSecretReady(userName);
+
+            KafkaUserUtils.waitForKafkaUserCreation(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);
@@ -225,7 +236,7 @@ class UserST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

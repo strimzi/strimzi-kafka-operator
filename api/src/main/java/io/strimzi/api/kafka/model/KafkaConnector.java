@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
@@ -33,7 +34,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaConnector.RESOURCE_KIND,
                         plural = KafkaConnector.RESOURCE_PLURAL,
-                        shortNames = {KafkaConnector.SHORT_NAME}
+                        shortNames = {KafkaConnector.SHORT_NAME},
+                        categories = {STRIMZI_CATEGORY}
                 ),
                 group = KafkaConnector.RESOURCE_GROUP,
                 scope = KafkaConnector.SCOPE,
@@ -61,13 +63,13 @@ import static java.util.Collections.unmodifiableList;
 @ToString
 public class KafkaConnector extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectorStatus> {
     private static final long serialVersionUID = 1L;
-    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String SCOPE = "Namespaced";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
+    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
     public static final String RESOURCE_SINGULAR = "kafkaconnector";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String SHORT_NAME = "kctr";

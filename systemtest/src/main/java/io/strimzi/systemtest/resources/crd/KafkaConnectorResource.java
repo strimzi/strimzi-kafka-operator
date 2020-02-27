@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.test.TestUtils;
@@ -43,16 +44,27 @@ public class KafkaConnectorResource {
         return deployKafkaConnector(defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks).build());
     }
 
-    private static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
+    public static KafkaConnectorBuilder defaultKafkaConnector(String name, String clusterName, int maxTasks) {
+        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
+        return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
+    }
+
+    public static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
         return new KafkaConnectorBuilder(kafkaConnector)
             .editOrNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels("strimzi.io/cluster", kafkaConnectClusterName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnectClusterName)
             .endMetadata()
             .editOrNewSpec()
                 .withTasksMax(maxTasks)
             .endSpec();
+    }
+
+    public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
+        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
+        return kafkaConnector;
+
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {

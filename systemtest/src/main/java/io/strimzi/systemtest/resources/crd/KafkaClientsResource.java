@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -15,12 +17,15 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SslConfigs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
@@ -32,15 +37,15 @@ import static io.strimzi.test.TestUtils.toYamlString;
 public class KafkaClientsResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
 
-    public static DoneableDeployment deployKafkaClients(String kafkaClientsName) {
-        return deployKafkaClients(false, kafkaClientsName, null);
+    public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
+        return deployKafkaClients(false, kafkaClusterName, null);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, null);
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName,  KafkaUser... kafkaUsers) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, true, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
@@ -54,7 +59,7 @@ public class KafkaClientsResource {
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -62,19 +67,19 @@ public class KafkaClientsResource {
         return KubernetesResource.deployNewDeployment(kafkaClient);
     }
 
-    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
             .withImage(Environment.TEST_CLIENT_IMAGE)
             .withCommand("sleep")
             .withArgs("infinity")
-            .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
+            .withImagePullPolicy(Environment.COMPONENTS_IMAGE_PULL_POLICY);
+
+        String producerConfiguration = ProducerConfig.ACKS_CONFIG + "=all\n";
+        String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
 
         if (kafkaUsers == null) {
-            String producerConfiguration = "acks=all\n";
-            String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
-
             containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
             containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
@@ -84,8 +89,6 @@ public class KafkaClientsResource {
                 boolean tlsUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
                 boolean scramShaUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
 
-                String producerConfiguration = "acks=all\n";
-                String consumerConfiguration = "auto.offset.reset=earliest\n";
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
                 containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
@@ -103,14 +106,14 @@ public class KafkaClientsResource {
                         consumerConfiguration += "security.protocol=SSL\n";
                     }
                     producerConfiguration +=
-                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
-                                    "ssl.truststore.type=pkcs12\n";
-                    consumerConfiguration += ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n" +
-                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
+                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
+                    consumerConfiguration +=
+                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
                 } else {
                     if (scramShaUser) {
-                        producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        producerConfiguration +=  "security.protocol=SASL_PLAINTEXT\n";
                         producerConfiguration += saslConfigs(kafkaUser);
                         consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
                         consumerConfiguration += saslConfigs(kafkaUser);
@@ -122,11 +125,11 @@ public class KafkaClientsResource {
 
                 if (tlsUser) {
                     producerConfiguration +=
-                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
-                                    "ssl.keystore.type=pkcs12\n";
-                    consumerConfiguration += "auto.offset.reset=earliest\n" +
-                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
-                            "ssl.keystore.type=pkcs12\n";
+                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                            SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
+                    consumerConfiguration +=
+                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                            SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
 
                     containerBuilder.addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
                             .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
@@ -149,8 +152,9 @@ public class KafkaClientsResource {
                 }
 
                 if (tlsListener) {
-                    String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
-                    String clusterCaSecretName = clusterCaCertSecretName(clusterName);
+                    String clusterName = kafkaUser.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
+                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
 
@@ -177,16 +181,21 @@ public class KafkaClientsResource {
                         .endVolume();
                 }
 
+                if (!hostnameVerification) {
+                    producerConfiguration += SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG + "=";
+                    consumerConfiguration += SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG + "=";
+                }
+
+
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
                 containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION"  + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
+
+                containerBuilder.withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("200M"))
+                        .build());
             }
         }
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
-    }
-
-
-    static String clusterCaCertSecretName(String cluster) {
-        return cluster + "-cluster-ca-cert";
     }
 
     static String saslConfigs(KafkaUser kafkaUser) {
@@ -439,7 +448,7 @@ public class KafkaClientsResource {
                         .withContainers()
                         .addNewContainer()
                             .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak")
+                            .withImage("jboss/keycloak:8.0.1")
                             .withPorts(
                                 new ContainerPortBuilder()
                                     .withName("http")
@@ -458,262 +467,12 @@ public class KafkaClientsResource {
                                 .withName("KEYCLOAK_PASSWORD")
                                 .withValue("admin")
                             .endEnv()
+                            // for enabling importing authorization script
+                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
                         .endContainer()
                     .endSpec()
                 .endTemplate()
             .endSpec()
             .build());
-    }
-
-    public static DoneableDeployment producerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
-        String producerName = "hello-world-producer";
-
-        Map<String, String> producerLabels = new HashMap<>();
-        producerLabels.put("app", producerName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withClusterName(ResourceManager.kubeClient().getNamespace())
-                .withLabels(producerLabels)
-                .withName("hello-world-producer")
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(1)
-                .withNewSelector()
-                    .withMatchLabels(producerLabels)
-                .endSelector()
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(producerLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(producerName)
-                            .withImage("strimzi/" + producerName + ":latest")
-                            .addNewEnv()
-                                .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrap)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("TOPIC")
-                                .withValue(topicName)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("DELAY_MS")
-                                .withValue("1000")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("LOG_LEVEL")
-                                .withValue("DEBUG")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("MESSAGE_COUNT")
-                                .withValue("100")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_ID")
-                                .withValue("hello-world-producer")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_SECRET")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("hello-world-producer-oauth")
-                                        .withKey("clientSecret")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_TOKEN_ENDPOINT_URI")
-                                .withValue(oauthTokenEndpointUri)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CRT")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("x509-https-secret")
-                                        .withKey("tls.crt")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM") // disable hostname verification
-                                .withValue("")
-                            .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec().build());
-    }
-
-
-    public static DoneableDeployment consumerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
-        return consumerWithOauth("hello-world-consumer", oauthTokenEndpointUri, topicName, bootstrap);
-    }
-
-    public static DoneableDeployment consumerWithOauth(String name, String oauthTokenEndpointUri, String topicName, String bootstrap) {
-        Map<String, String> consumerLabels = new HashMap<>();
-        consumerLabels.put("app", name);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withClusterName(ResourceManager.kubeClient().getNamespace())
-                .withLabels(consumerLabels)
-                .withName(name)
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(1)
-                .withNewSelector()
-                    .withMatchLabels(consumerLabels)
-                .endSelector()
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(consumerLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(name)
-                            .withImage("strimzi/hello-world-consumer:latest")
-                            .addNewEnv()
-                                .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrap)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("TOPIC")
-                                .withValue(topicName)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("GROUP_ID")
-                                .withValue(name)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("LOG_LEVEL")
-                                .withValue("INFO")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("MESSAGE_COUNT")
-                                .withValue("100")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_ID")
-                                .withValue("hello-world-consumer")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_SECRET")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("hello-world-consumer-oauth")
-                                        .withKey("clientSecret")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_TOKEN_ENDPOINT_URI")
-                                .withValue(oauthTokenEndpointUri)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CRT")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("x509-https-secret")
-                                        .withKey("tls.crt")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM")  // disable hostname verification
-                                .withValue("")
-                            .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec().build());
-    }
-
-    public static DoneableDeployment kafkaStreamsWithOauth(String oauthTokenEndpointUri, String bootstrap) {
-        String kafkaStreamsName = "hello-world-streams";
-
-        Map<String, String> kafkaStreamsLabel = new HashMap<>();
-        kafkaStreamsLabel.put("app", kafkaStreamsName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withClusterName(ResourceManager.kubeClient().getNamespace())
-                .withLabels(kafkaStreamsLabel)
-                .withName(kafkaStreamsName)
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(1)
-                .withNewSelector()
-                    .withMatchLabels(kafkaStreamsLabel)
-                .endSelector()
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(kafkaStreamsLabel)
-                    .endMetadata()
-                    .withNewSpec()
-                    .withContainers()
-                        .addNewContainer()
-                            .withName(kafkaStreamsName)
-                            .withImage("strimzi/" + kafkaStreamsName + ":latest")
-                            .addNewEnv()
-                                .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrap)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("APPLICATION_ID")
-                                .withValue(kafkaStreamsName)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("SOURCE_TOPIC")
-                                .withValue("my-topic")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("TARGET_TOPIC")
-                                .withValue("my-topic-reversed")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("LOG_LEVEL")
-                                .withValue("DEBUG")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_ID")
-                                .withValue(kafkaStreamsName)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CLIENT_SECRET")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("hello-world-streams-oauth")
-                                        .withKey("clientSecret")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_TOKEN_ENDPOINT_URI")
-                                .withValue(oauthTokenEndpointUri)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_CRT")
-                                .withNewValueFrom()
-                                    .withNewSecretKeyRef()
-                                        .withName("x509-https-secret")
-                                        .withKey("tls.crt")
-                                    .endSecretKeyRef()
-                                .endValueFrom()
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM") // disable hostname verification
-                                .withValue("")
-                            .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec().build());
     }
 }

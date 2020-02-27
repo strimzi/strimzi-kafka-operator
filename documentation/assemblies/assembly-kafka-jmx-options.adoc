@@ -9,7 +9,7 @@
 
 [id='assembly-jmx-options-{context}']
 
-= JMX Remote
+= JMX Options
 
 {ProductName} supports obtaining JMX metrics from the Kafka brokers by opening a JMX port on 9999.
 You can obtain various metrics about each Kafka broker, for example, usage data such as the `BytesPerSecond` value

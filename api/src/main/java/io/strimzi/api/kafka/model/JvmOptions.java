@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +34,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
+    private List<SystemProperty> javaSystemProperties;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -75,6 +77,15 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    @Description("A map of additional system properties which will be passed using the `-D` option to the JVM.")
+    public List<SystemProperty> getJavaSystemProperties() {
+        return javaSystemProperties;
+    }
+
+    public void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
+        this.javaSystemProperties = javaSystemProperties;
     }
 
     @JsonProperty("-XX")

@@ -145,7 +145,7 @@ class TopicSerialization {
                     .build();
         }
 
-        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("kafka.strimzi.io/v1beta1")
+        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion(KafkaTopic.RESOURCE_GROUP + "/" + KafkaTopic.V1BETA1)
                 .withMetadata(om)
                 // TODO .withUid()
                 .withNewSpec()

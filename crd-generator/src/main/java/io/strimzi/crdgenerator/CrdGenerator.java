@@ -283,6 +283,10 @@ public class CrdGenerator {
         if (names.shortNames().length > 0) {
             result.set("shortNames", stringArray(asList(names.shortNames())));
         }
+
+        if (names.categories().length > 0) {
+            result.set("categories", stringArray(asList(names.categories())));
+        }
         return result;
     }
 
@@ -463,13 +467,14 @@ public class CrdGenerator {
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
         } else if (Schema.isJsonScalarType(returnType)
-                || Map.class.equals(returnType)) {
+                || Map.class.equals(returnType)) {            
             schema = addSimpleTypeConstraints(buildBasicTypeSchema(property, returnType), property);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(property.getType());
         } else {
             schema = buildObjectSchema(property, returnType);
         }
+        addDescription(schema, property);
         return schema;
     }
 
@@ -489,6 +494,8 @@ public class CrdGenerator {
                 || Long.class.equals(elementType)
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
+        } else if (Map.class.equals(elementType)) {
+            itemResult.put("type", "object");
         } else  {
             buildObjectSchema(itemResult, elementType, true);
         }
@@ -509,6 +516,13 @@ public class CrdGenerator {
 
 
         return result;
+    }
+
+    private void addDescription(ObjectNode result, AnnotatedElement element) {
+        if (element.isAnnotationPresent(Description.class)) {
+            Description description = element.getAnnotation(Description.class);
+            result.put("description", DocGenerator.getDescription(description));
+        }
     }
 
     @SuppressWarnings("unchecked")

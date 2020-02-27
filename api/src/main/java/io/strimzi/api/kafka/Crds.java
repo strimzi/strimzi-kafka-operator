@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaClusterRebalance;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
@@ -30,6 +31,7 @@ import io.strimzi.api.kafka.model.KafkaClusterRebalance;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -45,6 +47,7 @@ import static java.util.Collections.singletonList;
 public class Crds {
 
     public static final String CRD_KIND = "CustomResourceDefinition";
+    public static final String STRIMZI_CATEGORY = "strimzi";
 
     @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
@@ -56,6 +59,7 @@ public class Crds {
         KafkaMirrorMaker.class,
         KafkaBridge.class,
         KafkaConnector.class,
+        KafkaMirrorMaker2.class,
         KafkaClusterRebalance.class
     };
 
@@ -91,6 +95,8 @@ public class Crds {
             version = KafkaBridge.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnector.class)) {
             version = KafkaConnector.VERSIONS.get(0);
+        } else if (cls.equals(KafkaMirrorMaker2.class)) {
+            version = KafkaMirrorMaker2.VERSIONS.get(0);
         } else if (cls.equals(KafkaClusterRebalance.class)) {
             version = KafkaClusterRebalance.VERSIONS.get(0);
         } else {
@@ -100,7 +106,7 @@ public class Crds {
         return crd(cls, version);
     }
 
-    @SuppressWarnings("checkstyle:JavaNCSS")
+    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:CyclomaticComplexity"})
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
         String scope, crdApiVersion, plural, singular, group, kind, listKind;
         CustomResourceSubresourceStatus status = null;
@@ -200,6 +206,18 @@ public class Crds {
             if (!KafkaConnector.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
+        } else if (cls.equals(KafkaMirrorMaker2.class)) {
+            scope = KafkaMirrorMaker2.SCOPE;
+            crdApiVersion = KafkaMirrorMaker2.CRD_API_VERSION;
+            plural = KafkaMirrorMaker2.RESOURCE_PLURAL;
+            singular = KafkaMirrorMaker2.RESOURCE_SINGULAR;
+            group = KafkaMirrorMaker2.RESOURCE_GROUP;
+            kind = KafkaMirrorMaker2.RESOURCE_KIND;
+            listKind = KafkaMirrorMaker2.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
+            if (!KafkaMirrorMaker2.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }                
         } else if (cls.equals(KafkaClusterRebalance.class)) {
             scope = KafkaClusterRebalance.SCOPE;
             crdApiVersion = KafkaClusterRebalance.CRD_API_VERSION;
@@ -305,6 +323,14 @@ public class Crds {
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeOperation(KubernetesClient client) {
         return client.customResources(kafkaBridge(), KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class);
+    }
+
+    public static CustomResourceDefinition kafkaMirrorMaker2() {
+        return crd(KafkaMirrorMaker2.class);
+    }
+
+    public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client) {
+        return client.customResources(kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class);
     }
 
     public static CustomResourceDefinition kafkaClusterRebalance() {

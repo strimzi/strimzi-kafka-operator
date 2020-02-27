@@ -182,14 +182,50 @@
   },
   {
     "fromVersion":"0.15.0",
-    "toVersion":"HEAD",
+    "toVersion":"0.16.2",
     "fromExamples":"strimzi-0.15.0",
-    "toExamples":"HEAD",
+    "toExamples":"strimzi-0.16.2",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
+    "imagesBeforeKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.16.2-kafka-2.3.1",
+      "kafka": "strimzi/kafka:0.16.2-kafka-2.3.1",
+      "topicOperator": "strimzi/operator:0.16.2",
+      "userOperator": "strimzi/operator:0.16.2"
+    },
+    "imagesAfterKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.16.2-kafka-2.4.0",
+      "kafka": "strimzi/kafka:0.16.2-kafka-2.4.0",
+      "topicOperator": "strimzi/operator:0.16.2",
+      "userOperator": "strimzi/operator:0.16.2"
+    },
+    "proceduresBefore": {
+      "kafkaVersion": "",
+      "logMessageVersion": ""
+    },
+    "proceduresAfter": {
+      "kafkaVersion": "2.4.0",
+      "logMessageVersion": "2.4"
+    },
+    "client": {
+      "beforeKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1",
+      "afterKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0"
+    },
+    "supportedK8sVersion": {
+      "version": "latest",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
+    "fromVersion":"0.16.2",
+    "toVersion":"HEAD",
+    "fromExamples":"strimzi-0.16.2",
+    "toExamples":"HEAD",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
     "urlTo":"HEAD",
     "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.3.1",
-      "kafka": "strimzi/kafka:latest-kafka-2.3.1",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.4.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.4.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -204,11 +240,11 @@
       "logMessageVersion": ""
     },
     "proceduresAfter": {
-      "kafkaVersion": "2.4.0",
-      "logMessageVersion": "2.4"
+      "kafkaVersion": "",
+      "logMessageVersion": ""
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1",
+      "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.3.1",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.4.0"
     },
     "supportedK8sVersion": {

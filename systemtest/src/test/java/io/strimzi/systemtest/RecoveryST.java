@@ -243,13 +243,13 @@ class RecoveryST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
 
     @Override
-    void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("No search in strimzi-cluster-operator log for errors");
     }
 }

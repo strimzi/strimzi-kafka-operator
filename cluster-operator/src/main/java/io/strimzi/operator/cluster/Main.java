@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
@@ -30,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +57,9 @@ public class Main {
     public static void main(String[] args) {
         log.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
+
+        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
+        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
@@ -112,6 +117,9 @@ public class Main {
             log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
+        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
+                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
@@ -129,6 +137,7 @@ public class Main {
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
+                    kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {

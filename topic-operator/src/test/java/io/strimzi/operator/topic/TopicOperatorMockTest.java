@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -24,6 +25,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,9 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
@@ -52,7 +57,7 @@ public class TopicOperatorMockTest {
     private KubernetesClient kubeClient;
     private Session session;
     private KafkaCluster kafkaCluster;
-    private Vertx vertx;
+    private static Vertx vertx;
     private String deploymentId;
     private AdminClient adminClient;
     private TopicConfigsWatcher topicsConfigWatcher;
@@ -74,10 +79,21 @@ public class TopicOperatorMockTest {
         }
     }
 
+    @AfterAll
+    public static void closeVertx() {
+        if (vertx != null) {
+            vertx.close();
+        }
+    }
+
     @BeforeEach
     public void createMockKube(VertxTestContext context) throws Exception {
         assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
-        vertx = Vertx.vertx();
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.topic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
@@ -160,8 +176,8 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
-                .addToLabels(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL, io.strimzi.operator.common.model.Labels.KUBERNETES_NAME)
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                .addToLabels(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME)
                 .endMetadata()
                 .withNewSpec()
                 .withPartitions(1)
@@ -275,7 +291,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
                 .withTopicName("my-topic") // the same as metadata.name
@@ -293,7 +309,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                 .withName("my-topic")
-                .addToLabels("strimzi.io/kind", "topic")
+                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
                     .withTopicName("DIFFERENT") // different to metadata.name

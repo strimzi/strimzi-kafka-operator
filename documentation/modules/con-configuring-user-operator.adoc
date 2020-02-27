@@ -32,7 +32,7 @@ For more details about resource request and limit configuration, see xref:assemb
 The `logging` property configures the logging of the User Operator.
 For more details, see xref:con-entity-operator-logging-{context}[].
 
-.Example of Topic Operator configuration
+.Example of User Operator configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}

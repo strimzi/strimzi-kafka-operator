@@ -181,6 +181,11 @@ public class ZookeeperCluster extends AbstractModel {
         if (replicas <= 0) {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
+
+        if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
+            log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
+        }
+
         zk.setReplicas(replicas);
 
         String image = zookeeperClusterSpec.getImage();
@@ -201,6 +206,9 @@ public class ZookeeperCluster extends AbstractModel {
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        if (zookeeperClusterSpec.getJvmOptions() != null) {
+            zk.setJavaSystemProperties(zookeeperClusterSpec.getJvmOptions().getJavaSystemProperties());
+        }
 
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
@@ -252,9 +260,15 @@ public class ZookeeperCluster extends AbstractModel {
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null && template.getStatefulset().getMetadata() != null)  {
-                zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+            if (template.getStatefulset() != null) {
+                if (template.getStatefulset().getPodManagementPolicy() != null) {
+                    zk.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
+                }
+
+                if (template.getStatefulset().getMetadata() != null) {
+                    zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
+                    zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+                }
             }
 
             ModelUtils.parsePodTemplate(zk, template.getPod());
@@ -435,6 +449,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                Collections.emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
@@ -511,8 +526,8 @@ public class ZookeeperCluster extends AbstractModel {
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidevarEnvVars())
-                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_NODES_VOLUME_NAME, TLS_SIDECAR_NODES_VOLUME_MOUNT),
-                        createVolumeMount(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, TLS_SIDECAR_CLUSTER_CA_VOLUME_MOUNT))
+                .withVolumeMounts(VolumeUtils.createVolumeMount(TLS_SIDECAR_NODES_VOLUME_NAME, TLS_SIDECAR_NODES_VOLUME_MOUNT),
+                        VolumeUtils.createVolumeMount(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, TLS_SIDECAR_CLUSTER_CA_VOLUME_MOUNT))
                 .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
                                 createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"),
                                 createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP")))
@@ -535,6 +550,9 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        if (javaSystemProperties != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
+        }
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
@@ -577,18 +595,18 @@ public class ZookeeperCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>();
         if (storage instanceof EphemeralStorage) {
             String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-            volumeList.add(createEmptyDirVolume(VOLUME_NAME, sizeLimit));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }
 
     /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaimTemplate(VOLUME_NAME, (PersistentClaimStorage) storage));
+            pvcList.add(VolumeUtils.createPersistentVolumeClaimTemplate(VOLUME_NAME, (PersistentClaimStorage) storage));
         }
         return pvcList;
     }
@@ -605,8 +623,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(VOLUME_NAME, mountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
     }

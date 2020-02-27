@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -33,7 +34,10 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
@@ -63,6 +67,7 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -93,9 +98,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
@@ -120,6 +123,10 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
+            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
+        }};
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
             .withLivenessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
@@ -130,6 +137,9 @@ public class KafkaClusterTest {
             .editSpec()
                 .editKafka()
                     .withTlsSidecar(tlsSidecar)
+                    .withNewJvmOptions()
+                        .addAllToJavaSystemProperties(javaSystemProperties)
+                    .endJvmOptions()
                 .endKafka()
             .endSpec()
             .build();
@@ -141,6 +151,13 @@ public class KafkaClusterTest {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(kc.createOwnerReference(), metricsCm);
+    }
+
+    @Test
+    public void  testJavaSystemProperties() {
+        assertThat(kc.getEnvVars().get(2).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
+        assertThat(kc.getEnvVars().get(2).getValue(), is("-D" + javaSystemProperties.get(0).getName() + "=" + javaSystemProperties.get(0).getValue() + " " +
+                "-D" + javaSystemProperties.get(1).getName() + "=" + javaSystemProperties.get(1).getValue()));
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
@@ -383,6 +400,24 @@ public class KafkaClusterTest {
         checkStatefulSet(sts, editKafkaAssembly, false);
     }
 
+    @Test
+    public void testGenerateStatefulSetWithPodManagementPolicy() {
+        Kafka editKafkaAssembly =
+                new KafkaBuilder(kafkaAssembly)
+                        .editSpec()
+                            .editKafka()
+                                .withNewTemplate()
+                                    .withNewStatefulset()
+                                        .withPodManagementPolicy(PodManagementPolicy.ORDERED_READY)
+                                    .endStatefulset()
+                                .endTemplate()
+                            .endKafka()
+                        .endSpec().build();
+        KafkaCluster kc = KafkaCluster.fromCrd(editKafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
+    }
+
     private void checkStatefulSet(StatefulSet sts, Kafka cm, boolean isOpenShift) {
         assertThat(sts.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(cluster)));
         // ... in the same namespace ...
@@ -399,6 +434,7 @@ public class KafkaClusterTest {
 
         // checks on the main Kafka container
         assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image));
         assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
         assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
@@ -1447,13 +1483,30 @@ public class KafkaClusterTest {
         // Check Network Policies
         NetworkPolicy np = k.generateNetworkPolicy(true);
 
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
+
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertEquals(4, rules.size());
-        assertTrue(rules.contains(kafkaBrokersPeer));
-        assertTrue(rules.contains(eoPeer));
-        assertTrue(rules.contains(kafkaExporterPeer));
-        assertTrue(rules.contains(clusterOperatorPeer));
+        assertThat(rules.size(), is(4));
+        assertThat(rules.contains(kafkaBrokersPeer), is(true));
+        assertThat(rules.contains(eoPeer), is(true));
+        assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(clusterOperatorPeer), is(true));
+    }
+
+    @Test
+    public void testReplicationPortNetworkPolicyOnOldKubernetes() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy(false);
+
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
+
+        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+        assertThat(rules.size(), is(0));
     }
 
     @Test
@@ -3207,4 +3260,116 @@ public class KafkaClusterTest {
         assertThat(k.getSecretSourceTls().getKey(), is(key));
         assertThat(k.getSecretSourceTls().getCertificate(), is(cert));
     }
+
+    @Test
+    public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                    image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                    .editSpec()
+                    .editKafka()
+                    .withAuthorization(
+                            new KafkaAuthorizationKeycloakBuilder()
+                                    .build())
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testGenerateDeploymentWithKeycloakAuthorization() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                    .withNewPlain()
+                        .withAuth(
+                                new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withIntrospectionEndpointUri("http://introspection")
+                                        .withNewClientSecret()
+                                            .withSecretName("my-secret-secret")
+                                            .withKey("my-secret-key")
+                                        .endClientSecret()
+                                        .withDisableTlsHostnameVerification(true)
+                                        .withTlsTrustedCertificates(cert1, cert2)
+                                        .build())
+                    .endPlain()
+                .endListeners()
+                .withAuthorization(
+                        new KafkaAuthorizationKeycloakBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://token-endpoint-uri")
+                                .withDisableTlsHostnameVerification(true)
+                                .withDelegateToKafkaAcls(false)
+                                .withTlsTrustedCertificates(cert1, cert2)
+                                .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        // Volume mounts
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-0".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate-0"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-1".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate-1"));
+
+        // Volumes
+        List<Volume> volumes = sts.getSpec().getTemplate().getSpec().getVolumes();
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-0".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
+        assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("tls.crt"));
+    }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationNok() {
+        String propertyName = "offsets.topic.replication.factor";
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap(propertyName, replicas + 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka());
+        });
+        assertThat(ex.getMessage().equals("Kafka configuration option '" + propertyName + "' should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas), is(true));
+    }
+
+    @Test
+    public void testReplicasAndRelatedOptionsValidationOk() {
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withConfig(singletonMap("offsets.topic.replication.factor", replicas - 1))
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka());
+    }
+
 }

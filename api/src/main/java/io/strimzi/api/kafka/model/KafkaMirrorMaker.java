@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -37,7 +38,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaMirrorMaker.RESOURCE_KIND,
                         plural = KafkaMirrorMaker.RESOURCE_PLURAL,
-                        shortNames = {KafkaMirrorMaker.SHORT_NAME}
+                        shortNames = {KafkaMirrorMaker.SHORT_NAME},
+                        categories = {STRIMZI_CATEGORY}
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
@@ -60,7 +62,7 @@ import static java.util.Collections.unmodifiableList;
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
-                                description = "The desired number of Kafka Mirror Maker replicas",
+                                description = "The desired number of Kafka MirrorMaker replicas",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
                         ),
@@ -96,15 +98,15 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String V1ALPHA1 = "v1alpha1";
-    public static final String V1BETA1 = "v1beta1";
+    public static final String V1ALPHA1 = Constants.V1ALPHA1;
+    public static final String V1BETA1 = Constants.V1BETA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaMirrorMaker";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkamirrormakers";
     public static final String RESOURCE_SINGULAR = "kafkamirrormaker";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
+    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kmm";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
@@ -135,7 +137,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of Kafka Mirror Maker.")
+    @Description("The specification of Kafka MirrorMaker.")
     public KafkaMirrorMakerSpec getSpec() {
         return spec;
     }
@@ -145,7 +147,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     }
 
     @Override
-    @Description("The status of Kafka Mirror Maker.")
+    @Description("The status of Kafka MirrorMaker.")
     public KafkaMirrorMakerStatus getStatus() {
         return status;
     }

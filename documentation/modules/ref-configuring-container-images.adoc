@@ -14,13 +14,14 @@ You can specify which container image to use for each component using the `image
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`
+* `Kafka.spec.jmxTrans`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 * `KafkaBridge.spec`
 
-== Configuring the `image` property for Kafka, Kafka Connect, and Kafka Mirror Maker
+== Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker
 
-Kafka, Kafka Connect (including Kafka Connect with S2I support), and Kafka Mirror Maker support multiple versions of Kafka.
+Kafka, Kafka Connect (including Kafka Connect with S2I support), and Kafka MirrorMaker support multiple versions of Kafka.
 Each component requires its own image.
 The default images for the different Kafka versions are configured in the following environment variables:
 
@@ -43,7 +44,7 @@ The mappings are used together with the `image` and `version` properties:
 The `image` and `version` for the different components can be configured in the following properties:
 
 * For Kafka in `spec.kafka.image` and `spec.kafka.version`.
-* For Kafka Connect, Kafka Connect S2I, and Kafka Mirror Maker in `spec.image` and `spec.version`.
+* For Kafka Connect, Kafka Connect S2I, and Kafka MirrorMaker in `spec.image` and `spec.version`.
 
 WARNING: It is recommended to provide only the `version` and leave the `image` property unspecified.
 This reduces the chance of making a mistake when configuring the custom resource. 
@@ -79,6 +80,9 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 . `{DockerKafkaBridge}` container image.
 * For Kafka broker initializer:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaInit}` container image.
+* For Kafka broker initializer:
+. Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in special situations, where you need to use a different container registry.

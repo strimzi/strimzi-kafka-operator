@@ -9,11 +9,22 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
@@ -29,29 +40,27 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.CoreMatchers.is;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
-class ConnectS2IST extends MessagingBaseST {
+class ConnectS2IST extends BaseST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
@@ -78,8 +87,9 @@ class ConnectS2IST extends MessagingBaseST {
         KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
 
         // Make sure that Connenct API is ready
-        // TODO remove this sleep when ENTMQST-1613 will be fixed
-        Thread.sleep(10_000);
+        KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
+
+        checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
         String createConnectorOutput = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
                 "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
@@ -99,8 +109,7 @@ class ConnectS2IST extends MessagingBaseST {
         String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
 
         // Make sure that Connenct API is ready
-        // TODO remove this sleep when ENTMQST-1613 will be fixed
-        Thread.sleep(10_000);
+        KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
 
         KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
@@ -116,13 +125,30 @@ class ConnectS2IST extends MessagingBaseST {
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         KafkaConnectUtils.waitForConnectorReady(kafkaConnectS2IName);
 
+        checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
+
         String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
+
+        KafkaConnectorResource.replaceKafkaConnectorResource(kafkaConnectS2IName, kC -> {
+            Map<String, Object> config = kC.getSpec().getConfig();
+            config.put("mongodb.user", "test-user");
+            kC.getSpec().setConfig(config);
+            kC.getSpec().setTasksMax(8);
+        });
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
+            () -> {
+                String connectorConfig = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/config").out();
+                assertThat(connectorStatus, containsString("RUNNING"));
+                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("mongodb.user\":\"test-user");
+            });
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
+    void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -131,20 +157,15 @@ class ConnectS2IST extends MessagingBaseST {
                             .withNewKafkaListenerAuthenticationScramSha512Auth()
                             .endKafkaListenerAuthenticationScramSha512Auth()
                         .endTls()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
             .endSpec()
             .done();
 
-
         final String userName = "user-example-one";
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         SecretUtils.waitForSecretReady(userName);
 
@@ -155,6 +176,8 @@ class ConnectS2IST extends MessagingBaseST {
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewTls()
                         .addNewTrustedCertificate()
                             .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -174,21 +197,31 @@ class ConnectS2IST extends MessagingBaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
 
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
+        String execPod = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
+        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPod, CONNECT_S2I_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME, 2);
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
+                internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+        );
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
-
-        assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
-                containsString("0\n1\n"));
+        assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
+                containsString("99"));
     }
 
     @Test
@@ -307,13 +340,108 @@ class ConnectS2IST extends MessagingBaseST {
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
     }
 
+    @Test
+    void testKafkaConnectorWithConnectS2IAndConnectWithSameName() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String connectClusterName = "connect-cluster";
+        String connectS2IClusterName = "connect-s2i-cluster";
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        // Create different connect cluster via S2I resources
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+                .editSpec()
+                .addToConfig("group.id", connectClusterName)
+                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectClusterName + "-config")
+                .addToConfig("status.storage.topic", connectClusterName + "-status")
+            .endSpec().done();
+
+        // Create connect cluster with default connect image
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editSpec()
+                .addToConfig("group.id", connectS2IClusterName)
+                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
+                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
+            .endSpec().build());
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", topicName)
+                .addToConfig("file", "/tmp/test-file-sink.txt")
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+            .endSpec().done();
+        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+
+        // Wait for Cluster Operator reconciliation
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnectS2I contains created connector
+        String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
+        assertThat(availableConnectors, containsString(CLUSTER_NAME));
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+
+        String newTopic = "new-topic";
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
+            kc.getSpec().getConfig().put("topics", newTopic);
+            kc.getSpec().setTasksMax(8);
+        });
+
+        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
+            () -> {
+                String connectorConfig = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/config").out();
+                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
+            });
+
+        // Now delete KafkaConnector resource and create connector manually
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+
+        KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME, kc -> {
+            kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
+        });
+
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
+        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnect contains created connector
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
+        assertThat(availableConnectors, containsString("sink-test"));
+
+        // Wait for Cluster Operator reconciliation
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+
+        // Check that KafkaConnect contains created connector
+        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
+        assertThat(availableConnectors, containsString("sink-test"));
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+    }
+
     private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName) {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .done();
 
@@ -331,9 +459,21 @@ class ConnectS2IST extends MessagingBaseST {
         String plugins = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
-        assertThat(kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).list().getItems().size(), is(2));
 
         return podForExecName;
+    }
+
+    private void checkConnectorInStatus(String namespace, String kafkaConnectS2IName) {
+        KafkaConnectS2IStatus kafkaConnectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespace).withName(kafkaConnectS2IName).get().getStatus();
+        List<ConnectorPlugin> pluginsList = kafkaConnectS2IStatus.getConnectorPlugins();
+        assertThat(pluginsList, notNullValue());
+        List<String> pluginsClasses = pluginsList.stream().map(p -> p.getConnectorClass()).collect(Collectors.toList());
+        assertThat(pluginsClasses, hasItems("org.apache.kafka.connect.file.FileStreamSinkConnector",
+                "org.apache.kafka.connect.file.FileStreamSourceConnector",
+                "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
+                "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
+                "org.apache.kafka.connect.mirror.MirrorSourceConnector",
+                "io.debezium.connector.mongodb.MongoDbConnector"));
     }
 
     @BeforeAll

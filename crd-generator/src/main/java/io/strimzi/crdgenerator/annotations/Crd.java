@@ -69,6 +69,11 @@ public @interface Crd {
              * @return Short names (e.g. "svc" is the short name for the K8S "services" kind).
              */
             String[] shortNames() default {};
+
+            /**
+             * @return A list of grouped resources custom resources belong to.
+             */
+            String[] categories() default {};
         }
 
         /**

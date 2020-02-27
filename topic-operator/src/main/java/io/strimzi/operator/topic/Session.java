@@ -23,14 +23,25 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.vertx.micrometer.backends.BackendRegistries;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+
 
 public class Session extends AbstractVerticle {
 
     private final static Logger LOGGER = LogManager.getLogger(Session.class);
 
     private static final int HEALTH_SERVER_PORT = 8080;
+
+    private static  final PrometheusMeterRegistry METRICS_REGISTRY = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
 
     private final Config config;
     private final KubernetesClient kubeClient;
@@ -57,13 +68,14 @@ public class Session extends AbstractVerticle {
             sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
+        setupMetrics();
     }
 
     /**
      * Stop the operator.
      */
     @Override
-    public void stop(Future<Void> stopFuture) throws Exception {
+    public void stop(Promise<Void> stop) throws Exception {
         this.stopped = true;
         Long timerId = this.timerId;
         if (timerId != null) {
@@ -121,13 +133,16 @@ public class Session extends AbstractVerticle {
                 });
                 return Future.succeededFuture();
             });
-        }, stopFuture);
+        }, stop);
     }
 
     @Override
-    public void start(Future<Void> startupFuture) {
+    public void start(Promise<Void> start) {
         LOGGER.info("Starting");
         Properties adminClientProps = new Properties();
+
+        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
+        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
 
         if (Boolean.valueOf(config.get(Config.TLS_ENABLED))) {
@@ -155,7 +170,7 @@ public class Session extends AbstractVerticle {
                 this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
             zkResult -> {
                 if (zkResult.failed()) {
-                    ((Promise<Void>) startupFuture).fail(zkResult.cause());
+                    start.fail(zkResult.cause());
                     return;
                 }
                 this.zk = zkResult.result();
@@ -216,9 +231,17 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                promise.future().setHandler(startupFuture);
+                promise.future().setHandler(start);
                 LOGGER.info("Started");
             });
+    }
+
+    public void setupMetrics() {
+        new ClassLoaderMetrics().bindTo(METRICS_REGISTRY);
+        new JvmMemoryMetrics().bindTo(METRICS_REGISTRY);
+        new ProcessorMetrics().bindTo(METRICS_REGISTRY);
+        new JvmThreadMetrics().bindTo(METRICS_REGISTRY);
+        new JvmGcMetrics().bindTo(METRICS_REGISTRY);
     }
 
     /**
@@ -233,6 +256,8 @@ public class Session extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        request.response().setStatusCode(200).end(METRICS_REGISTRY.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);

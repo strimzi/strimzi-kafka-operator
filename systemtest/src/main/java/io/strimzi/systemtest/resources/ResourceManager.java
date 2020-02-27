@@ -22,9 +22,11 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -106,6 +108,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((Kafka) resource);
                 });
@@ -116,6 +119,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
@@ -126,6 +130,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
@@ -136,6 +141,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
@@ -146,6 +152,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
@@ -184,6 +191,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
                 });
@@ -194,6 +202,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
+                            .cascading(true)
                             .delete();
                 });
         }
@@ -231,6 +240,10 @@ public class ResourceManager {
                 .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
 
         SecretUtils.waitForClusterSecretsDeletion(kafkaClusterName);
+        PersistentVolumeClaimUtils.waitUntilPVCDeletion(kafkaClusterName);
+
+        ConfigMapUtils.waitUntilConfigMapDeletion(KafkaResources.kafkaMetricsAndLogConfigMapName(kafka.getMetadata().getName()));
+        ConfigMapUtils.waitUntilConfigMapDeletion(KafkaResources.zookeeperMetricsAndLogConfigMapName(kafka.getMetadata().getName()));
     }
 
     private static void waitForDeletion(KafkaConnect kafkaConnect) {

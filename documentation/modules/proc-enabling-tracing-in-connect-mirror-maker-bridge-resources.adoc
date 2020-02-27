@@ -3,13 +3,13 @@
 // assembly-setting-up-tracing-mirror-maker-connect-bridge.adoc
 
 [id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
-= Enabling tracing in Mirror Maker, Kafka Connect, and Kafka Bridge resources
+= Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
 
 Update the configuration of `KafkaMirrorMaker`, `KafkaConnect`, `KafkaConnectS2I`, and `KafkaBridge` custom resources to specify and configure a Jaeger tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
 
-* Interceptor classes are updated in the integrated consumers and producers in Mirror Maker, Kafka Connect, or the {ProductName} Kafka Bridge.
+* Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, Kafka Connect, or the {ProductName} Kafka Bridge.
 
-* For Mirror Maker and Kafka Connect, the tracing agent initializes a Jaeger tracer based on the tracing configuration defined in the resource.
+* For MirrorMaker and Kafka Connect, the tracing agent initializes a Jaeger tracer based on the tracing configuration defined in the resource.
 
 * For the Kafka Bridge, a Jaeger tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
@@ -43,7 +43,7 @@ spec:
   #...
 ----
 
-.Jaeger tracer configuration for Mirror Maker
+.Jaeger tracer configuration for MirrorMaker
 [source,yaml,subs=attributes+]
 ----
 apiVersion: kafka.strimzi.io/v1beta1

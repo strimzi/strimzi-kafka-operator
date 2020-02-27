@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
@@ -64,7 +65,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("rack.id=${STRIMZI_RACK_ID}"));
+        assertThat(configuration, isEquivalent("broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @Test
@@ -75,7 +76,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
-                                                                "rack.id=${STRIMZI_RACK_ID}"));
+                                                                "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @Test
@@ -97,7 +98,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testAuthorizationWithSuperUsers()  {
+    public void testSimpleAuthorizationWithSuperUsers()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
@@ -107,11 +108,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer\n" +
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:jakub;User:CN=kuba"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
     @Test
-    public void testAuthorizationWithoutSuperUsers()  {
+    public void testSimpleAuthorizationWithoutSuperUsers()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .build();
 
@@ -120,7 +121,41 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer\n" +
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
+    }
+
+    @Test
+    public void testKeycloakAuthorization() {
+        CertSecretSource cert = new CertSecretSourceBuilder()
+                .withNewSecretName("my-secret")
+                .withNewCertificate("my.crt")
+                .build();
+
+        KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
+                .withTokenEndpointUri("http://token-endpoint-uri")
+                .withClientId("my-client-id")
+                .withDelegateToKafkaAcls(false)
+                .withTlsTrustedCertificates(cert)
+                .withDisableTlsHostnameVerification(true)
+                .addToSuperUsers("giada", "CN=paccu")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
+                "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
+                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
+                "strimzi.authorization.client.id=my-client-id\n" +
+                "strimzi.authorization.delegate.to.kafka.acl=false\n" +
+                "strimzi.authorization.kafka.cluster.name=my-cluster\n" +
+                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
+                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
+                "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
+                "strimzi.authorization.ssl.endpoint.identification.algorithm=\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 
     @Test
@@ -171,7 +206,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(ModelUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -186,7 +221,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(ModelUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -218,7 +253,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(ModelUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data-1/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-2/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-5/kafka-log${STRIMZI_BROKER_ID}"));
@@ -709,6 +744,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withNewKafkaListenerAuthenticationOAuth()
                         .withNewValidIssuerUri("http://valid-issuer")
                         .withNewJwksEndpointUri("http://jwks")
+                        .withEnableECDSA(true)
                         .withNewUserNameClaim("preferred_username")
                     .endKafkaListenerAuthenticationOAuth()
                 .endPlain()
@@ -733,7 +769,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.username.claim=\"preferred_username\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
     }
 
@@ -749,6 +785,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                         .withNewKafkaListenerAuthenticationOAuth()
                         .withNewValidIssuerUri("https://valid-issuer")
                         .withNewJwksEndpointUri("https://jwks")
+                        .withEnableECDSA(true)
                         .withNewUserNameClaim("preferred_username")
                         .withDisableTlsHostnameVerification(true)
                         .withTlsTrustedCertificates(cert)
@@ -775,7 +812,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
     }
 
@@ -831,6 +868,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withIntrospectionEndpointUri("http://introspection-endpoint")
                 .withJwksExpirySeconds(160)
                 .withJwksRefreshSeconds(50)
+                .withEnableECDSA(true)
                 .withUserNameClaim("preferred_username")
                 .withCheckAccessTokenType(false)
                 .withClientId("my-kafka-id")
@@ -844,6 +882,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint"));
         expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50));
         expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 160));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, true));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));

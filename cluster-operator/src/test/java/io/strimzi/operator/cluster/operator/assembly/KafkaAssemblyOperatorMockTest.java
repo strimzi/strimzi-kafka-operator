@@ -19,16 +19,17 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -37,7 +38,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -334,7 +334,7 @@ public class KafkaAssemblyOperatorMockTest {
     private void updateClusterWithoutSecrets(Params params, VertxTestContext context, String... secrets) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaAssemblyOperator kco = createCluster(params, context);
         for (String secret: secrets) {
-            mockClient.secrets().inNamespace(NAMESPACE).withName(secret).delete();
+            mockClient.secrets().inNamespace(NAMESPACE).withName(secret).cascading(true).delete();
             assertThat("Expected secret " + secret + " to be not exist",
                     mockClient.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(nullValue()));
         }
@@ -359,7 +359,7 @@ public class KafkaAssemblyOperatorMockTest {
         setFields(params);
         KafkaAssemblyOperator kco = createCluster(params, context);
         for (String service: services) {
-            mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
+            mockClient.services().inNamespace(NAMESPACE).withName(service).cascading(true).delete();
             assertThat("Expected service " + service + " to be not exist",
                     mockClient.services().inNamespace(NAMESPACE).withName(service).get(), is(nullValue()));
         }
@@ -410,7 +410,7 @@ public class KafkaAssemblyOperatorMockTest {
     private void updateClusterWithoutStatefulSet(Params params, VertxTestContext context, String statefulSet) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaAssemblyOperator kco = createCluster(params, context);
 
-        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).delete();
+        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).cascading(true).delete();
         assertThat("Expected sts " + statefulSet + " to be not exist",
                 mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
 
@@ -608,7 +608,7 @@ public class KafkaAssemblyOperatorMockTest {
 
 
         LOGGER.info("Reconciling again -> delete");
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).cascading(true).delete();
         Checkpoint deleteAsync = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();

@@ -1,16 +1,29 @@
 #!/usr/bin/env groovy
 
 def lib
+def NODE_LABEL = null
+
+node('master') {
+    stage('Set agent label') {
+        echo "Github PR comment: ${env.ghprbCommentBody}"
+        if (env.ghprbCommentBody.contains('crc') || env.ghprbCommentBody.contains('ocp4')) {
+            NODE_LABEL = "strimzi-crc"
+        } else {
+            NODE_LABEL = 'strimzi-pr'
+        }
+    }
+}
 
 pipeline {
     agent {
         node {
-            label 'strimzi-pr'
+            label "${NODE_LABEL}"
         }
     }
     parameters {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
+        string(name: 'EXCLUDE', defaultValue: 'networkpolicies', description: 'maven parameter for exclude specific test tag')
     }
     options {
         timeout(time: 22, unit: 'HOURS')
@@ -21,6 +34,7 @@ pipeline {
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
         ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
         KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
+        TEST_CLUSTER_ADMIN = "admin"
     }
     stages {
         stage('Clean WS') {
@@ -39,12 +53,19 @@ pipeline {
                     echo "Comment body: ${env.ghprbCommentBody}"
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
+                    env.EXCLUDE_GROUPS = params.EXCLUDE
+                    env.OC_VERSION = NODE_LABEL == 'strimzi-crc' ? "4" : "3"
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     echo "TEST_CASE: ${env.TEST_CASE}"
                     if (env.ghprbCommentBody.contains('profile=')) {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
+                    }
+                    echo "EXCLUDE_GROUPS: ${env.EXCLUDE_GROUPS}"
+                    if (env.ghprbCommentBody.contains('exclude=')) {
+                        env.EXCLUDE_GROUPS = env.ghprbCommentBody.split('exclude=')[1].split(/\s/)[0]
+                        env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",networkpolicies"
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                     if (env.ghprbCommentBody.contains('test_only')) {
@@ -55,9 +76,11 @@ pipeline {
                     } else {
                         env.TEST_ONLY = false
                         env.DOCKER_ORG="strimzi"
-                        env.DOCKER_REGISTRY="localhost:5000"
+                        env.DOCKER_REGISTRY = env.OC_VERSION == "3" ? "172.30.1.1:5000" : "default-route-openshift-image-registry.apps-crc.testing"
                         env.DOCKER_TAG="pr"
                     }
+                    env.BUILD_PROJECT_STATUS = false
+                    env.BUILD_DOCKER_IMAGE_STATUS = false
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
                     echo "DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}"
                     echo "DOCKER_ORG: ${env.DOCKER_ORG}"
@@ -67,10 +90,14 @@ pipeline {
         }
         stage('Start Openshift') {
             steps {
-                timeout(time: 25, unit: 'MINUTES') {
+                timeout(time: 50, unit: 'MINUTES') {
                     script {
                         lib = evaluate readFile('./jenkins.groovy')
-                        lib.startOrigin()
+                        if (env.OC_VERSION == "3") {
+                            lib.startOrigin()
+                        } else {
+                            lib.startCRC()
+                        }
                     }
                 }
             }
@@ -80,6 +107,7 @@ pipeline {
                 script {
                     withMaven(mavenOpts: '-Djansi.force=true') {
                         sh "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress"
+                        env.BUILD_PROJECT_STATUS = true
                     }
                 }
             }
@@ -91,6 +119,7 @@ pipeline {
             steps {
                 script {
                     lib.buildStrimziImages()
+                    env.BUILD_DOCKER_IMAGE_STATUS = true
                 }
             }
         }
@@ -98,7 +127,10 @@ pipeline {
             steps {
                 script {
                     catchError {
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE)
+                        if (env.OC_VERSION == "4" && !env.ghprbCommentBody.contains('test_only')) {
+                            env.DOCKER_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
+                        }
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
             }

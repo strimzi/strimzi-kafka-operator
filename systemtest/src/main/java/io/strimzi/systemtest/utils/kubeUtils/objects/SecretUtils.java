@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,20 +51,31 @@ public class SecretUtils {
     }
 
     public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
+        createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, null);
+    }
+
+    public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace) {
+        createSecretFromFile(certFilesPath, name, namespace, null);
+    }
+
+    public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace, Map<String, String> labels) {
         byte[] encoded;
         try {
-            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
-
             Map<String, String> data = new HashMap<>();
-            Base64.Encoder encoder = Base64.getEncoder();
-            data.put(key, encoder.encodeToString(encoded));
+            for (Map.Entry<String, String> entry : certFilesPath.entrySet()) {
+                encoded = Files.readAllBytes(Paths.get(entry.getValue()));
+
+                Base64.Encoder encoder = Base64.getEncoder();
+                data.put(entry.getKey(), encoder.encodeToString(encoded));
+            }
 
             Secret secret = new SecretBuilder()
                 .withData(data)
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                .endMetadata()
+                    .withNewMetadata()
+                        .withName(name)
+                        .withNamespace(namespace)
+                        .addToLabels(labels)
+                    .endMetadata()
                 .build();
             kubeClient().namespace(namespace).createSecret(secret);
 
@@ -76,7 +88,7 @@ public class SecretUtils {
         LOGGER.info("Waiting for Kafka cluster {} secrets deletion", clusterName);
         TestUtils.waitFor("Expected secrets for Kafka cluster " + clusterName + " will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> {
-                List<Secret> secretList = kubeClient().listSecrets("strimzi.io/cluster", clusterName);
+                List<Secret> secretList = kubeClient().listSecrets(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
                 if (secretList.isEmpty()) {
                     return true;
                 } else {
@@ -88,5 +100,17 @@ public class SecretUtils {
                 }
             });
         LOGGER.info("Kafka cluster {} secrets deleted", clusterName);
+    }
+
+    public static void createCustomSecret(String name, String clusterName, String namespace, String certPath, String keyPath) {
+        Map<String, String> secretLabels = new HashMap<>();
+        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+
+        Map<String, String> certsPaths = new HashMap<>();
+        certsPaths.put("ca.crt", certPath);
+        certsPaths.put("ca.key", keyPath);
+
+        SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
     }
 }
