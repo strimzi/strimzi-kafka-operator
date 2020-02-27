@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,22 +36,22 @@ public class KafkaConnectResource {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
-        return kafkaConnect(name, name, kafkaConnectReplicas);
+    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
+        return kafkaConnect(name, name, kafkaConnectReplicas, allowNetworkPolicyAccess);
     }
 
-    public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas) {
+    public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
-        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
+        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), allowNetworkPolicyAccess);
     }
 
-    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
+        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas, allowNetworkPolicyAccess);
     }
 
-    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
-        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
+        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), allowNetworkPolicyAccess);
     }
 
     public static KafkaConnectBuilder defaultKafkaConnect(String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -83,12 +84,15 @@ public class KafkaConnectResource {
             .endSpec();
     }
 
-    private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect) {
+    private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect, boolean allowNetworkPolicyAccess) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
             TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
+                        if (allowNetworkPolicyAccess) {
+                            KubernetesResource.deleteLater(KubernetesResource.applyNetworkPolicySettingsForResource(kC, KafkaConnectResources.deploymentName(kC.getMetadata().getName())));
+                        }
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
