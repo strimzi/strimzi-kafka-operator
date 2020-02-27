@@ -1,0 +1,92 @@
+{{- if .Values.createGlobalResources -}}
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kafkaclusterrebalances.kafka.strimzi.io
+  labels:
+    app: '{{ template "strimzi.name" . }}'
+    strimzi.io/crd-install: "true"
+    chart: '{{ template "strimzi.chart" . }}'
+    component: kafkaclusterrebalances.kafka.strimzi.io-crd
+    release: '{{ .Release.Name }}'
+    heritage: '{{ .Release.Service }}'
+spec:
+  group: kafka.strimzi.io
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: KafkaClusterRebalance
+    listKind: KafkaClusterRebalanceList
+    singular: kafkaclusterrebalance
+    plural: kafkaclusterrebalances
+    shortNames:
+    - kcr
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            goals:
+              type: array
+              items:
+                type: string
+              description: A list of goals, ordered by decreasing priority, to use
+                in generating the proposal and executing it.The supported goals are
+                available at https://github.com/linkedin/cruise-control#goals.Providing
+                empty goals means to use all the ones declared in the default.goals
+                cruise control configuration parameter.
+            verbose:
+              type: boolean
+              description: Enable the verbose mode for the JSON string describing
+                the optimization result in the related status.
+          description: The specification of the Kafka Cluster Rebalance.
+        status:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: The unique identifier of a condition, used to distinguish
+                      between other conditions in the resource.
+                  status:
+                    type: string
+                    description: The status of the condition, either True, False or
+                      Unknown.
+                  lastTransitionTime:
+                    type: string
+                    description: Last time the condition of a type changed from one
+                      status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                      in the UTC time zone.
+                  reason:
+                    type: string
+                    description: The reason for the condition's last transition (a
+                      single word in CamelCase).
+                  message:
+                    type: string
+                    description: Human-readable message indicating details about the
+                      condition's last transition.
+              description: List of status conditions.
+            observedGeneration:
+              type: integer
+              description: The generation of the CRD that was last reconciled by the
+                operator.
+            sessionId:
+              type: string
+              description: The session identifier for requests to Cruise Control pertaining
+                to this KafkaClusterRebalance resource.
+            optimizationResult:
+              type: object
+              description: A JSON describing the optimization result.
+          description: The status of the Kafka Cluster Rebalance.
+{{- end -}}

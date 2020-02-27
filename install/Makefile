@@ -17,7 +17,7 @@ crd_install:
 	$(CP) ./cluster-operator/046-Crd-kafkabridge.yaml ../helm-charts/strimzi-kafka-operator/templates/046-Crd-kafkabridge.yaml
 	$(CP) ./cluster-operator/047-Crd-kafkaconnector.yaml ../helm-charts/strimzi-kafka-operator/templates/047-Crd-kafkaconnector.yaml
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/strimzi-kafka-operator/templates/048-Crd-kafkamirrormaker2.yaml
-	$(CP) ./cluster-operator/049-Crd-kafkaclusterrebalance.yaml ../helm-charts/strimzi-kafka-operator/templates/048-Crd-kafkaclusterrebalance.yaml
+	$(CP) ./cluster-operator/049-Crd-kafkaclusterrebalance.yaml ../helm-charts/strimzi-kafka-operator/templates/049-Crd-kafkaclusterrebalance.yaml
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.app "{{ template \"strimzi.name\" . }}" \; && cd $$oldpath
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.chart "{{ template \"strimzi.chart\" . }}" \; && cd $$oldpath
 	yq write -i ../helm-charts/strimzi-kafka-operator/templates/040-Crd-kafka.yaml metadata.labels.component "kafkas.kafka.strimzi.io-crd"
