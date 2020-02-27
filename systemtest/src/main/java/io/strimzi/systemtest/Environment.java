@@ -69,6 +69,10 @@ public class Environment {
     private static final String OLM_OPERATOR_NAME_ENV = "OLM_OPERATOR_NAME";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
     private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
+    /**
+     * Allows network policies
+     */
+    private static final String ALLOW_NETWORK_POLICIES_ENV = "ALLOW_NETWORK_POLICIES";
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
@@ -82,9 +86,13 @@ public class Environment {
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
+<<<<<<< HEAD
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.16.2";
+=======
+    private static final String ALLOW_NETWORK_POLICIES_DEFAULT = "false";
+>>>>>>> Add env variable for allowing network policies for namespace
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
@@ -103,10 +111,14 @@ public class Environment {
     // Image pull policy variables
     public static final String COMPONENTS_IMAGE_PULL_POLICY = System.getenv().getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
     public static final String OPERATOR_IMAGE_PULL_POLICY = System.getenv().getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
+<<<<<<< HEAD
     // OLM env variables
     public static final String OLM_OPERATOR_NAME = System.getenv().getOrDefault(OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME_DEFAULT);
     public static final String OLM_APP_BUNDLE_PREFIX = System.getenv().getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
     public static final String OLM_OPERATOR_VERSION = System.getenv().getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
+=======
+    public static final String ALLOW_NETWORK_POLICIES = System.getenv().getOrDefault(ALLOW_NETWORK_POLICIES_ENV, ALLOW_NETWORK_POLICIES_DEFAULT);
+>>>>>>> Add env variable for allowing network policies for namespace
 
     private Environment() { }
 
@@ -124,8 +136,12 @@ public class Environment {
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
         LOGGER.info(debugFormat, COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY);
         LOGGER.info(debugFormat, OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY);
+<<<<<<< HEAD
         LOGGER.info(debugFormat, OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME);
         LOGGER.info(debugFormat, OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX);
         LOGGER.info(debugFormat, OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION);
+=======
+        LOGGER.info(debugFormat, ALLOW_NETWORK_POLICIES_ENV, ALLOW_NETWORK_POLICIES);
+>>>>>>> Add env variable for allowing network policies for namespace
     }
 }
