@@ -67,9 +67,11 @@ public class InternalKafkaClient implements IKafkaClient<Integer> {
         producer.setArguments(producerArguments);
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
-        TestUtils.waitFor("Sending messages", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CLIENTS_TIMEOUT, () -> {
-            LOGGER.info("Sending {} messages to pod {}", messageCount, podName);
-            return producer.run(timeoutMs);
+        TestUtils.waitFor("Sending messages", Constants.PRODUCER_POLL_INTERVAL, Constants.GLOBAL_CLIENTS_TIMEOUT, () -> {
+            LOGGER.info("Sending {} messages to {}", messageCount, podName);
+            producer.run(Constants.PRODUCER_TIMEOUT);
+            sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
+            return sent == messageCount;
         });
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
