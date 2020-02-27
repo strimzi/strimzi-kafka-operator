@@ -46,6 +46,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
@@ -823,6 +824,7 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly, VERSIONS);
         EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly, VERSIONS);
         KafkaExporter originalKafkaExporter = KafkaExporter.fromCrd(originalAssembly, VERSIONS);
+        CruiseControl originalCruiseControl = CruiseControl.fromCrd(originalAssembly, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -977,6 +979,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
+        when(mockSecretOps.getAsync(clusterNamespace, CruiseControl.secretName(clusterName))).thenReturn(
+                Future.succeededFuture()
+        );
 
         // Mock NetworkPolicy get
         when(mockPolicyOps.get(clusterNamespace, KafkaCluster.policyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(true));
@@ -1009,6 +1014,21 @@ public class KafkaAssemblyOperatorTest {
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null))
+            );
+            when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                    Future.succeededFuture()
+            );
+            when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                    Future.succeededFuture()
+            );
+        }
+
+        if (originalCruiseControl != null) {
+            when(mockDepOps.get(clusterNamespace, CruiseControl.cruiseControlName(clusterName))).thenReturn(
+                    originalCruiseControl.generateDeployment(true, Collections.EMPTY_MAP, null, null)
+            );
+            when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, Collections.EMPTY_MAP, null, null))
             );
             when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
