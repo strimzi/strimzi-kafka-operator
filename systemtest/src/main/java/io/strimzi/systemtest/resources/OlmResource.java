@@ -28,7 +28,7 @@ public class OlmResource {
         if (!KubeClusterResource.getInstance().getDefaultOlmvNamespace().equals(namespace)) {
             File operatorGroupFile = File.createTempFile("operatorgroup", ".yaml");
             String operatorGroup = TestUtils.getFileAsString(OlmResource.class.getClassLoader().getResource("olm/operator-group.yaml").getPath());
-            TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("\\$\\{OPERATOR_NAMESPACE}", namespace));
+            TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("${OPERATOR_NAMESPACE}", namespace));
             ResourceManager.cmdKubeClient().apply(operatorGroupFile);
         }
 
