@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -126,6 +128,8 @@ public abstract class BaseST implements TestSeparator {
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         cluster.applyClusterOperatorInstallFiles();
+        applyNetworkPolicySettings(clientNamespace, namespaces);
+
         // This is needed in case you are using internal kubernetes registry and you want to pull images from there
         for (String namespace : namespaces) {
             Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
@@ -641,6 +645,49 @@ public abstract class BaseST implements TestSeparator {
                 assertThat(rb.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
             }
         );
+    }
+
+    void applyNetworkPolicySettings(String clientNamespace, List<String> namespaces) {
+        NetworkPolicy networkPolicy;
+
+        for (String namespace : namespaces) {
+            if (Environment.ALLOW_NETWORK_POLICIES.equals("true")) {
+                networkPolicy = new NetworkPolicyBuilder()
+                        .withNewApiVersion("networking.k8s.io/v1")
+                        .withNewKind("NetworkPolicy")
+                        .withNewMetadata()
+                            .withName("allow-all-ingress")
+                        .endMetadata()
+                        .withNewSpec()
+                            .withNewPodSelector()
+                            .endPodSelector()
+                            .addNewIngress()
+                            .endIngress()
+                            .withPolicyTypes("Ingress")
+                        .endSpec()
+                        .build();
+
+                kubeClient().getClient().network().networkPolicies().inNamespace(namespace).createOrReplace(networkPolicy);
+            } else {
+                networkPolicy = new NetworkPolicyBuilder()
+                        .withNewApiVersion("networking.k8s.io/v1")
+                        .withNewKind("NetworkPolicy")
+                        .withNewMetadata()
+                            .withName("default-deny-ingress")
+                        .endMetadata()
+                        .withNewSpec()
+                            .withNewPodSelector()
+                            .endPodSelector()
+                            .withPolicyTypes("Ingress")
+                        .endSpec()
+                        .build();
+
+                kubeClient().getClient().network().networkPolicies().inNamespace(namespace).createOrReplace(networkPolicy);
+            }
+        }
+
+        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.ALLOW_NETWORK_POLICIES, clientNamespace);
+
     }
 
     protected void verifyCRStatusCondition(Condition condition, String status, String type) {

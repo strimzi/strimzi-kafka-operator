@@ -91,7 +91,7 @@ class ConnectST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
         String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
@@ -141,7 +141,7 @@ class ConnectST extends BaseST {
                 .endSpec()
                 .done();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -194,7 +194,7 @@ class ConnectST extends BaseST {
         KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
@@ -260,7 +260,7 @@ class ConnectST extends BaseST {
                 .endSpec()
                 .done();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -308,7 +308,7 @@ class ConnectST extends BaseST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -339,7 +339,7 @@ class ConnectST extends BaseST {
     void testKafkaConnectScaleUpScaleDown() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true).done();
 
         // kafka cluster Connect already deployed
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
@@ -399,7 +399,7 @@ class ConnectST extends BaseST {
 
         SecretUtils.waitForSecretReady(userName);
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -478,7 +478,7 @@ class ConnectST extends BaseST {
 
         SecretUtils.waitForSecretReady(userName);
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -559,7 +559,7 @@ class ConnectST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -624,7 +624,7 @@ class ConnectST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Crate connect cluster with default connect image
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
