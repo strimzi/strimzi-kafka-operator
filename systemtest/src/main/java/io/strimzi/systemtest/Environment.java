@@ -65,6 +65,7 @@ public class Environment {
     /**
      * OLM env variables
      */
+    private static final String OLM_INSTALLATION_ENV = "OLM_INSTALLATION_RNV";
     private static final String OLM_OPERATOR_NAME_ENV = "OLM_OPERATOR_NAME";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
     private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
