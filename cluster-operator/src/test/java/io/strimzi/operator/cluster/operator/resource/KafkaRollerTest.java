@@ -486,7 +486,7 @@ public class KafkaRollerTest {
             }
             Admin ac = mock(AdminClient.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
-                    AdminClient mock = (AdminClient) invocation.getMock();
+                    Admin mock = (Admin) invocation.getMock();
                     unclosedAdminClients.remove(mock);
                     if (acCloseException != null) {
                         throw acCloseException;
