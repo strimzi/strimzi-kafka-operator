@@ -33,7 +33,7 @@ MirrorMaker 2.0 uses:
 * Source cluster configuration to consume data from the source cluster
 * Target cluster configuration to output data to the target cluster
 
-A MirrorMaker 2.0 `MirrorSourceConnector` replicates topics from a source cluster to a target cluster.
+A MirrorMaker 2.0 `MirrorSourceConnector` custom resource replicates topics from a source cluster to a target cluster.
 
 .Replication across two clusters
 image::mirrormaker.png[MirrorMaker 2.0 replication]
