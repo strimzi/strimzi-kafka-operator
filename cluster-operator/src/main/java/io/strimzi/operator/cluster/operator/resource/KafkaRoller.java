@@ -393,7 +393,7 @@ public class KafkaRoller {
         try {
             String hostname = KafkaCluster.podDnsName(this.namespace, this.cluster, podName(podId)) + ":" + KafkaCluster.REPLICATION_PORT;
             log.debug("Creating AdminClient for {}", hostname);
-            return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret);
+            return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
         }

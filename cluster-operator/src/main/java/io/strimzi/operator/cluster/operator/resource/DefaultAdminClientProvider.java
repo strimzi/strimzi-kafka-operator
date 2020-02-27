@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.common.PasswordGenerator;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
@@ -19,35 +18,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 class DefaultAdminClientProvider implements AdminClientProvider {
 
     private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
 
     @Override
-    public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret coKeySecret) {
-        PasswordGenerator pg = new PasswordGenerator(12);
+    public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+
         AdminClient ac;
-        String trustStorePassword = pg.generate();
-        File truststoreFile = setupTrustStore(trustStorePassword.toCharArray(), Ca.cert(clusterCaCertSecret, Ca.CA_CRT));
+        String trustStorePassword = new String(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
+        File truststoreFile = createFileStore(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
         try {
-            String keyStorePassword = pg.generate();
-            File keystoreFile = setupKeyStore(coKeySecret,
-                    keyStorePassword.toCharArray(),
-                    Ca.cert(coKeySecret, "cluster-operator.crt"));
+            String keyStorePassword = new String(decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
+            File keystoreFile = createFileStore(decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
             try {
                 Properties p = new Properties();
                 p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, hostname);
@@ -60,7 +46,6 @@ class DefaultAdminClientProvider implements AdminClientProvider {
                 p.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, keystoreFile.getAbsolutePath());
                 p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
                 p.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keyStorePassword);
-                p.setProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, keyStorePassword);
                 p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
 
                 ac = AdminClient.create(p);
@@ -77,60 +62,24 @@ class DefaultAdminClientProvider implements AdminClientProvider {
         return ac;
     }
 
-    private File setupKeyStore(Secret clusterSecretKey, char[] password,
-                               X509Certificate clientCert) {
-        Base64.Decoder decoder = Base64.getDecoder();
-
-        try {
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(null, password);
-            Pattern parse = Pattern.compile("^---*BEGIN.*---*$(.*)^---*END.*---*$.*", Pattern.MULTILINE | Pattern.DOTALL);
-
-            String keyText = new String(decoder.decode(clusterSecretKey.getData().get("cluster-operator.key")), StandardCharsets.ISO_8859_1);
-            Matcher matcher = parse.matcher(keyText);
-            if (!matcher.find()) {
-                throw new RuntimeException("Bad client (CO) key. Key misses BEGIN or END markers");
-            }
-            PrivateKey clientKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(
-                    Base64.getMimeDecoder().decode(matcher.group(1))));
-
-            keyStore.setEntry("cluster-operator",
-                    new KeyStore.PrivateKeyEntry(clientKey, new Certificate[]{clientCert}),
-                    new KeyStore.PasswordProtection(password));
-
-            return store(password, keyStore);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private File setupTrustStore(char[] password, X509Certificate caCertCO) {
-        try {
-            KeyStore trustStore = null;
-            trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(null, password);
-            trustStore.setEntry(caCertCO.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(caCertCO), null);
-            return store(password, trustStore);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private File store(char[] password, KeyStore trustStore) throws Exception {
+    private File createFileStore(byte[] bytes) {
         File f = null;
         try {
             f = File.createTempFile(getClass().getName(), "ts");
             f.deleteOnExit();
             try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                trustStore.store(os, password);
+                os.write(bytes);
             }
             return f;
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
+        } catch (IOException e) {
             if (f != null && !f.delete()) {
                 LOGGER.warn("Failed to delete temporary file in exception handler");
             }
-            throw e;
+            throw new RuntimeException(e);
         }
+    }
+
+    private static byte[] decodeFromSecret(Secret secret, String key) {
+        return Base64.getDecoder().decode(secret.getData().get(key));
     }
 }

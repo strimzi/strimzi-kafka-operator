@@ -8,5 +8,5 @@ import io.fabric8.kubernetes.api.model.Secret;
 import org.apache.kafka.clients.admin.AdminClient;
 
 public interface AdminClientProvider {
-    AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret coKeySecret);
+    AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName);
 }

@@ -580,7 +580,7 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider() {
         return new AdminClientProvider() {
             @Override
-            public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret coKeySecret) {
+            public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
                 AdminClient mock = mock(AdminClient.class);
                 DescribeClusterResult dcr;
                 try {
