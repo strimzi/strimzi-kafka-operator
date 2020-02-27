@@ -5,9 +5,16 @@
 [id="configuration-points-topic_{context}"]
 = Kafka MirrorMaker configuration
 
-To set up MirrorMaker, a source and destination Kafka cluster must be running.
+To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
-MirrorMaker requires:
+You can use {ProductName} with MirrorMaker or MirrorMaker 2.0.
+
+[discrete]
+== MirrorMaker
+
+MirrorMaker uses producers and consumers to replicate data across clusters.
+
+MirrorMaker uses:
 
 * Consumer configuration to consume data from the source cluster
 * Producer configuration to output data to the target cluster
@@ -15,6 +22,25 @@ MirrorMaker requires:
 Consumer and producer configuration includes any authentication and encryption settings.
 
 A _whitelist_ defines the topics to mirror from a source to a target cluster.
+
+[discrete]
+== MirrorMaker 2.0
+
+MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
+
+MirrorMaker 2.0 uses:
+
+* Source cluster configuration to consume data from the source cluster
+* Target cluster configuration to output data to the target cluster
+
+A MirrorMaker 2.0 `MirrorSourceConnector` custom resource replicates topics from a source cluster to a target cluster.
+
+.Replication across two clusters
+image::mirrormaker.png[MirrorMaker 2.0 replication]
+
+The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration,
+so both clusters are active and provide the same data simultaneously. A MirrorMaker 2.0 cluster is required at each target destination.
+This is useful if you want to make the same data available locally in different geographical locations.
 
 [discrete]
 == Key Consumer configuration
