@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource;
+package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.Ca;
@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Properties;
 
-class DefaultAdminClientProvider implements AdminClientProvider {
+public class DefaultAdminClientProvider implements AdminClientProvider {
 
     private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
 
