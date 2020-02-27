@@ -6,11 +6,14 @@ package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
@@ -33,6 +36,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
@@ -307,6 +312,41 @@ public class KubernetesResource {
             .endSpec().build();
     }
 
+    public static <T extends HasMetadata> NetworkPolicy applyNetworkPolicySettingsForResource(T resource, String name) {
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewApiVersion("networking.k8s.io/v1")
+                .withNewKind("NetworkPolicy")
+                .withNewMetadata()
+                    .withName(resource.getMetadata().getName() + "-allow")
+                .endMetadata()
+                .withNewSpec()
+                    .addNewIngress()
+                        .addNewPort()
+                            .withNewPort(8083)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                        .addNewPort()
+                            .withNewPort(9404)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                        .addNewPort()
+                            .withNewPort(8080)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                      .endIngress()
+                    .withNewPodSelector()
+                        .addToMatchLabels("strimzi.io/cluster", resource.getMetadata().getName())
+                        .addToMatchLabels("strimzi.io/kind", resource.getKind())
+                        .addToMatchLabels("strimzi.io/name", name)
+                    .endPodSelector()
+                    .withPolicyTypes("Ingress")
+                .endSpec()
+                .build();
+
+        kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy);
+        return networkPolicy;
+    }
+
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
@@ -340,5 +380,9 @@ public class KubernetesResource {
 
     private static Service deleteLater(Service resource) {
         return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().services(), resource);
+    }
+
+    public static NetworkPolicy deleteLater(NetworkPolicy resource) {
+        return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().network().networkPolicies(), resource);
     }
 }
