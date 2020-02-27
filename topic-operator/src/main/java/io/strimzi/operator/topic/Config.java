@@ -99,6 +99,7 @@ public class Config {
     public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
     public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
     public static final String TC_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    public static final String TC_TOPICS_PATH = "STRIMZI_TOPICS_PATH";
 
     public static final String TC_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
     public static final String TC_TLS_TRUSTSTORE_LOCATION = "STRIMZI_TRUSTSTORE_LOCATION";
@@ -141,6 +142,9 @@ public class Config {
     /** The maximum number of retries for getting topic metadata from the Kafka cluster */
     public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, POSITIVE_INTEGER, "6");
 
+    /** The path to the Zookeeper node that stores the topic state in ZooKeeper. */
+    public static final Value<String> TOPICS_PATH = new Value<>(TC_TOPICS_PATH, STRING, "/strimzi/topics");
+
     /** If the connection with Kafka has to be encrypted by TLS protocol */
     public static final Value<String> TLS_ENABLED = new Value<>(TC_TLS_ENABLED, STRING, "false");
     /** The truststore with CA certificate for Kafka broker/server authentication */
@@ -164,6 +168,7 @@ public class Config {
         addConfigValue(configValues, REASSIGN_THROTTLE);
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
         addConfigValue(configValues, TOPIC_METADATA_MAX_ATTEMPTS);
+        addConfigValue(configValues, TOPICS_PATH);
         addConfigValue(configValues, TLS_ENABLED);
         addConfigValue(configValues, TLS_TRUSTSTORE_LOCATION);
         addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);

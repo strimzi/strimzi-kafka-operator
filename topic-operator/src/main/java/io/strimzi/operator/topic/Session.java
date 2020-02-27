@@ -176,7 +176,9 @@ public class Session extends AbstractVerticle {
                 this.zk = zkResult.result();
                 LOGGER.debug("Using ZooKeeper {}", zk);
 
-                ZkTopicStore topicStore = new ZkTopicStore(zk);
+                String topicsPath = config.get(Config.TOPICS_PATH);
+                ZkTopicStore topicStore = new ZkTopicStore(zk, topicsPath);
+
                 LOGGER.debug("Using TopicStore {}", topicStore);
 
                 this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config);
