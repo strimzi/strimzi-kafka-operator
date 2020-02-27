@@ -221,6 +221,7 @@ public class EntityTopicOperator extends AbstractModel {
                 if (topicOperatorSpec.getJvmOptions() != null) {
                     result.setJavaSystemProperties(topicOperatorSpec.getJvmOptions().getJavaSystemProperties());
                 }
+                result.setJvmOptions(topicOperatorSpec.getJvmOptions());
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
@@ -265,6 +266,8 @@ public class EntityTopicOperator extends AbstractModel {
         if (javaSystemProperties != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
+        heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
+        jvmPerformanceOptions(varList);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

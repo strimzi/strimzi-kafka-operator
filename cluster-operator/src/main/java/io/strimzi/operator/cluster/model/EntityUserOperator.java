@@ -207,6 +207,7 @@ public class EntityUserOperator extends AbstractModel {
                 if (userOperatorSpec.getJvmOptions() != null) {
                     result.setJavaSystemProperties(userOperatorSpec.getJvmOptions().getJavaSystemProperties());
                 }
+                result.setJvmOptions(userOperatorSpec.getJvmOptions());
                 result.setResources(userOperatorSpec.getResources());
                 if (userOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
@@ -263,6 +264,8 @@ public class EntityUserOperator extends AbstractModel {
         if (javaSystemProperties != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
+        heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
+        jvmPerformanceOptions(varList);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

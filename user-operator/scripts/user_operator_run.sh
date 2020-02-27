@@ -8,6 +8,14 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
+if [ -n "$KAFKA_HEAP_OPTS" ]; then
+    export JAVA_OPTS="${JAVA_OPTS} ${KAFKA_HEAP_OPTS}"
+fi
+
+if [ -n "$KAFKA_JVM_PERFORMANCE_OPTS" ]; then
+    export JAVA_OPTS="${JAVA_OPTS} ${KAFKA_JVM_PERFORMANCE_OPTS}"
+fi
+
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.user.Main
 exec ${STRIMZI_HOME}/bin/launch_java.sh

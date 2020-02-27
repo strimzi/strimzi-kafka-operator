@@ -112,6 +112,7 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms128M").build());
         return expected;
     }
 

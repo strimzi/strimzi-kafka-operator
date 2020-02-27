@@ -26,6 +26,14 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
     fi
 fi
 
+if [ -n "$KAFKA_HEAP_OPTS" ]; then
+    export JAVA_OPTS="${JAVA_OPTS} ${KAFKA_HEAP_OPTS}"
+fi
+
+if [ -n "$KAFKA_JVM_PERFORMANCE_OPTS" ]; then
+    export JAVA_OPTS="${JAVA_OPTS} ${KAFKA_JVM_PERFORMANCE_OPTS}"
+fi
+
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.topic.Main
 exec ${STRIMZI_HOME}/bin/launch_java.sh

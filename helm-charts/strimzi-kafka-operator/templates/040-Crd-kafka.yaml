@@ -3351,6 +3351,17 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
+                    -XX:
+                      type: object
+                      description: A map of -XX options to the JVM.
+                    -Xms:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                      description: -Xms option to to the JVM.
+                    -Xmx:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                      description: -Xmx option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging
@@ -3532,6 +3543,17 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
+                        -XX:
+                          type: object
+                          description: A map of -XX options to the JVM.
+                        -Xms:
+                          type: string
+                          pattern: '[0-9]+[mMgG]?'
+                          description: -Xms option to to the JVM.
+                        -Xmx:
+                          type: string
+                          pattern: '[0-9]+[mMgG]?'
+                          description: -Xmx option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
@@ -3652,6 +3674,17 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
+                        -XX:
+                          type: object
+                          description: A map of -XX options to the JVM.
+                        -Xms:
+                          type: string
+                          pattern: '[0-9]+[mMgG]?'
+                          description: -Xms option to to the JVM.
+                        -Xmx:
+                          type: string
+                          pattern: '[0-9]+[mMgG]?'
+                          description: -Xmx option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging
