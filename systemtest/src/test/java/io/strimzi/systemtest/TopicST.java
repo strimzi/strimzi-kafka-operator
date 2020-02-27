@@ -273,8 +273,9 @@ public class TopicST extends BaseST {
 
         LOGGER.info("Checking if {} is on topic list", topicName);
         created = hasTopicInKafka(topicName);
-
         assertThat(created, is(true));
+
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
         LOGGER.info("Topic successfully created");
     }
 
