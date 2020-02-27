@@ -6,7 +6,7 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.Ca;
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
@@ -26,9 +26,9 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
     private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
 
     @Override
-    public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+    public Admin createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
 
-        AdminClient ac;
+        Admin ac;
         String trustStorePassword = new String(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
         File truststoreFile = createFileStore(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
         try {
@@ -48,7 +48,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
                 p.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keyStorePassword);
                 p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
 
-                ac = AdminClient.create(p);
+                ac = Admin.create(p);
             } finally {
                 if (!keystoreFile.delete()) {
                     LOGGER.warn("Unable to delete keystore file {}", keystoreFile);
