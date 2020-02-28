@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Enums;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -312,7 +313,25 @@ public class KubernetesResource {
             .endSpec().build();
     }
 
-    public static <T extends HasMetadata> NetworkPolicy applyNetworkPolicySettingsForResource(T resource, String name) {
+    public static void applyDefaultNetworkPolicySettings(String clientNamespace, List<String> namespaces) {
+
+        for (String namespace : namespaces) {
+            if (Environment.ALLOW_DEFAULT_NETWORK_POLICIES.equals("true")) {
+                applyDefaultNetworkPolicy(namespace, Enums.DefaultPolicy.ALLOW);
+            } else {
+                applyDefaultNetworkPolicy(namespace, Enums.DefaultPolicy.DENY);
+            }
+        }
+
+        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.ALLOW_DEFAULT_NETWORK_POLICIES, clientNamespace);
+    }
+
+    /**
+     * Method for allowing network policies for Connect or ConnectS2I
+     * @param resource mean Connect or ConnectS2I resource
+     * @param deploymentName name of resource deployment - for setting strimzi.io/name
+     */
+    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName) {
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
                 .withNewKind("NetworkPolicy")
@@ -337,13 +356,41 @@ public class KubernetesResource {
                     .withNewPodSelector()
                         .addToMatchLabels("strimzi.io/cluster", resource.getMetadata().getName())
                         .addToMatchLabels("strimzi.io/kind", resource.getKind())
-                        .addToMatchLabels("strimzi.io/name", name)
+                        .addToMatchLabels("strimzi.io/name", deploymentName)
                     .endPodSelector()
                     .withPolicyTypes("Ingress")
                 .endSpec()
                 .build();
 
-        kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy);
+        deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+    }
+
+    public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, Enums.DefaultPolicy policy) {
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewApiVersion("networking.k8s.io/v1")
+                .withNewKind("NetworkPolicy")
+                .withNewMetadata()
+                    .withName("global-network-policy")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewPodSelector()
+                    .endPodSelector()
+                    .withPolicyTypes("Ingress")
+                .endSpec()
+                .build();
+
+        if(policy.equals(Enums.DefaultPolicy.ALLOW)) {
+            networkPolicy = new NetworkPolicyBuilder()
+                    .withNewSpec()
+                        .addNewIngress()
+                        .endIngress()
+                    .endSpec()
+                    .build();
+        }
+
+        deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy successfully set to deny-all");
+
         return networkPolicy;
     }
 

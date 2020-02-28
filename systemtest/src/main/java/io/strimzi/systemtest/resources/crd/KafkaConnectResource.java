@@ -36,13 +36,21 @@ public class KafkaConnectResource {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
+    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
+        return kafkaConnect(name, kafkaConnectReplicas, true);
+    }
+
     public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         return kafkaConnect(name, name, kafkaConnectReplicas, allowNetworkPolicyAccess);
     }
 
-    public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
+        public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
         return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), allowNetworkPolicyAccess);
+    }
+
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+        return kafkaConnectWithMetrics(name,kafkaConnectReplicas, true);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
@@ -91,7 +99,7 @@ public class KafkaConnectResource {
                     try {
                         kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
                         if (allowNetworkPolicyAccess) {
-                            KubernetesResource.deleteLater(KubernetesResource.applyNetworkPolicySettingsForResource(kC, KafkaConnectResources.deploymentName(kC.getMetadata().getName())));
+                            KubernetesResource.allowNetworkPolicySettingsForResource(kC, KafkaConnectResources.deploymentName(kC.getMetadata().getName()));
                         }
                         return true;
                     } catch (KubernetesClientException e) {

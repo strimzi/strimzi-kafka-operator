@@ -34,6 +34,13 @@ public class KafkaConnectS2IResource {
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
     }
+    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
+        return kafkaConnectS2I(name, kafkaConnectS2IReplicas, true);
+    }
+
+    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas, boolean allowNetworkPolicyAccess) {
+        return kafkaConnectS2I(name, name, kafkaConnectS2IReplicas, allowNetworkPolicyAccess);
+    }
 
     public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
@@ -75,7 +82,7 @@ public class KafkaConnectS2IResource {
                     try {
                         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
                         if (allowNetworkPolicyAccess) {
-                            KubernetesResource.deleteLater(KubernetesResource.applyNetworkPolicySettingsForResource(kC, KafkaConnectS2IResources.deploymentName(kC.getMetadata().getName())));
+                            KubernetesResource.allowNetworkPolicySettingsForResource(kC, KafkaConnectS2IResources.deploymentName(kC.getMetadata().getName()));
                         }
                         return true;
                     } catch (KubernetesClientException e) {
