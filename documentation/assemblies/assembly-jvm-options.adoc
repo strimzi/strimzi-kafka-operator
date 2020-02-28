@@ -19,7 +19,7 @@ The following components of {ProductName} run inside a Virtual Machine (VM):
 * Apache Kafka
 * Apache ZooKeeper
 * Apache Kafka Connect
-* Apache Kafka Mirror Maker
+* Apache Kafka MirrorMaker
 * {ProductName} Kafka Bridge
 
 JVM configuration options optimize the performance for different platforms and architectures.

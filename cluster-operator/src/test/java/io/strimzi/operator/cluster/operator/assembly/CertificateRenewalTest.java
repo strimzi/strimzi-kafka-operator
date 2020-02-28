@@ -36,6 +36,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -88,7 +90,7 @@ public class CertificateRenewalTest {
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
     private String clusterCaStorePassword = "123456";
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
     private OpenSslCertManager certManager = new OpenSslCertManager();
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
@@ -101,6 +103,18 @@ public class CertificateRenewalTest {
     @BeforeEach
     public void clearSecrets() {
         secrets = new ArrayList();
+    }
+
+    @BeforeAll
+    public static void initVertx() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void closeVertx() {
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     private ArgumentCaptor<Secret> reconcileCa(VertxTestContext context, CertificateAuthority clusterCa, CertificateAuthority clientsCa) throws InterruptedException {

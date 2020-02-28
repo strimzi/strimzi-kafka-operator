@@ -41,7 +41,7 @@ The Cluster Operator is best run using a `ServiceAccount`:
 [source,yaml,options="nowrap"]
 .Example `ServiceAccount` for the Cluster Operator
 ----
-include::../install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
+include::install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
 ----
 
 The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
@@ -49,7 +49,7 @@ The `Deployment` of the operator then needs to specify this in its `spec.templat
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example of `Deployment` for the Cluster Operator
 ----
-include::../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+include::install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
       # ...
 ----
 
@@ -70,7 +70,7 @@ Cluster Operator uses ClusterRoles to grant permission at the namespace-scoped r
 [source,yaml,options="nowrap"]
 .`ClusterRole` with namespaced resources for the Cluster Operator
 ----
-include::../install/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml[]
+include::install/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
 
 The second includes the permissions needed for cluster-scoped resources.
@@ -78,7 +78,7 @@ The second includes the permissions needed for cluster-scoped resources.
 [source,yaml,options="nowrap"]
 .`ClusterRole` with cluster-scoped resources for the Cluster Operator
 ----
-include::../install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
+include::install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
 
 The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-deploying-co[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
@@ -86,7 +86,7 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka broker pods
 ----
-include::../install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
+include::install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
 
 The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-deploying-co[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
@@ -94,7 +94,7 @@ The `strimzi-topic-operator` `ClusterRole` represents the access needed by the T
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
 ----
-include::../install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
+include::install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
 ----
 
 == `ClusterRoleBindings`
@@ -105,7 +105,7 @@ The operator needs `ClusterRoleBindings` and `RoleBindings` which associates its
 [source,yaml,options="nowrap"]
 .Example `ClusterRoleBinding` for the Cluster Operator
 ----
-include::../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
+include::install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
 ----
 
 `ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
@@ -113,17 +113,17 @@ include::../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-oper
 [source,yaml,options="nowrap"]
 .Examples `RoleBinding` for the Cluster Operator
 ----
-include::../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
+include::install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
 ----
 
 `ClusterRoles` containing only namespaced resources are bound using `RoleBindings` only.
 
 [source,yaml,options="nowrap"]
 ----
-include::../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml[]
+include::install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml[]
 ----
 
 [source,yaml,options="nowrap"]
 ----
-include::../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml[]
+include::install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml[]
 ----

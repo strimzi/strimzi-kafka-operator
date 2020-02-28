@@ -5,7 +5,13 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -14,11 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+
+import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -32,7 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
-public class TopicST extends MessagingBaseST {
+public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
 
@@ -52,7 +55,7 @@ public class TopicST extends MessagingBaseST {
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName));
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
         String errorMessage = "Replication factor: 5 larger than available brokers: 3";
 
         PodUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);
@@ -216,7 +219,7 @@ public class TopicST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
@@ -224,11 +227,13 @@ public class TopicST extends MessagingBaseST {
         LOGGER.info("Topic {} was created", topicName);
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        int sent = sendMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+        internalKafkaClient.setPodName(kafkaClientsPodName);
+
+        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
         KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
@@ -237,8 +242,9 @@ public class TopicST extends MessagingBaseST {
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} recreated", topicName);
 
-        int received = receiveMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
+
     }
 
     boolean hasTopicInKafka(String topicName) {
@@ -252,9 +258,10 @@ public class TopicST extends MessagingBaseST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        LOGGER.info("Checking topic in Kafka {}", KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName));
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
-                hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+        List<String> topicInfo = KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
+        LOGGER.info("Checking topic {} in Kafka {}", topicName, CLUSTER_NAME);
+        LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
+        assertThat(topicInfo, hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
     }
 
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {

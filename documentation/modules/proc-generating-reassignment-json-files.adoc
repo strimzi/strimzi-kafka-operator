@@ -53,10 +53,10 @@ For example if you want to reassign all the partitions of `topic-a` and `topic-b
 ----
 cat _topics.json_ | kubectl exec -c kafka _<BrokerPod>_ -i -- \
   /bin/bash -c \
-  'cat > /tmp/topics.json'  
+  'cat > /tmp/topics.json'
 ----
 
-. Use the `kafka-reassign-partitions.sh`` command to generate the reassignment JSON.
+. Use the `kafka-reassign-partitions.sh` command to generate the reassignment JSON.
 +
 [source,subs=+quotes]
 ----

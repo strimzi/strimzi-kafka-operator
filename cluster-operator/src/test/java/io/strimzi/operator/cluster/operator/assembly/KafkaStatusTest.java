@@ -81,7 +81,9 @@ public class KafkaStatusTest {
 
     @AfterAll
     public static void after() {
-        vertx.close();
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     public Kafka getKafkaCrd() throws ParseException {
@@ -422,11 +424,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -536,11 +538,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -640,11 +642,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -741,11 +743,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -841,11 +843,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.get(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(kafkaCluster.generateStatefulSet(false, null, null));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -1041,5 +1043,6 @@ public class KafkaStatusTest {
                     .compose(state -> state.kafkaNodePortExternalListenerStatus())
                     .map((Void) null);
         }
+
     }
 }

@@ -24,7 +24,7 @@ The following resources are defined on deployment:
 . Create a `Secret` resource from the Alertmanager configuration file (`alert-manager-config.yaml`):
 +
 [source,shell,subs="+quotes,attributes"]
-kubectl create secret generic alertmanager-alertmanager --from-file=alert-manager-config.yaml
+kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml=alert-manager-config.yaml
 
 . Update the `alert-manager-config.yaml` file to replace the:
 +

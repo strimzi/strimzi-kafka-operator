@@ -1,0 +1,10 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-oauth-authorization_{context}']
+= Using {oauth} token-based authorization
+
+include::modules/con-oauth-authorization-intro.adoc[leveloffset=+1]
+include::modules/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
+include::modules/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]

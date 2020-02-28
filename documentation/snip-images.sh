@@ -32,7 +32,7 @@ a|
 
 * Kafka Broker
 * Kafka Connect / S2I
-* Kafka Mirror Maker
+* Kafka MirrorMaker
 * ZooKeeper
 * TLS Sidecars
 
@@ -54,6 +54,13 @@ a|
 
 a|
 {ProductName} image for running the {ProductName} kafka Bridge
+
+|JmxTrans
+a|
+* {DockerOrg}/jmxtrans:{DockerTag}
+
+a|
+{ProductName} image for running the {ProductName} JmxTrans
 
 |===
 EOF

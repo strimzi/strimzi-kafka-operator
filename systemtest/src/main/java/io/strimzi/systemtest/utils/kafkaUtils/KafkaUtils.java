@@ -6,12 +6,18 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static io.strimzi.test.TestUtils.indent;
@@ -26,20 +32,27 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static void waitUntilKafkaCRIsReady(String clusterName) {
-        LOGGER.info("Waiting till Kafka CR will be ready");
-        TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->   Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals("Ready") &&
-                Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getStatus().equals("True")
-        );
-        LOGGER.info("Kafka CR will be ready");
+        waitUntilKafkaStatus(clusterName, "Ready");
     }
 
-    public static void waitUntilKafkaStatusConditionIsPresent(String clusterName) {
-        LOGGER.info("Waiting till kafka resource status is present");
-        TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () ->  Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0) != null
+    public static void waitUntilKafkaCRIsNotReady(String clusterName) {
+        waitUntilKafkaStatus(clusterName, "NotReady");
+    }
+
+    private static void waitUntilKafkaStatus(String clusterName, String state) {
+        LOGGER.info("Waiting till Kafka CR will be in state: {}", state);
+        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
         );
-        LOGGER.info("Kafka resource status is present");
+        LOGGER.info("Kafka CR is in state: {}", state);
+    }
+
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+        TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+                Condition condition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0);
+                return condition.getMessage().matches(message);
+            });
     }
 
     public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
@@ -70,4 +83,24 @@ public class KafkaUtils {
         }
     }
 
+    public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {
+        String certs = "";
+        List<ListenerStatus> kafkaListeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
+
+        for (ListenerStatus listener : kafkaListeners) {
+            if (listener.getType().equals(listenerType))
+                certs = listener.getCertificates().toString();
+        }
+        certs = certs.substring(1, certs.length() - 1);
+        return certs;
+    }
+
+    public static String getKafkaSecretCertificates(String secretName, String certType) {
+        String secretCerts = "";
+        secretCerts = kubeClient().getSecret(secretName).getData().get(certType);
+        byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
+        secretCerts = new String(decodedBytes, Charset.defaultCharset());
+
+        return secretCerts;
+    }
 }

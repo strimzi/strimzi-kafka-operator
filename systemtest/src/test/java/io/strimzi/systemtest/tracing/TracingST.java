@@ -10,14 +10,16 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -50,6 +52,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Stack;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
@@ -60,6 +64,7 @@ import static io.strimzi.test.TestUtils.getFileAsString;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -67,7 +72,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(REGRESSION)
 @Tag(TRACING)
 @ExtendWith(VertxExtension.class)
-public class TracingST extends MessagingBaseST {
+public class TracingST extends BaseST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
@@ -83,6 +88,8 @@ public class TracingST extends MessagingBaseST {
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
+
+    private static int jaegerHostNodePort;
 
     private static final String JAEGER_AGENT_NAME = "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE = "const";
@@ -103,6 +110,11 @@ public class TracingST extends MessagingBaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
                         .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
@@ -120,7 +132,7 @@ public class TracingST extends MessagingBaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
                 .editSpec()
-                    .withReplicas(3)
+                    .withReplicas(1)
                     .withPartitions(12)
                 .endSpec()
                 .done();
@@ -219,7 +231,11 @@ public class TracingST extends MessagingBaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -693,7 +709,11 @@ public class TracingST extends MessagingBaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        waitForClusterAvailability(NAMESPACE, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
+
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
@@ -742,6 +762,8 @@ public class TracingST extends MessagingBaseST {
         Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
         configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
+        configOfKafkaConnectS2I.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
@@ -775,13 +797,19 @@ public class TracingST extends MessagingBaseST {
                 .done();
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
-        LOGGER.info("Creating FileSink connect in Pod:{}", kafkaConnectS2IPodName);
-        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
+        LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);
+        KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME,
+                KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
+        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_S2I_SERVICE);
@@ -856,7 +884,9 @@ public class TracingST extends MessagingBaseST {
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
-        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
         verifyServiceIsPresent(JAEGER_KAFKA_BRIDGE_SERVICE);
@@ -951,7 +981,7 @@ public class TracingST extends MessagingBaseST {
     }
 
     @BeforeEach
-    void createTestResources() {
+    void createTestResources() throws InterruptedException {
         // deployment of the jaeger
         deployJaeger();
 
@@ -964,6 +994,12 @@ public class TracingST extends MessagingBaseST {
         RestAssured.baseURI = "https://" + jaegerRouteUrl;
 
         LOGGER.info("Setting Jaeger URL to:" + RestAssured.baseURI);
+
+        Service jaegerHostNodePortService = TracingUtils.createJaegerHostNodePortService(CLUSTER_NAME, NAMESPACE, JAEGER_AGENT_NAME + "-external");
+        KubernetesResource.createServiceResource(jaegerHostNodePortService, NAMESPACE).done();
+        ServiceUtils.waitForNodePortService(jaegerHostNodePortService.getMetadata().getName());
+
+        jaegerHostNodePort = TracingUtils.getJaegerHostNodePort(NAMESPACE, JAEGER_AGENT_NAME + "-external");
     }
 
     @BeforeAll

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -91,11 +92,10 @@ public class StatefulSetUtils {
     /**
      *  Method to wait when StatefulSet will be recreated after rolling update
      * @param name StatefulSet name
-     * @param expectedPods Expected number of pods
      * @param snapshot Snapshot of pods for StatefulSet before the rolling update
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
-    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT * 2, () -> {
@@ -106,8 +106,20 @@ public class StatefulSetUtils {
                     return false;
                 }
             });
-        waitForAllStatefulSetPodsReady(name, expectedPods);
         LOGGER.info("StatefulSet {} rolling update finished", name);
+        return ssSnapshot(name);
+    }
+
+    /**
+     *  Method to wait when StatefulSet will be recreated after rolling update with wait for all pods ready
+     * @param name StatefulSet name
+     * @param expectedPods Expected number of pods
+     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
+     * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
+     */
+    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        waitTillSsHasRolled(name, snapshot);
+        waitForAllStatefulSetPodsReady(name, expectedPods);
         return ssSnapshot(name);
     }
 
@@ -159,7 +171,7 @@ public class StatefulSetUtils {
     public static void waitForKafkaStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
-            boolean isStrimziTag = entry.getKey().startsWith("strimzi.io/");
+            boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Kafka stateful set label change {} -> {}", entry.getKey(), entry.getValue());

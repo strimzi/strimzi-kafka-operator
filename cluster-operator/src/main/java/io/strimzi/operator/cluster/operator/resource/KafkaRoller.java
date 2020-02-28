@@ -241,7 +241,7 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + podName(podId), e);
         }
 
-        if (podNeedsRestart.test(pod)) {
+        if (pod != null && podNeedsRestart.test(pod)) {
             log.debug("Pod {} needs to be restarted", podId);
             AdminClient adminClient = null;
             try {
@@ -278,7 +278,7 @@ public class KafkaRoller {
             // We rely on Kube to try restarting such pods.
             log.debug("Pod {} does not need to be restarted", podId);
             log.debug("Waiting for non-restarted pod {} to become ready", podId);
-            await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
+            await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
             log.debug("Pod {} is now ready", podId);
         }
     }
@@ -436,8 +436,10 @@ public class KafkaRoller {
     }
 
     protected Future<Void> isReady(Pod pod) {
-        String namespace = pod.getMetadata().getNamespace();
-        String podName = pod.getMetadata().getName();
+        return isReady(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+    }
+
+    protected Future<Void> isReady(String namespace, String podName) {
         return podOperations.readiness(namespace, podName, pollingIntervalMs, operationTimeoutMs)
             .recover(error -> {
                 log.warn("Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);

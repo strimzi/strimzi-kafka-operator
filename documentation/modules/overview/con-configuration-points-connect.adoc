@@ -48,7 +48,7 @@ Kafka provides two built-in connectors:
 * `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
 --
 
-You can add other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain type of external system.
+You can add other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain types of external system.
 
 You create a custom Kafka Connect image that uses new Kafka Connect plugins.
 
@@ -56,3 +56,45 @@ To create the image, you can use:
 
 * A Kafka container image on {DockerRepository} as a base image
 * OpenShift {docs-okd} and the {docs-okd-s2i} framework to create new container images
+
+[discrete]
+== Managing connectors
+
+You can use the `KafkaConnector` resource or the link:https://kafka.apache.org/documentation/#connect_rest[Kafka Connect REST API] to create and manage connector instances in a Kafka Connect cluster.
+The `KafkaConnector` resource offers a Kubernetes-native approach, and is managed by the Cluster Operator.
+
+The `spec` for the `KafkaConnector` resource specifies the connector class and configuration settings, as well as the maximum number of connector _tasks_ to handle the data.
+
+[discrete]
+== Example YAML showing KafkaConnector configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSourceConnector
+  tasksMax: 2
+  config:
+    file: "/opt/kafka/LICENSE"
+    topic: my-topic
+    # ...
+----
+
+You enable `KafkaConnectors` by adding an annotation to the `KafkaConnect` resource.
+
+[discrete]
+== Example YAML showing annotation to enable KafkaConnector
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+  # ...
+----

@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.vertx.core.Future;
@@ -79,6 +80,8 @@ public class CrdOperator<C extends KubernetesClient,
             this.plural = KafkaTopic.RESOURCE_PLURAL;
         } else if (cls.equals(KafkaConnector.class)) {
             this.plural = KafkaConnector.RESOURCE_PLURAL;
+        } else if (cls.equals(KafkaMirrorMaker2.class)) {
+            this.plural = KafkaMirrorMaker2.RESOURCE_PLURAL;
         } else {
             this.plural = null;
         }

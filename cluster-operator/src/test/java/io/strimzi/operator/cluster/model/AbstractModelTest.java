@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -213,56 +212,5 @@ public class AbstractModelTest {
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"), is(ImagePullPolicy.NEVER.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithSizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
-        Volume volume = am.createEmptyDirVolume("bar", "1Gi");
-        assertThat(volume.getEmptyDir().getSizeLimit().getAmount(), is("1Gi"));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithNullSizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
-        Volume volume = am.createEmptyDirVolume("bar", null);
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
-    }
-
-    @Test
-    public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
-        Volume volume = am.createEmptyDirVolume("bar", "");
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 }

@@ -32,7 +32,7 @@ import java.util.Map;
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate statefulset;
+    private StatefulSetTemplate statefulset;
     private PodTemplate pod;
     private ResourceTemplate bootstrapService;
     private ResourceTemplate brokersService;
@@ -51,11 +51,11 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getStatefulset() {
+    public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }
 
-    public void setStatefulset(ResourceTemplate statefulset) {
+    public void setStatefulset(StatefulSetTemplate statefulset) {
         this.statefulset = statefulset;
     }
 

@@ -62,6 +62,9 @@ the documentation for more details.
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
 | `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `latest`                                             |
+| `jmxtrans.image.repository`          | JmxTrans image repository                 | `strimzi`                                            |
+| `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
+| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `latest`                                             |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
 | `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `latest`                                             |
@@ -94,7 +97,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
-| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.15.0`                                             |
+| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.15.2`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

@@ -56,6 +56,12 @@ public class ScramShaCredentials {
         notifyChanges(username);
     }
 
+    private boolean configJsonIsEmpty(JsonObject json) {
+        validateJsonVersion(json);
+        JsonObject config = json.getJsonObject("config");
+        return config.isEmpty();
+    }
+
     /**
      * Delete the SCRAM-SHA credentials for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any SCRAM-SHA credentials.
@@ -67,7 +73,12 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
-            zkClient.writeData("/config/users/" + username, deleteUserJson(data));
+            JsonObject deletedJson = deleteUserJson(data);
+            if (configJsonIsEmpty(deletedJson)) {
+                zkClient.deleteRecursive("/config/users/" + username);
+            } else {
+                zkClient.writeData("/config/users/" + username, deletedJson.toBuffer().getBytes());
+            }
             notifyChanges(username);
         } else {
             log.warn("Credentials for user {} already don't exist", username);
@@ -154,6 +165,11 @@ public class ScramShaCredentials {
         }
     }
 
+    /* test */
+    boolean isPathExist(String path)    {
+        return zkClient.exists(path);
+    }
+
     /**
      * Generates the JSON with the credentials
      *
@@ -209,9 +225,9 @@ public class ScramShaCredentials {
      *
      * @param user JSON string with existing user configuration as byte[]
      *
-     * @return  Returns the updated JSON without the SCRAM credentials as byte array
+     * @return  Returns the updated JSON without the SCRAM credentials
      */
-    protected byte[] deleteUserJson(byte[] user)   {
+    protected JsonObject deleteUserJson(byte[] user)   {
         JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
 
         validateJsonVersion(json);
@@ -224,7 +240,7 @@ public class ScramShaCredentials {
             json.getJsonObject("config").remove(mechanism.mechanismName());
         }
 
-        return json.encode().getBytes(Charset.defaultCharset());
+        return json;
     }
 
     protected void validateJsonVersion(JsonObject json)   {

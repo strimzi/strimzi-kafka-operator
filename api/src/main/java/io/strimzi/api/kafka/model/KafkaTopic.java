@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -37,7 +38,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaTopic.RESOURCE_KIND,
                         plural = KafkaTopic.RESOURCE_PLURAL,
-                        shortNames = {KafkaTopic.SHORT_NAME}
+                        shortNames = {KafkaTopic.SHORT_NAME},
+                        categories = {STRIMZI_CATEGORY}
                 ),
                 group = KafkaTopic.RESOURCE_GROUP,
                 scope = KafkaTopic.SCOPE,
@@ -93,7 +95,7 @@ public class KafkaTopic extends CustomResource implements UnknownPropertyPreserv
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaTopic";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkatopics";
     public static final String RESOURCE_SINGULAR = "kafkatopic";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";

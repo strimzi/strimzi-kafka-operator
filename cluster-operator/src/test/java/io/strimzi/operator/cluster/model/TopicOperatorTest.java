@@ -47,6 +47,7 @@ public class TopicOperatorTest {
             KafkaVersionTestUtils.getKafkaImageMap(),
             emptyMap(),
             emptyMap(),
+            emptyMap(),
             emptyMap()) { };
 
     private final String namespace = "test";

@@ -33,12 +33,10 @@ include::assemblies/assembly-upgrade.adoc[leveloffset=+1]
 
 include::assemblies/assembly-upgrade-resources.adoc[leveloffset=+1]
 
-include::modules/proc-uninstalling.adoc[leveloffset=+1]
-
-include::modules/proc-accessing-resource-status.adoc[leveloffset=+1]
+include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
 
 [appendix]
-include::modules/faq.adoc[leveloffset=+1]
+include::modules/appendix_faq.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
 include::modules/appendix_deploying_kubernetes_cluster.adoc[]

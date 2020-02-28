@@ -26,7 +26,7 @@ m¦KafkaConnect
 ¦The Kafka Connect cluster, if deployed.
 
 m¦KafkaConnectS2I
-¦xref:type-KafkaConnectS2Istatus-reference[]
+¦xref:type-KafkaConnectS2IStatus-reference[]
 ¦The Kafka Connect cluster with Source-to-Image support, if deployed.
 
 m¦KafkaConnector
@@ -77,7 +77,7 @@ Here we see the `status` property specified for a Kafka custom resource.
 .Kafka custom resource with status
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
 spec:
@@ -96,10 +96,20 @@ status:
   - addresses:
     - host: my-cluster-kafka-bootstrap.myproject.svc
       port: 9093
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
     type: tls
   - addresses:
     - host: 172.29.49.180
       port: 9094
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
     type: external
     # ...
 ----

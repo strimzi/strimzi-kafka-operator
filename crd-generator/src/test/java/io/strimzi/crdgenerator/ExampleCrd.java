@@ -27,7 +27,8 @@ import java.util.Map;
         group = "crdgenerator.strimzi.io",
         names = @Crd.Spec.Names(
             kind = "Example",
-            plural = "examples"),
+            plural = "examples",
+            categories = {"strimzi"}),
         scope = "Namespaced",
         version = "v1alpha1",
     versions = {
@@ -108,6 +109,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     public List<? extends U> listOfWildcardTypeVar3;
 
     public List<? extends List<? extends U>> listOfWildcardTypeVar4;
+
+    public List<Map<String, Object>> listOfMaps;
 
     private String either;
     private String or;

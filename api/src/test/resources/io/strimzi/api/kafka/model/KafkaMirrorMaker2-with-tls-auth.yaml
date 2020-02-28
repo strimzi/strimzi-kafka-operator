@@ -1,0 +1,51 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: test-kafka-mirror-maker-2
+spec:
+  image: foo
+  replicas: 6
+  connectCluster: target
+  clusters:
+  - alias: source
+    bootstrapServers: my-source-kafka:9092
+    config:
+      name: bar
+    tls:
+      trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+    authentication:
+      type: tls
+      certificateAndKey:
+        secretName: my-user-secret
+        key: user.key
+        certificate: user.crt
+  - alias: target
+    bootstrapServers: my-target-kafka:9092
+    config:
+      name: bar
+    tls:
+      trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+    authentication:
+      type: tls
+      certificateAndKey:
+        secretName: my-user-secret
+        key: user.key
+        certificate: user.crt
+  mirrors:
+  - sourceCluster: source
+    targetCluster: target
+    sourceConnector: {}
+    topics: my-topic
+  tolerations:
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
+    - key: "key2"
+      operator: "Equal"
+      value: "value2"
+      effect: "NoSchedule"

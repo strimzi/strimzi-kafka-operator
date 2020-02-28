@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * Represents a status of the Kafka Mirror Maker resource
+ * Represents a status of the Kafka MirrorMaker resource
  */
 @Buildable(
         editableEnabled = false,

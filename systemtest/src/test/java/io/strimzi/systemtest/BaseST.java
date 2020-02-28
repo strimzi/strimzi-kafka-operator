@@ -11,13 +11,19 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
+import io.strimzi.systemtest.kafkaclients.ClientFactory;
+import io.strimzi.systemtest.kafkaclients.EClientType;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -67,6 +73,9 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
+    protected KafkaClient externalBasicKafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
+    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
+
     protected static final String CLUSTER_NAME = "my-cluster";
 
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -74,6 +83,7 @@ public abstract class BaseST implements TestSeparator {
     private static final Logger LOGGER = LogManager.getLogger(BaseST.class);
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
+    protected static final String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
@@ -81,6 +91,7 @@ public abstract class BaseST implements TestSeparator {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
+    protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
 
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
@@ -94,7 +105,11 @@ public abstract class BaseST implements TestSeparator {
     protected String testClass;
     protected String testName;
 
-    Random rng = new Random();
+    protected Random rng = new Random();
+
+    public static final int MESSAGE_COUNT = 100;
+    public static final String TOPIC_NAME = "my-topic";
+    public static final String USER_NAME = "user-name-example";
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
@@ -111,6 +126,10 @@ public abstract class BaseST implements TestSeparator {
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         cluster.applyClusterOperatorInstallFiles();
+        // This is needed in case you are using internal kubernetes registry and you want to pull images from there
+        for (String namespace : namespaces) {
+            Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+        }
     }
 
     /**
@@ -146,7 +165,7 @@ public abstract class BaseST implements TestSeparator {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
@@ -313,7 +332,7 @@ public abstract class BaseST implements TestSeparator {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
             entry("imageRepositoryOverride", dockerOrg),
             entry("imageTagOverride", dockerTag),
-            entry("image.pullPolicy", Constants.IMAGE_PULL_POLICY),
+            entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
             entry("resources.requests.memory", REQUESTS_MEMORY),
             entry("resources.requests.cpu", REQUESTS_CPU),
             entry("resources.limits.memory", LIMITS_MEMORY),
@@ -456,9 +475,9 @@ public abstract class BaseST implements TestSeparator {
                 assertThat(labels.get("app"), is(appName));
                 assertThat(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"), is(true));
                 assertThat(labels.get("statefulset.kubernetes.io/pod-name"), is(podName));
-                assertThat(labels.get("strimzi.io/cluster"), is(clusterName));
-                assertThat(labels.get("strimzi.io/kind"), is("Kafka"));
-                assertThat(labels.get("strimzi.io/name"), is(clusterName.concat("-").concat(podType)));
+                assertThat(labels.get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                assertThat(labels.get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                assertThat(labels.get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-").concat(podType)));
             }
         );
     }
@@ -468,8 +487,7 @@ public abstract class BaseST implements TestSeparator {
 
         Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is("strimzi-cluster-operator"));
-        assertThat(coLabels.get("pod-template-hash").matches("\\d+"), is(true));
-        assertThat(coLabels.get("strimzi.io/kind"), is("cluster-operator"));
+        assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
     }
 
     protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
@@ -479,10 +497,10 @@ public abstract class BaseST implements TestSeparator {
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
                 assertThat(pod.getMetadata().getLabels().get("app"), is(appName));
-                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"), is(true));
-                assertThat(pod.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
-                assertThat(pod.getMetadata().getLabels().get("strimzi.io/kind"), is(kind));
-                assertThat(pod.getMetadata().getLabels().get("strimzi.io/name"), is(clusterName.concat("-" + podType)));
+                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("[0-9A-Fa-f]+"), is(true));
+                assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(kind));
+                assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-" + podType)));
             });
     }
 
@@ -510,9 +528,9 @@ public abstract class BaseST implements TestSeparator {
                 .forEach(service -> {
                     LOGGER.info("Verifying labels for service {}", serviceName);
                     assertThat(service.getMetadata().getLabels().get("app"), is(appName));
-                    assertThat(service.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
-                    assertThat(service.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                    assertThat(service.getMetadata().getLabels().get("strimzi.io/name"), is(serviceName));
+                    assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                    assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(serviceName));
                 });
         }
     }
@@ -525,9 +543,9 @@ public abstract class BaseST implements TestSeparator {
             .filter(service -> service.getMetadata().getName().equals(serviceName))
             .forEach(service -> {
                 LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
-                assertThat(service.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
-                assertThat(service.getMetadata().getLabels().get("strimzi.io/kind"), is(kind));
-                assertThat(service.getMetadata().getLabels().get("strimzi.io/name"), is(serviceName));
+                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(kind));
+                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(serviceName));
             }
         );
     }
@@ -539,8 +557,8 @@ public abstract class BaseST implements TestSeparator {
             .forEach(p -> {
                 LOGGER.info("Verifying secret {}", p.getMetadata().getName());
                 assertThat(p.getMetadata().getLabels().get("app"), is(appName));
-                assertThat(p.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                assertThat(p.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                assertThat(p.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                assertThat(p.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
             }
         );
     }
@@ -553,15 +571,23 @@ public abstract class BaseST implements TestSeparator {
                 LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
                 if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaConnect"));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("KafkaConnect"));
                 } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker"));
-                } else {
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("KafkaMirrorMaker"));
+                } else if (cm.getMetadata().getName().contains("-mirrormaker2-config")) {
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("KafkaMirrorMaker2"));
+                } else if (cm.getMetadata().getName().equals(clusterName.concat("-kafka-config"))) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
-                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
-                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
-                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName), is(true));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                } else if (cm.getMetadata().getName().equals(additionalClusterName.concat("-kafka-config"))) {
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(additionalClusterName));
+                } else {
+                    LOGGER.info("CM {} is not related to current test", cm.getMetadata().getName());
                 }
             }
         );
@@ -584,15 +610,15 @@ public abstract class BaseST implements TestSeparator {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
                 if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
                     assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaConnect"));
+                    assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("KafkaConnect"));
                 } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
                     assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker"));
+                    assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("KafkaMirrorMaker"));
                 } else {
                     assertThat(sa.getMetadata().getLabels().get("app"), is(appName));
-                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                    assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
                 }
-                assertThat(sa.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
             }
         );
     }
@@ -611,8 +637,8 @@ public abstract class BaseST implements TestSeparator {
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
                 assertThat(rb.getMetadata().getLabels().get("app"), is(appName));
-                assertThat(rb.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
-                assertThat(rb.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                assertThat(rb.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+                assertThat(rb.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
             }
         );
     }
@@ -631,7 +657,7 @@ public abstract class BaseST implements TestSeparator {
         }
     }
 
-    void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
@@ -678,7 +704,7 @@ public abstract class BaseST implements TestSeparator {
 
         //Verifying docker image for entity-operator
         String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+                Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
         String imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
         assertThat(imgFromPod, is(imgFromDeplConf.get(TO_IMAGE)));
         imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "user-operator");

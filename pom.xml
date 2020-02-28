@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.17.0-SNAPSHOT</version>
+    <version>0.18.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -64,7 +64,7 @@
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <maven.checkstyle.version>3.0.0</maven.checkstyle.version>
+        <maven.checkstyle.version>3.1.0</maven.checkstyle.version>
         <spotbugs.version>3.1.12</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
@@ -72,33 +72,34 @@
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.19.0</sundrio.version>
 
-        <fabric8.kubernetes-client.version>4.6.2</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>4.6.2</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>4.6.2</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>4.6.4</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>4.6.4</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>4.6.4</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <okhttp.version>3.12.0</okhttp.version>
+        <okhttp.version>3.12.6</okhttp.version>
         <okio.version>1.15.0</okio.version>
-        <vertx.version>3.8.4</vertx.version>
-        <vertx-juni5.version>3.8.1</vertx-juni5.version>
-        <log4j.version>2.11.1</log4j.version>
+        <vertx.version>3.8.5</vertx.version>
+        <vertx-juni5.version>3.8.5</vertx-juni5.version>
+        <log4j.version>2.13.0</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
-        <fasterxml.jackson-core.version>2.9.10</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.9.10.1</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.9.10</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.9.10</fasterxml.jackson-annotations.version>
-        <kafka.version>2.3.1</kafka.version>
+        <fasterxml.jackson-core.version>2.10.2</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.10.2</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.10.2</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
+        <kafka.version>2.4.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.12.8</scala-library.version>
-        <zookeeper.version>3.4.14</zookeeper.version>
+        <scala-library.version>2.12.10</scala-library.version>
+        <zookeeper.version>3.5.6</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.2.1</quartz.version>
-        <debezium.version>0.9.5.Final</debezium.version>
+        <debezium.version>1.0.0.Final</debezium.version>
         <jaeger.version>1.0.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
-        <strimzi-oauth-callback.version>0.2.0</strimzi-oauth-callback.version>
+        <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
+        <strimzi-oauth.version>0.3.0</strimzi-oauth.version>
 
         <junit-json-params.version>5.5.1-r0</junit-json-params.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
@@ -109,8 +110,7 @@
         <junit.platform.version>1.5.1</junit.platform.version>
         <gson.version>2.8.2</gson.version>
         <vertx.kafka.client>3.7.1</vertx.kafka.client>
-        <okhttp.version>3.12.0</okhttp.version>
-        <netty-codec-http.version>4.1.34.Final</netty-codec-http.version>
+        <netty.version>4.1.45.Final</netty.version>
         <micrometer.version>1.3.1</micrometer.version>
     </properties>
 
@@ -292,6 +292,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper-jute</artifactId>
+                <version>${zookeeper.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.101tec</groupId>
                 <artifactId>zkclient</artifactId>
                 <version>${zkclient.version}</version>
@@ -327,9 +332,123 @@
                 <version>${fasterxml.jackson-dataformat.version}</version>
             </dependency>
             <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-csv</artifactId>
+                <version>${fasterxml.jackson-dataformat.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-paranamer</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_2.12</artifactId>
+                <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-core</artifactId>
                 <version>${vertx.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler-proxy</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-socks</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-dns</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver-dns</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid buggy version -->
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
@@ -355,23 +474,19 @@
                 <groupId>io.debezium</groupId>
                 <artifactId>debezium-core</artifactId>
                 <version>${debezium.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.debezium</groupId>
                 <artifactId>debezium-core</artifactId>
                 <version>${debezium.version}</version>
                 <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-unit</artifactId>
-                <version>${vertx.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -443,12 +558,41 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-server</artifactId>
-                <version>${strimzi-oauth-callback.version}</version>
+                <version>${strimzi-oauth.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-client</artifactId>
-                <version>${strimzi-oauth-callback.version}</version>
+                <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
+                <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apiguardian</groupId>
+                        <artifactId>apiguardian-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-junit5</artifactId>
+                <version>${vertx-juni5.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -559,7 +703,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.18</version>
+                        <version>8.29</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -779,9 +923,9 @@
                                         <!-- use org.apache.logging.log4j:log4j-slf4j-impl -->
                                         <exclude>ch.qos.logback:*</exclude>
                                         <!-- use org.apache.logging.log4j:log4j-1.2-api shim -->
-                                        <exclude>log4j:log4j</exclude>
+                                        <exclude>log4j:log4j:*:jar:compile</exclude>
                                         <!-- use org.apache.logging.log4j:log4j-slf4j-impl -->
-                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12:*:jar:compile</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

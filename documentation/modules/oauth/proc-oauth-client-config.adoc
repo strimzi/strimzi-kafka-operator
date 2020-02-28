@@ -34,7 +34,7 @@ For example:
 +
 [source,xml, subs="+quotes,attributes"]
 ----
-System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<authorization-server-address>/auth/realms/master/protocol/openid-connect/token_”); <1>
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”); <1>
 System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
 System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
 ----

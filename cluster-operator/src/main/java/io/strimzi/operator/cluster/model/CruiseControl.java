@@ -44,6 +44,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
+import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
+
 public class CruiseControl extends AbstractModel {
 
     public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";

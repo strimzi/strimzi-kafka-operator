@@ -69,6 +69,9 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT {
@@ -79,8 +82,7 @@ public abstract class TopicOperatorBaseIT {
 
     protected static String oldNamespace;
 
-    protected final Labels labels = Labels.fromString(
-            "strimzi.io/kind=topic");
+    protected final Labels labels = Labels.fromString(io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
 
     public static final String NAMESPACE = "topic-operator-it";
 
@@ -137,7 +139,11 @@ public abstract class TopicOperatorBaseIT {
 
     @BeforeEach
     public void setup() throws Exception {
-        vertx = Vertx.vertx();
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
         LOGGER.info("Setting up test");
         cluster.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
@@ -218,7 +224,7 @@ public abstract class TopicOperatorBaseIT {
 
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
                     waitForTopicInKube(item.getMetadata().getName(), false);
                 }
             }
@@ -258,7 +264,7 @@ public abstract class TopicOperatorBaseIT {
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
-        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
+        m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;
     }

@@ -35,7 +35,7 @@ public abstract class AbstractCrdTest<R extends CustomResource> {
         String content = TestUtils.readResource(getClass(), resource);
         if (content != null) {
             String ssStr = TestUtils.toYamlString(k);
-            assertThat(content.trim(), is(ssStr.trim()));
+            assertThat(ssStr.trim(), is(content.trim()));
         } else {
             fail("The resource " + resource + " does not exist");
         }

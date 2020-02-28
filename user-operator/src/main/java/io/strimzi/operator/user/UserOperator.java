@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.user;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -16,6 +15,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.vertx.micrometer.backends.BackendRegistries;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -31,6 +37,8 @@ public class UserOperator extends AbstractVerticle {
     private final long reconciliationInterval;
     private final KafkaUserOperator kafkaUserOperator;
 
+    private final PrometheusMeterRegistry metrics;
+
     private Watch watch;
     private long reconcileTimer;
 
@@ -43,10 +51,12 @@ public class UserOperator extends AbstractVerticle {
         this.reconciliationInterval = config.getReconciliationIntervalMs();
         this.client = client;
         this.kafkaUserOperator = kafkaUserOperator;
+        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        setupMetrics();
     }
 
     @Override
-    public void start(Future<Void> start) {
+    public void start(Promise<Void> start) {
         log.info("Starting UserOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
@@ -69,8 +79,7 @@ public class UserOperator extends AbstractVerticle {
     }
 
     @Override
-    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
-    public void stop(Future<Void> stop) {
+    public void stop(Promise<Void> stop) {
         log.info("Stopping UserOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
 
@@ -79,7 +88,18 @@ public class UserOperator extends AbstractVerticle {
         }
 
         client.close();
-        ((Promise<Void>) stop).complete();
+        stop.complete();
+    }
+
+    /**
+     * Setup Metrics collection
+     */
+    public void setupMetrics() {
+        new ClassLoaderMetrics().bindTo(metrics);
+        new JvmMemoryMetrics().bindTo(metrics);
+        new ProcessorMetrics().bindTo(metrics);
+        new JvmThreadMetrics().bindTo(metrics);
+        new JvmGcMetrics().bindTo(metrics);
     }
 
     /**
@@ -100,6 +120,8 @@ public class UserOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        request.response().setStatusCode(200).end(metrics.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {

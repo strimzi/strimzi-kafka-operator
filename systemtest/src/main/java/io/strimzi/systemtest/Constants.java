@@ -47,15 +47,19 @@ public interface Constants {
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
+    long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
+
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
+    long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(80).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    String IMAGE_PULL_POLICY = "Always";
+    String ALWAYS_IMAGE_PULL_POLICY = "Always";
+    String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
 
     int HTTP_KEYCLOAK_DEFAULT_PORT = 8080;
     int HTTPS_KEYCLOAK_DEFAULT_PORT = 8443;
@@ -76,7 +80,13 @@ public interface Constants {
      */
     String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
 
+    String DEFAULT_SINK_FILE_NAME = "/tmp/test-file-sink.txt";
+
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
+    int HTTP_JAEGER_DEFAULT_TCP_PORT = 5778;
+    int HTTP_JAEGER_DEFAULT_NODE_PORT = 32480;
+    int HTTPS_KEYCLOAK_DEFAULT_NODE_PORT = 32481;
+    int HTTP_KEYCLOAK_DEFAULT_NODE_PORT = 32482;
 
     /**
      * Default value which allows execution of tests with any tags
@@ -139,9 +149,12 @@ public interface Constants {
      * Tag for Helm tests
      */
     String HELM = "helm";
-
     /**
      * Tag for oauth tests
      */
     String OAUTH = "oauth";
+    /**
+     * Tag for recovery tests
+     */
+    String RECOVERY = "recovery";
 }

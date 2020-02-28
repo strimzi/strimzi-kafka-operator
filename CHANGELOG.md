@@ -1,6 +1,18 @@
 
 # CHANGELOG
 
+## 0.18.0
+
+* Make it possible to configure PodManagementPolicy for StatefulSets
+
+## 0.17.0
+
+* Add possibility to set Java System Properties via CR yaml
+* Add support for Mirror Maker 2.0
+* Add Jmxtrans deployment
+* Add public keys of TLS listeners to the status section of the Kafka CR
+* Add support for using a Kafka authorizer backed by Keycloak Authorization Services
+
 ## 0.16.0
 
 * Add support for Kafka 2.4.0 and upgrade from Zookeeper 3.4.x to 3.5.x

@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
@@ -48,6 +49,10 @@ public class KubernetesResource {
 
     public static DoneableDeployment clusterOperator(String namespace) {
         return deployNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
+    }
+
+    public static DeploymentBuilder defaultClusterOperator(String namespace) {
+        return defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     private static DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
@@ -86,7 +91,7 @@ public class KubernetesResource {
             }
         }
 
-        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
@@ -99,7 +104,7 @@ public class KubernetesResource {
                     .editSpec()
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))
-                            .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
                         .endContainer()
                     .endSpec()
                 .endTemplate()
@@ -222,7 +227,7 @@ public class KubernetesResource {
         return kCRBList;
     }
 
-    public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
+    public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace, String transportProtocol) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)
@@ -234,13 +239,13 @@ public class KubernetesResource {
                 .addNewPort()
                     .withName("http")
                     .withPort(port)
-                    .withProtocol("TCP")
+                    .withProtocol(transportProtocol)
                 .endPort()
             .endSpec();
     }
 
-    public static DoneableService createServiceResource(String appName, int port, String clientNamespace) {
-        Service service = getSystemtestsServiceResource(appName, port, clientNamespace).build();
+    public static DoneableService createServiceResource(String appName, int port, String clientNamespace, String transportProtocol) {
+        Service service = getSystemtestsServiceResource(appName, port, clientNamespace, transportProtocol).build();
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
@@ -254,6 +259,23 @@ public class KubernetesResource {
         return new DoneableService(service);
     }
 
+    public static Service deployKeycloakNodePortHttpService(String namespace) {
+        String keycloakName = "keycloak";
+
+        Map<String, String> keycloakLabels = new HashMap<>();
+        keycloakLabels.put("app", keycloakName);
+
+        return getSystemtestsServiceResource(keycloakName + "service-http",
+                Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
+                .editSpec()
+                    .withType("NodePort")
+                    .withSelector(keycloakLabels)
+                    .editFirstPort()
+                        .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
+                    .endPort()
+                .endSpec().build();
+    }
+
     public static Service deployKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
@@ -261,24 +283,24 @@ public class KubernetesResource {
         keycloakLabels.put("app", keycloakName);
 
         return getSystemtestsServiceResource(keycloakName + "service-https",
-            Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace)
+            Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
             .editSpec()
                 .withType("NodePort")
                 .withSelector(keycloakLabels)
                 .editFirstPort()
-                    .withNodePort(32223)
+                    .withNodePort(Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT)
                 .endPort()
             .endSpec().build();
     }
 
     public static Service deployBridgeNodePortService(String bridgeExternalService, String namespace, String clusterName) {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", clusterName);
-        map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", clusterName + "-bridge");
+        map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
+        map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside the cluster
-        return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
+        return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
             .editSpec()
                 .withType("NodePort")
                 .withSelector(map)

@@ -30,7 +30,7 @@ It contains key:value pairs representing labels for selecting such a volume.
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
-WARNING: Increasing the size of persistent volumes in an existing {ProductName} cluster is only supported in Kubernetes versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion. 
+WARNING: Increasing the size of persistent volumes in an existing {ProductName} cluster is only supported in Kubernetes versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion.
 For other versions of Kubernetes and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
 Decreasing the size of existing persistent volumes is not possible.
 
@@ -118,6 +118,7 @@ As a result of the configured `overrides` property, the broker volumes use the f
 The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
 Other fields from the storage configuration are currently not supported.
 
+[[pvc-naming]]
 == Persistent Volume Claim naming
 
 When persistent storage is used, it creates Persistent Volume Claims with the following names:

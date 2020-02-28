@@ -1,0 +1,24 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: test-kafka-mirror-maker-2
+spec:
+  image: foo
+  replicas: 6
+  connectCluster: target
+  clusters:
+  - alias: source
+    bootstrapServers: my-source-kafka:9092
+    config:
+      name: bar
+  - alias: target
+    bootstrapServers: my-target-kafka:9092
+    config:
+      name: bar
+  mirrors:
+  - sourceCluster: source
+    targetCluster: target
+    sourceConnector: {}
+    topics: my-topic
+  extra: true
+extra: true

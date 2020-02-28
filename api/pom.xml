@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.17.0-SNAPSHOT</version>
+        <version>0.18.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>api</artifactId>
@@ -133,6 +133,7 @@
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
@@ -142,7 +143,8 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaClusterRebalance=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkaclusterrebalance.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaClusterRebalance=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkaclusterrebalance.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -170,6 +172,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaClusterRebalance</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>

@@ -6,7 +6,7 @@ source $(dirname $(realpath $0))/../multi-platform-support.sh
 
 # Image directories
 base_images="base"
-java_images="operator"
+java_images="operator jmxtrans"
 kafka_image="kafka"
 kafka_images="kafka test-client"
 
@@ -183,7 +183,6 @@ function build {
                 THIRD_PARTY_LIBS="${lib_directory}"
         done
     done
-
 }
 
 dependency_check

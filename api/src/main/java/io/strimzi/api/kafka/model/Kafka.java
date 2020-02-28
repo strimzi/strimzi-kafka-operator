@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -37,7 +38,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = Kafka.RESOURCE_KIND,
                         plural = Kafka.RESOURCE_PLURAL,
-                        shortNames = {Kafka.SHORT_NAME}
+                        shortNames = {Kafka.SHORT_NAME},
+                        categories = {STRIMZI_CATEGORY}
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
@@ -78,18 +80,18 @@ import static java.util.Collections.unmodifiableList;
 @EqualsAndHashCode
 public class Kafka extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaStatus> {
 
-    public static final String V1BETA1 = "v1beta1";
-    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1BETA1 = Constants.V1BETA1;
+    public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
     public static final String RESOURCE_KIND = "Kafka";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkas";
     public static final String RESOURCE_SINGULAR = "kafka";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
+    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "k";
     public static final List<String> RESOURCE_SHORTNAMES = unmodifiableList(singletonList(SHORT_NAME));
