@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -183,7 +184,7 @@ public class KafkaAvailabilityTest {
             return unsupportedOperationException;
         }
 
-        void mockDescribeTopics(AdminClient mockAc) {
+        void mockDescribeTopics(Admin mockAc) {
             when(mockAc.describeTopics(any())).thenAnswer(invocation -> {
                 DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
                 Collection<String> topicNames = invocation.getArgument(0);
@@ -224,7 +225,7 @@ public class KafkaAvailabilityTest {
             });
         }
 
-        void mockDescribeConfigs(AdminClient mockAc) {
+        void mockDescribeConfigs(Admin mockAc) {
             when(mockAc.describeConfigs(any())).thenAnswer(invocation -> {
                 Collection<ConfigResource> argument = invocation.getArgument(0);
                 DescribeConfigsResult dcr = mock(DescribeConfigsResult.class);
@@ -254,8 +255,8 @@ public class KafkaAvailabilityTest {
             });
         }
 
-        AdminClient ac() {
-            AdminClient ac = mock(AdminClient.class);
+        Admin ac() {
+            Admin ac = mock(AdminClient.class);
 
             ListTopicsResult ltr = mockListTopics();
             when(ac.listTopics(any())).thenReturn(ltr);

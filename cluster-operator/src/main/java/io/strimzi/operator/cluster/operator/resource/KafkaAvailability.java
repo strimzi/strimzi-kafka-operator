@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
@@ -35,10 +35,10 @@ class KafkaAvailability {
 
     private static final Logger log = LogManager.getLogger(KafkaAvailability.class.getName());
 
-    private final AdminClient ac;
+    private final Admin ac;
     private final Future<Collection<TopicDescription>> descriptions;
 
-    KafkaAvailability(AdminClient ac) {
+    KafkaAvailability(Admin ac) {
         this.ac = ac;
         // 1. Get all topic names
         Future<Set<String>> topicNames = topicNames();
