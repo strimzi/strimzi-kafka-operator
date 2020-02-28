@@ -107,10 +107,10 @@ public class KafkaConnectS2IcrdOperatorIT {
 
     protected KafkaConnectS2I getResource() {
         return new KafkaConnectS2IBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion(KafkaConnectS2I.RESOURCE_GROUP + "/" + KafkaConnectS2I.V1BETA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(namespace)
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()

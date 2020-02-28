@@ -108,7 +108,7 @@ public class KafkaBridgeCrdOperatorIT {
 
     protected KafkaBridge getResource() {
         return new KafkaBridgeBuilder()
-                .withApiVersion("kafka.strimzi.io/v1alpha1")
+                .withApiVersion(KafkaBridge.RESOURCE_GROUP + "/" + KafkaBridge.V1ALPHA1)
                 .withNewMetadata()
                 .withName(RESOURCE_NAME)
                 .withNamespace(namespace)

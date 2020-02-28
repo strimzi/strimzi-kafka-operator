@@ -29,6 +29,6 @@ External data is translated and transformed into the appropriate format.
 You can deploy Kafka Connect with Source2Image support, which provides a convenient way to include connectors.
 Kafka MirrorMaker:: Kafka MirrorMaker replicates data between two Kafka clusters, within or across data centers.
 +
-Using producers and consumers, MirrorMaker consumes messages from the (source) primary cluster and writes them to the (target) secondary cluster.
+MirrorMaker takes messages from a source Kafka cluster and writes them to a target Kafka cluster.
 Kafka Bridge:: Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 Kafka Exporter:: Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics. Consumer lag is the delay between the last message written to a partition and the message currently being picked up from that partition by a consumer

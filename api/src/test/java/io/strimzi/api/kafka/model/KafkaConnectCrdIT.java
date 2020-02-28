@@ -12,8 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -54,10 +52,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-missing-required-property.yaml");
             });
 
-
-        assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.bootstrapServers in body is required"),
-                containsStringIgnoringCase("spec.bootstrapServers: Required value")));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
     }
 
     @Test
@@ -90,13 +85,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                allOf(
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate in body is required"),
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key in body is required")),
-                allOf(
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.certificate: Required value"),
-                        containsStringIgnoringCase("spec.authentication.certificateAndKey.key: Required value"))));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate", "spec.authentication.certificateAndKey.key");
     }
 
     @Test
@@ -122,9 +111,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
                 createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml");
             });
 
-        assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom in body is required"),
-                containsStringIgnoringCase("spec.externalConfiguration.env.valueFrom: Required value")));
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.externalConfiguration.env.valueFrom");
     }
 
     @BeforeAll
