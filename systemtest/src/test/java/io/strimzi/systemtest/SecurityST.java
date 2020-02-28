@@ -37,6 +37,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,17 +46,22 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -1296,6 +1302,61 @@ class SecurityST extends BaseST {
         assertThat(sent, is(messagesCount));
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
+    }
+
+    @Test
+    void testLoadBalancerSourceRanges() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+
+        String networkInterfaces = Exec.exec("ip", "route").out();
+        Pattern pattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
+        Matcher matchers = pattern.matcher(networkInterfaces);
+
+        matchers.find();
+        LOGGER.info(matchers.group(0));
+        String correctNetworkInterface = matchers.group(0);
+
+        String[] correctNetworkInterfaceStrings = correctNetworkInterface.split(" ");
+
+        LOGGER.info(correctNetworkInterfaceStrings[0]);
+
+        String ipWithPrefix = correctNetworkInterfaceStrings[0];
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withNewTemplate()
+                        .withNewExternalBootstrapService()
+                                .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
+                        .endExternalBootstrapService()
+                        .withNewPerPodService()
+                            .withLoadBalancerSourceRanges(ipWithPrefix)
+                        .endPerPodService()
+                    .endTemplate()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        String invalidNetworkAddress = "255.255.255.111/30";
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getTemplate().getExternalBootstrapService().setLoadBalancerSourceRanges(Collections.singletonList(invalidNetworkAddress))
+        );
+
+        assertThrows(ExecutionException.class, () -> {
+            Future<Integer> invalidProducer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+            Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT * 2);
+        });
     }
 
     @BeforeAll
