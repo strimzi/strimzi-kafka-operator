@@ -264,12 +264,30 @@ public class EntityUserOperator extends AbstractModel {
         if (javaSystemProperties != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
-        heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
-        jvmPerformanceOptions(varList);
+        heapOpts(varList);
+        jvmPerformanceOptions(varList, ENV_VAR_STRIMZI_JVM_PERFORMANCE_OPTS);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
+    }
+
+    private void heapOpts(List<EnvVar> envVars) {
+        StringBuilder strimziHeapOpts = new StringBuilder();
+        String xms = getJvmOptions() != null ? getJvmOptions().getXms() : null;
+        if (xms != null) {
+            strimziHeapOpts.append("-Xms").append(xms);
+        }
+
+        String xmx = getJvmOptions() != null ? getJvmOptions().getXmx() : null;
+        if (xmx != null) {
+            strimziHeapOpts.append(" -Xmx").append(xmx);
+        }
+
+        String trim = strimziHeapOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_HEAP_OPTS, trim));
+        }
     }
 
     public List<Volume> getVolumes() {

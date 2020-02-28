@@ -97,6 +97,8 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_HEAP_OPTS = "STRIMZI_HEAP_OPTS";
+    public static final String ENV_VAR_STRIMZI_JVM_PERFORMANCE_OPTS = "STRIMZI_JVM_PERFORMANCE_OPTS";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */
@@ -924,6 +926,10 @@ public abstract class AbstractModel {
         this.jvmOptions = jvmOptions;
     }
 
+    public JvmOptions getJvmOptions() {
+        return jvmOptions;
+    }
+
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
      *
@@ -968,8 +974,9 @@ public abstract class AbstractModel {
      * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
      *
      * @param envVars List of Environment Variables
+     * @param envar EnvVar to which put result
      */
-    protected void jvmPerformanceOptions(List<EnvVar> envVars) {
+    protected void jvmPerformanceOptions(List<EnvVar> envVars, String envar) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
         Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
 
@@ -994,7 +1001,7 @@ public abstract class AbstractModel {
 
         String trim = jvmPerformanceOpts.toString().trim();
         if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
+            envVars.add(buildEnvVar(envar, trim));
         }
     }
 

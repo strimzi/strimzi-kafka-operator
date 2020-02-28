@@ -1699,7 +1699,7 @@ public class KafkaCluster extends AbstractModel {
         }
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
-        jvmPerformanceOptions(varList);
+        jvmPerformanceOptions(varList, ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS);
 
         if (listeners != null) {
             if (listeners.getPlain() != null) {

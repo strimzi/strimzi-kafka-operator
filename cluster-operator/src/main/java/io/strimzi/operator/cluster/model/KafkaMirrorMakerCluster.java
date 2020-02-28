@@ -390,7 +390,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
 
         heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
+        jvmPerformanceOptions(varList, ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS);
 
         /** consumer */
         addConsumerEnvVars(varList);
