@@ -84,5 +84,9 @@ fi
 # This section should be removed once Strimzi no longer supports Kafka brokers using ZK 3.4.x.
 ############ ZK Upgrade End ############
 
+if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
+fi
+
 # starting Zookeeper with final configuration
 exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties"
