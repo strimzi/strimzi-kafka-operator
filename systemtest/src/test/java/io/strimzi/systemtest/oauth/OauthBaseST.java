@@ -79,6 +79,7 @@ public class OauthBaseST extends BaseST {
     void setup() throws InterruptedException {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
+        allowNetworkPolicies(NAMESPACE);
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
