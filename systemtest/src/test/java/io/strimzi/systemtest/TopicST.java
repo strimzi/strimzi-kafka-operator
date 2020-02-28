@@ -247,6 +247,38 @@ public class TopicST extends BaseST {
 
     }
 
+    @Test
+    void testSendingMessagesToNonExistingTopic() {
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        boolean created = hasTopicInKafka(topicName);
+        assertThat(created, is(false));
+        LOGGER.info("Topic with name {} is not created yet", topicName);
+
+        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
+        internalKafkaClient.assertSentAndReceivedMessages(
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+        );
+
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        created = hasTopicInKafka(topicName);
+        assertThat(created, is(true));
+
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
+        LOGGER.info("Topic successfully created");
+    }
+
     boolean hasTopicInKafka(String topicName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
         return KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0).contains(topicName);
