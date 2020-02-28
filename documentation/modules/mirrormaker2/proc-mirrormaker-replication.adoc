@@ -1,0 +1,149 @@
+// Module included in the following assemblies:
+//
+// assembly-mirrormaker.adoc
+
+[id='proc-mirrormaker-replication-{context}']
+= Synchronizing data between Kafka clusters using MirrorMaker 2.0
+
+Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
+
+The previous version of MirrorMaker continues to be supported.
+If you wish to use the resources configured for the previous version,
+they must be updated to the format supported by MirrorMaker 2.0.
+
+The configuration must specify:
+
+* Each Kafka cluster
+* Connection information for each cluster, including TLS authentication
+* The replication flow and direction
+** Cluster to cluster
+** Topic to topic
+
+Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
+
+MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
+A minimal configuration, with defaults left unchanged, would be something like this example:
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+  spec:
+    version: {DefaultKafkaVersion}
+    connectCluster: "my-cluster-target"
+    clusters:
+    - alias: "my-cluster-source"
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+    - alias: "my-cluster-target"
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector: {}
+----
+
+You can configure access control for source and target clusters using TLS or SASL authentication.
+This procedure shows a configuration that uses TLS encryption and authentication for the source and target cluster.
+
+.Prerequisites
+
+* xref:cluster-operator-str[{ProductName} and Kafka is deployed]
+* Source and target Kafka clusters are available
+
+.Procedure
+
+. Edit the `spec` properties for the `KafkaMirrorMaker2` resource.
++
+The properties you can configure are shown in this example configuration:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  version: {DefaultKafkaVersion} <1>
+  replicas: 3 <2>
+  connectCluster: "my-cluster-target" <3>
+  clusters: <4>
+  - alias: "my-cluster-source" <5>
+    authentication: <6>
+      certificateAndKey:
+        certificate: source.crt
+        key: source.key
+        secretName: my-user-source
+      type: tls
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092 <7>
+    tls: <8>
+      trustedCertificates:
+      - certificate: ca.crt
+        secretName: my-cluster-source-cluster-ca-cert
+  - alias: "my-cluster-target" <9>
+    authentication: <10>
+      certificateAndKey:
+        certificate: target.crt
+        key: target.key
+        secretName: my-user-target
+      type: tls
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092 <11>
+    config: <12>
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
+    tls: <13>
+      trustedCertificates:
+      - certificate: ca.crt
+        secretName: my-cluster-target-cluster-ca-cert
+  mirrors: <14>
+  - sourceCluster: "my-cluster-source" <15>
+    targetCluster: "my-cluster-target" <16>
+    sourceConnector: <17>
+      config:
+        replication.factor: 1 <18>
+        offset-syncs.topic.replication.factor: 1 <19>
+        sync.topic.acls.enabled: "false" <20>
+    heartbeatConnector: <21>
+      config:
+        heartbeats.topic.replication.factor: 1 <22>
+    checkpointConnector: <23>
+      config:
+        checkpoints.topic.replication.factor: 1 <24>
+    topicsPattern: ".*" <25>
+    groupsPattern: "group1|group2|group3" <26>
+----
+<1> The Kafka Connect version.
+<2> The number of replica nodes.
+<3> The cluster alias for Kafka Connect.
+<4> Specification for the Kafka clusters being synchronized.
+<5> The cluster alias for the source Kafka cluster.
+<6> Authentication for the source cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<7> Bootstrap server for connection to the source Kafka cluster.
+<8> TLS encryption with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. For more details see xref:type-KafkaMirrorMaker2Tls-reference[`KafkaMirrorMaker2Tls` schema reference].
+<9> The cluster alias for the target Kafka cluster.
+<10> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
+<11> Bootstrap server for connection to the target Kafka cluster.
+<12> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
+Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}.
+<13> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
+<14> MirrorMaker 2.0 connectors.
+<15> The alias of the source cluster used by the MirrorMaker 2.0 connectors.
+<16> The alias of the target cluster used by the MirrorMaker 2.0 connectors.
+<17> The configuration for the `MirrorSourceConnector` that creates remote topics. The `config` overrides the default configuration options.
+<18> The replication factor for mirrored topics created at the target cluster.
+<19> The replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
+<20> When enabled, ACLs are applied to synchronized topics. The default is `true`.
+<21> The configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. The `config` overrides the default configuration options.
+<22> The replication factor for the heartbeat topic created at the target cluster.
+<23> The configuration for the `MirrorCheckpointConnector` that tracks offsets. The `config` overrides the default configuration options.
+<24> The replication factor for the checkpoints topic created at the target cluster.
+<25> Topic replication from the source cluster defined as regular expression patterns. Here we request all topics.
+<26> Consumer group replication from the source cluster defined as regular expression patterns. Here we request three consumer groups by name.
+You can use comma-separated lists.
+
+. Create or update the resource:
++
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
