@@ -2908,7 +2908,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), cruiseControl != null ? cruiseControl.generateService() : null));
+            return withVoid(serviceOperations.reconcile(namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {

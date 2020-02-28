@@ -30,7 +30,6 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -259,11 +258,11 @@ public class CruiseControl extends AbstractModel {
     }
 
     public static String cruiseControlName(String cluster) {
-        return KafkaResources.cruiseControlDeploymentName(cluster);
+        return CruiseControlResources.deploymentName(cluster);
     }
 
     public static String cruiseControlServiceName(String cluster) {
-        return KafkaResources.cruiseControlDeploymentName(cluster);
+        return CruiseControlResources.serviceName(cluster);
     }
 
     public Service generateService() {
