@@ -1308,18 +1308,18 @@ class SecurityST extends BaseST {
     void testLoadBalancerSourceRanges() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
         String networkInterfaces = Exec.exec("ip", "route").out();
-        Pattern pattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
-        Matcher matchers = pattern.matcher(networkInterfaces);
+        Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
+        Matcher ipv4InterfacesMatcher = ipv4InterfacesPattern.matcher(networkInterfaces);
 
-        matchers.find();
-        LOGGER.info(matchers.group(0));
-        String correctNetworkInterface = matchers.group(0);
+        ipv4InterfacesMatcher.find();
+        LOGGER.info(ipv4InterfacesMatcher.group(0));
+        String correctNetworkInterface = ipv4InterfacesMatcher.group(0);
 
         String[] correctNetworkInterfaceStrings = correctNetworkInterface.split(" ");
 
-        LOGGER.info(correctNetworkInterfaceStrings[0]);
-
         String ipWithPrefix = correctNetworkInterfaceStrings[0];
+
+        LOGGER.info("Network address of machine with associated prefix is {}", ipWithPrefix);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
@@ -1349,9 +1349,13 @@ class SecurityST extends BaseST {
 
         String invalidNetworkAddress = "255.255.255.111/30";
 
+        LOGGER.info("Replacing Kafka CR invalid load-balancer source range to {}", invalidNetworkAddress);
+
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-                kafka.getSpec().getKafka().getTemplate().getExternalBootstrapService().setLoadBalancerSourceRanges(Collections.singletonList(invalidNetworkAddress))
+            kafka.getSpec().getKafka().getTemplate().getExternalBootstrapService().setLoadBalancerSourceRanges(Collections.singletonList(invalidNetworkAddress))
         );
+
+        LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
 
         assertThrows(ExecutionException.class, () -> {
             Future<Integer> invalidProducer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
