@@ -45,7 +45,7 @@ if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
     echo "Preparing keystore is complete"
 fi
 
-if [ -d $oauth_certs_paths ]; then
+if [ -d $oauth_certs_path ]; then
   echo "Preparing truststore for OAuth"
   # Add each certificate to the trust store
   STORE=/tmp/kafka/oauth.truststore.p12
