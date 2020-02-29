@@ -334,7 +334,7 @@ public class KubeClusterResource {
         return testNamespace;
     }
 
-    public String getDefaultOlmvNamespace() {
+    public String getDefaultOlmNamespace() {
         return cluster().defaultOlmNamespace();
     }
 }

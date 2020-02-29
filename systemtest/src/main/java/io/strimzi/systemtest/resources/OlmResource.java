@@ -25,7 +25,7 @@ public class OlmResource {
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
     public static void clusterOperator(String namespace) throws Exception {
-        if (!KubeClusterResource.getInstance().getDefaultOlmvNamespace().equals(namespace)) {
+        if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(namespace)) {
             File operatorGroupFile = File.createTempFile("operatorgroup", ".yaml");
             String operatorGroup = TestUtils.getFileAsString(OlmResource.class.getClassLoader().getResource("olm/operator-group.yaml").getPath());
             TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("${OPERATOR_NAMESPACE}", namespace));

@@ -84,7 +84,7 @@ public class Environment {
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.16.2";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.16.2";
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
