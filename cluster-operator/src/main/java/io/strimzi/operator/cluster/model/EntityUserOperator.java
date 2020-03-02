@@ -261,7 +261,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        javaOptionsForEO(varList);
+        EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

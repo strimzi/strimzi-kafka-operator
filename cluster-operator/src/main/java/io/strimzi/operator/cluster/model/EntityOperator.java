@@ -19,9 +19,11 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -335,5 +337,48 @@ public class EntityOperator extends AbstractModel {
             return null;
         }
         return super.generateServiceAccount();
+    }
+
+    protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
+        StringBuilder strimziJavaOpts = new StringBuilder();
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+        if (xms != null) {
+            strimziJavaOpts.append("-Xms").append(xms);
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            strimziJavaOpts.append(" -Xmx").append(xmx);
+        }
+
+        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
+
+        if (server != null && server) {
+            strimziJavaOpts.append(' ').append(" -server");
+        }
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                strimziJavaOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    strimziJavaOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    strimziJavaOpts.append("-").append(k);
+                } else  {
+                    strimziJavaOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        if (javaSystemProperties != null) {
+            strimziJavaOpts.append(' ').append(ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties));
+        }
+
+        String trim = strimziJavaOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, trim));
+        }
     }
 }

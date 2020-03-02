@@ -101,7 +101,7 @@ spec:
       "-Xmx": "4G"
       "-Xms": "2G"
       "-XX":
-        "-foo": "bar"
+        foo: "bar"
     resources:
       limits:
         memory: "5Gi"
