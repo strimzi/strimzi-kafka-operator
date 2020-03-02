@@ -97,8 +97,6 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
-    public static final String ENV_VAR_STRIMZI_HEAP_OPTS = "STRIMZI_HEAP_OPTS";
-    public static final String ENV_VAR_STRIMZI_JVM_PERFORMANCE_OPTS = "STRIMZI_JVM_PERFORMANCE_OPTS";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */
@@ -974,9 +972,8 @@ public abstract class AbstractModel {
      * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
      *
      * @param envVars List of Environment Variables
-     * @param envar EnvVar to which put result
      */
-    protected void jvmPerformanceOptions(List<EnvVar> envVars, String envar) {
+    protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
         Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
 
@@ -1001,7 +998,7 @@ public abstract class AbstractModel {
 
         String trim = jvmPerformanceOpts.toString().trim();
         if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(envar, trim));
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
         }
     }
 
@@ -1195,6 +1192,49 @@ public abstract class AbstractModel {
                     existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
                 }
             }
+        }
+    }
+
+    protected void javaOptionsForEO(List<EnvVar> envVars) {
+        StringBuilder strimziJavaOpts = new StringBuilder();
+        String xms = getJvmOptions() != null ? getJvmOptions().getXms() : null;
+        if (xms != null) {
+            strimziJavaOpts.append("-Xms").append(xms);
+        }
+
+        String xmx = getJvmOptions() != null ? getJvmOptions().getXmx() : null;
+        if (xmx != null) {
+            strimziJavaOpts.append(" -Xmx").append(xmx);
+        }
+
+        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
+
+        if (server != null && server) {
+            strimziJavaOpts.append(' ').append(" -server");
+        }
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                strimziJavaOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    strimziJavaOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    strimziJavaOpts.append("-").append(k);
+                } else  {
+                    strimziJavaOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        if (javaSystemProperties != null) {
+            strimziJavaOpts.append(' ').append(ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties));
+        }
+
+        String trim = strimziJavaOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, trim));
         }
     }
 }

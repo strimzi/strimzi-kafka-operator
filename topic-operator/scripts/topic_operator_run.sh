@@ -26,14 +26,6 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
     fi
 fi
 
-if [ -n "$STRIMZI_HEAP_OPTS" ]; then
-    export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_HEAP_OPTS}"
-fi
-
-if [ -n "$STRIMZI_JVM_PERFORMANCE_OPTS" ]; then
-    export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JVM_PERFORMANCE_OPTS}"
-fi
-
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.topic.Main
 exec ${STRIMZI_HOME}/bin/launch_java.sh

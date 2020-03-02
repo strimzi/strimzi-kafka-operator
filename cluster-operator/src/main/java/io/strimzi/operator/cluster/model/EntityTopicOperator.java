@@ -263,33 +263,11 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
-        }
-        heapOpts(varList);
-        jvmPerformanceOptions(varList, ENV_VAR_STRIMZI_JVM_PERFORMANCE_OPTS);
+        javaOptionsForEO(varList);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
-    }
-
-    private void heapOpts(List<EnvVar> envVars) {
-        StringBuilder strimziHeapOpts = new StringBuilder();
-        String xms = getJvmOptions() != null ? getJvmOptions().getXms() : null;
-        if (xms != null) {
-            strimziHeapOpts.append("-Xms").append(xms);
-        }
-
-        String xmx = getJvmOptions() != null ? getJvmOptions().getXmx() : null;
-        if (xmx != null) {
-            strimziHeapOpts.append(" -Xmx").append(xmx);
-        }
-
-        String trim = strimziHeapOpts.toString().trim();
-        if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_HEAP_OPTS, trim));
-        }
     }
 
     public List<Volume> getVolumes() {
