@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -22,6 +23,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Enums;
@@ -331,7 +333,9 @@ public class KubernetesResource {
      * @param resource mean Connect or ConnectS2I resource
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
-    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName) {
+    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
+        Map<String, String> labels = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName)).getMatchLabels();
+
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
                 .withNewKind("NetworkPolicy")
@@ -340,6 +344,9 @@ public class KubernetesResource {
                 .endMetadata()
                 .withNewSpec()
                     .addNewIngress()
+                        .addNewFrom()
+                            .withPodSelector(new LabelSelectorBuilder().addToMatchLabels(labels).build())
+                        .endFrom()
                         .addNewPort()
                             .withNewPort(8083)
                             .withNewProtocol("TCP")

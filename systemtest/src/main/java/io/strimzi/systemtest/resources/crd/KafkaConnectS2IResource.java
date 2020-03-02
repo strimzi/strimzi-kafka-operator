@@ -44,7 +44,7 @@ public class KafkaConnectS2IResource {
 
     public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
-        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build(), allowNetworkPolicyAccess);
+        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build(), allowNetworkPolicyAccess, clusterName);
     }
 
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -75,14 +75,14 @@ public class KafkaConnectS2IResource {
             .endSpec();
     }
 
-    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, boolean allowNetworkPolicyAccess) {
+    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, boolean allowNetworkPolicyAccess, String clusterName) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
             TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
                         if (allowNetworkPolicyAccess) {
-                            KubernetesResource.allowNetworkPolicySettingsForResource(kC, KafkaConnectS2IResources.deploymentName(kC.getMetadata().getName()));
+                            KubernetesResource.allowNetworkPolicySettingsForResource(kC, KafkaConnectS2IResources.deploymentName(kC.getMetadata().getName()), clusterName);
                         }
                         return true;
                     } catch (KubernetesClientException e) {
