@@ -21,7 +21,7 @@
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 2.4.0
-:KafkaVersionLower: 2.3.0
+:KafkaVersionLower: 2.3.1
 :KafkaVersionHigher: 2.4.0
 
 //log message format version
