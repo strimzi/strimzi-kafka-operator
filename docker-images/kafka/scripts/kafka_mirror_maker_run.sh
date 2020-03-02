@@ -99,6 +99,10 @@ if [ -n "$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS" ]; then
     message_handler_args="--message.handler.args \""${$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS}"\""
 fi
 
+if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
+fi
+
 . ./set_kafka_gc_options.sh
 
 # starting Kafka Mirror Maker with final configuration
