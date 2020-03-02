@@ -5,7 +5,7 @@
 [id='proc-upgrading-the-co-{context}']
 = Upgrading the Cluster Operator to a later version
 
-This procedure describes how to upgrade a Cluster Operator deployment to a later version
+This procedure describes how to upgrade a Cluster Operator deployment to a later version.
 
 .Prerequisites
 
