@@ -44,13 +44,13 @@ public class KafkaConnectResource {
         return kafkaConnect(name, name, kafkaConnectReplicas, allowNetworkPolicyAccess);
     }
 
-        public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
+    public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
         return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), allowNetworkPolicyAccess);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name,kafkaConnectReplicas, true);
+        return kafkaConnectWithMetrics(name, kafkaConnectReplicas, true);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {

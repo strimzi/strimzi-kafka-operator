@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Enums;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.executor.Exec;
@@ -79,7 +80,7 @@ public class OauthBaseST extends BaseST {
     void setup() throws InterruptedException {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
-        KubernetesResource.allowNetworkPolicies(NAMESPACE);
+        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, Enums.DefaultPolicy.ALLOW);
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment

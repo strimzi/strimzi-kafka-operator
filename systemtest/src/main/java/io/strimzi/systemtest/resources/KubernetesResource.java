@@ -379,7 +379,7 @@ public class KubernetesResource {
                 .endSpec()
                 .build();
 
-        if(policy.equals(Enums.DefaultPolicy.ALLOW)) {
+        if (policy.equals(Enums.DefaultPolicy.ALLOW)) {
             networkPolicy = new NetworkPolicyBuilder()
                     .withNewSpec()
                         .addNewIngress()
