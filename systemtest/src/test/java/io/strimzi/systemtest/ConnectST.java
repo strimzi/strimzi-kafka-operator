@@ -15,13 +15,14 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -79,6 +80,9 @@ class ConnectST extends BaseST {
     public static final String NAMESPACE = "connect-cluster-test";
 
     private static final String CONNECT_TOPIC_NAME = "connect-topic-example";
+
+    private static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
+    private String kafkaClientsPodName;
 
     @Test
     void testDeployUndeploy() {
@@ -285,8 +289,7 @@ class ConnectST extends BaseST {
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), greaterThanOrEqualTo(messageCount));
         }
 
-        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
-        String output = cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl http://localhost:8083/connectors/" + connectorName).out();
+        String output = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", "curl http://localhost:8083/connectors/" + connectorName).out();
         assertThat(output, containsString("\"name\":\"license-source\""));
         assertThat(output, containsString("\"connector.class\":\"org.apache.kafka.connect.file.FileStreamSourceConnector\""));
         assertThat(output, containsString("\"tasks.max\":\"2\""));
@@ -681,7 +684,7 @@ class ConnectST extends BaseST {
 
         TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> {
-                String connectorConfig = cmdKubeClient().execInPod(connectPodName, "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/config").out();
+                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/config").out();
                 return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
             });
 
@@ -720,5 +723,8 @@ class ConnectST extends BaseST {
         // 050-Deployment
         cluster.setNamespace(NAMESPACE);
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }
 }

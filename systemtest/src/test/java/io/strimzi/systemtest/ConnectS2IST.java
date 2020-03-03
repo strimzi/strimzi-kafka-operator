@@ -67,6 +67,9 @@ class ConnectS2IST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
+    private static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
+    private String kafkaClientsPodName;
+
     @Test
     void testDeployS2IWithMongoDBPlugin() throws InterruptedException, IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
@@ -457,7 +460,7 @@ class ConnectS2IST extends BaseST {
         String podForExecName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         LOGGER.info("Collect plugins information from connect s2i pod");
 
-        String plugins = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
+        String plugins = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
 
@@ -485,6 +488,9 @@ class ConnectS2IST extends BaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }
 
     @Override

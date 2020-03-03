@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
@@ -334,7 +333,7 @@ public class KubernetesResource {
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
     public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
-        Map<String, String> labels = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName)).getMatchLabels();
+        Map<String, String> labels = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getLabels();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
