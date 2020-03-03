@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -251,7 +252,7 @@ class CustomResourceStatusST extends BaseST {
 
     @Test
     void testKafkaConnectS2IStatus() {
-        String connectS2IUrl = KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083);
+        String connectS2IUrl = KafkaConnectS2IResources.url(CLUSTER_NAME, NAMESPACE, 8083);
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
