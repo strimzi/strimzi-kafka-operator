@@ -1,0 +1,13 @@
+// Module included in the following assemblies:
+//
+// assembly-mirrormaker.adoc
+
+[id='con-mirrormaker-acls{context}']
+= ACL rules synchronization
+
+ACL access to remote topics is possible if you are *not* using the User Operator.
+
+If `SimpleAclAuthorizer` is being used, without the User Operator, ACL rules that manage access to brokers also apply to remote topics.
+Users that can read a source topic can read its remote equivalent.
+
+NOTE: {oauth} authorization does not support access to remote topics in this way.

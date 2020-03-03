@@ -115,7 +115,7 @@ spec:
 [[con-oauth-authentication-broker-intro-local]]
 == {oauth} introspection endpoint configuration
 
-Token validation using {oauth} as an introspection endpoint treats a received access token as opaque.
+Token validation using an {oauth} introspection endpoint treats a received access token as opaque.
 The Kafka broker sends an access token to the introspection endpoint, which responds with the token information necessary for validation.
 Importantly, it returns up-to-date information if the specific access token is valid, and also information about when the token expires.
 
