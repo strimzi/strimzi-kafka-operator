@@ -252,8 +252,8 @@ class CustomResourceStatusST extends BaseST {
 
     @Test
     void testKafkaConnectS2IStatus() {
-        String connectS2IUrl = KafkaConnectS2IResources.url(CLUSTER_NAME, NAMESPACE, 8083);
-        String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
+        String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_CLUSTER_NAME);
+        String connectS2IUrl = KafkaConnectS2IResources.url(CONNECTS2I_CLUSTER_NAME, NAMESPACE, 8083);
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
