@@ -77,16 +77,20 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
     protected void mockPatch(String resourceName, RollableScalableResource<Deployment, DoneableDeployment> resource) {
         when(resource.patch(any())).thenAnswer(invocation -> {
             Deployment deployment = invocation.getArgument(0);
+            String deploymentName = deployment.getMetadata().getName();
+            // Initialize the map with empty collection in cases where deployment was initialized with zero replicas
+            podsForDeployments.putIfAbsent(deploymentName, new ArrayList<>());
+
             deployment.getMetadata().setGeneration(Long.valueOf(0));
             deployment.setStatus(new DeploymentStatusBuilder().withObservedGeneration(Long.valueOf(0)).build());
             LOGGER.debug("patched {} {} -> {}", resourceType, resourceName, deployment);
             db.put(resourceName, copyResource(deployment));
 
             // Handle case where patch reduces replicas
-            int podsToDelete = podsForDeployments.get(deployment.getMetadata().getName()).size() - deployment.getSpec().getReplicas();
+            int podsToDelete = podsForDeployments.get(deploymentName).size() - deployment.getSpec().getReplicas();
             if (podsToDelete > 0) {
                 for (int i = 0; i < podsToDelete; i++) {
-                    String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
+                    String podToDelete = podsForDeployments.get(deploymentName).remove(0);
                     mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
                 }
             }
@@ -95,7 +99,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
             for (int i = 0; i < deployment.getSpec().getReplicas(); i++) {
                 // create a "new" Pod
                 String uuid = UUID.randomUUID().toString();
-                String newPodName = deployment.getMetadata().getName() + "-" + uuid;
+                String newPodName = deploymentName + "-" + uuid;
 
                 Pod newPod = new PodBuilder()
                         .withNewMetadataLike(deployment.getSpec().getTemplate().getMetadata())
@@ -109,13 +113,13 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
                 newPodNames.add(newPodName);
 
                 // delete the first "old" Pod if there is one still remaining
-                if (podsForDeployments.get(deployment.getMetadata().getName()).size() > 0) {
-                    String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
+                if (podsForDeployments.get(deploymentName).size() > 0) {
+                    String podToDelete = podsForDeployments.get(deploymentName).remove(0);
                     mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).cascading(true).delete();
                 }
 
             }
-            podsForDeployments.get(deployment.getMetadata().getName()).addAll(newPodNames);
+            podsForDeployments.get(deploymentName).addAll(newPodNames);
 
             return deployment;
         });
