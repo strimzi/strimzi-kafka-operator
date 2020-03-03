@@ -21,5 +21,8 @@ NOTE: MirrorMaker 2.0 has features not supported by the previous version of Mirr
 //Describes the underlying archiecture and how it is used in replication
 include::modules/con-mirrormaker-replication.adoc[leveloffset=+1]
 
+//Handling of ACLs in replication
+include::modules/con-mirrormaker-acls.adoc[leveloffset=+1]
+
 //Procedure to set up the configuration
 include::modules/proc-mirrormaker-replication.adoc[leveloffset=+1]
