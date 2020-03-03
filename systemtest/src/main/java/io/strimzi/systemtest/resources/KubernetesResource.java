@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Enums;
+import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -319,9 +319,9 @@ public class KubernetesResource {
 
         for (String namespace : namespaces) {
             if (Environment.ALLOW_DEFAULT_NETWORK_POLICIES.equals("true")) {
-                applyDefaultNetworkPolicy(namespace, Enums.DefaultPolicy.ALLOW);
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.ALLOW);
             } else {
-                applyDefaultNetworkPolicy(namespace, Enums.DefaultPolicy.DENY);
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DENY);
             }
         }
 
@@ -372,7 +372,7 @@ public class KubernetesResource {
         deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
     }
 
-    public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, Enums.DefaultPolicy policy) {
+    public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
                 .withNewKind("NetworkPolicy")
@@ -386,7 +386,7 @@ public class KubernetesResource {
                 .endSpec()
                 .build();
 
-        if (policy.equals(Enums.DefaultPolicy.ALLOW)) {
+        if (policy.equals(DefaultNetworkPolicy.ALLOW)) {
             networkPolicy = new NetworkPolicyBuilder()
                     .withNewSpec()
                         .addNewIngress()
