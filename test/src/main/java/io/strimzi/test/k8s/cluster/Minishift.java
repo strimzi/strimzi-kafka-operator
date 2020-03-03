@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.k8s.cluster;
 
-import io.fabric8.kubernetes.client.Config;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
@@ -13,7 +12,7 @@ import io.strimzi.test.k8s.cmdClient.Oc;
 public class Minishift implements KubeCluster {
 
     private static final String CMD = "minishift";
-    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+    private static final String OLM_NAMESPACE = "openshift-operators";
 
     @Override
     public boolean isAvailable() {
@@ -38,5 +37,10 @@ public class Minishift implements KubeCluster {
 
     public String toString() {
         return CMD;
+    }
+
+    @Override
+    public String defaultOlmNamespace() {
+        return OLM_NAMESPACE;
     }
 }

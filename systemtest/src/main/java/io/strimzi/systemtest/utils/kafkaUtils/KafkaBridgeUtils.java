@@ -6,6 +6,8 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
@@ -60,5 +62,13 @@ public class KafkaBridgeUtils {
             assertThat(metadata.getInteger("offset"), is(i));
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
+    }
+
+    public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
+        LOGGER.info("Waiting till Kafka Bridge CR will be in state: {}", state);
+        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
+        );
+        LOGGER.info("Kafka Bridge CR is in state: {}", state);
     }
 }

@@ -8,14 +8,11 @@ import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Oc;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class OpenShift implements KubeCluster {
 
-    private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
     private static final String OC = "oc";
+    private static final String OLM_NAMESPACE = "openshift-operators";
 
     @Override
     public boolean isAvailable() {
@@ -39,5 +36,10 @@ public class OpenShift implements KubeCluster {
 
     public String toString() {
         return OC;
+    }
+
+    @Override
+    public String defaultOlmNamespace() {
+        return OLM_NAMESPACE;
     }
 }

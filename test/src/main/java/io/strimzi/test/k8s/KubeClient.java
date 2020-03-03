@@ -282,6 +282,10 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get();
     }
 
+    public String getDeploymentNameByPrefix(String namePrefix) {
+        return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
+                .filter(rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList()).get(0).getMetadata().getName();
+    }
     /**
      * Gets deployment UID
      */

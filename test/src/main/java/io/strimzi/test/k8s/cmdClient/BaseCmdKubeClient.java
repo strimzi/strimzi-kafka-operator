@@ -190,7 +190,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"));
+            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, true, false);
             return (K) this;
         }
     }
@@ -208,7 +208,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(namespacedCommand(DELETE, "namespace", name));
+            Exec.exec(null, namespacedCommand(DELETE, "namespace", name), 0, true, false);
         }
         return (K) this;
     }
@@ -229,7 +229,10 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult exec(String... command) {
-        return Exec.exec(asList(command));
+        List<String> cmd = new ArrayList<>();
+        cmd.add(cmd());
+        cmd.addAll(asList(command));
+        return Exec.exec(cmd);
     }
 
     @Override
