@@ -11,14 +11,13 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Kubectl;
 
-import static io.strimzi.test.k8s.cluster.Minishift.CONFIG;
-
 /**
  * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
  */
 public class Minikube implements KubeCluster {
 
     public static final String CMD = "minikube";
+    private static final String OLM_NAMESPACE = "operators";
 
     @Override
     public boolean isAvailable() {
@@ -47,5 +46,10 @@ public class Minikube implements KubeCluster {
 
     public String toString() {
         return CMD;
+    }
+
+    @Override
+    public String defaultOlmNamespace() {
+        return OLM_NAMESPACE;
     }
 }
