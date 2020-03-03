@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +79,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
             Deployment deployment = invocation.getArgument(0);
             String deploymentName = deployment.getMetadata().getName();
             // Initialize the map with empty collection in cases where deployment was initialized with zero replicas
-            podsForDeployments.putIfAbsent(deploymentName, Collections.emptyList());
+            podsForDeployments.putIfAbsent(deploymentName, new ArrayList<>());
 
             deployment.getMetadata().setGeneration(Long.valueOf(0));
             deployment.setStatus(new DeploymentStatusBuilder().withObservedGeneration(Long.valueOf(0)).build());
