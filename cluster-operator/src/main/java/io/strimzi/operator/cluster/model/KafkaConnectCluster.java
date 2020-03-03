@@ -578,7 +578,7 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled) {
         if (connectorOperatorEnabled) {
-            List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
+            List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
             // Give CO access to the REST API
             NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
@@ -587,16 +587,32 @@ public class KafkaConnectCluster extends AbstractModel {
                     .endPort()
                     .build();
 
+            // OCP 3.11 doesn't support network policies with the `from` section containing a namespace.
+            // Since the CO can run in a different namespace, we have to leave it wide open on OCP 3.11
+            // Therefore these rules are set only when using something else than OCP 3.11 and leaving
+            // the `from` section empty on 3.11
             if (namespaceAndPodSelectorNetworkPolicySupported) {
+                List<NetworkPolicyPeer> peers = new ArrayList<>(2);
+
+                // Other connect pods in the same cluster need to talk with each other over the REST API
+                NetworkPolicyPeer connectPeer = new NetworkPolicyPeerBuilder()
+                        .withNewPodSelector()
+                        .addToMatchLabels(getSelectorLabelsAsMap())
+                        .endPodSelector()
+                        .build();
+                peers.add(connectPeer);
+
+                // CO needs to talk with the Connect pods to manage connectors
                 NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                        .withNewPodSelector() // cluster operator
+                        .withNewPodSelector()
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                         .endPodSelector()
                         .withNewNamespaceSelector()
                         .endNamespaceSelector()
                         .build();
+                peers.add(clusterOperatorPeer);
 
-                replicationRule.setFrom(Collections.singletonList(clusterOperatorPeer));
+                replicationRule.setFrom(peers);
             }
 
             rules.add(replicationRule);
