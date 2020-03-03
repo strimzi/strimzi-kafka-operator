@@ -175,6 +175,7 @@ The following table shows currently used tags:
 | prometheus      | Execute tests for Kafka with Prometheus                                            |
 | oauth           | Execute tests which use OAuth                                                      |
 | helm            | Execute tests which use Helm for deploy cluster operator                           |
+| olm             | Execute tests which use OLM for deploy cluster operator                            |
 
 If your Kubernetes cluster doesn't support, for example, Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 
@@ -204,6 +205,9 @@ All environment variables can be seen in [Environment](systemtest/src/main/java/
 | OPERATOR_IMAGE_PULL_POLICY   | Image Pull Policy for Operator image                                              | Always                                           |
 | COMPONENTS_IMAGE_PULL_POLICY | Image Pull Policy for Kafka, Bridge, etc.                                         | IfNotPresent                                     |
 | STRIMZI_TEST_LOG_LEVEL    | Log level for system tests                                                           | INFO                                             |
+| OLM_OPERATOR_NAME         | Operator name in manifests CSV                                                       | strimzi                                             |
+| OLM_APP_BUNDLE_PREFIX     | CSV bundle name                                                                      | strimzi                                             |
+| OLM_OPERATOR_VERSION      | Version of the operator which will be installed                                      | v0.16.2                                             |
 
 If you want to use your own images with a different tag or from a different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
@@ -250,3 +254,41 @@ We already introduced this environment variable, but we didn't describe full pot
 This env variable is every useful in debugging some types of test case. 
 When this variable is set the teardown phase will be skipped when the test finishes and if you keep it set, setup phase will be much quicker, because all components are already deployed. 
 Unfortunately, this approach is not friendly for tests where component configuration change.  
+
+## Testing Cluster Operator deployment via OLM
+
+Strimzi also supports deploy Cluster Operator through OperatorHub. 
+For these, we need to have manifests updated for each version and test them. 
+We created a simple [OLM test suite](systemtest/src/test/java/io/strimzi/systemtest/olm), which deploys Cluster Operator and all other components via OLM and examples from manifests.
+
+To run these tests, you have to build an image with manifests and create a new CatalogSource resource, which points to the built image.
+Docker could look like the following one:
+```
+   FROM quay.io/openshift/origin-operator-registry:latest
+   
+   COPY /manifests /manifests
+   
+   RUN /usr/bin/initializer -m /manifests -o bundles.db
+   ENTRYPOINT ["/usr/bin/registry-server"]
+   CMD ["-d", "bundles.db", "-t", "termination.log"]
+```
+
+When you build a new image, you should create new `CatalogSource` like this:
+
+```
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata: 
+  name: strimzi-source
+  namespace: openshift-marketplace
+  labels:
+    app: Strimzi
+spec:
+  displayName: Strimzi Operator Source
+  image: quay.io/myorg/myimage:latest
+  publisher: Strimzi
+  sourceType: grpc
+```
+
+Now you can easily run our OLM tests.
+
