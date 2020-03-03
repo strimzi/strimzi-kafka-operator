@@ -10,7 +10,7 @@ This procedure describes how to upgrade a Cluster Operator deployment to a later
 .Prerequisites
 
 * An existing Cluster Operator deployment is available.
-* The installation files have been xref:downloads-{context}[downloaded for the new version].
+* You have xref:downloads-{context}[downloaded the installation files for the new version].
 
 .Procedure
 
