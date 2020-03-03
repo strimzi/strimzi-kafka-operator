@@ -74,6 +74,9 @@ public class KafkaMirrorMakerResource {
                 .endProducer()
                 .withReplicas(kafkaMirrorMakerReplicas)
                 .withWhitelist(".*")
+                .withNewInlineLogging()
+                    .addToLoggers("mirrormaker.root.logger", "DEBUG")
+                .endInlineLogging()
             .endSpec();
     }
 

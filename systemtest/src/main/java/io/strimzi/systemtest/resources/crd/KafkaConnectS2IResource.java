@@ -60,6 +60,9 @@ public class KafkaConnectS2IResource {
                     .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
                 .endTls()
                 .withInsecureSourceRepository(true)
+                .withNewInlineLogging()
+                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                .endInlineLogging()
             .endSpec();
     }
 
