@@ -123,12 +123,13 @@ public class ZookeeperUpgradeST extends BaseST {
 
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("2nd Kafka roll (update) is complete");
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.info("3rd Kafka roll (update) is complete");
 
         if (testInfo.getDisplayName().contains("Upgrade")) {
             StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
             LOGGER.info("2nd Zookeeper roll (update) is complete");
+        } else if (testInfo.getDisplayName().contains("Downgrade")) {
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
+            LOGGER.info("3rd Kafka roll (update) is complete");
         }
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
