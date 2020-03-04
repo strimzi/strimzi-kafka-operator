@@ -31,7 +31,7 @@ public class KafkaMirrorMaker2Resource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2Resource.class);
 
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = "../examples/kafka-mirror-maker-2/kafka-mirror-maker-2.yaml";
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = "../metrics/examples/kafka/kafka-mirror-maker-2-metrics.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = "../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
