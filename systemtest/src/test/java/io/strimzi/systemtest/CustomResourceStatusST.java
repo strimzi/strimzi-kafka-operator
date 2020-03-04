@@ -108,7 +108,7 @@ class CustomResourceStatusST extends BaseST {
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("10m"))
+                    .addToRequests("cpu", new Quantity("100m"))
                     .build());
         });
         waitForKafkaStatus("Ready");
@@ -160,7 +160,7 @@ class CustomResourceStatusST extends BaseST {
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pod
         KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("10m"))
+                .addToRequests("cpu", new Quantity("100m"))
                 .build()));
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(3);
@@ -218,7 +218,7 @@ class CustomResourceStatusST extends BaseST {
         waitForKafkaConnectStatus("NotReady");
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("10m"))
+                .addToRequests("cpu", new Quantity("100m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
         assertKafkaConnectStatus(3, connectUrl);
@@ -267,7 +267,7 @@ class CustomResourceStatusST extends BaseST {
         waitForKafkaConnectS2IStatus("NotReady");
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("10m"))
+                .addToRequests("cpu", new Quantity("100m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
@@ -327,7 +327,7 @@ class CustomResourceStatusST extends BaseST {
         KafkaMirrorMaker2Utils.waitUntilKafkaMirrorMaker2Status(CLUSTER_NAME, "NotReady");
         // Restore Mirror Maker pod
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME, mm2 -> mm2.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("10m"))
+                .addToRequests("cpu", new Quantity("100m"))
                 .build()));
         KafkaMirrorMaker2Utils.waitUntilKafkaMirrorMaker2Status(CLUSTER_NAME, "Ready");
         assertKafkaMirrorMaker2Status(3, mm2Url);

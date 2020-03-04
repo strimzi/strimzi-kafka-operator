@@ -61,7 +61,7 @@ class MirrorMaker2ST extends BaseST {
     @Test
     void testMirrorMaker2() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
-        String availabilityTopicTargetName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
+        String availabilityTopicTargetName = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
 
         Map<String, Object> expectedConfig = StUtils.loadProperties("group.id=mirrormaker2-cluster\n" +
                 "key.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
@@ -153,7 +153,7 @@ class MirrorMaker2ST extends BaseST {
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
-        String availabilityTopicTargetName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
+        String availabilityTopicTargetName = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + availabilityTopicSourceName;
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
@@ -293,7 +293,7 @@ class MirrorMaker2ST extends BaseST {
     @Test
     void testMirrorMaker2TlsAndScramSha512Auth() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
-        String availabilityTopicTargetName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
+        String availabilityTopicTargetName = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + availabilityTopicSourceName;
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
