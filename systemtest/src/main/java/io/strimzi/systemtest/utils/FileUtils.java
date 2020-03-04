@@ -28,7 +28,7 @@ public class FileUtils {
 
     private FileUtils() { }
 
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     public static File downloadAndUnzip(String url) throws IOException {
         File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
 
@@ -42,21 +42,29 @@ public class FileUtils {
             int len;
             while (entry != null) {
                 File file = new File(dir, entry.getName());
-                boolean isDirectoryCreated = file.exists();
 
-                if (!isDirectoryCreated) {
-                    if (file.mkdirs()) {
-                        try (FileOutputStream fout = new FileOutputStream(file)) {
-                            while ((len = zin.read(buffer)) != -1) {
-                                fout.write(buffer, 0, len);
-                            }
+                if (entry.isDirectory()) {
+                    if (file.exists()) {
+                        if (!file.isDirectory()) {
+                            throw new IOException("Malformed zip file");
+                        }
+                    } else {
+                        if (!file.mkdirs()) {
+                            throw new IOException("Could not create directory " + file);
+                        }
+                    }
+                } else {
+                    file.getParentFile().mkdirs(); // create parent; in case zip file is malformed
+                    try (FileOutputStream fout = new FileOutputStream(file)) {
+                        while ((len = zin.read(buffer)) != -1) {
+                            fout.write(buffer, 0, len);
                         }
                     }
                 }
                 entry = zin.getNextEntry();
             }
         } catch (RuntimeException e) {
-            LOGGER.error("IOException {}", e.getMessage());
+            LOGGER.error("RuntimeException {}", e.getMessage());
         }
         return dir;
     }
