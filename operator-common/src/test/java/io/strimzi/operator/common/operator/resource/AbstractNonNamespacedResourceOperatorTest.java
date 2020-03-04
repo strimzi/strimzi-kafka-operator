@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -107,20 +106,16 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        Future<ReconcileResult<T>> fut = op.createOrUpdate(resource());
-        fut.setHandler(ar -> {
-            if (!ar.succeeded()) {
-                ar.cause().printStackTrace();
-            }
-            context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            verify(mockResource).get();
-            verify(mockResource).patch(any());
-            verify(mockResource, never()).create(any());
-            verify(mockResource, never()).createNew();
-            verify(mockResource, never()).createOrReplace(any());
-            verify(mockCms, never()).createOrReplace(any());
-            async.flag();
-        });
+        op.createOrUpdate(resource())
+            .setHandler(context.succeeding(ar -> {
+                verify(mockResource).get();
+                verify(mockResource).patch(any());
+                verify(mockResource, never()).create(any());
+                verify(mockResource, never()).createNew();
+                verify(mockResource, never()).createOrReplace(any());
+                verify(mockCms, never()).createOrReplace(any());
+                async.flag();
+            }));
     }
 
     @Test

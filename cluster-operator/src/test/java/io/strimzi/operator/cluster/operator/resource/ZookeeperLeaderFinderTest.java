@@ -311,18 +311,15 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                     asList(getPod(0), getPod(1)), coKeySecret())
-            .setHandler(ar -> {
-                if (ar.succeeded()) {
-                    context.verify(() -> assertThat(ar.result(), is(-1)));
+            .setHandler(context.succeeding(leader -> {
+                context.verify(() -> {
+                    assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
                     for (FakeZk zk : zks) {
-                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(MAX_ATTEMPTS + 1)));
+                        assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(MAX_ATTEMPTS + 1));
                     }
-                } else {
-                    ar.cause().printStackTrace();
-                    context.failNow(new Throwable());
-                }
+                });
                 a.flag();
-            });
+            }));
     }
 
     @Test
@@ -356,13 +353,15 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(getPod(0), getPod(1)), coKeySecret())
-                .setHandler(result -> {
-                    context.verify(() -> assertThat(result.result(), is(ZookeeperLeaderFinder.UNKNOWN_LEADER)));
-                    for (FakeZk zk : zks) {
-                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(0)));
-                    }
+                .setHandler(context.succeeding(l -> {
+                    context.verify(() -> {
+                        assertThat(l, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
+                        for (FakeZk zk : zks) {
+                            assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(0));
+                        }
+                    });
                     a.flag();
-                });
+                }));
     }
 
     @Test
@@ -394,20 +393,16 @@ public class ZookeeperLeaderFinderTest {
         TestingZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                asList(getPod(0), getPod(1)), coKeySecret())
-                .setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        context.verify(() -> assertThat(ar.result(), is(leader)));
-                        for (FakeZk zk : zks) {
-                            context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(succeedOnAttempt + 1)));
-                        }
-                    } else {
-                        ar.cause().printStackTrace();
-                        context.failNow(new Throwable());
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(getPod(0), getPod(1)), coKeySecret())
+            .setHandler(context.succeeding(l -> {
+                context.verify(() -> {
+                    assertThat(l, is(leader));
+                    for (FakeZk zk : zks) {
+                        assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(succeedOnAttempt + 1));
                     }
-                    a.flag();
                 });
+                a.flag();
+            }));
     }
 
     @Test
@@ -439,17 +434,15 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(getPod(0), getPod(1)), coKeySecret())
-                .setHandler(asyncResult -> {
-                    if (asyncResult.failed()) {
-                        asyncResult.cause().printStackTrace();
-                    }
-                    context.verify(() -> assertThat(asyncResult.succeeded(), is(true)));
-                    context.verify(() -> assertThat(asyncResult.result(), is(leader)));
+            .setHandler(context.succeeding(l -> {
+                context.verify(() -> {
+                    assertThat(l, is(leader));
                     for (FakeZk zk : zks) {
-                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(1)));
+                        assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(1));
                     }
-                    a.flag();
                 });
+                a.flag();
+            }));
     }
 
     Pod getPod(int id) {
@@ -465,6 +458,7 @@ public class ZookeeperLeaderFinderTest {
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster")
                 .endMetadata()
             .build();
+
         assertThat(new ZookeeperLeaderFinder(vertx, null, this::backoff).host(pod),
                 is("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local"));
     }
