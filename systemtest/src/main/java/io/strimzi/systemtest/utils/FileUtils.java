@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +28,7 @@ public class FileUtils {
 
     private FileUtils() { }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static File downloadAndUnzip(String url) throws IOException {
         File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
 
@@ -59,6 +61,7 @@ public class FileUtils {
         return dir;
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static File downloadYamlAndReplaceNamespace(String url, String namespace) throws IOException {
         File yamlFile = File.createTempFile("temp-file", ".yaml");
 
