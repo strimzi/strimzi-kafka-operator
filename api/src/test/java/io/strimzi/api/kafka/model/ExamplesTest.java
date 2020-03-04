@@ -58,7 +58,11 @@ public class ExamplesTest {
     private void validateRecursively(File directory) throws IOException {
         for (File f : directory.listFiles()) {
             if (f.isDirectory()) {
-                validateRecursively(f);
+                if (f.getAbsolutePath().contains("examples/metrics/grafana") || f.getAbsolutePath().contains("examples/metrics/prometheus"))  {
+                    continue;
+                } else {
+                    validateRecursively(f);
+                }
             } else if (f.isFile()
                     && (f.getName().endsWith(".yaml") || f.getName().endsWith(".yml"))) {
                 validate(f);
