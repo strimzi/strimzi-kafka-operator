@@ -59,17 +59,17 @@ spec:
           value: |
             2.4.0=strimzi/kafka:latest-kafka-2.4.0
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-          value: strimzi/operator:latest
+          value: "strimzi/operator:latest"
         - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-          value: strimzi/operator:latest
+          value: "strimzi/operator:latest"
         - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-          value: strimzi/operator:latest
+          value: "strimzi/operator:latest"
         - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-          value: strimzi/kafka-bridge:0.15.2
+          value: "strimzi/kafka-bridge:0.15.2"
         - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-          value: strimzi/jmxtrans:latest
+          value: "strimzi/jmxtrans:latest"
         - name: STRIMZI_LOG_LEVEL
-          value: INFO
+          value: "INFO"
         livenessProbe:
           httpGet:
             path: /healthy
