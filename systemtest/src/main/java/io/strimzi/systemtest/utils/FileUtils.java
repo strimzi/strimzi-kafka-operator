@@ -32,7 +32,7 @@ public class FileUtils {
     public static File downloadAndUnzip(String url) {
 
         try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
-             ZipInputStream zin = new ZipInputStream(bais)){
+            ZipInputStream zin = new ZipInputStream(bais)) {
 
             File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
             dir.deleteOnExit();
@@ -60,7 +60,7 @@ public class FileUtils {
 
         try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
              BufferedReader br = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
-             OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)){
+             OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)) {
 
             StringBuilder sb = new StringBuilder();
 
