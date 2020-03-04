@@ -6,7 +6,7 @@ metadata:
     app: strimzi
 rules:
 - apiGroups:
-  - kafka.strimzi.io
+  - "kafka.strimzi.io"
   resources:
   - kafkatopics
   verbs:
