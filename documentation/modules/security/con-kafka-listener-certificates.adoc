@@ -6,7 +6,7 @@
 
 = Kafka listener certificates
 
-You can provide your own server certificates and public keys for the following types of listeners:
+You can provide your own server certificates and private keys for the following types of listeners:
 
 * TLS listeners for inter-cluster communication
 
