@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,13 +27,12 @@ public class FileUtils {
 
     private FileUtils() { }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public static File downloadAndUnzip(String url) {
+    public static File downloadAndUnzip(String url) throws IOException {
+        File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
 
         try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
             ZipInputStream zin = new ZipInputStream(bais)) {
 
-            File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
             dir.deleteOnExit();
 
             ZipEntry entry = zin.getNextEntry();
@@ -42,20 +40,26 @@ public class FileUtils {
             int len;
             while (entry != null) {
                 File file = new File(dir, entry.getName());
-                try (FileOutputStream fout = new FileOutputStream(file)) {
-                    while ((len = zin.read(buffer)) != -1) {
-                        fout.write(buffer, 0, len);
+                boolean isDirectoryCreated = file.exists();
+
+                if (!isDirectoryCreated) {
+                    if (file.mkdirs()) {
+                        try (FileOutputStream fout = new FileOutputStream(file)) {
+                            while ((len = zin.read(buffer)) != -1) {
+                                fout.write(buffer, 0, len);
+                            }
+                        }
                     }
                 }
                 entry = zin.getNextEntry();
             }
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("IOException {}", e.getMessage());
         }
-        return null;
+        return dir;
     }
 
-    public static File downloadYamlAndReplaceNameSpace(String url, String namespace) throws IOException {
+    public static File downloadYamlAndReplaceNamespace(String url, String namespace) throws IOException {
         File yamlFile = File.createTempFile("temp-file", ".yaml");
 
         try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
@@ -77,7 +81,7 @@ public class FileUtils {
             osw.write(yaml);
             return yamlFile;
 
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             e.printStackTrace();
         }
         return null;
@@ -87,7 +91,7 @@ public class FileUtils {
         byte[] encoded;
         File yamlFile = File.createTempFile("temp-file", ".yaml");
 
-        try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8);) {
+        try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)) {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
             String yaml = new String(encoded, StandardCharsets.UTF_8);
@@ -95,7 +99,7 @@ public class FileUtils {
 
             osw.write(yaml);
             return yamlFile.toPath().toFile();
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             e.printStackTrace();
         }
         return null;
