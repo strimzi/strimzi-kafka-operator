@@ -172,8 +172,6 @@ public class OauthAuthorizationST extends OauthBaseST {
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
-
-
     @Disabled("Will be implemented in next PR")
     @Test
     void testListTopics() {
