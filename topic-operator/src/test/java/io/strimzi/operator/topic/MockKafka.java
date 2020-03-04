@@ -23,6 +23,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 
 public class MockKafka implements Kafka {
 
@@ -198,19 +201,23 @@ public class MockKafka implements Kafka {
     }
 
     public void assertExists(VertxTestContext context, TopicName topicName) {
-        context.verify(() -> assertThat("The topic "  + topicName + " should exist in " + this, topics.containsKey(topicName), is(true)));
+        context.verify(() -> assertThat("The topic "  + topicName + " should exist in " + this, topics, hasKey(topicName)));
     }
 
     public void assertNotExists(VertxTestContext context, TopicName topicName) {
-        context.verify(() -> assertThat("The topic "  + topicName + " should not exist in " + this, topics.containsKey(topicName), is(false)));
+        context.verify(() -> assertThat("The topic "  + topicName + " should not exist in " + this, topics, not(hasKey(topicName))));
     }
 
     public void assertEmpty(VertxTestContext context) {
-        context.verify(() -> assertThat("No topics should exist in " + this, topics.isEmpty(), is(true)));
+        context.verify(() -> assertThat("No topics should exist in " + this, topics, aMapWithSize(0)));
     }
 
     public void assertContains(VertxTestContext context, Topic topic) {
-        context.verify(() -> assertThat("The topic " + topic.getTopicName() + " either didn't exist, or had unexpected state", topics.get(topic.getTopicName()), is(topic)));
+        context.verify(() -> {
+            TopicName topicName = topic.getTopicName();
+            assertThat("The topic " + topicName + " does not exist", topics, hasKey(topicName));
+            assertThat("The topic " + topicName + " has an unexpected state", topics.get(topicName), is(topic));
+        });
     }
 
     public Topic getTopicState(TopicName topicName) {
