@@ -12,13 +12,13 @@ function get_default_kafka_version {
     default_kafka_version="null"
     while [ $finished -lt 1 ] 
     do
-        version="$(yq read $VERSIONS_FILE [${counter}].version)"
+        version="$(yq read $VERSIONS_FILE "[${counter}].version")"
 
         if [ "$version" = "null" ]
         then
             finished=1
         else
-            if [ "$(yq read $VERSIONS_FILE [${counter}].default)" = "true" ]
+            if [ "$(yq read $VERSIONS_FILE "[${counter}].default")" = "true" ]
             then
                 if [ "$default_kafka_version" = "null" ]
                 then
@@ -42,40 +42,38 @@ function get_default_kafka_version {
 }
 
 function get_kafka_versions {
-    eval versions="$(yq read $VERSIONS_FILE '*.version' -j | tr '[],' '() ')"
+    eval versions="($(yq read $VERSIONS_FILE '*.version'))"
 }
 
 function get_kafka_urls {
-    eval binary_urls="$(yq read $VERSIONS_FILE '*.url' -j | tr '[],' '() ')"
+    eval binary_urls="($(yq read $VERSIONS_FILE '*.url'))"
 }
 
 function get_zookeeper_versions {
-
-    eval zk_versions="$(yq read $VERSIONS_FILE '*.zookeeper' -j | tr '[],' '() ')"
-
+    eval zk_versions="($(yq read $VERSIONS_FILE '*.zookeeper'))"
 }
 
 function get_kafka_checksums {
-    eval checksums="$(yq read $VERSIONS_FILE '*.checksum' -j | tr '[],' '() ')"
+    eval checksums="($(yq read $VERSIONS_FILE '*.checksum'))"
 }
 
 function get_kafka_third_party_libs {
-    eval libs="$(yq read "$VERSIONS_FILE" '*.third-party-libs' -j | tr '[],' '() ')"
+    eval libs="($(yq read "$VERSIONS_FILE" '*.third-party-libs'))"
 }
 
 function get_kafka_protocols {
-    eval protocols="$(yq read $VERSIONS_FILE '*.protocol' -j | tr '[],' '() ')"
+    eval protocols="($(yq read $VERSIONS_FILE '*.protocol'))"
 }
 
 function get_kafka_formats {
-    eval formats="$(yq read $VERSIONS_FILE '*.format' -j | tr '[],' '() ')"
+    eval formats="($(yq read $VERSIONS_FILE '*.format'))"
 }
 
 function get_kafka_does_not_support {
-    eval does_not_support="$(yq read $VERSIONS_FILE '*.unsupported-features' -j | tr '[],' '() ')"
+    eval does_not_support="($(yq read $VERSIONS_FILE '*.unsupported-features'))"
 
     get_kafka_versions
-
+    
     declare -Ag version_does_not_support
     for i in "${!versions[@]}"
     do 
@@ -89,21 +87,19 @@ function get_kafka_does_not_support {
 # "version_checksums": Maps from version string to sha512 checksum.
 # "version_libs": Maps from version string to third party library version string.
 function get_version_maps {
-
     get_kafka_versions
     get_kafka_urls
     get_kafka_checksums
     get_kafka_third_party_libs
-
+    
     declare -Ag version_binary_urls
     declare -Ag version_checksums
     declare -Ag version_libs
-
+    
     for i in "${!versions[@]}"
     do 
         version_binary_urls[${versions[$i]}]=${binary_urls[$i]}
         version_checksums[${versions[$i]}]=${checksums[$i]}
         version_libs[${versions[$i]}]=${libs[$i]}
     done
-    
 }

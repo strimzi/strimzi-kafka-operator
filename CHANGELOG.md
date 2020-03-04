@@ -4,6 +4,7 @@
 ## 0.18.0
 
 * Make it possible to configure PodManagementPolicy for StatefulSets
+* Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
 
 ## 0.17.0
 
