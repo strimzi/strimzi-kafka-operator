@@ -7,16 +7,20 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TimeoutException;
@@ -26,6 +30,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -35,6 +41,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +50,9 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -199,6 +208,131 @@ public class OauthTlsST extends OauthBaseST {
                 assertThat("Offset is not zero", item.getInteger("offset"), greaterThan(exceptedValue));
             }
         });
+    }
+
+    @Description("As a oauth mirror maker, i am able to replicate topic data using using encrypted communication")
+    @Test
+    void testMirrorMaker() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
+            MESSAGE_COUNT, "SSL");
+
+        Future<Integer> consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
+            MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        String targetKafkaCluster = CLUSTER_NAME + "-target";
+
+        KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewTls()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withUserNameClaim(userNameClaim)
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withUserNameClaim(userNameClaim)
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
+                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, true)
+                .editSpec()
+                    .withNewConsumer()
+                        // this is for kafka tls connection
+                        .withNewTls()
+                            .withTrustedCertificates(new CertSecretSourceBuilder()
+                                .withCertificate("ca.crt")
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
+                                .build())
+                        .endTls()
+                        .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+                        .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
+                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                        .withNewKafkaClientAuthenticationOAuth()
+                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withClientId("kafka-mirror-maker")
+                            .withNewClientSecret()
+                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                            // this is for authorization server tls connection
+                            .withTlsTrustedCertificates(new CertSecretSourceBuilder()
+                                .withSecretName(SECRET_OF_KEYCLOAK)
+                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .build())
+                            .withDisableTlsHostnameVerification(true)
+                        .endKafkaClientAuthenticationOAuth()
+                    .endConsumer()
+                    .withNewProducer()
+                        .withBootstrapServers(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
+                        // this is for kafka tls connection
+                        .withNewTls()
+                            .withTrustedCertificates(new CertSecretSourceBuilder()
+                                .withCertificate("ca.crt")
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaCluster))
+                                .build())
+                        .endTls()
+                        .withNewKafkaClientAuthenticationOAuth()
+                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withClientId("kafka-mirror-maker")
+                            .withNewClientSecret()
+                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                            // this is for authorization server tls connection
+                            .withTlsTrustedCertificates(new CertSecretSourceBuilder()
+                                .withSecretName(SECRET_OF_KEYCLOAK)
+                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .build())
+                            .withDisableTlsHostnameVerification(true)
+                        .endKafkaClientAuthenticationOAuth()
+                        .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
+                    .endProducer()
+                .endSpec()
+                .done();
+
+        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String kafkaMirrorMakerLogs = kubeClient().logs(mirrorMakerPodName);
+
+        assertThat(kafkaMirrorMakerLogs,
+            not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+
+        consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, targetKafkaCluster, USER_NAME, MESSAGE_COUNT,
+            "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @BeforeAll

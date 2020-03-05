@@ -41,7 +41,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.io.IOException;
-import java.security.KeyStoreException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -120,7 +119,6 @@ public class OauthPlainST extends OauthBaseST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
     }
 
-    @Disabled("MM doesn't replicate messages to target cluster. Investigate in the next PR")
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
     void testProducerConsumerMirrorMaker() throws IOException, InterruptedException, ExecutionException, TimeoutException {
@@ -128,82 +126,81 @@ public class OauthPlainST extends OauthBaseST {
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         String targetKafkaCluster = CLUSTER_NAME + "-target";
 
         KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewPlain()
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withUserNameClaim(userNameClaim)
-                                .endKafkaListenerAuthenticationOAuth()
-                            .endPlain()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withUserNameClaim(userNameClaim)
-                                .endKafkaListenerAuthenticationOAuth()
-                                .withTls(false)
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewPlain()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endPlain()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
-                .editSpec()
-                    .withNewConsumer()
-                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                        .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
-                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                        .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
-                            .withClientId("kafka-mirror-maker")
-                            .withNewClientSecret()
-                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                                .withKey(OAUTH_KEY)
-                            .endClientSecret()
-                        .endKafkaClientAuthenticationOAuth()
-                        .withTls(null)
-                    .endConsumer()
-                    .withNewProducer()
-                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                        .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
-                            .withClientId("kafka-mirror-maker")
-                            .withNewClientSecret()
-                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                                .withKey(OAUTH_KEY)
-                            .endClientSecret()
-                        .endKafkaClientAuthenticationOAuth()
-                        .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
-                        .withTls(null)
-                    .endProducer()
-                .endSpec()
-                .done();
+            "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+            .editSpec()
+                .withNewConsumer()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                    .withNewKafkaClientAuthenticationOAuth()
+                        .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                        .withClientId("kafka-mirror-maker")
+                        .withNewClientSecret()
+                            .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                            .withKey(OAUTH_KEY)
+                        .endClientSecret()
+                    .endKafkaClientAuthenticationOAuth()
+                    .withTls(null)
+                .endConsumer()
+                .withNewProducer()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
+                    .withNewKafkaClientAuthenticationOAuth()
+                        .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                        .withClientId("kafka-mirror-maker")
+                        .withNewClientSecret()
+                            .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                            .withKey(OAUTH_KEY)
+                        .endClientSecret()
+                    .endKafkaClientAuthenticationOAuth()
+                    .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
+                    .withTls(null)
+                .endProducer()
+            .endSpec()
+            .done();
 
-        // TODO: doesn't work...
         consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, targetKafkaCluster, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Disabled("MM doesn't replicate messages to target cluster. Investigate in the next PR")
     @Test
-    void testProducerConsumerMirrorMaker2() throws IOException, KeyStoreException, InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumerMirrorMaker2() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));

@@ -90,8 +90,8 @@ public class ListenersST extends BaseST {
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         externalBasicKafkaClient.setCaCertName(customCertServer1);
-        Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
         assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
         assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
