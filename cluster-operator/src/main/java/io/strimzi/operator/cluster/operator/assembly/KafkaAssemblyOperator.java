@@ -217,7 +217,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .build();
             }
 
-            status.setConditions(Collections.singletonList(readyCondition));
+            status.addCondition(readyCondition);
             reconcileState.updateStatus(status).setHandler(statusResult -> {
                 if (statusResult.succeeded())    {
                     log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
@@ -255,7 +255,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkVersionChange())
                 .compose(state -> state.zookeeperServiceAccount())
                 .compose(state -> state.zkPvcs())
-                .compose(state -> state.zkScaleUpInSmallSteps())
+                .compose(state -> state.zkScalingSetup())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -368,6 +368,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap zkMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
         private boolean zkScalingUp = false;
+        private boolean zkScalingDown = false;
+        private boolean zkManualScaling = false;
 
         private KafkaCluster kafkaCluster = null;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
@@ -1356,33 +1358,116 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+            Annotations.annotations(zkSts).put(Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE, String.valueOf(zkManualScaling));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)
-            ));
+            if (zkManualScaling && (KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0)) {
+                log.info("Skipping cluster roll due to ongoing manual scaling operations. " +
+                        "If you have completed the manual scaling operation then set the " +
+                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE + " to false to re-enable rolling updates.");
+                return Future.succeededFuture(this);
+            } else {
+                log.debug("No manual scaling operation detected, continuing with ZK cluster roll");
+                return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
+                        isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)));
+            }
         }
 
         /**
-         * Scale up is divided by scaling up Zookeeper cluster in steps.
+         * This method setups to the scaling behaviour for the zookeeper cluster.
+         *
+         * For 3.4.x clusters the scale by one -> roll cluster -> scale by one -> roll cluster method used.
          * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
          * Each step performs scale up by one replica and full rolling update of Zookeeper cluster.
          * This approach ensures a valid configuration of each Zk pod.
          * Together with modified `maybeRollingUpdate` the quorum is not lost after the scale up operation is performed.
          * There is one special case of scaling from standalone (single one) Zookeeper pod.
          * In this case quorum cannot be preserved.
+         *
+         * For 3.5.x clusters scaling is limited to one server at a time (or an exception is thrown) and currently
+         * requires user intervention to manually add/remove servers to/from the quorum.
          */
-        Future<ReconciliationState> zkScaleUpInSmallSteps() {
+        Future<ReconciliationState> zkScalingSetup() {
             return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .map(sts -> sts == null ? Integer.valueOf(0) : sts.getSpec().getReplicas())
-                    .compose(currentReplicas -> {
-                        if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
-                            zkCluster.setReplicas(currentReplicas + 1);
-                            zkScalingUp = true;
-                        }
+                    .compose(sts -> {
+                        if (sts != null) {
+                            int currentReplicas = sts.getSpec().getReplicas();
+                            int desiredReplicas = zkCluster.getReplicas();
+                            int replicaDiff = Math.abs(currentReplicas - desiredReplicas);
+                            boolean isZK35x = KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0;
 
+                            if (isZK35x && replicaDiff > 1) {
+                                // If the user is scaling a 3.5.x cluster and has specified as scale up or down of more than one
+                                // then log the error and throw an exception halting the reconciliation.
+                                String scaleErrorMessage = String.format(
+                                        "Scaling of Zookeeper 3.5.x clusters must be done in steps of one only. " +
+                                                "A change of %d was specified. Please set the Zookeeper replica count " +
+                                                "to one greater or lesser than the original value (%d).",
+                                        replicaDiff, currentReplicas);
+
+                                log.error(scaleErrorMessage);
+
+                                return Future.failedFuture(new IllegalArgumentException(scaleErrorMessage));
+                            } else if (desiredReplicas > currentReplicas) {
+                                // If this is a scale up of a 3.4.x cluster we want to scale in steps of one at a time
+                                // automatically. If it is 3.5 then it is limited to one at a time anyway by the check
+                                // in the clause above.
+                                zkCluster.setReplicas(currentReplicas + 1);
+                                zkScalingUp = true;
+                            } else if (desiredReplicas < currentReplicas) {
+                                zkScalingDown = true;
+                            }
+
+                            ConditionBuilder zkManualScalingCondition = null;
+
+                            if ((zkScalingUp || zkScalingDown) && isZK35x) {
+                                // This is a scale up or down of a ZK 3.5.x cluster
+                                String scaleMessage = String.format(
+                                        "Scaling Zookeeper 3.5.x cluster: Rolling updates will be skipped and the manual " +
+                                        "update process defined in the documentation should be followed. When finished set " +
+                                         "%s annotation on the Zookeeper StatefulSet to false.",
+                                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE);
+
+                                log.info(scaleMessage);
+
+                                zkManualScalingCondition = new ConditionBuilder()
+                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                        .withType("ZK-Manual-Scaling")
+                                        .withReason("replicaChange")
+                                        .withStatus("True")
+                                        .withMessage(scaleMessage);
+
+                                // Setting this will add the annotation to the STS in the state.zkStatefulSet() method
+                                zkManualScaling = true;
+                            } else if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE, false)) {
+                                // This is an on-going manual scaling operation. Once the annotation has been set to true by the operator
+                                // only the user can set it to false.
+                                String scaleMessage = String.format("Detected manual Zookeeper 3.5.x scaling operation in progress. " +
+                                                "After following the manual process defined in the documentation, set %s annotation on the " +
+                                                "Zookeeper stateful set to false.",
+                                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE);
+
+                                log.info(scaleMessage);
+
+                                zkManualScalingCondition = new ConditionBuilder()
+                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                        .withType("ZK-Manual-Scaling")
+                                        .withReason("manualScaleAnnotationSet")
+                                        .withStatus("True")
+                                        .withMessage(scaleMessage);
+
+                                zkManualScaling = true;
+                            } else {
+                                // Either this is a ZK 3.4.x cluster or the user is not manually scaling the 3.5.x cluster.
+                                zkManualScaling = false;
+                            }
+
+                            if (zkManualScalingCondition != null && isZK35x) {
+                                this.kafkaStatus.addCondition(zkManualScalingCondition.build());
+                            }
+                        }
                         return Future.succeededFuture(this);
                     });
         }
@@ -1390,6 +1475,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkScaleUp() {
             if (zkScalingUp) {
                 return zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas())
+                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(zkCluster.getReplicas() - 1), 1_000, operationTimeoutMs))
                         .map(this);
             } else {
                 return Future.succeededFuture(this);
