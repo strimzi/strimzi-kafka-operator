@@ -28,7 +28,7 @@ To build this project you must first install several command line utilities and 
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
 - [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool. 
-    - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq).
+    - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need **v3** version.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 
 In order to use `make` these all need to be available in your `$PATH`.
