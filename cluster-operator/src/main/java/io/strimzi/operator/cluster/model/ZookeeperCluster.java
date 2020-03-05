@@ -79,6 +79,7 @@ public class ZookeeperCluster extends AbstractModel {
     // Zookeeper configuration
     private TlsSidecar tlsSidecar;
     private boolean isSnapshotCheckEnabled;
+    private String version;
 
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
@@ -181,16 +182,18 @@ public class ZookeeperCluster extends AbstractModel {
         if (replicas <= 0) {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
-
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
             log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
-
         zk.setReplicas(replicas);
+
+        // Get the ZK version information from either the CRD or from the default setting
+        KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+        String version = versions.version(kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null).zookeeperVersion();
+        zk.setVersion(version);
 
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
@@ -250,7 +253,6 @@ public class ZookeeperCluster extends AbstractModel {
 
         String tlsSideCarImage = tlsSidecar.getImage();
         if (tlsSideCarImage == null) {
-            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
         }
         tlsSidecar.setImage(tlsSideCarImage);
@@ -664,6 +666,14 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     public void setImage(String image) {
         super.setImage(image);
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getVersion() {
+        return this.version;
     }
 
     public void disableSnapshotChecks() {
