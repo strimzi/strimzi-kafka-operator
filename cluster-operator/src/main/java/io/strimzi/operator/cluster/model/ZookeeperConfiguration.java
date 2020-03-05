@@ -29,13 +29,18 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
         FORBIDDEN_OPTIONS.addAll(Arrays.asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *")));
         // This option is handled in the Zookeeper container startup script
         FORBIDDEN_OPTIONS.add("snapshot.trust.empty");
+        // This option would prevent scaling beyond 1 node for clusters started with a single node
+        FORBIDDEN_OPTIONS.add("standaloneEnabled");
+        // Reconfiguration needs to be enabled to allow scaling of the cluster
+        FORBIDDEN_OPTIONS.add("reconfigEnabled");
+        // The Cluster Operator requires access to multiple 4LW and access to the nodes is secured by the TLS-Sidecars so we set all allowed
+        FORBIDDEN_OPTIONS.add("4lw.commands.whitelist");
 
         Map<String, String> config = new HashMap<>();
         config.put("tickTime", "2000");
         config.put("initLimit", "5");
         config.put("syncLimit", "2");
         config.put("autopurge.purgeInterval", "1");
-        config.put("4lw.commands.whitelist", "*");
         DEFAULTS = Collections.unmodifiableMap(config);
     }
 

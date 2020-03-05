@@ -12,6 +12,8 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,13 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
 
     public void setConditions(List<Condition> conditions) {
         this.conditions = conditions;
+    }
+
+    public void addCondition(Condition condition) {
+        List<Condition> oldConditions = getConditions();
+        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>();
+        newConditions.add(condition);
+        setConditions(Collections.unmodifiableList(newConditions));
     }
 
     @Description("The generation of the CRD that was last reconciled by the operator.")

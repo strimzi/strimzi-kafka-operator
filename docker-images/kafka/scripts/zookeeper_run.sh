@@ -88,5 +88,9 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
+# We need to disable the native ZK authorisation (we secure ZK through the TLS-Sidecars) to allow use of the reconfiguration options.
+KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.skipACL=yes"
+export KAFKA_OPTS
+
 # starting Zookeeper with final configuration
 exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties"
