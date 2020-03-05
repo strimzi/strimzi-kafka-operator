@@ -42,6 +42,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,7 +68,7 @@ class ConnectS2IST extends BaseST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
-    void testDeployS2IWithMongoDBPlugin() throws InterruptedException {
+    void testDeployS2IWithMongoDBPlugin() throws InterruptedException, IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
         // Calls to Connect API are executed from kafka-0 pod
         String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
@@ -103,7 +104,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
-    void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws InterruptedException {
+    void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-11";
         // Calls to Connect API are executed from kafka-0 pod
         String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
@@ -435,7 +436,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
-    private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName) {
+    private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName) throws IOException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
