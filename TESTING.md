@@ -208,6 +208,7 @@ All environment variables can be seen in [Environment](systemtest/src/main/java/
 | OLM_OPERATOR_NAME         | Operator name in manifests CSV                                                       | strimzi                                             |
 | OLM_APP_BUNDLE_PREFIX     | CSV bundle name                                                                      | strimzi                                             |
 | OLM_OPERATOR_VERSION      | Version of the operator which will be installed                                      | v0.16.2                                             |
+| DEFAULT_TO_DENY_NETWORK_POLICIES | Determines how will be network policies set - to deny-all (true) or allow-all (false)    | true                                            |
 
 If you want to use your own images with a different tag or from a different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 

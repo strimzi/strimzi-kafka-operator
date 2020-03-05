@@ -416,7 +416,7 @@ class LogSettingST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1, true)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)

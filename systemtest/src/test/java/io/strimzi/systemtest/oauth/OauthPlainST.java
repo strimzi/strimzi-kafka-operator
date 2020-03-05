@@ -87,7 +87,7 @@ public class OauthPlainST extends OauthBaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
