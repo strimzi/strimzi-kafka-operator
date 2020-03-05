@@ -5,6 +5,6 @@
 package io.strimzi.systemtest.enums;
 
 public enum DefaultNetworkPolicy {
-    ALLOW,
-    DENY
+    DEFAULT_TO_ALLOW,
+    DEFAULT_TO_DENY
 }

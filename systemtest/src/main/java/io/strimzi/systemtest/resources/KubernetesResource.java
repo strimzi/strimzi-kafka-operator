@@ -317,14 +317,14 @@ public class KubernetesResource {
     public static void applyDefaultNetworkPolicySettings(String clientNamespace, List<String> namespaces) {
 
         for (String namespace : namespaces) {
-            if (Environment.ALLOW_DEFAULT_NETWORK_POLICIES.equals("true")) {
-                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.ALLOW);
+            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals("true")) {
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
-                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DENY);
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
         }
 
-        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.ALLOW_DEFAULT_NETWORK_POLICIES, clientNamespace);
+        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, clientNamespace);
     }
 
     /**
@@ -385,7 +385,7 @@ public class KubernetesResource {
                     .endSpec()
                     .build();
 
-        if (policy.equals(DefaultNetworkPolicy.ALLOW)) {
+        if (policy.equals(DefaultNetworkPolicy.DEFAULT_TO_ALLOW)) {
             networkPolicy = new NetworkPolicyBuilder(networkPolicy)
                     .editSpec()
                         .addNewIngress()

@@ -80,7 +80,7 @@ public class OauthBaseST extends BaseST {
     void setup() throws InterruptedException {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
-        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.ALLOW);
+        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
