@@ -74,7 +74,7 @@ class ConnectS2IST extends BaseST {
     void testDeployS2IWithMongoDBPlugin() throws InterruptedException, IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
         // Calls to Connect API are executed from kafka-0 pod
-        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName);
+        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
 
         String mongoDbConfig = "{" +
                 "\"name\": \"" + kafkaConnectS2IName + "\"," +

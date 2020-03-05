@@ -372,10 +372,7 @@ public class KubernetesResource {
     }
 
     public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
-        NetworkPolicy networkPolicy;
-
-        if (policy.equals(DefaultNetworkPolicy.ALLOW)) {
-            networkPolicy = new NetworkPolicyBuilder()
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                     .withNewApiVersion("networking.k8s.io/v1")
                     .withNewKind("NetworkPolicy")
                     .withNewMetadata()
@@ -384,22 +381,15 @@ public class KubernetesResource {
                     .withNewSpec()
                         .withNewPodSelector()
                         .endPodSelector()
-                        .addNewIngress()
-                        .endIngress()
                         .withPolicyTypes("Ingress")
                     .endSpec()
                     .build();
-        } else {
-            networkPolicy = new NetworkPolicyBuilder()
-                    .withNewApiVersion("networking.k8s.io/v1")
-                    .withNewKind("NetworkPolicy")
-                    .withNewMetadata()
-                        .withName("global-network-policy")
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewPodSelector()
-                        .endPodSelector()
-                        .withPolicyTypes("Ingress")
+
+        if (policy.equals(DefaultNetworkPolicy.ALLOW)) {
+            networkPolicy = new NetworkPolicyBuilder(networkPolicy)
+                    .editSpec()
+                        .addNewIngress()
+                        .endIngress()
                     .endSpec()
                     .build();
         }
