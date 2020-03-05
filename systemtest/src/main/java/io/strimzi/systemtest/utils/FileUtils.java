@@ -28,134 +28,90 @@ public class FileUtils {
 
     private FileUtils() { }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public static File downloadAndUnzip(String url) {
-        File dir = null;
-        FileOutputStream fout = null;
-        ZipInputStream zin = null;
-        try {
-            InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
-            dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
+    public static File downloadAndUnzip(String url) throws IOException {
+        File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
+
+        try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+            ZipInputStream zin = new ZipInputStream(bais)) {
+
             dir.deleteOnExit();
-            zin = new ZipInputStream(bais);
+
             ZipEntry entry = zin.getNextEntry();
             byte[] buffer = new byte[8 * 1024];
             int len;
             while (entry != null) {
                 File file = new File(dir, entry.getName());
+
                 if (entry.isDirectory()) {
-                    file.mkdirs();
-                } else {
-                    fout = new FileOutputStream(file);
-                    while ((len = zin.read(buffer)) != -1) {
-                        fout.write(buffer, 0, len);
+                    if (file.exists()) {
+                        if (!file.isDirectory()) {
+                            throw new IOException("Malformed zip file");
+                        }
+                    } else {
+                        if (!file.mkdirs()) {
+                            throw new IOException("Could not create directory " + file);
+                        }
                     }
-                    fout.close();
+                } else {
+                    file.getParentFile().mkdirs(); // create parent; in case zip file is malformed
+                    try (FileOutputStream fout = new FileOutputStream(file)) {
+                        while ((len = zin.read(buffer)) != -1) {
+                            fout.write(buffer, 0, len);
+                        }
+                    }
                 }
                 entry = zin.getNextEntry();
             }
-        } catch (IOException e) {
-            LOGGER.error("IOException {}", e.getMessage());
-        } finally {
-            if (fout != null) {
-                try {
-                    fout.close();
-                } catch (IOException e) {
-                    LOGGER.error("IOException {}", e.getMessage());
-                }
-            }
-            if (zin != null) {
-                try {
-                    zin.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        } catch (RuntimeException e) {
+            LOGGER.error("RuntimeException {}", e.getMessage());
         }
         return dir;
     }
 
-    public static File downloadYamlAndReplaceNameSpace(String url, String namespace) {
-        InputStream bais = null;
-        BufferedReader br = null;
-        OutputStreamWriter osw = null;
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+    public static File downloadYamlAndReplaceNamespace(String url, String namespace) throws IOException {
+        File yamlFile = File.createTempFile("temp-file", ".yaml");
 
-        try {
-            bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+        try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+             BufferedReader br = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
+             OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)) {
+
             StringBuilder sb = new StringBuilder();
-            br = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
+
             String read;
             while ((read = br.readLine()) != null) {
-                sb.append(read + "\n");
+                sb.append(read);
+                sb.append("\n");
             }
-            br.close();
             String yaml = sb.toString();
-            File yamlFile = File.createTempFile("temp-file", ".yaml");
-            osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8);
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
             yaml = yaml.replace("securityContext:\n" +
                 "        runAsNonRoot: true\n" +
                 "        runAsUser: 65534", "");
             osw.write(yaml);
-            osw.close();
             return yamlFile;
 
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             e.printStackTrace();
-        } finally {
-            if (bais != null) {
-                try {
-                    bais.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (osw != null) {
-                try {
-                    osw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
         }
         return null;
     }
 
-    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) {
+    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) throws IOException {
         byte[] encoded;
-        OutputStreamWriter osw = null;
+        File yamlFile = File.createTempFile("temp-file", ".yaml");
 
-        try {
+        try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)) {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
             String yaml = new String(encoded, StandardCharsets.UTF_8);
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
 
-            File yamlFile = File.createTempFile("temp-file", ".yaml");
-            osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8);
             osw.write(yaml);
-            osw.close();
             return yamlFile.toPath().toFile();
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             e.printStackTrace();
-        } finally {
-            if (osw != null) {
-                try {
-                    osw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
         return null;
     }
