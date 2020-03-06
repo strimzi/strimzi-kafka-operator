@@ -13,7 +13,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -39,7 +38,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -48,10 +46,9 @@ import static io.vertx.core.Future.succeededFuture;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -377,26 +374,19 @@ public class KafkaRollerTest {
                                  Class<? extends Throwable> exception, String message,
                                  List<Integer> expectedRestart) throws InterruptedException {
         CountDownLatch async = new CountDownLatch(1);
-        AtomicReference<AsyncResult<Void>> arReference = new AtomicReference<>();
         kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
-            .setHandler(ar -> {
-                    arReference.set(ar);
+            .setHandler(testContext.failing(e -> {
+                testContext.verify(() -> {
+                    assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
+                    assertThat("The exception message was not as expected", e.getMessage(), is(message));
+                    assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
+                    assertNoUnclosedAdminClient(testContext, kafkaRoller);
+                    testContext.completeNow();
                     async.countDown();
-                }
-            );
+                });
+            }));
         async.await();
-        AsyncResult<Void> ar = arReference.get();
-        if (ar.succeeded()) {
-            testContext.failNow(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
-        }
-        assertTrue(exception.isAssignableFrom(ar.cause().getClass()),
-                ar.cause().getClass().getName() + " is not a subclass of " + exception.getName());
-        assertEquals(message, ar.cause().getMessage(),
-                "The exception message was not as expected");
-        assertEquals(expectedRestart, restarted(),
-                "The restarted pods were not as expected");
-        assertNoUnclosedAdminClient(testContext, kafkaRoller);
-        testContext.completeNow();
+
     }
 
     public List<Integer> restarted() {
