@@ -66,7 +66,7 @@ import static java.util.Collections.unmodifiableList;
         editableEnabled = false, 
         generateBuilderPackage = false, 
         builderPackage = Constants.KUBERNETES_API_BUILDER,
-        inline = @Inline(type = Doneable.class, prefix = Constants.DONEABLE_PREFIX, value = Constants.DONE)
+        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })

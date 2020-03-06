@@ -73,7 +73,7 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.KUBERNETES_API_BUILDER,
-        inline = @Inline(type = Doneable.class, prefix = Constants.DONEABLE_PREFIX, value = Constants.DONE),
+        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done"),
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
