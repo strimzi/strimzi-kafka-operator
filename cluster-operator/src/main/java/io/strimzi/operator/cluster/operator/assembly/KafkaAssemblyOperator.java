@@ -1057,8 +1057,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(newSts, pod -> {
-                            log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                            return "Upgrade: Maybe patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
+                            log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                            return "Upgrade phase 1 of " + (twoPhase ? 2 : 1) + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                         }).map(resultSts);
                     })
                     .compose(ss2 -> {
@@ -1115,8 +1115,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                        return "Upgrade: Maybe patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
+                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                        return "Upgrade: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                     }))
                     .compose(ignored -> {
                         log.info("{}: {}, phase 2 of 2 completed", reconciliation, upgrade);
@@ -1213,8 +1213,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                            log.info("{}: Downgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                            return "Downgrade: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
+                            log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                            return "Downgrade phase 1 of " + phases + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                         }).map(resultSts);
                     })
                     .compose(ss2 -> {
@@ -1270,8 +1270,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                        return "Upgrade: Maybe patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
+                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                        return "Upgrade phase 2 of 2: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                     }))
                     .compose(ignored -> {
                         log.info("{}: {}, phase 2 of 2 completed", reconciliation, versionChange);
@@ -3073,7 +3073,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @param sts Stateful set to which pod belongs
          * @param pod Pod to restart
          * @param cas cas
-         * @return null if the restart is not needed, reason String otherwise
+         * @return null or empty if the restart is not needed, reason String otherwise
          */
         private String getReasonsToRestartPod(StatefulSet sts, Pod pod,
                                        boolean nodeCertsChange,
