@@ -21,7 +21,7 @@ import static java.util.Collections.emptyMap;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

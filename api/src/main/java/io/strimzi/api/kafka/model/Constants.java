@@ -11,5 +11,12 @@ public class Constants {
     public static final String V1BETA1 = "v1beta1";
     public static final String V1ALPHA1 = "v1alpha1";
 
+    public static final String CRD_KIND = "CustomResourceDefinition";
+    public static final String STRIMZI_CATEGORY = "strimzi";
+
+    public static final String KUBERNETES_API_BUILDER = "io.fabric8.kubernetes.api.builder";
+    public static final String DONEABLE_PREFIX = "Doneable";
+    public static final String DONE = "done";
+
     public static final String V1BETA1_API_VERSION = "apiextensions.k8s.io/" + V1BETA1;
 }

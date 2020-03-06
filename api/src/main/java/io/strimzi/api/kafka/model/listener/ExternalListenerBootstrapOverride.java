@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -20,7 +21,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
-    builderPackage = "io.fabric8.kubernetes.api.builder"
+    builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @EqualsAndHashCode
 public class ExternalListenerBootstrapOverride implements Serializable, UnknownPropertyPreserving {

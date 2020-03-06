@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -19,7 +20,7 @@ import java.util.List;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectorPlugins" })

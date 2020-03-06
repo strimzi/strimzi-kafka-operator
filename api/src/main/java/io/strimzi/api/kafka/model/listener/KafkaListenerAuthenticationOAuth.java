@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

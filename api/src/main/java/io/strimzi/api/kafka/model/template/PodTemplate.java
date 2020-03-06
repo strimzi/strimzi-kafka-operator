@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -28,7 +29,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({

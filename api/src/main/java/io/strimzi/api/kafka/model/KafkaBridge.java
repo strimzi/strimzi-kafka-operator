@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -39,7 +38,7 @@ import static java.util.Collections.unmodifiableList;
                         kind = KafkaBridge.RESOURCE_KIND,
                         plural = KafkaBridge.RESOURCE_PLURAL,
                         shortNames = {KafkaBridge.SHORT_NAME},
-                        categories = {STRIMZI_CATEGORY}
+                        categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = KafkaBridge.RESOURCE_GROUP,
                 scope = KafkaBridge.SCOPE,
@@ -73,8 +72,8 @@ import static java.util.Collections.unmodifiableList;
 )
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder",
-        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done"),
+        builderPackage = Constants.KUBERNETES_API_BUILDER,
+        inline = @Inline(type = Doneable.class, prefix = Constants.DONEABLE_PREFIX, value = Constants.DONE),
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -85,7 +84,7 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";

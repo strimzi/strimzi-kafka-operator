@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.connect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -22,7 +23,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode

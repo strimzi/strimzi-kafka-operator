@@ -14,7 +14,7 @@ import io.sundr.builder.annotations.Buildable;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonPropertyOrder({"type", "name"})
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -42,7 +41,7 @@ import static java.util.Collections.unmodifiableList;
                         kind = KafkaConnectS2I.RESOURCE_KIND,
                         plural = KafkaConnectS2I.RESOURCE_PLURAL,
                         shortNames = {KafkaConnectS2I.SHORT_NAME},
-                        categories = {STRIMZI_CATEGORY}
+                        categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
@@ -74,8 +73,8 @@ import static java.util.Collections.unmodifiableList;
 )
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder",
-        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
+        builderPackage = Constants.KUBERNETES_API_BUILDER,
+        inline = @Inline(type = Doneable.class, prefix = Constants.DONEABLE_PREFIX, value = Constants.DONE)
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})

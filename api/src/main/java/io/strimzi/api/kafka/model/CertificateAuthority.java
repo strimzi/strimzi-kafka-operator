@@ -20,7 +20,7 @@ import java.util.Map;
         "used for client access via `Kafka.spec.kafka.listeners.tls`.")
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.KUBERNETES_API_BUILDER
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "generateCertificateAuthority", "validityDays", "renewalDays" })
