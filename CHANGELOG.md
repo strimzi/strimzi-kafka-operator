@@ -5,6 +5,7 @@
 
 * Make it possible to configure PodManagementPolicy for StatefulSets
 * Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
+* Allow ssl.cipher.suites to be configured for Kafka
 
 ## 0.17.0
 
