@@ -29,7 +29,7 @@ spec:
   logging:
     type: inline
     loggers:
-      connect.root.logger: "INFO"
+      connect.root.logger.level: "INFO"
   # ...
 ----
 
