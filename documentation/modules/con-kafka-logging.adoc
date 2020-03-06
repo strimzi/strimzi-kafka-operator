@@ -44,7 +44,7 @@ spec:
   logging:
     type: inline
     loggers:
-      kafka.root.logger: "INFO"
+      kafka.root.logger.level: "INFO"
   # ...
   zookeeper:
     # ...
