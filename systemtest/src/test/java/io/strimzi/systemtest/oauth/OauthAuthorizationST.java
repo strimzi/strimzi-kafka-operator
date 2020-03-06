@@ -4,17 +4,17 @@
  */
 package io.strimzi.systemtest.oauth;
 
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.junit.jupiter.api.BeforeAll;
@@ -171,6 +171,72 @@ public class OauthAuthorizationST extends OauthBaseST {
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
+    @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
+    @Test
+    void testSuperUserWithOauthAuthorization() throws InterruptedException, ExecutionException, TimeoutException, IOException {
+
+        final String superUserCluster = CLUSTER_NAME + "-super-user";
+
+        KafkaResource.kafkaEphemeral(superUserCluster,  1, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-ephemeral")
+            .endMetadata()
+            .editSpec()
+                .editKafka()
+                    .withNewKafkaAuthorizationKeycloak()
+                        .withClientId(KAFKA_CLIENT_ID)
+                        .withDisableTlsHostnameVerification(true)
+                        .withDelegateToKafkaAcls(false)
+                        .addToSuperUsers("service-account-" + TEAM_A_CLIENT)
+                        .addToSuperUsers("service-account-" + TEAM_B_CLIENT)
+                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                    .endKafkaAuthorizationKeycloak()
+                    .editListeners()
+                        .withNewPlain()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endPlain()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(validIssuerUri)
+                                .withJwksEndpointUri(jwksEndpointUri)
+                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
+                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                .withUserNameClaim(userNameClaim)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
+
+        Future<Integer> producer = teamBOauthKafkaClient.sendMessages(TOPIC_X, NAMESPACE, superUserCluster, MESSAGE_COUNT);
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
+
+        Future<Integer> consumer = teamAOauthKafkaClient.receiveMessages(TOPIC_X, NAMESPACE, superUserCluster,
+            MESSAGE_COUNT, "x_consumer_group_b");
+
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+
+        LOGGER.info("Verifying that team A is able to consume message even if we specify bad consumer group");
+
+        Future<Integer> consumerWithBadConsumerGroup = teamAOauthKafkaClient.receiveMessages(TOPIC_A, NAMESPACE, superUserCluster,
+            MESSAGE_COUNT, "bad_consumer_group");
+
+        assertThat(consumerWithBadConsumerGroup.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+    }
+
     @Disabled("Will be implemented in next PR")
     @Test
     void testListTopics() {
@@ -237,9 +303,6 @@ public class OauthAuthorizationST extends OauthBaseST {
                     .build());
 
         });
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
     }
