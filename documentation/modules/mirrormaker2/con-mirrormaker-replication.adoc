@@ -1,0 +1,83 @@
+// Module included in the following assemblies:
+//
+// assembly-mirrormaker.adoc
+
+[id='con-mirrormaker-{context}']
+= MirrorMaker 2.0 data replication
+
+MirrorMaker 2.0 consumes messages from a source Kafka cluster and writes them to a target Kafka cluster.
+
+MirrorMaker 2.0 uses:
+
+* Source cluster configuration to consume data from the source cluster
+* Target cluster configuration to output data to the target cluster
+
+MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
+A MirrorMaker 2.0 `MirrorSourceConnector` replicates topics from a source cluster to a target cluster.
+
+The process of _mirroring_ data from one cluster to another cluster is asynchronous.
+The recommended pattern is for messages to be produced locally alongside the source Kafka cluster, then consumed remotely close to the target Kafka cluster.
+
+MirrorMaker 2.0 can be used with more than one source cluster.
+
+.Replication across two clusters
+image::mirrormaker.png[MirrorMaker 2.0 replication]
+
+= Cluster configuration
+
+You can use MirrorMaker 2.0 in _active/passive_ or _active/active_ cluster configurations.
+
+* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
+* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
+
+The expectation is that producers and consumers connect to active clusters only.
+
+== Bidirectional replication
+
+The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration.
+A MirrorMaker 2.0 cluster is required at each target destination.
+
+Each cluster replicates the data of the other cluster using the concept of _source_ and _remote_ topics.
+As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2.0 to represent the source cluster.
+
+.Topic renaming
+image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
+
+By flagging the originating cluster, topics are not replicated back to that cluster.
+
+The concept of replication through _remote_ topics is useful when configuring an architecture that requires data aggregation.
+Consumers can subscribe to source and remote topics within the same cluster, without the need for a separate aggregation cluster.
+
+== Topic configuration synchronization
+
+Topic configuration is automatically synchronized between source and target clusters.
+By synchronizing configuration properties, the need for rebalancing is reduced.
+
+== Data integrity
+
+MirrorMaker 2.0 monitors source topics and propagates any configuration changes to remote topics, checking for and creating missing partitions.
+Only MirrorMaker 2.0 can write to remote topics.
+
+== Offset tracking
+MirrorMaker 2.0 tracks offsets for consumer groups using _internal topics_.
+
+* The _offset sync_ topic maps the source and target offsets for replicated topic partitions from record metadata
+* The _checkpoint_ topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
+
+Offsets for the _checkpoint_ topic are tracked at predetermined intervals through configuration.
+Both topics enable replication to be fully restored from the correct offset position on failover.
+
+MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for offset tracking.
+
+== Connectivity checks
+
+A _heartbeat_ internal topic checks connectivity between clusters.
+
+The _heartbeat_ topic is replicated from the source cluster.
+
+Target clusters use the topic to check:
+
+* The connector managing connectivity between clusters is running
+* The source cluster is available
+
+MirrorMaker 2.0 uses its `MirrorHeartbeatConnector` to emit _heartbeats_ that perform these checks.

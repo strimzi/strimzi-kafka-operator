@@ -51,6 +51,10 @@ if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     fi
 fi
 
+if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
+fi
+
 . ./set_kafka_gc_options.sh
 
 # starting Kafka server with final configuration

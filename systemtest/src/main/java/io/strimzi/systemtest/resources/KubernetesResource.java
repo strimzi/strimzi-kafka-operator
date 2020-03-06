@@ -6,11 +6,15 @@ package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
@@ -21,6 +25,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -33,6 +38,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
@@ -307,6 +314,92 @@ public class KubernetesResource {
             .endSpec().build();
     }
 
+    public static void applyDefaultNetworkPolicySettings(String clientNamespace, List<String> namespaces) {
+
+        for (String namespace : namespaces) {
+            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals("true")) {
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+            } else {
+                applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+            }
+        }
+
+        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, clientNamespace);
+    }
+
+    /**
+     * Method for allowing network policies for Connect or ConnectS2I
+     * @param resource mean Connect or ConnectS2I resource
+     * @param deploymentName name of resource deployment - for setting strimzi.io/name
+     */
+    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
+        Map<String, String> labels = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getLabels();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewApiVersion("networking.k8s.io/v1")
+                .withNewKind("NetworkPolicy")
+                .withNewMetadata()
+                    .withName(resource.getMetadata().getName() + "-allow")
+                .endMetadata()
+                .withNewSpec()
+                    .addNewIngress()
+                        .addNewFrom()
+                            .withPodSelector(new LabelSelectorBuilder().addToMatchLabels(labels).build())
+                        .endFrom()
+                        .addNewPort()
+                            .withNewPort(8083)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                        .addNewPort()
+                            .withNewPort(9404)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                        .addNewPort()
+                            .withNewPort(8080)
+                            .withNewProtocol("TCP")
+                        .endPort()
+                      .endIngress()
+                    .withNewPodSelector()
+                        .addToMatchLabels("strimzi.io/cluster", resource.getMetadata().getName())
+                        .addToMatchLabels("strimzi.io/kind", resource.getKind())
+                        .addToMatchLabels("strimzi.io/name", deploymentName)
+                    .endPodSelector()
+                    .withPolicyTypes("Ingress")
+                .endSpec()
+                .build();
+
+        deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+    }
+
+    public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                    .withNewApiVersion("networking.k8s.io/v1")
+                    .withNewKind("NetworkPolicy")
+                    .withNewMetadata()
+                        .withName("global-network-policy")
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewPodSelector()
+                        .endPodSelector()
+                        .withPolicyTypes("Ingress")
+                    .endSpec()
+                    .build();
+
+        if (policy.equals(DefaultNetworkPolicy.DEFAULT_TO_ALLOW)) {
+            networkPolicy = new NetworkPolicyBuilder(networkPolicy)
+                    .editSpec()
+                        .addNewIngress()
+                        .endIngress()
+                    .endSpec()
+                    .build();
+        }
+
+        deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy successfully set to deny-all");
+
+        return networkPolicy;
+    }
+
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
@@ -340,5 +433,9 @@ public class KubernetesResource {
 
     private static Service deleteLater(Service resource) {
         return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().services(), resource);
+    }
+
+    public static NetworkPolicy deleteLater(NetworkPolicy resource) {
+        return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().network().networkPolicies(), resource);
     }
 }

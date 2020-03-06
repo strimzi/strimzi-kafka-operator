@@ -49,6 +49,9 @@ public class KafkaBridgeResource {
             .editSpec()
                 .withBootstrapServers(bootstrap)
                 .withReplicas(kafkaBridgeReplicas)
+                .withNewInlineLogging()
+                    .addToLoggers("bridge.root.logger", "DEBUG")
+                .endInlineLogging()
             .endSpec();
     }
 

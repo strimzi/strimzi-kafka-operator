@@ -41,8 +41,10 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends BaseST {
@@ -56,7 +58,7 @@ public class MirrorMakerST extends BaseST {
     private String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
     @Test
-    void testMirrorMaker() throws Exception {
+    void testMirrorMaker() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
@@ -108,6 +110,12 @@ public class MirrorMakerST extends BaseST {
 
         verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
+
+        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String kafkaMirrorMakerLogs = kubeClient().logs(mirrorMakerPodName);
+
+        assertThat(kafkaMirrorMakerLogs,
+            not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
         String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),

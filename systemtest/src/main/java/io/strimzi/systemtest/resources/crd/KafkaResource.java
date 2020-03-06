@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../metrics/examples/kafka/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 
@@ -131,13 +131,29 @@ public class KafkaResource {
                         .withNewPlain().endPlain()
                         .withNewTls().endTls()
                     .endListeners()
+                    .withNewInlineLogging()
+                        .addToLoggers("kafka.root.logger.level", "DEBUG")
+                    .endInlineLogging()
                 .endKafka()
                 .editZookeeper()
                     .withReplicas(zookeeperReplicas)
+                    .withNewInlineLogging()
+                        .addToLoggers("zookeeper.root.logger", "DEBUG")
+                    .endInlineLogging()
                 .endZookeeper()
                 .editEntityOperator()
                     .editTopicOperator().withImage(tOImage).endTopicOperator()
                     .editUserOperator().withImage(uOImage).endUserOperator()
+                    .editUserOperator()
+                        .withNewInlineLogging()
+                            .addToLoggers("rootLogger.level", "DEBUG")
+                        .endInlineLogging()
+                    .endUserOperator()
+                    .editTopicOperator()
+                        .withNewInlineLogging()
+                            .addToLoggers("rootLogger.level", "DEBUG")
+                        .endInlineLogging()
+                    .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
     }

@@ -43,6 +43,8 @@ public interface Constants {
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long CONNECT_STATUS_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
+    long PRODUCER_POLL_INTERVAL = Duration.ofSeconds(30).toMillis();
+    long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
 
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();

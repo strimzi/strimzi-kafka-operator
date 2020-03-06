@@ -41,6 +41,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -178,7 +179,7 @@ public class StrimziUpgradeST extends BaseST {
     }
 
     @Test
-    void testUpgradeKafkaWithoutVersion() {
+    void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
         coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");

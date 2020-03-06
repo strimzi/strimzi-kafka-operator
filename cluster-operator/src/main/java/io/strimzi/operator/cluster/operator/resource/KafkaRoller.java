@@ -9,14 +9,16 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
@@ -243,7 +245,7 @@ public class KafkaRoller {
 
         if (pod != null && podNeedsRestart.test(pod)) {
             log.debug("Pod {} needs to be restarted", podId);
-            AdminClient adminClient = null;
+            Admin adminClient = null;
             try {
                 try {
                     adminClient = adminClient(podId);
@@ -283,7 +285,7 @@ public class KafkaRoller {
         }
     }
 
-    private void closeLoggingAnyError(AdminClient adminClient) {
+    private void closeLoggingAnyError(Admin adminClient) {
         if (adminClient != null) {
             try {
                 adminClient.close(Duration.ofMinutes(2));
@@ -320,7 +322,7 @@ public class KafkaRoller {
         }
     }
 
-    private boolean canRoll(AdminClient adminClient, int podId, long timeout, TimeUnit unit)
+    private boolean canRoll(Admin adminClient, int podId, long timeout, TimeUnit unit)
             throws ForceableProblem, InterruptedException {
         return await(availability(adminClient).canRoll(podId), timeout, unit,
             t -> new ForceableProblem("An error while trying to determine rollability", t));
@@ -389,17 +391,17 @@ public class KafkaRoller {
     /**
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
-    protected AdminClient adminClient(Integer podId) throws ForceableProblem {
+    protected Admin adminClient(Integer podId) throws ForceableProblem {
         try {
             String hostname = KafkaCluster.podDnsName(this.namespace, this.cluster, podName(podId)) + ":" + KafkaCluster.REPLICATION_PORT;
             log.debug("Creating AdminClient for {}", hostname);
-            return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret);
+            return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
         }
     }
 
-    protected KafkaAvailability availability(AdminClient ac) {
+    protected KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(ac);
     }
 
@@ -414,7 +416,7 @@ public class KafkaRoller {
      * @return A future which completes the the node id of the controller of the cluster,
      * or -1 if there is not currently a controller.
      */
-    int controller(int podId, AdminClient ac, long timeout, TimeUnit unit) throws ForceableProblem, InterruptedException {
+    int controller(int podId, Admin ac, long timeout, TimeUnit unit) throws ForceableProblem, InterruptedException {
         Node controllerNode = null;
         try {
             DescribeClusterResult describeClusterResult = ac.describeCluster();
