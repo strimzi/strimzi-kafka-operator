@@ -350,7 +350,7 @@ class ConnectS2IST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Create different connect cluster via S2I resources
-        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(connectS2IClusterName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")

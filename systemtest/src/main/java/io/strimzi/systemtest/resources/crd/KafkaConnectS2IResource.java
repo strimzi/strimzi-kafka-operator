@@ -34,9 +34,6 @@ public class KafkaConnectS2IResource {
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
     }
-    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
-        return kafkaConnectS2I(name, kafkaConnectS2IReplicas);
-    }
 
     public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
