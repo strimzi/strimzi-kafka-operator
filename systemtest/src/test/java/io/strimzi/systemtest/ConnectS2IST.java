@@ -74,7 +74,7 @@ class ConnectS2IST extends BaseST {
     void testDeployS2IWithMongoDBPlugin() throws InterruptedException, IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
         // Calls to Connect API are executed from kafka-0 pod
-        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
+        deployConnectS2IWithMongoDb(kafkaConnectS2IName, false);
 
         String mongoDbConfig = "{" +
                 "\"name\": \"" + kafkaConnectS2IName + "\"," +
@@ -93,16 +93,14 @@ class ConnectS2IST extends BaseST {
         // Make sure that Connenct API is ready
         KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
 
-        checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
-
-        String createConnectorOutput = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
+        String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
                 "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
         LOGGER.info("Create Connector result: {}", createConnectorOutput);
 
         // Make sure that connector is really created
         Thread.sleep(10_000);
 
-        String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
+        String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
     }
 
@@ -110,7 +108,7 @@ class ConnectS2IST extends BaseST {
     void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-11";
         // Calls to Connect API are executed from kafka-0 pod
-        String podForExecName = deployConnectS2IWithMongoDb(kafkaConnectS2IName, false);
+        deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
 
         // Make sure that Connenct API is ready
         KafkaConnectS2IUtils.waitForRebalancingDone(kafkaConnectS2IName);
@@ -131,7 +129,7 @@ class ConnectS2IST extends BaseST {
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
-        String connectorStatus = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
+        String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
 
         KafkaConnectorResource.replaceKafkaConnectorResource(kafkaConnectS2IName, kC -> {
@@ -145,7 +143,7 @@ class ConnectS2IST extends BaseST {
 
         TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> {
-                String connectorConfig = cmdKubeClient().execInPod(podForExecName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/config").out();
+                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/config").out();
                 assertThat(connectorStatus, containsString("RUNNING"));
                 return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("mongodb.user\":\"test-user");
             });
@@ -173,7 +171,7 @@ class ConnectS2IST extends BaseST {
 
         SecretUtils.waitForSecretReady(userName);
 
-        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1, true)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()
@@ -237,7 +235,7 @@ class ConnectS2IST extends BaseST {
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
 
-        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1, true)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
@@ -352,7 +350,7 @@ class ConnectS2IST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Create different connect cluster via S2I resources
-        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, 1, false)
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -439,13 +437,13 @@ class ConnectS2IST extends BaseST {
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
-    private String deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean allowNetworkPolicyAccess) throws IOException {
+    private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
-        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1, allowNetworkPolicyAccess)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, Boolean.toString(useConnectorOperator))
             .endMetadata()
             .done();
 
@@ -457,14 +455,11 @@ class ConnectS2IST extends BaseST {
         cmdKubeClient().execInCurrentNamespace("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath());
         // Wait for rolling update connect pods
         DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
-        String podForExecName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        LOGGER.info("Collect plugins information from connect s2i pod");
 
+        LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
-
-        return podForExecName;
     }
 
     private void checkConnectorInStatus(String namespace, String kafkaConnectS2IName) {

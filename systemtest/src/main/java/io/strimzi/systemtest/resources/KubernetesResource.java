@@ -333,7 +333,10 @@ public class KubernetesResource {
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
     public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
-        Map<String, String> labels = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getLabels();
+        String clientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+        Map<String, String> labels = kubeClient().listPodsByPrefixInName(clientsDeploymentName).get(0).getMetadata().getLabels();
+
+        LOGGER.info("Apply NetworkPolicy access to {} from {}", deploymentName, clientsDeploymentName);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
@@ -368,7 +371,9 @@ public class KubernetesResource {
                 .endSpec()
                 .build();
 
+        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
         deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy for {} successfully applied", clientsDeploymentName);
     }
 
     public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
@@ -394,8 +399,9 @@ public class KubernetesResource {
                     .build();
         }
 
+        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
         deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).createOrReplace(networkPolicy));
-        LOGGER.info("Network policy successfully set to deny-all");
+        LOGGER.info("Network policy successfully set to: {}", policy);
 
         return networkPolicy;
     }
