@@ -44,13 +44,13 @@ public class MainIT {
     }
 
     @Test
-    public void testCreateClusterRoles(VertxTestContext context) {
+    public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
             assumeTrue(false, e.getMessage());
         }
-        Map<String, String> envVars = new HashMap<>(1);
+        Map<String, String> envVars = new HashMap<>(6);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
@@ -62,17 +62,15 @@ public class MainIT {
 
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
 
-        Checkpoint async = context.checkpoint();
-        Main.maybeCreateClusterRoles(vertx, config, client).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
-
-            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-entity-operator"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-topic-operator"), is(notNullValue())));
-
-            async.flag();
-        });
+        Checkpoint a = context.checkpoint();
+        Main.maybeCreateClusterRoles(vertx, config, client)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
+                assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));
+                assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue()));
+                assertThat(cro.get("strimzi-entity-operator"), is(notNullValue()));
+                assertThat(cro.get("strimzi-topic-operator"), is(notNullValue()));
+                a.flag();
+            })));
     }
 }
