@@ -193,7 +193,7 @@ public class TracingST extends BaseST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -671,7 +671,7 @@ public class TracingST extends BaseST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()

@@ -126,7 +126,7 @@ public abstract class BaseST implements TestSeparator {
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         cluster.applyClusterOperatorInstallFiles();
-        KubernetesResource.applyDefaultNetworkPolicySettings(clientNamespace, namespaces);
+        KubernetesResource.applyDefaultNetworkPolicySettings(namespaces);
 
         // This is needed in case you are using internal kubernetes registry and you want to pull images from there
         for (String namespace : namespaces) {
@@ -191,7 +191,7 @@ public abstract class BaseST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        KubernetesResource.clusterOperator(coNamespace).done();
+        KubernetesResource.clusterOperator(coNamespace, operationTimeout).done();
     }
 
     /**
@@ -748,6 +748,7 @@ public abstract class BaseST implements TestSeparator {
             if (context.getExecutionException().isPresent() || logError) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
+                KubernetesResource.applyDefaultNetworkPolicySettings(cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();

@@ -624,7 +624,7 @@ class ConnectST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Crate connect cluster with default connect image
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -711,6 +711,12 @@ class ConnectST extends BaseST {
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployKafkaClients();
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
@@ -721,6 +727,10 @@ class ConnectST extends BaseST {
         cluster.setNamespace(NAMESPACE);
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
 
+        deployKafkaClients();
+    }
+
+    private void deployKafkaClients() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }

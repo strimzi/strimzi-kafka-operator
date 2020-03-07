@@ -314,17 +314,15 @@ public class KubernetesResource {
             .endSpec().build();
     }
 
-    public static void applyDefaultNetworkPolicySettings(String clientNamespace, List<String> namespaces) {
-
+    public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
         for (String namespace : namespaces) {
             if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals("true")) {
                 applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
                 applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
+            LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
-
-        LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, clientNamespace);
     }
 
     /**
