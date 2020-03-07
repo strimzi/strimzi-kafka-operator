@@ -46,6 +46,8 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -117,7 +119,7 @@ public class ClusterOperatorTest {
      * @param context
      * @param namespaces
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, ExecutionException, TimeoutException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -169,31 +171,28 @@ public class ClusterOperatorTest {
         Map<String, String> env = buildEnv(namespaces);
 
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
-                    ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-                        context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-                        async.countDown();
-                    });
+                    ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
+            .setHandler(context.succeeding(f -> async.countDown()));
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
-        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(namespaceList.size())));
+        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size())));
 
+        CountDownLatch async2 = new CountDownLatch(vertx.deploymentIDs().size());
         for (String deploymentId: vertx.deploymentIDs()) {
-            CountDownLatch async2 = new CountDownLatch(1);
             vertx.undeploy(deploymentId, ar -> {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
                 async2.countDown();
             });
-            if (!async2.await(60, TimeUnit.SECONDS)) {
-                context.failNow(new Throwable("Test timeout"));
-            }
+        }
+        if (!async2.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
         }
 
+        int maximumExpectedNumberOfWatchers = (openShift ? 8 : 6) * namespaceList.size(); // we do not have connectS2I on k8s
+        assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
-        if (numWatchers.get() > (openShift ? 8 : 6) * namespaceList.size()) { // we do not have connectS2I on k8s
-            context.failNow(new Throwable("Looks like there were more watchers than namespaces"));
-        }
         context.completeNow();
     }
 
@@ -202,7 +201,7 @@ public class ClusterOperatorTest {
      * @param context
      * @param namespaces
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, ExecutionException, TimeoutException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -250,30 +249,30 @@ public class ClusterOperatorTest {
         Map<String, String> env = buildEnv(namespaces);
 
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
-                ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-                    context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-                    async.countDown();
-                });
+                ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
+            .setHandler(context.succeeding(f -> async.countDown()));
+
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
-        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(1)));
+        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1)));
+
+        CountDownLatch async2 = new CountDownLatch(vertx.deploymentIDs().size());
 
         for (String deploymentId: vertx.deploymentIDs()) {
-            CountDownLatch async2 = new CountDownLatch(1);
             vertx.undeploy(deploymentId, ar -> {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
                 async2.countDown();
             });
-            if (!async2.await(60, TimeUnit.SECONDS)) {
-                context.failNow(new Throwable(""));
-            }
+        }
+        if (!async2.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable(""));
         }
 
-        if (numWatchers.get() > (openShift ? 8 : 6)) { // we do not have connectS2I on k8s
-            context.failNow(new Throwable("Looks like there were more watchers than should be"));
-        }
+        int maximumExpectedNumberOfWatchers = openShift ? 8 : 6; // we do not have connectS2I on k8s
+        assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+
         context.completeNow();
     }
 }
