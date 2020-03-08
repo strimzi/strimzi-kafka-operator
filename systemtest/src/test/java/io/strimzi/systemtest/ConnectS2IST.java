@@ -67,7 +67,6 @@ class ConnectS2IST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
-    private static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
     private String kafkaClientsPodName;
 
     @Test
@@ -124,7 +123,6 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
             .endSpec().done();
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         KafkaConnectUtils.waitForConnectorReady(kafkaConnectS2IName);
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
@@ -138,8 +136,6 @@ class ConnectS2IST extends BaseST {
             kC.getSpec().setConfig(config);
             kC.getSpec().setTasksMax(8);
         });
-
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> {
@@ -214,15 +210,15 @@ class ConnectS2IST extends BaseST {
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", execPod, CONNECT_S2I_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(execPod, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
                 internalKafkaClient.receiveMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
         );
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
-        assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_NAME).out(),
+        assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat " + Constants.DEFAULT_SINK_FILE_PATH).out(),
                 containsString("99"));
     }
 
@@ -350,16 +346,16 @@ class ConnectS2IST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Create different connect cluster via S2I resources
-        KafkaConnectS2IResource.kafkaConnectS2I(connectS2IClusterName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
                 .editSpec()
-                .addToConfig("group.id", connectClusterName)
-                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectClusterName + "-config")
-                .addToConfig("status.storage.topic", connectClusterName + "-status")
+                .addToConfig("group.id", connectS2IClusterName)
+                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
+                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
             .endSpec().done();
 
         // Create connect cluster with default connect image
@@ -369,10 +365,10 @@ class ConnectS2IST extends BaseST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
-                .addToConfig("group.id", connectS2IClusterName)
-                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
-                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
+                .addToConfig("group.id", connectClusterName)
+                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
+                .addToConfig("config.storage.topic", connectClusterName + "-config")
+                .addToConfig("status.storage.topic", connectClusterName + "-status")
             .endSpec().build());
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
@@ -387,15 +383,9 @@ class ConnectS2IST extends BaseST {
             .endSpec().done();
         KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
 
-        // Wait for Cluster Operator reconciliation
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
         // Check that KafkaConnectS2I contains created connector
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
-        assertThat(availableConnectors, containsString(CLUSTER_NAME));
-
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
 
@@ -419,18 +409,14 @@ class ConnectS2IST extends BaseST {
         });
 
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
-        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
-        assertThat(availableConnectors, containsString("sink-test"));
+        KafkaConnectUtils.createFileSinkConnector(execPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, "sink-test");
 
         // Wait for Cluster Operator reconciliation
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
+        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
         assertThat(availableConnectors, containsString("sink-test"));
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");

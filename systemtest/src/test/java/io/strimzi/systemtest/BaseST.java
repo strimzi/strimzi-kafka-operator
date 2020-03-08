@@ -77,6 +77,7 @@ public abstract class BaseST implements TestSeparator {
     protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
 
     protected static final String CLUSTER_NAME = "my-cluster";
+    protected static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
 
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 

@@ -184,6 +184,8 @@ public class TracingST extends BaseST {
                 .endSpec()
                 .done();
 
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
         configOfKafkaConnect.put("offset.storage.replication.factor", "1");
@@ -662,6 +664,8 @@ public class TracingST extends BaseST {
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
 
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
         configOfKafkaConnect.put("offset.storage.replication.factor", "1");
@@ -759,6 +763,8 @@ public class TracingST extends BaseST {
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
         Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
         configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
@@ -800,7 +806,7 @@ public class TracingST extends BaseST {
         String execPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
 
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);
-        KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME,
+        KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH,
                 KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
@@ -809,7 +815,7 @@ public class TracingST extends BaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_S2I_SERVICE);

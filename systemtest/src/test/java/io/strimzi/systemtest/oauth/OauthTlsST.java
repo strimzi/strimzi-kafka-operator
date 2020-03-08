@@ -126,9 +126,9 @@ public class OauthTlsST extends OauthBaseST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, "http://localhost:8083");
+        KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
     }
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")

@@ -91,7 +91,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
-        connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_NAME);
+        connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
@@ -110,6 +110,6 @@ public abstract class AbstractNamespaceST extends BaseST {
         internalKafkaClient.setPodName(kafkaClientsPodName);
         int sent = internalKafkaClient.sendMessages(topicName, namespace, clusterName, MESSAGE_COUNT);
         assertThat(sent, Matchers.is(MESSAGE_COUNT));
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 }
