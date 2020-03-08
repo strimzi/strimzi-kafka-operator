@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
@@ -18,7 +19,9 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -28,16 +31,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -120,86 +120,48 @@ public class KafkaBridgeCrdOperatorIT {
     }
 
     @Test
-    public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testUpdateStatus(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
         log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+        PlatformFeaturesAvailability.create(vertx, client)
+            .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
+                        pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), is(not(lessThan(0))));
+            })))
 
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
+            .compose(pfa -> {
+                log.info("Creating resource");
+                return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+            })
+            .setHandler(context.succeeding())
 
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+            .compose(rrCreated -> {
+                KafkaBridge newStatus = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
+                        .withNewStatus()
+                        .withConditions(new ConditionBuilder()
+                                .withType("Ready")
+                                .withStatus("True")
+                                .build())
+                        .endStatus()
+                        .build();
 
-        KafkaBridge withStatus = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
+                log.info("Updating resource status");
+                return kafkaBridgeOperator.updateStatusAsync(newStatus);
+            })
+            .setHandler(context.succeeding())
 
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            if (res.succeeded())    {
-                kafkaBridgeOperator.getAsync(namespace, RESOURCE_NAME).setHandler(res2 -> {
-                    if (res2.succeeded())    {
-                        KafkaBridge updated = res2.result();
+            .compose(rrModified -> kafkaBridgeOperator.getAsync(namespace, RESOURCE_NAME))
+            .setHandler(context.succeeding(modifiedKafkaBridge -> context.verify(() -> {
+                assertThat(modifiedKafkaBridge.getStatus().getConditions().get(0).getType(), is("Ready"));
+                assertThat(modifiedKafkaBridge.getStatus().getConditions().get(0).getStatus(), is("True"));
+            })))
 
-                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getType(), is("Ready")));
-                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getStatus(), is("True")));
-
-                        updateStatusAsync.countDown();
-                    } else {
-                        context.failNow(res.cause());
-                    }
-                });
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!updateStatusAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
+            .compose(rrModified -> {
+                log.info("Deleting resource");
+                return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null);
+            })
+            .setHandler(context.succeeding(rrDeleted ->  async.flag()));
     }
 
     /**
@@ -208,72 +170,44 @@ public class KafkaBridgeCrdOperatorIT {
      * @param context
      */
     @Test
-    public void testUpdateStatusWhileResourceDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testUpdateStatusWhileResourceDeletedThrowsNullPointerException(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
         log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+        PlatformFeaturesAvailability.create(vertx, client)
+            .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
+                        pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), is(not(lessThan(0))));
+            })))
+            .compose(pfa -> {
+                log.info("Creating resource");
+                return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+            })
+            .setHandler(context.succeeding())
 
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
+            .compose(rr -> {
+                log.info("Deleting resource");
+                return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null);
+            })
+            .setHandler(context.succeeding())
 
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+            .compose(v -> {
+                KafkaBridge newStatus = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
+                        .withNewStatus()
+                        .withConditions(new ConditionBuilder()
+                                .withType("Ready")
+                                .withStatus("True")
+                                .build())
+                        .endStatus()
+                        .build();
 
-        KafkaBridge withStatus = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.countDown();
-        });
-        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
+                log.info("Updating resource status");
+                return kafkaBridgeOperator.updateStatusAsync(newStatus);
+            })
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(NullPointerException.class));
+                async.flag();
+            })));
     }
 
     /**
@@ -282,81 +216,56 @@ public class KafkaBridgeCrdOperatorIT {
      * @param context
      */
     @Test
-    public void testUpdateStatusWhileResourceUpdated(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testUpdateStatusThrowsKubernetesExceptionIfResourceUpdatedPrior(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
+        Promise updateFailed = Promise.promise();
+
         log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+        PlatformFeaturesAvailability.create(vertx, client)
+            .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
+                        pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), is(not(lessThan(0))));
+            })))
+            .compose(pfa -> {
+                log.info("Creating resource");
+                return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+            })
+            .setHandler(context.succeeding())
+            .compose(rr -> {
+                KafkaBridge currentKafkaBridge = kafkaBridgeOperator.get(namespace, RESOURCE_NAME);
 
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
+                KafkaBridge updated = new KafkaBridgeBuilder(currentKafkaBridge)
+                        .editSpec()
+                            .withLogging(new InlineLogging())
+                        .endSpec()
+                        .build();
 
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+                KafkaBridge newStatus = new KafkaBridgeBuilder(currentKafkaBridge)
+                        .withNewStatus()
+                            .withConditions(new ConditionBuilder()
+                                    .withType("Ready")
+                                    .withStatus("True")
+                                    .build())
+                        .endStatus()
+                        .build();
 
-        KafkaBridge withStatus = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
+                log.info("Updating resource (mocking an update due to some other reason)");
+                kafkaBridgeOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
 
-        log.info("Updating resource");
-        KafkaBridge updated = new KafkaBridgeBuilder(kafkaBridgeOperator.get(namespace, RESOURCE_NAME))
-                .editSpec()
-                .withLogging(new InlineLogging())
-                .endSpec()
-                .build();
+                log.info("Updating resource status after underlying resource has changed");
+                return kafkaBridgeOperator.updateStatusAsync(newStatus);
+            })
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat("Exception was not KubernetesClientException, it was : " + e.toString(),
+                        e, instanceOf(KubernetesClientException.class));
+                updateFailed.complete();
+            })));
 
-        //Async updateAsync = context.async();
-        kafkaBridgeOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
-
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.countDown();
-        });
-        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(300, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
+        updateFailed.future().compose(v -> {
+            log.info("Deleting resource");
+            return kafkaBridgeOperator.reconcile(namespace, RESOURCE_NAME, null);
+        })
+        .setHandler(context.succeeding(v -> async.flag()));
     }
 }
