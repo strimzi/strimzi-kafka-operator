@@ -252,11 +252,13 @@ public class KafkaUserQuotasIT {
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(user, quotas)
                 .setHandler(testContext.succeeding(res -> {
-                    testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("2000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("1000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("50")));
-                    testContext.verify(() -> assertThat(kuq.isPathExist("/config/users/" + user), is(true)));
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("50"));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
 
                     async.flag();
                 }));
@@ -281,11 +283,13 @@ public class KafkaUserQuotasIT {
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(user, updatedQuotas)
                 .setHandler(testContext.succeeding(res -> {
-                    testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("75")));
-                    testContext.verify(() -> assertThat(kuq.isPathExist("/config/users/" + user), is(true)));
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("75"));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
 
                     async.flag();
                 }));
@@ -309,11 +313,13 @@ public class KafkaUserQuotasIT {
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(user, updatedQuotas)
                 .setHandler(testContext.succeeding(res -> {
-                    testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000")));
-                    testContext.verify(() -> assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is(nullValue())));
-                    testContext.verify(() -> assertThat(kuq.isPathExist("/config/users/" + user), is(true)));
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is(nullValue()));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
 
                     async.flag();
                 }));
