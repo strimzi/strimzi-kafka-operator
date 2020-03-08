@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -21,6 +20,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -59,65 +62,34 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
     abstract void assertResources(VertxTestContext context, T expected, T actual);
 
     @Test
-    public void testFullCycle(VertxTestContext context) {
+    public void testCreateModifyDelete(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
 
-        Future<ReconcileResult<T>> createFuture = op.reconcile(RESOURCE_NAME, newResource);
-
-        createFuture.setHandler(create -> {
-            if (create.succeeded()) {
+        op.reconcile(RESOURCE_NAME, newResource)
+            .setHandler(context.succeeding(rrCreate -> context.verify(() -> {
                 T created = op.get(RESOURCE_NAME);
 
-                if (created == null)    {
-                    context.failNow(new Throwable("Failed to get created Resource"));
-                    async.flag();
-                } else  {
-                    assertResources(context, newResource, created);
+                assertThat("Failed to get created Resource", created, is(notNullValue()));
+                assertResources(context, newResource, created);
+            })))
+            .compose(rr -> op.reconcile(RESOURCE_NAME, modResource))
+            .setHandler(context.succeeding(rrModified -> context.verify(() -> {
+                T modified = (T) op.get(RESOURCE_NAME);
 
-                    Future<ReconcileResult<T>> modifyFuture = op.reconcile(RESOURCE_NAME, modResource);
-                    modifyFuture.setHandler(modify -> {
-                        if (modify.succeeded()) {
-                            T modified = (T) op.get(RESOURCE_NAME);
+                assertThat("Failed to get modified Resource", modified, is(notNullValue()));
+                assertResources(context, modResource, modified);
+            })))
+            .compose(rr -> op.reconcile(RESOURCE_NAME, null))
+            .setHandler(context.succeeding(rrDelete -> context.verify(() -> {
+                T deleted = (T) op.get(RESOURCE_NAME);
 
-                            if (modified == null)    {
-                                context.failNow(new Throwable("Failed to get modified Resource"));
-                                async.flag();
-                            } else {
-                                assertResources(context, modResource, modified);
-
-                                Future<ReconcileResult<T>> deleteFuture = op.reconcile(RESOURCE_NAME, null);
-                                deleteFuture.setHandler(delete -> {
-                                    if (delete.succeeded()) {
-                                        T deleted = (T) op.get(RESOURCE_NAME);
-
-                                        if (deleted == null)    {
-                                            async.flag();
-                                        } else {
-                                            context.failNow(new Throwable("Failed to delete Resource"));
-                                            async.flag();
-                                        }
-                                    } else {
-                                        context.failNow(delete.cause());
-                                        async.flag();
-                                    }
-                                });
-                            }
-                        } else {
-                            context.failNow(modify.cause());
-                            async.flag();
-                        }
-                    });
-                }
-
-            } else {
-                context.failNow(create.cause());
+                assertThat("Failed to get modified Resource", deleted, is(nullValue()));
                 async.flag();
-            }
-        });
+            })));
     }
 }
 

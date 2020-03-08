@@ -55,7 +55,7 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     @Test
-    public void createWhenExistsIsAPatch(VertxTestContext context) {
+    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, false);
     }
 }
