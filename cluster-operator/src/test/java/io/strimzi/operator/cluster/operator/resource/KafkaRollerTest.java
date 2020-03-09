@@ -48,6 +48,8 @@ import static io.vertx.core.Future.succeededFuture;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -354,14 +356,12 @@ public class KafkaRollerTest {
                                     Collection<Integer> podsToRestart,
                                     List<Integer> expected) {
         Checkpoint async = testContext.checkpoint();
-        kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName()))).setHandler(ar -> {
-            if (ar.failed()) {
-                testContext.failNow(new RuntimeException("Rolling failed", ar.cause()));
-            }
-            testContext.verify(() -> assertEquals(expected, restarted()));
-            assertNoUnclosedAdminClient(testContext, kafkaRoller);
-            async.flag();
-        });
+        kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
+            .setHandler(testContext.succeeding(v -> {
+                testContext.verify(() -> assertThat(restarted(), is(expected)));
+                assertNoUnclosedAdminClient(testContext, kafkaRoller);
+                async.flag();
+            }));
     }
 
     private void assertNoUnclosedAdminClient(VertxTestContext testContext, TestingKafkaRoller kafkaRoller) {

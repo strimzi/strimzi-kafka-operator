@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -414,12 +415,11 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2).setHandler(ar -> {
-            if (ar.failed()) ar.cause().printStackTrace();
-            context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            verify(mockDeletable).delete();
-            async.flag();
-        });
+        op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2)
+            .setHandler(context.succeeding(state -> {
+                verify(mockDeletable).delete();
+                async.flag();
+            }));
     }
 
     @Test
@@ -459,14 +459,11 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint async = context.checkpoint();
-        op.deleteAsync(NAMESPACE, RESOURCE_NAME, true).setHandler(res -> {
-            if (res.succeeded())    {
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, true)
+            .setHandler(context.succeeding(res -> {
                 context.verify(() -> assertThat(cascadingCaptor.getValue(), is(true)));
-            } else {
-                context.failNow(new Throwable());
-            }
-            async.flag();
-        });
+                async.flag();
+            }));
     }
 
     @Test
@@ -593,14 +590,13 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint async = context.checkpoint();
-        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
-            if (res.succeeded())    {
-                context.failNow(new Throwable());
-            } else {
-                context.verify(() -> assertThat("org.mockito.exceptions.base.MockitoException".equals(res.cause().getClass().getName()), is(true)));
-                context.verify(() -> assertThat("Something failed".equals(res.cause().getMessage()), is(true)));
-            }
-            async.flag();
-        });
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
+            .setHandler(context.failing(res -> {
+                context.verify(() -> {
+                    assertThat(res, instanceOf(MockitoException.class));
+                    assertThat(res.getMessage(), is("Something failed"));
+                });
+                async.flag();
+            }));
     }
 }

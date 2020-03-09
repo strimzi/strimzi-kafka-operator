@@ -68,11 +68,14 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
 
     @Override
     protected void assertResources(VertxTestContext context, ClusterRole expected, ClusterRole actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getRules().size(), is(expected.getRules().size())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs())));
+        context.verify(() -> {
+            assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+            assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+            assertThat(actual.getRules().size(), is(expected.getRules().size()));
+            assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups()));
+            assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources()));
+            assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs()));
+        });
+
     }
 }

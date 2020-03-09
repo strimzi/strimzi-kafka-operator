@@ -42,6 +42,7 @@ import static io.fabric8.kubernetes.client.Watcher.Action.MODIFIED;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -134,7 +135,7 @@ public class TopicOperatorTest {
         Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).setHandler(ar -> {
             assertFailed(context, ar);
-            context.verify(() -> assertThat(ar.cause() instanceof InvalidTopicException, is(true)));
+            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
             context.verify(() -> assertThat(ar.cause().getMessage(), is("KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null")));
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
