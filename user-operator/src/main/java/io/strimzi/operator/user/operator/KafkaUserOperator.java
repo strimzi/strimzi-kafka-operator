@@ -171,24 +171,27 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         Set<SimpleAclRule> tlsAcls = null;
         Set<SimpleAclRule> scramOrNoneAcls = null;
-        KafkaUserQuotas newQuotasTls = null;
-        KafkaUserQuotas newQuotasPlain = null;
+        KafkaUserQuotas tlsQuotas = null;
+        KafkaUserQuotas scramOrNoneQuotas = null;
 
         if (user.isTlsUser())   {
             tlsAcls = user.getSimpleAclRules();
-            newQuotasTls = user.getQuotas();
-            newQuotasPlain = null;
+            tlsQuotas = user.getQuotas();
         } else if (user.isScramUser() || user.isNoneUser())  {
             scramOrNoneAcls = user.getSimpleAclRules();
-            newQuotasTls = null;
-            newQuotasPlain = user.getQuotas();
+            scramOrNoneQuotas = user.getQuotas();
         }
 
+        // Create the effectively final variables to use in lambda
+        KafkaUserQuotas finalScramOrNoneQuotas = scramOrNoneQuotas;
+        KafkaUserQuotas finalTlsQuotas = tlsQuotas;
 
+        // Reconciliation of Quotas and of SCRAM-SHA credentials changes the same fields and cannot be done in parallel
+        // because they would overwrite each other's data!
         CompositeFuture.join(
-                scramShaCredentialOperator.reconcile(user.getName(), password),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), newQuotasTls),
-                kafkaUserQuotasOperator.reconcile(user.getName(), newQuotasPlain),
+                scramShaCredentialOperator.reconcile(user.getName(), password)
+                        .compose(ignore -> CompositeFuture.join(kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), finalTlsQuotas),
+                                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(userName), finalScramOrNoneQuotas))),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
