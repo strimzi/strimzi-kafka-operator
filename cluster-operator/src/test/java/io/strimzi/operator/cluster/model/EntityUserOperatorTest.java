@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +67,11 @@ public class EntityUserOperatorTest {
     private final int uoReconciliationInterval = 90;
     private final int uoZookeeperSessionTimeout = 20;
 
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
+            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
+        }};
+
     private final EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
             .withWatchedNamespace(uoWatchedNamespace)
             .withImage(uoImage)
@@ -73,6 +80,9 @@ public class EntityUserOperatorTest {
             .withLivenessProbe(livenessProbe)
             .withReadinessProbe(readinessProbe)
             .withLogging(userOperatorLogging)
+            .withNewJvmOptions()
+                .addAllToJavaSystemProperties(javaSystemProperties)
+            .endJvmOptions()
             .build();
 
     private final EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
@@ -101,6 +111,8 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
+
         return expected;
     }
 

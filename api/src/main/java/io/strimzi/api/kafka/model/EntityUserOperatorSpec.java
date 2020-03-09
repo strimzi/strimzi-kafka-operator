@@ -48,7 +48,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     private Probe readinessProbe;
     private ResourceRequirements resources;
     private Logging logging;
-    private EntityOperatorJvmOptions jvmOptions;
+    private JvmOptions jvmOptions;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the User Operator should watch.")
@@ -140,11 +140,11 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("JVM Options for pods")
-    public EntityOperatorJvmOptions getJvmOptions() {
+    public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
 
-    public void setJvmOptions(EntityOperatorJvmOptions jvmOptions) {
+    public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
     }
 }
