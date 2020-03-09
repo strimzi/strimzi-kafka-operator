@@ -212,7 +212,7 @@ public class Labels {
     public Labels withCluster(String cluster) {
         return with(STRIMZI_CLUSTER_LABEL, cluster);
     }
-    
+
     /**
      * The same labels as this instance, but with the application name {@code strimzi} for the {@code app.kubernetes.io/name} key.
      * @return A new instance with the given kubernetes application name added.
@@ -231,12 +231,12 @@ public class Labels {
     }
 
     /**
-     * The same labels as this instance, but with the given {@code instance} for the {@code app.kubernetes.io/instance} key.
-     * @param instance The instance to add.
-     * @return A new instance with the given kubernetes application instance added.
+     * The same labels as this instance, but with the given {@code part-of} for the {@code app.kubernetes.io/part-of} key.
+     * @param partof The partof label to add.
+     * @return A new instance with the given kubernetes application part-of label added.
      */
-    public Labels withKubernetesPartOf(String instance) {
-        return with(Labels.KUBERNETES_PART_OF_LABEL, getOrValidInstanceLabelValue(instance));
+    public Labels withKubernetesPartOf(String partof) {
+        return with(Labels.KUBERNETES_PART_OF_LABEL, getOrValidInstanceLabelValue(partof));
     }
 
     /**
