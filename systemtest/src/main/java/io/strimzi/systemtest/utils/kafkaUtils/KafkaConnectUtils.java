@@ -67,4 +67,11 @@ public class KafkaConnectUtils {
                 "curl -X GET http://localhost:8083/connectors"
         ).out();
     }
+
+    public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
+        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
+            return availableConnectors.contains(connectorName);
+        });
+    }
 }

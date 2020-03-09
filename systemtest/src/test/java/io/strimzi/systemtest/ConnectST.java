@@ -81,7 +81,6 @@ class ConnectST extends BaseST {
 
     private static final String CONNECT_TOPIC_NAME = "connect-topic-example";
 
-    private static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
     private String kafkaClientsPodName;
 
     @Test
@@ -158,7 +157,7 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
@@ -166,7 +165,7 @@ class ConnectST extends BaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
@@ -200,7 +199,6 @@ class ConnectST extends BaseST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
-                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
                 .withNewSpec()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
@@ -231,7 +229,7 @@ class ConnectST extends BaseST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", kafkaClientsPodName, CONNECT_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "SASL_SSL");
@@ -239,7 +237,7 @@ class ConnectST extends BaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).cascading(true).delete();
         LOGGER.info("Topic {} deleted", CONNECT_TOPIC_NAME);
@@ -438,7 +436,7 @@ class ConnectST extends BaseST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", kafkaClientsPodName, CONNECT_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
@@ -446,7 +444,7 @@ class ConnectST extends BaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
@@ -514,7 +512,7 @@ class ConnectST extends BaseST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", kafkaClientsPodName, CONNECT_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(CONNECT_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
@@ -522,7 +520,7 @@ class ConnectST extends BaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
@@ -624,7 +622,7 @@ class ConnectST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Crate connect cluster with default connect image
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, true)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -661,16 +659,9 @@ class ConnectST extends BaseST {
             .endSpec().done();
         KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
 
-        // Wait for first reconciliation
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
         // Check that KafkaConnect contains created connector
         String connectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
-        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
-        String service = KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083);
-        assertThat(availableConnectors, containsString(CLUSTER_NAME));
-
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        KafkaConnectUtils.waitForConnectorCreation(connectPodName, CLUSTER_NAME);
 
         KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
 
@@ -682,7 +673,7 @@ class ConnectST extends BaseST {
 
         TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> {
-                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", service + "/connectors/" + CLUSTER_NAME + "/config").out();
+                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083) + "/connectors/" + CLUSTER_NAME + "/config").out();
                 return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
             });
 
@@ -693,22 +684,24 @@ class ConnectST extends BaseST {
             kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
-        assertThat(availableConnectors, containsString("sink-test"));
+        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.waitForConnectorCreation(connectPodName, "sink-test");
 
         // Wait for second reconciliation and check that pods are not rolled
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Check that KafkaConnect contains created connector
-        availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
+        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
         assertThat(availableConnectors, containsString("sink-test"));
 
         KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployKafkaClients();
     }
 
     @BeforeAll
@@ -721,6 +714,10 @@ class ConnectST extends BaseST {
         cluster.setNamespace(NAMESPACE);
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
 
+        deployKafkaClients();
+    }
+
+    private void deployKafkaClients() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }

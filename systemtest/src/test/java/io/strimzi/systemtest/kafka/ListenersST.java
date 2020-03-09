@@ -672,8 +672,8 @@ public class ListenersST extends BaseST {
             .editSpec()
                 .editKafka()
                     .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
+                        .withNewKafkaListenerExternalRoute()
+                        .endKafkaListenerExternalRoute()
                     .endListeners()
                 .endKafka()
             .endSpec().done();

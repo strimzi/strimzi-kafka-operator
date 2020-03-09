@@ -82,7 +82,7 @@ public interface Constants {
      */
     String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
 
-    String DEFAULT_SINK_FILE_NAME = "/tmp/test-file-sink.txt";
+    String DEFAULT_SINK_FILE_PATH = "/tmp/test-file-sink.txt";
 
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
     int HTTP_JAEGER_DEFAULT_TCP_PORT = 5778;

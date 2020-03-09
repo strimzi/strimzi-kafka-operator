@@ -6,7 +6,6 @@ package io.strimzi.systemtest.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
@@ -90,7 +89,7 @@ public class OauthTlsST extends OauthBaseST {
         assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -127,9 +126,9 @@ public class OauthTlsST extends OauthBaseST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
     }
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")
