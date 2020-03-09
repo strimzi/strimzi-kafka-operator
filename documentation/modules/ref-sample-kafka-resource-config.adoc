@@ -120,7 +120,7 @@ spec:
 <6> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-configuring-kafka-broker-listeners-{context}[configured as `plain` (without encryption), `tls` or `external`].
 <7> Listener authentication mechanisms may be configured for each listener, and xref:assembly-kafka-broker-listener-authentication-{context}[specified as mutual TLS or SCRAM-SHA].
 <8> External listener configuration specifies xref:assembly-kafka-broker-external-listeners-{context}[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
-<9> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a public key. Kafka listener certificates can also be configured for TLS listeners.
+<9> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
 <10> Authorization xref:ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
 <11> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}].
 <12> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].

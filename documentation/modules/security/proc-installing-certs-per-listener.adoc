@@ -5,7 +5,7 @@
 [id='proc-installing-certs-per-listener-{context}']
 = Providing your own Kafka listener certificates
 
-This procedure shows how to configure a listener to use your own public key and server certificate, called a xref:kafka-listener-certificates-{context}[Kafka listener certificate].
+This procedure shows how to configure a listener to use your own private key and server certificate, called a xref:kafka-listener-certificates-{context}[Kafka listener certificate].
 
 Your client applications should use the CA public key as a trusted certificate in order to verify the identity of the Kafka broker.
 
@@ -21,14 +21,14 @@ For more information, see xref:ref-alternative-subjects-certs-for-listeners-{con
 
 .Procedure
 
-. Create a `Secret` containing your public key and server certificate:
+. Create a `Secret` containing your private key and server certificate:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl create secret generic _my-secret_ --from-file=_my-listener-key.key_ --from-file=_my-listener-certificate.crt_
 ----
 
-. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and public key file in the `configuration.brokerCertChainAndKey` property.
+. Edit the `Kafka` resource for your cluster. Configure the listener to use your `Secret`, certificate file, and private key file in the `configuration.brokerCertChainAndKey` property.
 +
 .Example configuration for a `loadbalancer` external listener with TLS encryption enabled
 [source,yaml,subs="attributes+"]

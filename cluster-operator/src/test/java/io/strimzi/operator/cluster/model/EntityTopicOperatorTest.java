@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +66,13 @@ public class EntityTopicOperatorTest {
     private final int toZookeeperSessionTimeout = 20;
     private final int toTopicMetadataMaxAttempts = 3;
 
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
+            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
+        }};
+
+
+
     private final EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
             .withWatchedNamespace(toWatchedNamespace)
             .withImage(toImage)
@@ -73,6 +82,9 @@ public class EntityTopicOperatorTest {
             .withLivenessProbe(livenessProbe)
             .withReadinessProbe(readinessProbe)
             .withLogging(topicOperatorLogging)
+            .withNewJvmOptions()
+                    .addAllToJavaSystemProperties(javaSystemProperties)
+            .endJvmOptions()
             .build();
 
     private final EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
@@ -99,6 +111,7 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(toTopicMetadataMaxAttempts)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
         return expected;
     }
 

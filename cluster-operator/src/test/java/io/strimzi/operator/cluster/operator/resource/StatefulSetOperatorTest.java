@@ -468,11 +468,11 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Checkpoint a = context.checkpoint();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, true)
             .setHandler(context.succeeding(v -> context.verify(() -> {
                 assertThat(cascadingCaptor.getValue(), is(true));
-                a.flag();
+                async.flag();
             })));
     }
 
@@ -592,12 +592,12 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Checkpoint a = context.checkpoint();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
             .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(MockitoException.class));
                 assertThat(e.getMessage(), is("Something failed"));
-                a.flag();
+                async.flag();
             })));
     }
 }

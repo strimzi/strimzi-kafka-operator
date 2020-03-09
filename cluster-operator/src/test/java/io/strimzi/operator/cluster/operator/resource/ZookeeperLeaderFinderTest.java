@@ -338,8 +338,7 @@ public class ZookeeperLeaderFinderTest {
                     assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(MAX_ATTEMPTS + 1));
                 }
                 a.flag();
-            })
-            ));
+            })));
     }
 
     @Test

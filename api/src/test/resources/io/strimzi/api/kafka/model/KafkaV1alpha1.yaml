@@ -30,7 +30,7 @@ spec:
       -Xmx: "4G"
       -Xms: "2G"
       -XX:
-        -foo: bar
+        foo: bar
     storage:
       type: persistent-claim
       size: 500Gi

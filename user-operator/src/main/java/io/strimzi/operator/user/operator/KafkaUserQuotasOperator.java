@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 public class KafkaUserQuotasOperator {
     private static final Logger log = LogManager.getLogger(KafkaUserQuotasOperator.class.getName());
@@ -35,8 +34,8 @@ public class KafkaUserQuotasOperator {
         this.vertx = vertx;
     }
 
-    Future<ReconcileResult<Void>> reconcile(String username, KafkaUserQuotas quotas) {
-        Promise<ReconcileResult<Void>> prom = Promise.promise();
+    Future<ReconcileResult<KafkaUserQuotas>> reconcile(String username, KafkaUserQuotas quotas) {
+        Promise<ReconcileResult<KafkaUserQuotas>> prom = Promise.promise();
         
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
@@ -44,7 +43,7 @@ public class KafkaUserQuotasOperator {
                     boolean exists = exists(username);
                     if (quotas != null) {
                         createOrUpdate(username, quotas);
-                        future.complete(exists ? ReconcileResult.created(null) : ReconcileResult.patched(null));
+                        future.complete(exists ? ReconcileResult.created(quotas) : ReconcileResult.patched(quotas));
                     } else {
                         if (exists) {
                             delete(username);
@@ -73,16 +72,21 @@ public class KafkaUserQuotasOperator {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            log.debug("Updating quotas for user {}", username);
+            log.debug("Checking quota updates for user {}", username);
             JsonNode diff = null;
+
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
-                diff = JsonDiff.asJson(objectMapper.readTree(data), objectMapper.readTree(createUserJson(quotas)));
+                diff = JsonDiff.asJson(objectMapper.readTree(data), objectMapper.readTree(createOrUpdateUserJson(data, quotas)));
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Failed to diff user configuration for user {}", username, e);
             }
+
             if (diff != null && diff.size() > 0) {
-                zkClient.writeData("/config/users/" + username, updateUserJson(data, quotas));
+                log.debug("Updating quotas for user {}", username);
+                zkClient.writeData("/config/users/" + username, createOrUpdateUserJson(data, quotas));
+            } else {
+                log.debug("Nothing to update in quotas for user {}", username);
             }
         } else {
             log.debug("Creating quotas for user {}", username);
@@ -100,37 +104,57 @@ public class KafkaUserQuotasOperator {
      * @return  Returns the generated JSON as byte array
      */
     protected byte[] createUserJson(KafkaUserQuotas quotas)   {
-        JsonObject json = new JsonObject()
-                .put("version", 1)
-                .put("config", new JsonObject());
-
-        for (Map.Entry<String, Object> quota: quotasToJson(quotas).getMap().entrySet()) {
-            json.getJsonObject("config").put(quota.getKey(), quota.getValue().toString());
-        }
-
-        return json.encode().getBytes(StandardCharsets.UTF_8);
+        return createOrUpdateUserJson(null, quotas);
     }
 
     /**
-     * Updates the quotas in existing JSON
+     * Updates the quotas in existing JSON. If the existing JSON is null, new JSON will be created.
      *
      * @param user user configuration
      * @param quotas  quotas
      *
      * @return  Returns the updated JSON as byte array
      */
-    protected byte[] updateUserJson(byte[] user, KafkaUserQuotas quotas)   {
-        JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
+    protected byte[] createOrUpdateUserJson(byte[] user, KafkaUserQuotas quotas)   {
+        JsonObject json;
 
-        validateJsonVersion(json);
-
-        if (json.getJsonObject("config") == null)   {
-            json.put("config", new JsonObject());
+        if (user != null) {
+            json = new JsonObject(new String(user, StandardCharsets.UTF_8));
+            validateJsonVersion(json);
+        } else {
+            json = new JsonObject()
+                    .put("version", 1)
+                    .put("config", new JsonObject());
         }
 
-        for (Map.Entry<String, Object> quota: quotasToJson(quotas).getMap().entrySet()) {
-            json.getJsonObject("config").put(quota.getKey(), quota.getValue().toString());
+        JsonObject config = json.getJsonObject("config", new JsonObject());
+
+        if (quotas != null && quotas.getProducerByteRate() != null) {
+            config.put("producer_byte_rate", quotas.getProducerByteRate().toString());
+        } else {
+            if (config.getString("producer_byte_rate") != null) {
+                config.remove("producer_byte_rate");
+            }
         }
+
+        if (quotas != null && quotas.getConsumerByteRate() != null) {
+            config.put("consumer_byte_rate", quotas.getConsumerByteRate().toString());
+        } else {
+            if (config.getString("consumer_byte_rate") != null) {
+                config.remove("consumer_byte_rate");
+            }
+        }
+
+        if (quotas != null && quotas.getRequestPercentage() != null) {
+            config.put("request_percentage", quotas.getRequestPercentage().toString());
+        } else {
+            if (config.getString("request_percentage") != null) {
+                config.remove("request_percentage");
+            }
+        }
+
+        json.put("config", config);
+
         return json.encode().getBytes(StandardCharsets.UTF_8);
 
     }
@@ -266,22 +290,5 @@ public class KafkaUserQuotasOperator {
             JsonObject json = new JsonObject(jsonString);
             return json;
         } else return null;
-    }
-
-    protected JsonObject quotasToJson(KafkaUserQuotas quotas) {
-        JsonObject quotasJson = new JsonObject();
-        if (quotas == null) {
-            return quotasJson;
-        }
-        if (quotas.getProducerByteRate() != null) {
-            quotasJson.put("producer_byte_rate", quotas.getProducerByteRate().toString());
-        }
-        if (quotas.getConsumerByteRate() != null) {
-            quotasJson.put("consumer_byte_rate", quotas.getConsumerByteRate().toString());
-        }
-        if (quotas.getRequestPercentage() != null) {
-            quotasJson.put("request_percentage", quotas.getRequestPercentage().toString());
-        }
-        return quotasJson;
     }
 }

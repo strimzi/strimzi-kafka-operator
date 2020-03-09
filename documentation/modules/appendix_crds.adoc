@@ -790,7 +790,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [id='type-JvmOptions-{context}']
 ### `JvmOptions` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -1200,24 +1200,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
-|xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`]
+|xref:type-JvmOptions-{context}[`JvmOptions`]
 |livenessProbe                   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|====
-
-[id='type-EntityOperatorJvmOptions-{context}']
-### `EntityOperatorJvmOptions` schema reference
-
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
-
-
-[options="header"]
-|====
-|Property                 |Description
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
-|boolean
 |====
 
 [id='type-EntityOperatorSpec-{context}']
@@ -1275,7 +1262,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
-|xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`]
+|xref:type-JvmOptions-{context}[`JvmOptions`]
 |====
 
 [id='type-EntityUserOperatorSpec-{context}']
@@ -1304,7 +1291,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
-|xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`]
+|xref:type-JvmOptions-{context}[`JvmOptions`]
 |====
 
 [id='type-EntityOperatorTemplate-{context}']

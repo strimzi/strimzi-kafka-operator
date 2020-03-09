@@ -8,10 +8,14 @@ import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +26,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@ExtendWith(VertxExtension.class)
 public class KafkaUserQuotasIT {
 
     private static EmbeddedZooKeeper zkServer;
@@ -146,8 +151,9 @@ public class KafkaUserQuotasIT {
 
     @Test
     public void testDeletion()  {
-        JsonObject original = new JsonObject().put("version", 1).put("config", kuq.quotasToJson(defaultQuotas));
+        JsonObject original = new JsonObject(new String(kuq.createUserJson(defaultQuotas), StandardCharsets.UTF_8));
         original.getJsonObject("config").put("persist", 42);
+
         JsonObject updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getInteger("persist"), is(42));
@@ -170,27 +176,172 @@ public class KafkaUserQuotasIT {
     }
 
     @Test
-    public void testUpdate()  {
-        JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
+    public void testUpdateAndFieldRemoval()  {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2000);
-        JsonObject updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
-
-        quotas.setConsumerByteRate(3000);
         quotas.setProducerByteRate(4000);
-        original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000").put("producer_byte_rate", "2000"));
-        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
+        quotas.setRequestPercentage(40);
+
+        JsonObject created = new JsonObject(new String(kuq.createUserJson(quotas), StandardCharsets.UTF_8));
+        assertThat(created.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
+        assertThat(created.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
+        assertThat(created.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
+        assertThat(created.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
+        assertThat(created.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
+        assertThat(created.getJsonObject("config").getString("request_percentage"), is("40"));
+
+        byte[] createdBytes = created.encode().getBytes(StandardCharsets.UTF_8);
+
+        KafkaUserQuotas quotas2 = new KafkaUserQuotas();
+        quotas2.setConsumerByteRate(2000);
+        quotas2.setProducerByteRate(4000);
+
+        JsonObject updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdBytes, quotas2), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("3000"));
 
-        original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        quotas.setProducerByteRate(null);
-        quotas.setConsumerByteRate(1000);
-        updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), quotas), StandardCharsets.UTF_8));
+        KafkaUserQuotas quotas3 = new KafkaUserQuotas();
+        quotas3.setConsumerByteRate(2000);
+        quotas3.setRequestPercentage(40);
+
+        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdBytes, quotas3), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("40"));
+
+        KafkaUserQuotas quotas4 = new KafkaUserQuotas();
+        quotas4.setProducerByteRate(4000);
+        quotas4.setRequestPercentage(40);
+
+        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdBytes, quotas4), StandardCharsets.UTF_8));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("40"));
+
+        KafkaUserQuotas quotas5 = new KafkaUserQuotas();
+        quotas5.setConsumerByteRate(20000);
+        quotas5.setProducerByteRate(40000);
+        quotas5.setRequestPercentage(50);
+
+        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdBytes, quotas5), StandardCharsets.UTF_8));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("20000"));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("40000"));
+        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("50"));
+    }
+
+    @Test
+    public void testReconcileCreate(VertxTestContext testContext)  {
+        String user = "createTestUser";
+        KafkaUserQuotas quotas = new KafkaUserQuotas();
+        quotas.setConsumerByteRate(2_000_000);
+        quotas.setProducerByteRate(1_000_000);
+        quotas.setRequestPercentage(50);
+
+        testContext.verify(() -> assertThat(kuq.exists(user), is(false)));
+
+        Checkpoint async = testContext.checkpoint();
+        kuq.reconcile(user, quotas)
+                .setHandler(testContext.succeeding(res -> {
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("50"));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
+
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testReconcileUpdate(VertxTestContext testContext)  {
+        String user = "updateTestUser";
+        KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
+        initialQuotas.setConsumerByteRate(2_000_000);
+        initialQuotas.setProducerByteRate(1_000_000);
+        initialQuotas.setRequestPercentage(50);
+
+        kuq.createOrUpdate(user, initialQuotas);
+        testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
+
+        KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
+        updatedQuotas.setConsumerByteRate(4_000_000);
+        updatedQuotas.setProducerByteRate(3_000_000);
+        updatedQuotas.setRequestPercentage(75);
+
+        Checkpoint async = testContext.checkpoint();
+        kuq.reconcile(user, updatedQuotas)
+                .setHandler(testContext.succeeding(res -> {
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("75"));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
+
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testReconcileUpdateWithRemovedField(VertxTestContext testContext)  {
+        String user = "updateTestUser";
+        KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
+        initialQuotas.setConsumerByteRate(2_000_000);
+        initialQuotas.setProducerByteRate(1_000_000);
+        initialQuotas.setRequestPercentage(50);
+
+        kuq.createOrUpdate(user, initialQuotas);
+        testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
+
+        KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
+        updatedQuotas.setConsumerByteRate(4_000_000);
+        updatedQuotas.setProducerByteRate(3_000_000);
+
+        Checkpoint async = testContext.checkpoint();
+        kuq.reconcile(user, updatedQuotas)
+                .setHandler(testContext.succeeding(res -> {
+                    testContext.verify(() -> {
+                        assertThat(kuq.exists(user), is(true));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                        assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is(nullValue()));
+                        assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+                    });
+
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testReconcileDelete(VertxTestContext testContext)  {
+        String user = "deleteTestUser";
+        KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
+        initialQuotas.setConsumerByteRate(2_000_000);
+        initialQuotas.setProducerByteRate(1_000_000);
+        initialQuotas.setRequestPercentage(50);
+
+        kuq.createOrUpdate(user, initialQuotas);
+        testContext.verify(() -> assertThat(kuq.exists(user), is(true)));
+
+        Checkpoint async = testContext.checkpoint();
+        kuq.reconcile(user, null)
+                .setHandler(testContext.succeeding(res -> {
+                    testContext.verify(() -> assertThat(kuq.exists(user), is(false)));
+
+                    async.flag();
+                }));
     }
 }
