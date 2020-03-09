@@ -17,7 +17,6 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -119,17 +118,6 @@ public class KafkaMirrorMaker2CrdOperatorIT {
                 .build();
     }
 
-    private Future<Void> deleteResource()    {
-        // The resource has to be deleted this was and not using reconcile due to https://github.com/fabric8io/kubernetes-client/pull/1325
-        // Fix this override when project is using fabric8 version > 4.1.1
-        kafkaMirrorMaker2Operator.operation().inNamespace(namespace).withName(RESOURCE_NAME).delete();
-
-        return kafkaMirrorMaker2Operator.waitFor(namespace, RESOURCE_NAME, 1_000, 60_000, (ignore1, ignore2) -> {
-            KafkaMirrorMaker2 deletion = kafkaMirrorMaker2Operator.get(namespace, RESOURCE_NAME);
-            return deletion == null;
-        });
-    }
-
     @Test
     public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
@@ -200,7 +188,7 @@ public class KafkaMirrorMaker2CrdOperatorIT {
 
         log.info("Deleting resource");
         CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
+        kafkaMirrorMaker2Operator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
             if (res.succeeded()) {
                 deleteAsync.countDown();
             } else {
@@ -264,7 +252,7 @@ public class KafkaMirrorMaker2CrdOperatorIT {
 
         log.info("Deleting resource");
         CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
+        kafkaMirrorMaker2Operator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
             if (res.succeeded()) {
                 deleteAsync.countDown();
             } else {
@@ -357,7 +345,7 @@ public class KafkaMirrorMaker2CrdOperatorIT {
 
         log.info("Deleting resource");
         CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
+        kafkaMirrorMaker2Operator.reconcile(namespace, RESOURCE_NAME, null).setHandler(res -> {
             if (res.succeeded()) {
                 deleteAsync.countDown();
             } else {
