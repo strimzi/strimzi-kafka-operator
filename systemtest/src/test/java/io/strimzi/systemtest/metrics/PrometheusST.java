@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
@@ -73,24 +74,24 @@ public class PrometheusST extends BaseST {
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
 
     @BeforeAll
-    void setup() {
+    void setup() throws IOException {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
-        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNamespace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
 
-        SecretUtils.createSecretFromFile("../metrics/examples/prometheus/additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
-        SecretUtils.createSecretFromFile("../metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
+        SecretUtils.createSecretFromFile("../examples/metrics/prometheus-additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
+        SecretUtils.createSecretFromFile("../examples/metrics/prometheus-alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
 
         SecretUtils.waitForSecretReady("additional-scrape-configs");
         SecretUtils.waitForSecretReady("alertmanager-alertmanager");
 
         DeploymentUtils.waitForDeploymentReady("prometheus-operator", 1);
 
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/strimzi-service-monitor.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/prometheus-rules.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/alert-manager.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/prometheus.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus.yaml", NAMESPACE));
 
         PodUtils.waitForPod(ALERTMANAGER_POD);
         PodUtils.waitForPod(PROMETHEUS_POD);

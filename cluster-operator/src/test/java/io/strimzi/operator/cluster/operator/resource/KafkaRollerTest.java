@@ -19,6 +19,7 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.logging.log4j.LogManager;
@@ -453,7 +454,7 @@ public class KafkaRollerTest {
     private class TestingKafkaRoller extends KafkaRoller {
 
         int controllerCall;
-        private final IdentityHashMap<AdminClient, Throwable> unclosedAdminClients;
+        private final IdentityHashMap<Admin, Throwable> unclosedAdminClients;
         private final RuntimeException acOpenException;
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
@@ -479,13 +480,13 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected AdminClient adminClient(Integer podId) throws ForceableProblem {
+        protected Admin adminClient(Integer podId) throws ForceableProblem {
             if (acOpenException != null) {
                 throw new ForceableProblem("An error while try to create the admin client", acOpenException);
             }
-            AdminClient ac = mock(AdminClient.class, invocation -> {
+            Admin ac = mock(AdminClient.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
-                    AdminClient mock = (AdminClient) invocation.getMock();
+                    Admin mock = (Admin) invocation.getMock();
                     unclosedAdminClients.remove(mock);
                     if (acCloseException != null) {
                         throw acCloseException;
@@ -499,7 +500,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaAvailability availability(AdminClient ac) {
+        protected KafkaAvailability availability(Admin ac) {
             return new KafkaAvailability(null) {
                 @Override
                 protected Future<Set<String>> topicNames() {
@@ -519,7 +520,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        int controller(int podId, AdminClient ac, long timeout, TimeUnit unit) throws ForceableProblem {
+        int controller(int podId, Admin ac, long timeout, TimeUnit unit) throws ForceableProblem {
             if (controllerException != null) {
                 throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podName(podId), controllerException);
             } else {

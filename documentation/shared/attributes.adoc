@@ -20,8 +20,10 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
+:DefaultKafkaVersion: 2.4.0
 :KafkaVersionLower: 2.3.1
 :KafkaVersionHigher: 2.4.0
+
 //log message format version
 :LogMsgVersLower: 2.3
 :LogMsgVersHigher: 2.4
@@ -51,6 +53,7 @@
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]
 :docs-okd-s2i: link:https://docs.okd.io/3.9/creating_images/s2i.html[Source-to-Image (S2I)^]
+:kafkaDoc: https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
