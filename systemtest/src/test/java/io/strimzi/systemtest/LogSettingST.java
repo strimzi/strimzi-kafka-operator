@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -237,14 +236,12 @@ class LogSettingST extends BaseST {
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
 
-        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
             k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
-            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
-            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
+            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(jvmOptions);
+            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(jvmOptions);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(zkName, 1, zkPods);

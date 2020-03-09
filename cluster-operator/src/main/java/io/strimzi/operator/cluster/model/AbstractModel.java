@@ -924,6 +924,10 @@ public abstract class AbstractModel {
         this.jvmOptions = jvmOptions;
     }
 
+    public JvmOptions getJvmOptions() {
+        return jvmOptions;
+    }
+
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
      *
