@@ -4,17 +4,20 @@
  */
 package io.strimzi.systemtest.oauth;
 
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.junit.jupiter.api.BeforeAll;
@@ -106,7 +109,7 @@ public class OauthAuthorizationST extends OauthBaseST {
 
     @Description("As a member of team A, I should be able only read from consumer that starts with a_")
     @Test
-    void testTeamAReadFromTopic() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    void testTeamAReadFromTopic() throws InterruptedException, ExecutionException, TimeoutException, IOException {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_A);
 
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
@@ -192,23 +195,34 @@ public class OauthAuthorizationST extends OauthBaseST {
                         .withTokenEndpointUri(oauthTokenEndpointUri)
                     .endKafkaAuthorizationKeycloak()
                     .editListeners()
-                        .withNewPlain()
+                        .withNewTls()
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withValidIssuerUri(validIssuerUri)
                                 .withJwksEndpointUri(jwksEndpointUri)
                                 .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
                                 .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
                                 .withUserNameClaim(userNameClaim)
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endPlain()
+                        .endTls()
                         .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withValidIssuerUri(validIssuerUri)
                                 .withJwksEndpointUri(jwksEndpointUri)
                                 .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
                                 .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
                                 .withUserNameClaim(userNameClaim)
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
@@ -216,25 +230,22 @@ public class OauthAuthorizationST extends OauthBaseST {
             .endSpec()
             .done();
 
+        KafkaUserResource.tlsUser(superUserCluster, USER_NAME).done();
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 
-        Future<Integer> producer = teamBOauthKafkaClient.sendMessages(TOPIC_X, NAMESPACE, superUserCluster, MESSAGE_COUNT);
+        Future<Integer> producer = teamBOauthKafkaClient.sendMessagesTls(TOPIC_X, NAMESPACE, superUserCluster, USER_NAME,
+                MESSAGE_COUNT, "SSL");
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 
-        Future<Integer> consumer = teamAOauthKafkaClient.receiveMessages(TOPIC_X, NAMESPACE, superUserCluster,
-            MESSAGE_COUNT, "x_consumer_group_b");
+        Future<Integer> consumer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_X, NAMESPACE, superUserCluster, USER_NAME,
+            MESSAGE_COUNT, "SSL", "x_consumer_group_b");
 
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-
-        LOGGER.info("Verifying that team A is able to consume message even if we specify bad consumer group");
-
-        Future<Integer> consumerWithBadConsumerGroup = teamAOauthKafkaClient.receiveMessages(TOPIC_A, NAMESPACE, superUserCluster,
-            MESSAGE_COUNT, "bad_consumer_group");
-
-        assertThat(consumerWithBadConsumerGroup.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Disabled("Will be implemented in next PR")
@@ -288,21 +299,22 @@ public class OauthAuthorizationST extends OauthBaseST {
                     .build());
 
             kafka.getSpec().getKafka().setAuthorization(
-                    new KafkaAuthorizationKeycloakBuilder()
-                        .withClientId(KAFKA_CLIENT_ID)
-                        .withDisableTlsHostnameVerification(true)
-                        .withDelegateToKafkaAcls(false)
-                            // ca.crt a tls.crt
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(SECRET_OF_KEYCLOAK)
-                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                .build()
-                        )
-                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                new KafkaAuthorizationKeycloakBuilder()
+                    .withClientId(KAFKA_CLIENT_ID)
+                    .withDisableTlsHostnameVerification(true)
+                    .withDelegateToKafkaAcls(false)
+                    // ca.crt a tls.crt
+                    .withTlsTrustedCertificates(
+                        new CertSecretSourceBuilder()
+                            .withSecretName(SECRET_OF_KEYCLOAK)
+                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                            .build()
+                    )
+                    .withTokenEndpointUri(oauthTokenEndpointUri)
                     .build());
-
         });
+        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
     }
