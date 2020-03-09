@@ -154,7 +154,7 @@ class UserST extends BaseST {
 
         // Create user with correct name
         KafkaUserResource.userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
-        SecretUtils.waitForSecretReady(userName);
+        KafkaUserUtils.waitForKafkaUserCreation(userName);
 
         String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
 
