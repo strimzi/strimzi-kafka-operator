@@ -316,7 +316,7 @@ public class KubernetesResource {
 
     public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
         for (String namespace : namespaces) {
-            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals("true")) {
+            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
                 applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
                 applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);

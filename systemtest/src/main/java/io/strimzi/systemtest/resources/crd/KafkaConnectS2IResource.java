@@ -69,7 +69,7 @@ public class KafkaConnectS2IResource {
     }
 
     private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String clusterName) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals("true")) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()), clusterName);
         }
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
