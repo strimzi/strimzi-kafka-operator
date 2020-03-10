@@ -36,6 +36,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -376,6 +377,7 @@ class CustomResourceStatusST extends BaseST {
             .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
     }
 
     void logCurrentStatus(Condition kafkaCondition, String resource) {
