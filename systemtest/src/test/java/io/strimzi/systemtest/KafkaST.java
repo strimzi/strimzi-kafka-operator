@@ -788,7 +788,7 @@ class KafkaST extends BaseST {
             if (!container.getName().equals("tls-sidecar")) {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
                 String value = container.getEnv().stream().filter(envVar ->
-                        envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).collect(Collectors.toList()).get(0).getValue();
+                        envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
                 assertThat(value, is("-Djavax.net.debug=verbose"));
             }
         });
