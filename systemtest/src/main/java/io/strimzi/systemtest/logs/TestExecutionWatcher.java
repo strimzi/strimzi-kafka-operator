@@ -7,9 +7,9 @@ package io.strimzi.systemtest.logs;
 import io.strimzi.systemtest.Environment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -18,14 +18,15 @@ import java.util.TimeZone;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class TestExecutionWatcher implements AfterTestExecutionCallback, LifecycleMethodExecutionExceptionHandler {
+public class TestExecutionWatcher implements TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
 
     @Override
-    public void afterTestExecution(ExtensionContext extensionContext) {
+    public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         String testClass = extensionContext.getRequiredTestClass().getName();
         String testMethod = extensionContext.getRequiredTestMethod().getName();
         collectLogs(testClass, testMethod);
+        throw throwable;
     }
 
     @Override
@@ -46,17 +47,7 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
     @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         String testClass = extensionContext.getRequiredTestClass().getName();
-
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
-        String logDir = Environment.TEST_LOG_DIR + testClass + "_" + currentDate;
-
-        LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
-        logCollector.collectDeployments();
-        logCollector.collectStatefulSets();
-        logCollector.collectReplicaSets();
-
+        collectLogs(testClass, "");
         throw throwable;
     }
 
@@ -67,11 +58,15 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
         String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
         String logDir = !testMethod.isEmpty() ?
                 Environment.TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
-                : Environment.TEST_LOG_DIR + currentDate;
+                : Environment.TEST_LOG_DIR + testClass + currentDate;
 
         LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
         logCollector.collectEvents();
         logCollector.collectConfigMaps();
         logCollector.collectLogsFromPods();
+        logCollector.collectDeployments();
+        logCollector.collectStatefulSets();
+        logCollector.collectReplicaSets();
+        logCollector.collectStrimzi();
     }
 }
