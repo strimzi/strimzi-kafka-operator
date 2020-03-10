@@ -126,6 +126,7 @@ public class LabelsTest {
         userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
         userLabels.put("key1", "value1");
         userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
+        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "my-cluster");
         userLabels.put("key2", "value2");
         userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
         String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
@@ -188,6 +189,7 @@ public class LabelsTest {
         Map<String, String> userLabels = new HashMap<String, String>(5);
         userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
         userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
+        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "my-cluster");
         userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
         userLabels.put("key1", "value1");
         userLabels.put("key2", "value2");

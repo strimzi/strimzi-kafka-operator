@@ -116,6 +116,7 @@ public class KafkaUserOperatorTest {
                             .withKind(KafkaUser.RESOURCE_KIND)
                             .withKubernetesName()
                             .withKubernetesInstance(ResourceUtils.NAME)
+                            .withKubernetesPartOf(ResourceUtils.NAME)
                             .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                             .toMap())));
             context.verify(() -> assertThat(new String(Base64.getDecoder().decode(captured.getData().get("ca.crt"))), is("clients-ca-crt")));
@@ -453,6 +454,7 @@ public class KafkaUserOperatorTest {
                             .withKind(KafkaUser.RESOURCE_KIND)
                             .withKubernetesName()
                             .withKubernetesInstance(ResourceUtils.NAME)
+                            .withKubernetesPartOf(ResourceUtils.NAME)
                             .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                             .toMap())));
             context.verify(() -> assertThat(new String(Base64.getDecoder().decode(captured.getData().get("ca.crt"))), is("clients-ca-crt")));
@@ -535,6 +537,7 @@ public class KafkaUserOperatorTest {
                     is(Labels.userLabels(user.getMetadata().getLabels())
                             .withKubernetesName()
                             .withKubernetesInstance(ResourceUtils.NAME)
+                            .withKubernetesPartOf(ResourceUtils.NAME)
                             .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                             .withKind(KafkaUser.RESOURCE_KIND)
                             .toMap())));
@@ -741,6 +744,7 @@ public class KafkaUserOperatorTest {
                     is(Labels.userLabels(user.getMetadata().getLabels())
                             .withKubernetesName()
                             .withKubernetesInstance(ResourceUtils.NAME)
+                            .withKubernetesPartOf(ResourceUtils.NAME)
                             .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                             .withKind(KafkaUser.RESOURCE_KIND)
                             .toMap())));
@@ -824,6 +828,7 @@ public class KafkaUserOperatorTest {
                     is(Labels.userLabels(user.getMetadata().getLabels())
                             .withKubernetesName()
                             .withKubernetesInstance(ResourceUtils.NAME)
+                            .withKubernetesPartOf(ResourceUtils.NAME)
                             .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                             .withKind(KafkaUser.RESOURCE_KIND)
                             .toMap())));
