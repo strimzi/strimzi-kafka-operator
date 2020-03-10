@@ -25,7 +25,11 @@ public class PathBuilderTest {
     private String getExpectedRebalanceString() {
 
         StringBuilder expectedQuery = new StringBuilder(
-                CruiseControlEndpoints.REBALANCE.path + DEFAULT_QUERY + "&" + CruiseControlParameters.GOALS.key + "=");
+                CruiseControlEndpoints.REBALANCE.path + "?" +
+                        CruiseControlParameters.JSON.key + "=true&" +
+                        CruiseControlParameters.DRY_RUN.key + "=false&" +
+                        CruiseControlParameters.VERBOSE.key + "=true&" +
+                        CruiseControlParameters.GOALS.key + "=");
 
         for (int i = 0; i < GOALS.size(); i++) {
             expectedQuery.append(GOALS.get(i));
@@ -67,7 +71,11 @@ public class PathBuilderTest {
     @Test
     public void testQueryRebalanceOptions() {
 
-        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withGoals(GOALS).build();
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withVerboseResponse()
+                .withFullRun()
+                .withGoals(GOALS)
+                .build();
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .addParameter(CruiseControlParameters.JSON, "true")
