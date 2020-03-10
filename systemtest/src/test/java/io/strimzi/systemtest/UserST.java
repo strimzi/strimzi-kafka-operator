@@ -173,8 +173,11 @@ class UserST extends BaseST {
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
 
         String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:21810 <<< 'ls /config/users'";
-        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
-        assertThat(zkResult.out().contains(userName), is(true));
+
+        TestUtils.waitFor("user " + userName + " will be available in Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            return zkResult.out().contains(userName);
+        });
 
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
@@ -183,8 +186,10 @@ class UserST extends BaseST {
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), emptyString());
 
-        ExecResult zkDeleteResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
-        assertThat(zkDeleteResult.out().contains(userName), is(false));
+        TestUtils.waitFor("user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            return !zkResult.out().contains(userName);
+        });
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
