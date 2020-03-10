@@ -194,9 +194,9 @@ public class OauthAuthorizationST extends OauthBaseST {
                 "does not have super-users to break authorization rules");
 
         assertThrows(Exception.class, () -> {
-            Future<Integer> invalidProducer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_X, NAMESPACE, CLUSTER_NAME, USER_NAME,
+            Future<Integer> invalidConsumer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_X, NAMESPACE, CLUSTER_NAME, USER_NAME,
                     MESSAGE_COUNT, "SSL", "x_consumer_group_b1", Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            invalidProducer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
+            invalidConsumer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
         });
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
