@@ -64,6 +64,7 @@ public class Labels {
 
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
+    public static final String KUBERNETES_PART_OF_LABEL = KUBERNETES_DOMAIN + "part-of";
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
 
     public static final String KUBERNETES_NAME = "strimzi";
@@ -211,7 +212,7 @@ public class Labels {
     public Labels withCluster(String cluster) {
         return with(STRIMZI_CLUSTER_LABEL, cluster);
     }
-    
+
     /**
      * The same labels as this instance, but with the application name {@code strimzi} for the {@code app.kubernetes.io/name} key.
      * @return A new instance with the given kubernetes application name added.
@@ -227,6 +228,15 @@ public class Labels {
      */
     public Labels withKubernetesInstance(String instance) {
         return with(Labels.KUBERNETES_INSTANCE_LABEL, getOrValidInstanceLabelValue(instance));
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code part-of} for the {@code app.kubernetes.io/part-of} key.
+     * @param partof The partof label to add.
+     * @return A new instance with the given kubernetes application part-of label added.
+     */
+    public Labels withKubernetesPartOf(String partof) {
+        return with(Labels.KUBERNETES_PART_OF_LABEL, getOrValidInstanceLabelValue(partof));
     }
 
     /**
