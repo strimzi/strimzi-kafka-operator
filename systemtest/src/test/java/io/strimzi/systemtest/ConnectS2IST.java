@@ -462,7 +462,7 @@ class ConnectS2IST extends BaseST {
         );
         String podIP = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
         String connectorPodName = kubeClient().listPods().stream().filter(pod ->
-                pod.getStatus().getPodIP().equals(podIP)).collect(Collectors.toList()).get(0).getMetadata().getName();
+                pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
 
         internalKafkaClient.assertSentAndReceivedMessages(
                 internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
