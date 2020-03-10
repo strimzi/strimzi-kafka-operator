@@ -36,9 +36,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -108,7 +109,7 @@ public class KafkaAvailabilityTest {
                 configs.put(config, value);
                 return this;
             }
-            PSB partition(int partition) {
+            PSB addNewPartition(int partition) {
                 return partitions.computeIfAbsent(partition, p -> new PSB(p));
             }
 
@@ -136,7 +137,7 @@ public class KafkaAvailabilityTest {
         private Map<Integer, BSB> brokers = new HashMap<>();
         private Map<Integer, Node> nodes = new HashMap<>();
 
-        TSB topic(String name, boolean internal) {
+        TSB addNewTopic(String name, boolean internal) {
             return topics.computeIfAbsent(name, n -> new TSB(n, internal));
         }
 
@@ -270,260 +271,234 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void belowMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
+    public void testBelowMinIsr(VertxTestContext context) {
+        KSB ksb = new KSB()
+            .addNewTopic("A", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
-                .partition(0)
+                .addNewPartition(0)
                     .replicaOn(0, 1)
                     .leader(0)
                     .isr(0, 1)
                 .endPartition()
-
-                .endTopic()
-                .topic("B", false)
+            .endTopic()
+            .addNewTopic("B", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
-                .partition(0)
+                .addNewPartition(0)
                     .replicaOn(0, 1)
                     .leader(1)
                     .isr(1)
                 .endPartition()
-                .endTopic()
+            .endTopic()
 
-                .addBroker(3);
+            .addBroker(3);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    fail(ar.cause());
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                if (brokerId == 3) {
+                    assertTrue(canRoll,
+                            "broker " + brokerId + " should be rollable, having no partitions");
                 } else {
-                    if (brokerId == 3) {
-                        assertTrue(ar.result(),
-                                "broker " + brokerId + " should be rollable, having no partitions");
-                    } else {
-                        assertFalse(ar.result(),
-                                "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
-                    }
+                    assertFalse(canRoll,
+                            "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
                 }
-                checkpoint.flag();
-            });
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void atMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
+    public void testAtMinIsr(VertxTestContext context) {
+        KSB ksb = new KSB()
+            .addNewTopic("A", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
-                .partition(0)
+                .addNewPartition(0)
                     .replicaOn(0, 1)
                     .leader(0)
                     .isr(0, 1)
                 .endPartition()
-
             .endTopic()
-            .topic("B", false)
+            .addNewTopic("B", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
-                .partition(0)
+                .addNewPartition(0)
                     .replicaOn(0, 1)
                     .leader(1)
                     .isr(0, 1)
                 .endPartition()
-
             .endTopic()
 
             .addBroker(2);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    fail(ar.cause());
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                if (brokerId == 2) {
+                    assertTrue(canRoll,
+                            "broker " + brokerId + " should be rollable, having no partitions");
                 } else {
-                    if (brokerId == 2) {
-                        assertTrue(ar.result(),
-                                "broker " + brokerId + " should be rollable, having no partitions");
-                    } else {
-                        assertTrue(ar.result(),
-                                "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
-                    }
+                    assertTrue(canRoll,
+                            "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
                 }
-                checkpoint.flag();
-            });
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void aboveMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                    .replicaOn(0, 1, 2)
-                    .leader(0)
-                    .isr(0, 1, 2)
-                .endPartition()
-
+    public void testAboveMinIsr(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                    .replicaOn(0, 1, 2)
-                    .leader(1)
-                    .isr(0, 1, 2)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(1)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    fail(ar.cause());
-                } else {
-                    assertTrue(ar.result(),
-                            "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                }
-                checkpoint.flag();
-            });
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void minIsrEqualsReplicas(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(0)
-                .isr(0, 1, 2)
-                .endPartition()
-
+    public void testMinIsrEqualsReplicas(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    fail(ar.cause());
-                } else {
-                    assertTrue(ar.result(),
-                            "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
-                }
-                checkpoint.flag();
-            });
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
+
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void noLeader(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                //.leader(0)
-                .isr(1, 2)
-                .endPartition()
-
+    public void testNoLeader(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        //.leader(0)
+                        .isr(1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                //.leader(1)
-                .isr(0)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        //.leader(1)
+                        .isr(0)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3);
 
         KafkaAvailability kafkaSorted = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaSorted.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    context.failNow(ar.cause());
+            kafkaSorted.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                if (brokerId == 0) {
+                    assertFalse(canRoll,
+                            "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
                 } else {
-                    if (brokerId == 0) {
-                        assertFalse(ar.result(),
-                                "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
-                    } else {
-                        assertTrue(ar.result(),
-                                "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                    }
+                    assertTrue(canRoll,
+                            "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
                 }
-                checkpoint.flag();
-            });
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void noMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(0)
-                .isr(0, 1, 2)
-                .endPartition()
-
+    public void testNoMinIsr(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(1)
-                .isr(1, 0, 2)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(1)
+                        .isr(1, 0, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.failed()) {
-                    fail(ar.cause());
-                } else {
-                    assertTrue(ar.result(),
-                            "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                }
-                checkpoint.flag();
-            });
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
+                a.flag();
+            })));
         }
     }
 
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
     @Test
-    public void listThrows(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(0)
-                .isr(0, 1, 2)
-                .endPartition()
-
+    public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(1)
-                .isr(0, 1, 2)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(1)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3)
@@ -531,37 +506,33 @@ public class KafkaAvailabilityTest {
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (ar.succeeded()) {
-                    fail();
-                } else {
-                    assertTrue(ar.cause() instanceof TimeoutException);
-                }
-                checkpoint.flag();
-            });
+            kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void describeTopicsThrows(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(0)
-                .isr(0, 1, 2)
-                .endPartition()
-
+    public void testCanRollThrowsExceptionWhenTopicDescribeThrows(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(1)
-                .isr(0, 1, 2)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(1)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3)
@@ -569,34 +540,33 @@ public class KafkaAvailabilityTest {
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                assertTrue(ar.failed());
-                assertTrue(ar.cause() instanceof UnknownTopicOrPartitionException);
-                checkpoint.flag();
-            });
+            kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
+                a.flag();
+            })));
         }
     }
 
     @Test
-    public void describeConfigsThrows(VertxTestContext context) {
-        KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(0)
-                .isr(0, 1, 2)
-                .endPartition()
-
+    public void testCanRollThrowsExceptionWhenDescribeConfigsThrows(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                .partition(0)
-                .replicaOn(0, 1, 2)
-                .leader(1)
-                .isr(0, 1, 2)
-                .endPartition()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(1)
+                        .isr(0, 1, 2)
+                    .endPartition()
                 .endTopic()
 
                 .addBroker(3)
@@ -604,17 +574,16 @@ public class KafkaAvailabilityTest {
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
-        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
-                if (brokerId <= 2) {
-                    assertFalse(ar.succeeded());
-                    assertTrue(ar.cause() instanceof UnknownTopicOrPartitionException);
-                } else {
-                    assertTrue(ar.succeeded());
-                }
-                checkpoint.flag();
-            });
+            if (brokerId <= 2) {
+                kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+                    assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
+                    a.flag();
+                })));
+            } else {
+                kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> a.flag()));
+            }
         }
     }
 }

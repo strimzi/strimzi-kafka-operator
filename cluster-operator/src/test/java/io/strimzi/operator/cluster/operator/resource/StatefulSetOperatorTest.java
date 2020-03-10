@@ -140,7 +140,7 @@ public class StatefulSetOperatorTest
     }
 
     @Test
-    public void rollingUpdateSuccess() {
+    public void testRollingUpdateSuccess(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -179,11 +179,13 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertThat(result.succeeded(), is(true));
+        Checkpoint a = context.checkpoint();
+        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+            .setHandler(context.succeeding(v -> a.flag()));
     }
+
     @Test
-    public void rollingUpdateDeletionTimeout() {
+    public void testRollingUpdateDeletionTimeout(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -228,13 +230,16 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertThat(result.failed(), is(true));
-        assertThat(result.cause() instanceof TimeoutException, is(true));
+        Checkpoint a = context.checkpoint();
+        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                a.flag();
+            })));
     }
 
     @Test
-    public void rollingUpdateReadinessTimeout() {
+    public void testRollingUpdateReadinessTimeout(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -272,13 +277,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertThat(result.failed(), is(true));
-        assertThat(result.cause() instanceof TimeoutException, is(true));
+        Checkpoint a = context.checkpoint();
+        op.maybeRestartPod(resource, "my-pod-0", pod -> true).setHandler(context.failing(e -> context.verify(() -> {
+            assertThat(e, instanceOf(TimeoutException.class));
+            a.flag();
+        })));
     }
 
     @Test
-    public void rollingUpdateReconcileFailed() {
+    public void testRollingUpdateReconcileFailed(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -315,9 +322,12 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertThat(result.failed(), is(true));
-        assertThat(result.cause().getMessage().equals("reconcile failed"), is(true));
+        Checkpoint a = context.checkpoint();
+        op.maybeRestartPod(resource, "my-pod-0", pod -> true)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e.getMessage(), is("reconcile failed"));
+                a.flag();
+            })));
     }
 
     @Test
@@ -416,7 +426,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2)
-            .setHandler(context.succeeding(state -> {
+            .setHandler(context.succeeding(rrState -> {
                 verify(mockDeletable).delete();
                 async.flag();
             }));
@@ -460,10 +470,10 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, true)
-            .setHandler(context.succeeding(res -> {
-                context.verify(() -> assertThat(cascadingCaptor.getValue(), is(true)));
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat(cascadingCaptor.getValue(), is(true));
                 async.flag();
-            }));
+            })));
     }
 
     @Test
@@ -502,15 +512,12 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Checkpoint async = context.checkpoint();
-        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
-            if (res.succeeded())    {
-                context.verify(() -> assertThat(cascadingCaptor.getValue(), is(false)));
-            } else {
-                context.failNow(new Throwable());
-            }
-            async.flag();
-        });
+        Checkpoint a = context.checkpoint();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat(cascadingCaptor.getValue(), is(false));
+                a.flag();
+            })));
     }
 
     @Test
@@ -545,13 +552,9 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Checkpoint async = context.checkpoint();
-        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
-            if (res.succeeded())    {
-                context.failNow(new Throwable());
-            }
-            async.flag();
-        });
+        Checkpoint a = context.checkpoint();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
+            .setHandler(context.failing(e -> a.flag()));
     }
 
     @Test
@@ -591,12 +594,10 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
-            .setHandler(context.failing(res -> {
-                context.verify(() -> {
-                    assertThat(res, instanceOf(MockitoException.class));
-                    assertThat(res.getMessage(), is("Something failed"));
-                });
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(MockitoException.class));
+                assertThat(e.getMessage(), is("Something failed"));
                 async.flag();
-            }));
+            })));
     }
 }
