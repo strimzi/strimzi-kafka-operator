@@ -99,7 +99,7 @@
         <jaeger.version>1.0.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
-        <strimzi-oauth.version>0.3.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.4.0</strimzi-oauth.version>
 
         <junit-json-params.version>5.5.1-r0</junit-json-params.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
