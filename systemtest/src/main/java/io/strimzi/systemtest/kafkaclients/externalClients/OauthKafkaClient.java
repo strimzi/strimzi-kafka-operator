@@ -32,7 +32,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * The OauthKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthKafkaClient implements IKafkaClient<Future<Integer>>, AutoCloseable {
+public class OauthKafkaClient implements IKafkaClient<Future<Integer>> {
 
     private Vertx vertx = Vertx.vertx();
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
@@ -41,13 +41,6 @@ public class OauthKafkaClient implements IKafkaClient<Future<Integer>>, AutoClos
     private String clientId;
     private String clientSecretName;
     private String oauthTokenEndpointUri;
-
-    @Override
-    public void close() {
-        if (vertx != null) {
-            vertx.close();
-        }
-    }
 
     public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) throws IOException {
         return sendMessages(topicName, namespace, clusterName, messageCount, Constants.GLOBAL_CLIENTS_TIMEOUT);
