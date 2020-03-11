@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.debezium.kafka.KafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -37,6 +39,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -101,7 +104,7 @@ public class KafkaConnectApiTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         CountDownLatch async = new CountDownLatch(1);
@@ -166,12 +169,32 @@ public class KafkaConnectApiTest {
                         assertEquals("RUNNING", an.get("state"));
                         assertEquals("localhost:18083", an.get("worker_id"));
                     }
-                    return Future.succeededFuture();
+                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test");
                 } catch (Throwable e) {
                     return Future.failedFuture(e);
                 }
             })
-            .compose(ignored -> {
+            .compose(config -> {
+                try {
+                    assertEquals(TestUtils.map("connector.class", "FileStreamSource",
+                            "file", "/dev/null",
+                            "tasks.max", "1",
+                            "name", "test",
+                            "topic", "my-topic"), config);
+                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist");
+                } catch (Throwable e) {
+                    return Future.failedFuture(e);
+                }
+            })
+            .recover(error -> {
+                try {
+                    assertTrue(error instanceof ConnectRestException);
+                    assertEquals(404, ((ConnectRestException) error).getStatusCode());
+                    return Future.succeededFuture();
+                } catch (Throwable e) {
+                    return Future.failedFuture(e);
+                }
+            }).compose(ignored -> {
                 return client.pause("localhost", PORT, "test");
             })
             .compose(ignored -> {

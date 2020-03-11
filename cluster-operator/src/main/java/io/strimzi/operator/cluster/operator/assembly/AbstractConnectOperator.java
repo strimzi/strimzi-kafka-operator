@@ -319,7 +319,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
                 Promise<Void> promise = Promise.promise();
-                createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec())
+                maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec())
                         .setHandler(result -> {
                             if (result.succeeded()) {
                                 maybeUpdateConnectorStatus(reconciliation, connector, result.result(), null);
@@ -333,8 +333,41 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, 
-            String connectorName, KafkaConnectorSpec connectorSpec) {
+    /**
+     * Try to get the current connector config. If the connector does not exist, or its config differs from the 
+     * {@code connectorSpec}'s, then call
+     * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec)}
+     * otherwise, just return the connectors current state.
+     * @param reconciliation The reconciliation.
+     * @param host The REST API host.
+     * @param apiClient The client instance.
+     * @param connectorName The connector name.
+     * @param connectorSpec The desired connector spec.
+     * @return A Future whose result, when successfully completed, is a map of the current connector state.
+     */
+    protected Future<Map<String, Object>> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+                                                                       String connectorName, KafkaConnectorSpec connectorSpec) {
+        return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT, connectorName).compose(
+            config -> {
+                if (connectorSpec.getConfig().equals(config)) {
+                    log.debug("{}: Connector {} exists and has desired config", reconciliation, connectorName);
+                    return apiClient.getConnector(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                } else {
+                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
+                }
+            },
+            error -> {
+                if (error instanceof ConnectRestException
+                        && ((ConnectRestException) error).getStatusCode() == 404) {
+                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
+                } else {
+                    return Future.failedFuture(error);
+                }
+            });
+    }
+
+    protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+                                                                  String connectorName, KafkaConnectorSpec connectorSpec) {
         return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT, connectorName, asJson(connectorSpec))
             .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT,
                     connectorName))
