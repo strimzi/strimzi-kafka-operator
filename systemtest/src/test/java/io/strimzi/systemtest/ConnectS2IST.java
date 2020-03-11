@@ -33,6 +33,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -421,6 +422,54 @@ class ConnectS2IST extends BaseST {
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+    }
+
+    @Test
+    void testMultiNodeKafkaConnectS2IWithConnectorCreation() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String connectS2IClusterName = "connect-s2i-cluster";
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        // Crate connect cluster with default connect image
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 3)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect-s2i")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editSpec()
+                    .addToConfig("group.id", connectS2IClusterName)
+                    .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
+                    .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
+                    .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
+                .endSpec().done();
+
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
+                .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", topicName)
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec().done();
+        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+
+        internalKafkaClient.setPodName(kafkaClientsPodName);
+
+        String execConnectPod =  kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
+                execConnectPod,
+                "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/status").out()
+        );
+        String podIP = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
+        String connectorPodName = kubeClient().listPods().stream().filter(pod ->
+                pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
+
+        internalKafkaClient.assertSentAndReceivedMessages(
+                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
+                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+        );
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
