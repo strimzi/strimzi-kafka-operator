@@ -50,6 +50,7 @@ public interface Constants {
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
+    long GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT = Duration.ofSeconds(10).toMillis();
 
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
