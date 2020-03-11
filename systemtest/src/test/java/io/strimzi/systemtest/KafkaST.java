@@ -23,6 +23,8 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
@@ -688,6 +690,10 @@ class KafkaST extends BaseST {
 
     @Test
     void testJvmAndResources() {
+        ArrayList<SystemProperty> javaSystemProps = new ArrayList<>();
+        javaSystemProps.add(new SystemPropertyBuilder().withName("javax.net.debug")
+                .withValue("verbose").build());
+
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
@@ -729,6 +735,9 @@ class KafkaST extends BaseST {
                                 .addToRequests("memory", new Quantity("512Mi"))
                                 .addToRequests("cpu", new Quantity("0.25"))
                                 .build())
+                        .withNewJvmOptions()
+                            .withJavaSystemProperties(javaSystemProps)
+                        .endJvmOptions()
                     .endTopicOperator()
                     .withNewUserOperator()
                         .withResources(new ResourceRequirementsBuilder()
@@ -737,6 +746,9 @@ class KafkaST extends BaseST {
                                 .addToRequests("memory", new Quantity("256M"))
                                 .addToRequests("cpu", new Quantity("300m"))
                                 .build())
+                        .withNewJvmOptions()
+                            .withJavaSystemProperties(javaSystemProps)
+                        .endJvmOptions()
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec().done();
@@ -770,6 +782,16 @@ class KafkaST extends BaseST {
                 "1Gi", "500m", "512Mi", "250m");
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "300m");
+
+        String eoPod = eoPods.keySet().toArray()[0].toString();
+        kubeClient().getPod(eoPod).getSpec().getContainers().forEach(container -> {
+            if (!container.getName().equals("tls-sidecar")) {
+                LOGGER.info("Check if -D java options are present in {}", container.getName());
+                String value = container.getEnv().stream().filter(envVar ->
+                        envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
+                assertThat(value, is("-Djavax.net.debug=verbose"));
+            }
+        });
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
@@ -1445,7 +1467,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-        void testLabelModificationDoesNotBreakCluster() throws Exception {
+    void testLabelModificationDoesNotBreakCluster() throws Exception {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
         String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
