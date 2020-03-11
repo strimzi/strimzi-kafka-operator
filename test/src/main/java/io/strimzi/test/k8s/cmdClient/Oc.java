@@ -81,7 +81,7 @@ public class Oc extends BaseCmdKubeClient<Oc> {
     }
 
     @Override
-    protected String cmd() {
+    public String cmd() {
         return OC;
     }
 
