@@ -209,7 +209,7 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    void testDeleteTopicEnableFalse() throws Exception {
+    void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
