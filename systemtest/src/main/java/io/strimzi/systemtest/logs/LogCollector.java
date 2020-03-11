@@ -91,7 +91,7 @@ public class LogCollector {
 
     public void collectStrimzi() {
         LOGGER.info("Collecting CR in namespaces {}", namespace);
-        String crData = cmdKubeClient().exec("get", "strimzi", "-o", "yaml").out();
+        String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml").out();
         writeFile(logDir + "/strimzi-custom-resources.log", crData);
     }
 }
