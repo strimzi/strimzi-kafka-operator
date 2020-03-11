@@ -124,7 +124,7 @@ public class MetricsST extends BaseST {
     }
 
     @Test
-    void testKafkaExporterDataAfterExchange() throws InterruptedException {
+    void testKafkaExporterDataAfterExchange() {
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String defaultKafkaClientsPodName =

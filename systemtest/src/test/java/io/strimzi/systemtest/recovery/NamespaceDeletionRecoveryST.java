@@ -161,7 +161,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
         assertThat(consumed, is(MESSAGE_COUNT));
     }
 
-    private void prepareEnvironmentForRecovery(String topicName, int messageCount) throws InterruptedException {
+    private void prepareEnvironmentForRecovery(String topicName, int messageCount) {
         String consumerGroup = "group-" + new Random().nextInt(Integer.MAX_VALUE);
         // Setup Test environment with Kafka and store some messages
         prepareEnvForOperator(NAMESPACE);
