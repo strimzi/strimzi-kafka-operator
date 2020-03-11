@@ -309,7 +309,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoRenewClusterCaCertsTriggeredByAnno() throws Exception {
+    void testAutoRenewClusterCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME)),
                 /* ZK node need new certs */
@@ -321,7 +321,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoRenewClientsCaCertsTriggeredByAnno() throws Exception {
+    void testAutoRenewClientsCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clientsCaCertificateSecretName(CLUSTER_NAME)),
                 /* no communication between clients and zk, so no need to roll */
@@ -334,7 +334,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    void testAutoRenewAllCaCertsTriggeredByAnno() throws Exception {
+    void testAutoRenewAllCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME),
                 clientsCaCertificateSecretName(CLUSTER_NAME)),
@@ -346,7 +346,7 @@ class SecurityST extends BaseST {
     void autoReplaceSomeKeysTriggeredByAnno(final List<String> secrets,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
-                                            boolean eoShouldRoll) throws Exception {
+                                            boolean eoShouldRoll) {
         createKafkaCluster();
 
         String aliceUserName = "alice";
@@ -465,7 +465,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoReplaceClusterCaKeysTriggeredByAnno() throws Exception {
+    void testAutoReplaceClusterCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME)),
                 true,
                 true,
@@ -473,7 +473,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoReplaceClientsCaKeysTriggeredByAnno() throws Exception {
+    void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clientsCaKeySecretName(CLUSTER_NAME)),
                 false,
                 true,
@@ -481,7 +481,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoReplaceAllCaKeysTriggeredByAnno() throws Exception {
+    void testAutoReplaceAllCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME),
                 clientsCaKeySecretName(CLUSTER_NAME)),
                 true,
@@ -518,7 +518,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
+    void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -753,7 +753,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
-    void testNetworkPoliciesWithPlainListener() throws InterruptedException {
+    void testNetworkPoliciesWithPlainListener() {
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
 
@@ -828,7 +828,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
-    void testNetworkPoliciesWithTlsListener() throws InterruptedException {
+    void testNetworkPoliciesWithTlsListener() {
         Map<String, String> matchLabelsForTls = new HashMap<>();
         matchLabelsForTls.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
 

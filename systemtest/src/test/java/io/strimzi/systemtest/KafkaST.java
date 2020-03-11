@@ -1364,7 +1364,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testPersistentStorageSize() throws Exception {
+    void testPersistentStorageSize() {
         String[] diskSizes = {"70Gi", "20Gi"};
         int kafkaRepl = 2;
         int diskCount = 2;
@@ -1418,7 +1418,7 @@ class KafkaST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testRegenerateCertExternalAddressChange() throws InterruptedException {
+    void testRegenerateCertExternalAddressChange() {
         LOGGER.info("Creating kafka without external listener");
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
@@ -1728,7 +1728,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testMessagesAreStoredInDisk() throws Exception {
+    void testMessagesAreStoredInDisk() {
         String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
@@ -1791,7 +1791,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testConsumerOffsetFiles() throws Exception {
+    void testConsumerOffsetFiles() {
         String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");

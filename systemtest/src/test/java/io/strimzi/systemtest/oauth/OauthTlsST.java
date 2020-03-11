@@ -67,7 +67,7 @@ public class OauthTlsST extends OauthBaseST {
             "As an oauth producer, i am able to produce messages to the kafka broker\n" +
             "As an oauth consumer, i am able to consumer messages from the kafka broker using encrypted communication")
     @Test
-    void testProducerConsumer() throws IOException, KeyStoreException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumer() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
                 MESSAGE_COUNT, "SSL");
 
@@ -80,7 +80,7 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As an oauth kafka connect, i am able to sink messages from kafka broker topic using encrypted communication.")
     @Test
-    void testProducerConsumerConnect() throws IOException, KeyStoreException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
                 MESSAGE_COUNT, "SSL");
 
