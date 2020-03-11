@@ -47,7 +47,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     String namespace = defaultNamespace();
 
-    protected abstract String cmd();
+    public abstract String cmd();
 
     @Override
     @SuppressWarnings("unchecked")
@@ -229,10 +229,15 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult exec(String... command) {
+        return exec(true, command);
+    }
+
+    @Override
+    public ExecResult exec(boolean throwError, String... command) {
         List<String> cmd = new ArrayList<>();
         cmd.add(cmd());
         cmd.addAll(asList(command));
-        return Exec.exec(cmd);
+        return Exec.exec(null, cmd, 0, true, throwError);
     }
 
     @Override
