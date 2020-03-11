@@ -70,6 +70,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -271,6 +272,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPersistentClaimDeletion())
 
                 .compose(state -> state.getKafkaClusterDescription())
+                .compose(state -> state.checkKafkaSpec())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaNetPolicy())
                 .compose(state -> state.kafkaManualRollingUpdate())
@@ -521,6 +523,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
 
             return initialStatusPromise.future();
+        }
+
+        /**
+         * Checks the requested Kafka spec for potential issues, and adds warnings and advice for best
+         * practice to the status.
+         */
+        Future<ReconciliationState> checkKafkaSpec() {
+            KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
+            List<Condition> warnings = checker.run();
+            kafkaStatus.addConditions(warnings);
+            return Future.succeededFuture(this);
         }
 
         /**
