@@ -33,7 +33,7 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
     }
 
     @Override
-    protected String cmd() {
+    public String cmd() {
         return KUBECTL;
     }
 
