@@ -110,6 +110,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
