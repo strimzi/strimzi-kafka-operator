@@ -81,8 +81,8 @@ public class OauthAuthorizationST extends OauthBaseST {
 
         assertThrows(Exception.class, () -> {
             Future<Integer> invalidProducer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE,
-                    CLUSTER_NAME, TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", TIMEOUT_SEND_RECV_MESSAGES);
-            invalidProducer.get(TIMEOUT_SEND_RECV_MESSAGES, TimeUnit.SECONDS);
+                    CLUSTER_NAME, TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            invalidProducer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
         });
 
         String topicXName = TOPIC_X + "-example-1";
@@ -116,15 +116,14 @@ public class OauthAuthorizationST extends OauthBaseST {
 
         assertThrows(Exception.class, () -> {
             Future<Integer> invalidConsumer = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME,
-                    TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", "bad_consumer_group", TIMEOUT_SEND_RECV_MESSAGES);
-            invalidConsumer.get(TIMEOUT_SEND_RECV_MESSAGES, TimeUnit.SECONDS);
+                    TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", "bad_consumer_group", Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            invalidConsumer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
         });
 
-        Future<Integer> consumerWithCorrectConsumerGroup = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
-                MESSAGE_COUNT, "SSL", "a_correct_consumer_group");
+        Future<Integer> consumerWithCorrectConsumerGroup = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE,
+                CLUSTER_NAME, TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", "a_correct_consumer_group");
 
         assertThat(consumerWithCorrectConsumerGroup.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-
     }
 
     @Description("As a member of team B, I should be able to write and read from topics that starts with b-")
@@ -135,8 +134,8 @@ public class OauthAuthorizationST extends OauthBaseST {
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
         assertThrows(Exception.class, () -> {
             Future<Integer> invalidProducer = teamBOauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME,
-                    TEAM_B_CLIENT, MESSAGE_COUNT, "SSL", TIMEOUT_SEND_RECV_MESSAGES);
-            invalidProducer.get(TIMEOUT_SEND_RECV_MESSAGES, TimeUnit.SECONDS);
+                    TEAM_B_CLIENT, MESSAGE_COUNT, "SSL", Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            invalidProducer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
         });
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_B);
