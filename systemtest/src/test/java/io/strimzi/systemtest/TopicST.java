@@ -15,6 +15,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -141,9 +142,11 @@ public class TopicST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
+        LOGGER.info("Creating topic {} with partitions {} via Kafka", numberOfTopics, topicPartitions);
+
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
-            LOGGER.info("Creating topic {} with {} replicas and {} partitions", currentTopic, 3, topicPartitions);
+            LOGGER.debug("Creating topic {} with {} replicas and {} partitions", currentTopic, 3, topicPartitions);
             KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
         }
 
@@ -160,6 +163,7 @@ public class TopicST extends BaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, currentTopic, topicPartitions);
+            LOGGER.debug("Topic {} updated from {} to {} partitions", currentTopic, 3, topicPartitions);
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -290,10 +294,19 @@ public class TopicST extends BaseST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        List<String> topicInfo = KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
-        LOGGER.info("Checking topic {} in Kafka {}", topicName, CLUSTER_NAME);
-        LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
-        assertThat(topicInfo, hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> {
+                try {
+                    List<String> topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
+                    LOGGER.info("Checking topic {} in Kafka {}", topicName, CLUSTER_NAME);
+                    LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
+                    assertThat(topicInfo, hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+                    return true;
+                } catch (KubeClusterException e) {
+                    LOGGER.info("Describing topic using pod cli occurred following error:{}", e.getMessage());
+                    return false;
+                }
+            });
     }
 
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {

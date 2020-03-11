@@ -1112,6 +1112,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testAclWithSuperUser() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
             .editMetadata()
@@ -1197,8 +1198,9 @@ class SecurityST extends BaseST {
                 " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
 
         assertThrows(ExecutionException.class, () -> {
-            Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, nonSuperuserName, MESSAGE_COUNT,
-                    "SSL");
+            Future<Integer> invalidConsumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME,
+                nonSuperuserName, MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE),
+                Duration.ofSeconds(10).toMillis());
             invalidConsumer.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
         });
     }
