@@ -100,17 +100,6 @@ public class ZookeeperUpgradeST extends BaseST {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
         });
 
-//        Kafka retrievedKafka = Crds.kafkaOperation(kubeClient(NAMESPACE).getClient())
-//                .inNamespace(NAMESPACE)
-//                .withName(CLUSTER_NAME)
-//                .get();
-//
-//        // Change the Kafka version for the resource
-//        retrievedKafka.getSpec().getKafka().setVersion(newVersion.version());
-//
-//        // Patch the existing resource with this new version
-//        Crds.kafkaOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(retrievedKafka);
-
         LOGGER.info("Waiting for deployment of new Kafka version (" + newVersion.version() + ") to complete");
 
         // Wait for the zk version change roll
