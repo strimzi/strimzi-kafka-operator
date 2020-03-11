@@ -104,7 +104,7 @@ spec:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-oc apply -f your-file
+kubectl apply -f your-file
 ----
 
 . Check the update in the logs or by watching the pod state transitions:

@@ -36,7 +36,7 @@ sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 .. Create a `Secret` resource:
 +
 [source,shell,subs="+quotes,attributes"]
-oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
 .. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the YAML file (`prometheus-additional.yaml`) that contains the additional configuration.
 
