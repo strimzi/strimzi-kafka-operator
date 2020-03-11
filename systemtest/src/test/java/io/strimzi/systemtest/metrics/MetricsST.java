@@ -200,6 +200,7 @@ public class MetricsST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1, false).done();
         KafkaTopicResource.topic(CLUSTER_NAME, "test-topic", 7, 2).done();
         // Wait for Metrics refresh/values change

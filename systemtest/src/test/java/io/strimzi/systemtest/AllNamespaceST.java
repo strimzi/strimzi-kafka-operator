@@ -83,6 +83,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
         KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
             .editMetadata()
@@ -98,6 +99,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
         KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
