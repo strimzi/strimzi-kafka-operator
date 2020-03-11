@@ -63,11 +63,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -300,7 +302,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return connectClientProvider.apply(vertx);
     }
 
-    private Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, boolean useResources, String connectorName, KafkaConnector connector) {
+    /*test*/ Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+                                             boolean useResources, String connectorName, KafkaConnector connector) {
         if (connector == null) {
             if (useResources) {
                 log.info("{}: deleting connector: {}", reconciliation, connectorName);
@@ -349,21 +352,37 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                        String connectorName, KafkaConnectorSpec connectorSpec) {
         return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT, connectorName).compose(
             config -> {
-                if (connectorSpec.getConfig().equals(config)) {
-                    log.debug("{}: Connector {} exists and has desired config", reconciliation, connectorName);
-                    return apiClient.getConnector(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
+                    log.info("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
+                    return apiClient.status(host, KafkaConnectCluster.REST_API_PORT, connectorName);
                 } else {
+                    log.info("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
                 }
             },
             error -> {
                 if (error instanceof ConnectRestException
                         && ((ConnectRestException) error).getStatusCode() == 404) {
+                    log.info("{}: Connector {} does not exist", reconciliation, connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
                 } else {
                     return Future.failedFuture(error);
                 }
             });
+    }
+
+    private boolean needsReconfiguring(Reconciliation reconciliation, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> actual) {
+        // The actual which comes from Connect API includes tasks.max, connector.class and name,
+        // which connectorSpec.getConfig() does not
+        Map<String, Object> desired = log.isDebugEnabled() ? new TreeMap(connectorSpec.getConfig()) : new HashMap<>(connectorSpec.getConfig());
+        desired.put("tasks.max", connectorSpec.getTasksMax().toString());
+        desired.put("name", connectorName);
+        desired.put("connector.class", connectorSpec.getClassName());
+        if (log.isDebugEnabled()) {
+            log.info("{}: Desired: {}", reconciliation, desired);
+            log.info("{}: Actual:  {}", reconciliation, new TreeMap(actual));
+        }
+        return connectorSpec.getConfig().equals(actual);
     }
 
     protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
