@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
@@ -412,6 +413,8 @@ class LogSettingST extends BaseST {
                 .endEntityOperator()
             .endSpec()
             .done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1)
             .editSpec()

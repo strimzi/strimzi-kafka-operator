@@ -7,7 +7,7 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -332,7 +332,7 @@ public class KubernetesResource {
      */
     public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
         String clientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
-        Map<String, String> labels = kubeClient().listPodsByPrefixInName(clientsDeploymentName).get(0).getMetadata().getLabels();
+        LabelSelector labelSelector = kubeClient().getDeployment(clientsDeploymentName).getSpec().getSelector();
 
         LOGGER.info("Apply NetworkPolicy access to {} from {}", deploymentName, clientsDeploymentName);
 
@@ -345,7 +345,7 @@ public class KubernetesResource {
                 .withNewSpec()
                     .addNewIngress()
                         .addNewFrom()
-                            .withPodSelector(new LabelSelectorBuilder().addToMatchLabels(labels).build())
+                            .withPodSelector(labelSelector)
                         .endFrom()
                         .addNewPort()
                             .withNewPort(8083)
