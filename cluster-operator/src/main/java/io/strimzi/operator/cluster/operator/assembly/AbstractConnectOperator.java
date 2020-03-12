@@ -355,20 +355,20 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, port, connectorName).compose(
             config -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
-                    log.info("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
+                    log.debug("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return apiClient.status(host, port, connectorName)
                         .compose(status -> {
                             return pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status);
                         });
                 } else {
-                    log.info("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
+                    log.debug("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
                 }
             },
             error -> {
                 if (error instanceof ConnectRestException
                         && ((ConnectRestException) error).getStatusCode() == 404) {
-                    log.info("{}: Connector {} does not exist", reconciliation, connectorName);
+                    log.debug("{}: Connector {} does not exist", reconciliation, connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
                 } else {
                     return Future.failedFuture(error);
@@ -384,8 +384,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         desired.put("name", connectorName);
         desired.put("connector.class", connectorSpec.getClassName());
         if (log.isDebugEnabled()) {
-            log.info("{}: Desired: {}", reconciliation, desired);
-            log.info("{}: Actual:  {}", reconciliation, new TreeMap<>(actual));
+            log.debug("{}: Desired: {}", reconciliation, desired);
+            log.debug("{}: Actual:  {}", reconciliation, new TreeMap<>(actual));
         }
         return connectorSpec.getConfig().equals(actual);
     }

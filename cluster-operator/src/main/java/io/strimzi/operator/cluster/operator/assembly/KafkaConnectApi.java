@@ -178,7 +178,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
-        log.info("Making PUT request to {} with body {}", path, configJson);
+        log.debug("Making PUT request to {} with body {}", path, configJson);
         vertx.createHttpClient(options)
                 .put(port, host, path, response -> {
                     response.exceptionHandler(error -> {
@@ -189,7 +189,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             ObjectMapper mapper = new ObjectMapper();
                             try {
                                 Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                                log.info("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
+                                log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
                                 result.complete(t);
                             } catch (IOException e) {
                                 result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
@@ -197,7 +197,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         });
                     } else {
                         // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        log.info("Got {} response to PUT request to {}", response.statusCode(), path);
+                        log.debug("Got {} response to PUT request to {}", response.statusCode(), path);
                         response.bodyHandler(buffer -> {
                             JsonObject x = buffer.toJsonObject();
                             result.fail(new ConnectRestException(response, x.getString("message")));
@@ -225,7 +225,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private Future<Map<String, Object>> doGet(String host, int port, String path, Set<Integer> okStatusCodes) {
         Future<Map<String, Object>> result = Future.future();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        log.info("Making GET request to {}", path);
+        log.debug("Making GET request to {}", path);
         vertx.createHttpClient(options)
                 .get(port, host, path, response -> {
                     response.exceptionHandler(error -> {
@@ -236,7 +236,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             ObjectMapper mapper = new ObjectMapper();
                             try {
                                 Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                                log.info("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
+                                log.debug("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
                                 result.complete(t);
                             } catch (IOException e) {
                                 result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
@@ -244,7 +244,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         });
                     } else {
                         // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        log.info("Got {} response to GET request to {}", response.statusCode(), path);
+                        log.debug("Got {} response to GET request to {}", response.statusCode(), path);
                         response.bodyHandler(buffer -> {
                             JsonObject x = buffer.toJsonObject();
                             result.fail(new ConnectRestException(response, x.getString("message")));
