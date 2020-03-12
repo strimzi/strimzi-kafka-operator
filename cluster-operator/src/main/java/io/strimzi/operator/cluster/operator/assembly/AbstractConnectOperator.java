@@ -93,11 +93,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final long operationTimeoutMs;
     protected final PlatformFeaturesAvailability pfa;
     protected final ServiceAccountOperator serviceAccountOperations;
+    private final int port;
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                    CrdOperator<C, T, L, D> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
-                                   Function<Vertx, KafkaConnectApi> connectClientProvider) {
+                                   Function<Vertx, KafkaConnectApi> connectClientProvider,
+                                   int port) {
         super(vertx, kind, resourceOperator);
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
@@ -109,6 +111,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.pfa = pfa;
+        this.port = port;
     }
 
     @Override
@@ -272,9 +275,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
         return CompositeFuture.join(
-                apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
+                apiClient.list(host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
-                apiClient.listConnectorPlugins(host, KafkaConnectCluster.REST_API_PORT)
+                apiClient.listConnectorPlugins(host, port)
         ).compose(cf -> {
             List<String> runningConnectorNames = cf.resultAt(0);
             List<KafkaConnector> desiredConnectors = cf.resultAt(1);
@@ -307,7 +310,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (connector == null) {
             if (useResources) {
                 log.info("{}: deleting connector: {}", reconciliation, connectorName);
-                return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                return apiClient.delete(host, port, connectorName);
             } else {
                 return Future.succeededFuture();
             }
@@ -350,11 +353,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<Map<String, Object>> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                        String connectorName, KafkaConnectorSpec connectorSpec) {
-        return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT, connectorName).compose(
+        return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, port, connectorName).compose(
             config -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
                     log.info("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
-                    return apiClient.status(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                    return apiClient.status(host, port, connectorName);
                 } else {
                     log.info("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
@@ -387,8 +390,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                   String connectorName, KafkaConnectorSpec connectorSpec) {
-        return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT, connectorName, asJson(connectorSpec))
-            .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 6), host, KafkaConnectCluster.REST_API_PORT,
+        return apiClient.createOrUpdatePutRequest(host, port, connectorName, asJson(connectorSpec))
+            .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
                     connectorName))
             .compose(status -> {
                 Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
@@ -399,17 +402,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
                     if ("RUNNING".equals(state) && shouldPause) {
                         log.debug("{}: Pausing connector {}", reconciliation, connectorName);
-                        return apiClient.pause(host, KafkaConnectCluster.REST_API_PORT,
+                        return apiClient.pause(host, port,
                                 connectorName)
                                 .compose(ignored ->
-                                        apiClient.status(host, KafkaConnectCluster.REST_API_PORT,
+                                        apiClient.status(host, port,
                                                 connectorName));
                     } else if ("PAUSED".equals(state) && !shouldPause) {
                         log.debug("{}: Resuming connector {}", reconciliation, connectorName);
-                        return apiClient.resume(host, KafkaConnectCluster.REST_API_PORT,
+                        return apiClient.resume(host, port,
                                 connectorName)
                                 .compose(ignored ->
-                                        apiClient.status(host, KafkaConnectCluster.REST_API_PORT,
+                                        apiClient.status(host, port,
                                                 connectorName));
 
                     } else {

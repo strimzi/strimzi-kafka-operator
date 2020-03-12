@@ -36,6 +36,9 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -52,15 +55,16 @@ public class KafkaConnectApiTest {
     @BeforeEach
     public void before() throws IOException, InterruptedException {
         vertx = Vertx.vertx();
+        // Start a 3 node Kafka cluster
         cluster = new KafkaCluster();
         cluster.addBrokers(3);
         cluster.deleteDataPriorToStartup(true);
         cluster.deleteDataUponShutdown(true);
         cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-        //cluster.withKafkaConfiguration(kafkaClusterConfig());
         cluster.startup();
         cluster.createTopics(getClass().getSimpleName() + "-offsets", getClass().getSimpleName() + "-config", getClass().getSimpleName() + "-status");
-        // Somehow start connect distributed. Or can I just fire up the webserver hooked into some mock stuff?
+
+        // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();
         workerProps.put("listeners", "http://localhost:" + PORT);
         File tempDirectory = Files.createTempDirectory(getClass().getSimpleName()).toFile();
@@ -110,7 +114,7 @@ public class KafkaConnectApiTest {
         CountDownLatch async = new CountDownLatch(1);
         client.listConnectorPlugins("localhost", PORT)
             .compose(connectorPlugins -> {
-                assertEquals(connectorPlugins.size(), 2);
+                assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
                 ConnectorPlugin fileSink = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
                 assertNotNull(fileSink);

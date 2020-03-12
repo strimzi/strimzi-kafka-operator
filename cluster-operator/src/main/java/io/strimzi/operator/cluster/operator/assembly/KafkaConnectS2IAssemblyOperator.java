@@ -82,7 +82,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                                            ResourceOperatorSupplier supplier,
                                            ClusterOperatorConfig config,
                                            Function<Vertx, KafkaConnectApi> connectClientProvider) {
-        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, supplier.connectS2IOperator, supplier, config, connectClientProvider);
+        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, supplier.connectS2IOperator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;
