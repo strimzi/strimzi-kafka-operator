@@ -139,7 +139,6 @@ class RollingUpdateST extends BaseST {
     @Test
     void testRecoveryDuringKafkaRollingUpdate() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-        int messageCount = 50;
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
@@ -159,9 +158,9 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
 
-        assertThat(sent, is(messageCount));
+        assertThat(sent, is(MESSAGE_COUNT));
 
         LOGGER.info("Update resources for pods");
 
@@ -178,25 +177,24 @@ class RollingUpdateST extends BaseST {
         // Wait for second reconciliation and check that pods are not rolled
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
-        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k ->
             k.getSpec()
-                    .getKafka()
-                    .setResources(new ResourceRequirementsBuilder()
-                            .addToRequests("cpu", new Quantity("200m"))
-                            .build());
-        });
+                .getKafka()
+                .setResources(new ResourceRequirementsBuilder()
+                    .addToRequests("cpu", new Quantity("200m"))
+                    .build()));
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
     }
 

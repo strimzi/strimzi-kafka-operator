@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -54,16 +53,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
-import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Failed;
-import static io.strimzi.systemtest.k8s.Events.FailedSync;
-import static io.strimzi.systemtest.k8s.Events.FailedValidation;
-import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Scheduled;
-import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.k8s.Events.Unhealthy;
-import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -353,25 +342,12 @@ class ConnectST extends BaseST {
         DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
-        for (String pod : connectPods) {
-            PodUtils.waitForPod(pod);
-            String uid = kubeClient().getPodUid(pod);
-            List<Event> events = kubeClient().listEvents(uid);
-            assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-            assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-        }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
         DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(initialReplicas));
-        for (String pod : connectPods) {
-            String uid = kubeClient().getPodUid(pod);
-            List<Event> events = kubeClient().listEvents(uid);
-            assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-            assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-        }
     }
 
     @Test
