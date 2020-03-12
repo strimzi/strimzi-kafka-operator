@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -196,9 +198,14 @@ public class OauthAuthorizationST extends OauthBaseST {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-            ((KafkaAuthorizationKeycloak) kafka.getSpec().getKafka().getAuthorization()).setSuperUsers(
-                    List.of("service-account-" + TEAM_A_CLIENT, "service-account-" + TEAM_B_CLIENT)));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+
+            List<String> superUsers = new ArrayList<>(2);
+            superUsers.add("service-account-" + TEAM_A_CLIENT);
+            superUsers.add("service-account-" + TEAM_B_CLIENT);
+
+            ((KafkaAuthorizationKeycloak) kafka.getSpec().getKafka().getAuthorization()).setSuperUsers(superUsers);
+        });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
