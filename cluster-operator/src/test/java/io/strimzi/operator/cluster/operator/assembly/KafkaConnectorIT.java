@@ -186,15 +186,13 @@ public class KafkaConnectorIT {
                         null, null, null, null, null, null, null, null, null, null, null,
                         null, connectCrdOperator, null, null, null),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-                connect -> new KafkaConnectApiImpl(vertx),
-                connectCluster.getPort() + 2) {
-
-        };
+            connect -> new KafkaConnectApiImpl(vertx),
+            connectCluster.getPort() + 2) { };
 
         operator.reconcileConnector(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
-                connector)
-        .compose(r -> {
+                connector
+        ).compose(r -> {
             return connectorIsRunning(context, kubeClient, namespace, connectorName);
         }).compose(ignored -> {
             config.remove(TestingConnector.START_TIME_MS, 1_000);
