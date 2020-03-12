@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
@@ -84,17 +85,18 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSubjects().size(), is(expected.getSubjects().size())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName())));
+    protected void assertResources(VertxTestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual) {
+        context.verify(() -> {
+            assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+            assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+            assertThat(actual.getSubjects(), hasSize(expected.getSubjects().size()));
+            assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind()));
+            assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace()));
+            assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName()));
 
-        context.verify(() -> assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind())));
-        context.verify(() -> assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup())));
-        context.verify(() -> assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName())));
-
+            assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind()));
+            assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup()));
+            assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName()));
+        });
     }
 }
