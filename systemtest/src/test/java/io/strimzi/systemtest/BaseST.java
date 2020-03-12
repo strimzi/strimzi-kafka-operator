@@ -258,7 +258,7 @@ public abstract class BaseST implements TestSeparator {
 
     private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = cmdKubeClient().execInPodContainer(podName, containerName,"/bin/bash", "-c",
+        String output = cmdKubeClient().execInPodContainer(podName, containerName, "/bin/bash", "-c",
             "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
