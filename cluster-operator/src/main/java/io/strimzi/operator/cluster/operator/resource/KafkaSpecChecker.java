@@ -7,12 +7,13 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +34,8 @@ public class KafkaSpecChecker {
     private ZookeeperCluster zkCluster;
     private String timestamp;
 
+    private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
+
     /**
      * @param spec The spec requested by the user in the CR
      * @param kafkaCluster The model generated based on the spec. This is requested so that default
@@ -46,20 +49,17 @@ public class KafkaSpecChecker {
         this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
-        this.timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date());
+        this.timestamp = ModelUtils.formatTimestamp(new Date());
     }
-
 
     public List<Condition> run() {
-        List<Condition> notifications = new ArrayList<>();
-        checkKafkaLogMessageFormatVersion(notifications);
-        checkKafkaStorage(notifications);
-        checkZooKeeperStorage(notifications);
-        checkZooKeeperReplicas(notifications);
-        return notifications;
+        List<Condition> warnings = new ArrayList<>();
+        checkKafkaLogMessageFormatVersion(warnings);
+        checkKafkaStorage(warnings);
+        checkZooKeeperStorage(warnings);
+        checkZooKeeperReplicas(warnings);
+        return warnings;
     }
-
-    private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
 
     /**
      * Checks if the version of the Kafka brokers matches any custom log.message.format.version config.
@@ -90,8 +90,7 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKafkaStorage(List<Condition> warnings) {
-        if (kafkaCluster.getReplicas() == 1 &&
-            kafkaCluster.getStorage() != null && Storage.TYPE_EPHEMERAL.equals(kafkaCluster.getStorage().getType())) {
+        if (kafkaCluster.getReplicas() == 1 && usesEphemeral(kafkaCluster.getStorage())) {
             warnings.add(buildCondition("KafkaStorage",
                     "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
         }
@@ -104,11 +103,27 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkZooKeeperStorage(List<Condition> warnings) {
-        if (zkCluster.getReplicas() == 1 &&
-            zkCluster.getStorage() != null && Storage.TYPE_EPHEMERAL.equals(zkCluster.getStorage().getType())) {
+        if (zkCluster.getReplicas() == 1 && usesEphemeral(zkCluster.getStorage())) {
             warnings.add(buildCondition("ZooKeeperStorage",
                     "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
         }
+    }
+
+    private boolean isEphemeral(Storage storage) {
+        return Storage.TYPE_EPHEMERAL.equals(storage.getType());
+    }
+
+    private boolean usesEphemeral(Storage storage) {
+        if (storage != null) {
+            if (isEphemeral(storage)) {
+                return true;
+            }
+            if (Storage.TYPE_JBOD.equals(storage.getType())) {
+                JbodStorage jbodStorage = (JbodStorage) storage;
+                return jbodStorage.getVolumes().stream().anyMatch(this::isEphemeral);
+            }
+        }
+        return false;
     }
 
     /**

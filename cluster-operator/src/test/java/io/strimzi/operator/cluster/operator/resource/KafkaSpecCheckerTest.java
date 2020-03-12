@@ -8,6 +8,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -62,6 +64,29 @@ public class KafkaSpecCheckerTest {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .editSpec()
+                    .editZookeeper()
+                        .withReplicas(3)
+                    .endZookeeper()
+                .endSpec()
+            .build();
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("KafkaStorage"));
+        assertThat(warning.getLastTransitionTime(), not(emptyOrNullString()));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
+    }
+
+    @Test
+    public void checkKafkaJbodStorage() {
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
+            new JbodStorageBuilder().withVolumes(new EphemeralStorageBuilder().withId(1).build(),
+                                                 new EphemeralStorageBuilder().withId(2).build()).build(),
+            new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editZookeeper()
                         .withReplicas(3)

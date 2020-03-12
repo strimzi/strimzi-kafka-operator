@@ -48,13 +48,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready2")
                 .withNewStatus("True")
                 .build();
@@ -127,13 +127,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
