@@ -162,42 +162,43 @@ public class OauthPlainST extends OauthBaseST {
             .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-            "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
-            .editSpec()
-                .withNewConsumer()
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                    .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
-                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                    .withNewKafkaClientAuthenticationOAuth()
-                        .withNewTokenEndpointUri(oauthTokenEndpointUri)
-                        .withClientId("kafka-mirror-maker")
-                        .withNewClientSecret()
-                            .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                            .withKey(OAUTH_KEY)
-                        .endClientSecret()
-                    .endKafkaClientAuthenticationOAuth()
-                    .withTls(null)
-                .endConsumer()
-                .withNewProducer()
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
-                    .withNewKafkaClientAuthenticationOAuth()
-                        .withNewTokenEndpointUri(oauthTokenEndpointUri)
-                        .withClientId("kafka-mirror-maker")
-                        .withNewClientSecret()
-                            .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                            .withKey(OAUTH_KEY)
-                        .endClientSecret()
-                    .endKafkaClientAuthenticationOAuth()
-                    .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
-                    .withTls(null)
-                .endProducer()
-            .endSpec()
-            .done();
+                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+                .editSpec()
+                    .withNewConsumer()
+                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                        .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
+                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                        .withNewKafkaClientAuthenticationOAuth()
+                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withClientId("kafka-mirror-maker")
+                            .withNewClientSecret()
+                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                        .endKafkaClientAuthenticationOAuth()
+                        .withTls(null)
+                    .endConsumer()
+                    .withNewProducer()
+                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                        .withNewKafkaClientAuthenticationOAuth()
+                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withClientId("kafka-mirror-maker")
+                            .withNewClientSecret()
+                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                        .endKafkaClientAuthenticationOAuth()
+                        .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
+                        .withTls(null)
+                    .endProducer()
+                .endSpec()
+                .done();
 
+        // TODO: doesn't work...
         consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, targetKafkaCluster, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Disabled("MM doesn't replicate messages to target cluster. Investigate in the next PR")
