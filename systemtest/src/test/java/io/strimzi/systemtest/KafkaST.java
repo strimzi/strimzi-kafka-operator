@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -109,6 +110,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
@@ -1018,7 +1020,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testEntityOperatorWithoutUserOperator() {
+        void testEntityOperatorWithoutUserOperator() {
         LOGGER.info("Deploying Kafka cluster without UO in EO");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -1279,6 +1281,7 @@ class KafkaST extends BaseST {
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pvc", "data-0-" + KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        PersistentVolumeClaimUtils.waitUntilPVCDeletion(CLUSTER_NAME);
         verifyPVCDeletion(2, jbodStorage);
     }
 
@@ -1955,7 +1958,7 @@ class KafkaST extends BaseST {
     @Test
     void testKafkaOffsetsReplicationFactorHigherThanReplicas() {
         int replicas = 3;
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, replicas, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, replicas, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("offsets.topic.replication.factor", 4)
@@ -1966,6 +1969,7 @@ class KafkaST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
                 "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).delete(kafka);
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
