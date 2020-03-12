@@ -74,7 +74,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
         RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
         ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*[fF]ailed.*"),
-        WATCHER_CLOSED_EXCEPTION("ERROR AbstractOperator:* - Watcher closed with exception in namespace *");
+        WATCHER_CLOSED_EXCEPTION("ERROR AbstractOperator:.+ - Watcher closed with exception in namespace .*");
 
         final String name;
 
