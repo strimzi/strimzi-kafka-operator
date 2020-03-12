@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
@@ -71,7 +72,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
         context.verify(() -> {
             assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
             assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
-            assertThat(actual.getRules().size(), is(expected.getRules().size()));
+            assertThat(actual.getRules(), hasSize(expected.getRules().size()));
             assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups()));
             assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources()));
             assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs()));

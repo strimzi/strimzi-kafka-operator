@@ -8,17 +8,16 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
-
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -47,16 +46,16 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectCrdOperatorIT {
-    protected static final Logger log = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
+public class KafkaConnectS2ICrdOperatorIT {
+    protected static final Logger log = LogManager.getLogger(KafkaConnectS2ICrdOperatorIT.class);
 
     public static final String RESOURCE_NAME = "my-test-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
-    protected static CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> kafkaConnectOperator;
-    protected static String namespace = "connect-crd-it-namespace";
+    protected static CrdOperator<KubernetesClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> kafkaConnectS2IOperator;
+    protected static String namespace = "connects2i-crd-it-namespace";
 
-    private static KubeClusterResource cluster;
+    private static  KubeClusterResource cluster;
 
     @BeforeAll
     public static void before() {
@@ -70,7 +69,7 @@ public class KafkaConnectCrdOperatorIT {
         }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
-        kafkaConnectOperator = new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
+        kafkaConnectS2IOperator = new CrdOperator(vertx, client, KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
 
         log.info("Preparing namespace");
         if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -84,7 +83,7 @@ public class KafkaConnectCrdOperatorIT {
         cmdKubeClient().waitForResourceCreation("Namespace", namespace);
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().create(Crds.kafkaConnect());
+        client.customResourceDefinitions().create(Crds.kafkaConnectS2I());
         log.info("Created CRD");
     }
 
@@ -92,7 +91,7 @@ public class KafkaConnectCrdOperatorIT {
     public static void after() {
         if (client != null) {
             log.info("Deleting CRD");
-            client.customResourceDefinitions().delete(Crds.kafkaConnect());
+            client.customResourceDefinitions().delete(Crds.kafkaConnectS2I());
         }
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Deleting namespace {} after tests run", namespace);
@@ -105,12 +104,12 @@ public class KafkaConnectCrdOperatorIT {
         }
     }
 
-    protected KafkaConnect getResource() {
-        return new KafkaConnectBuilder()
-                .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
+    protected KafkaConnectS2I getResource() {
+        return new KafkaConnectS2IBuilder()
+                .withApiVersion(KafkaConnectS2I.RESOURCE_GROUP + "/" + KafkaConnectS2I.V1BETA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(namespace)
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -132,12 +131,12 @@ public class KafkaConnectCrdOperatorIT {
 
             .compose(pfa -> {
                 log.info("Creating resource");
-                return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+                return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, getResource());
             })
             .setHandler(context.succeeding())
 
             .compose(rrCreated -> {
-                KafkaConnect newStatus = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
+                KafkaConnectS2I newStatus = new KafkaConnectS2IBuilder(kafkaConnectS2IOperator.get(namespace, RESOURCE_NAME))
                         .withNewStatus()
                         .withConditions(new ConditionBuilder()
                                 .withType("Ready")
@@ -147,24 +146,21 @@ public class KafkaConnectCrdOperatorIT {
                         .build();
 
                 log.info("Updating resource status");
-                return kafkaConnectOperator.updateStatusAsync(newStatus);
+                return kafkaConnectS2IOperator.updateStatusAsync(newStatus);
             })
             .setHandler(context.succeeding())
 
-            .compose(v -> kafkaConnectOperator.getAsync(namespace, RESOURCE_NAME))
-            .setHandler(context.succeeding(updatedKafkaConnect -> context.verify(() -> {
-
-                assertThat(updatedKafkaConnect.getStatus().getConditions().get(0), is(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build()));
+            .compose(rrModified -> kafkaConnectS2IOperator.getAsync(namespace, RESOURCE_NAME))
+            .setHandler(context.succeeding(modifiedKafkaConnectS2I -> context.verify(() -> {
+                assertThat(modifiedKafkaConnectS2I.getStatus().getConditions().get(0).getType(), is("Ready"));
+                assertThat(modifiedKafkaConnectS2I.getStatus().getConditions().get(0).getStatus(), is("True"));
             })))
 
-            .compose(rr -> {
+            .compose(rrModified -> {
                 log.info("Deleting resource");
-                return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, null);
+                return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, null);
             })
-            .setHandler(context.succeeding(rr -> async.flag()));
+            .setHandler(context.succeeding(rrDeleted ->  async.flag()));
     }
 
     /**
@@ -184,18 +180,18 @@ public class KafkaConnectCrdOperatorIT {
             })))
             .compose(pfa -> {
                 log.info("Creating resource");
-                return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+                return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, getResource());
             })
             .setHandler(context.succeeding())
 
             .compose(rr -> {
                 log.info("Deleting resource");
-                return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, null);
+                return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, null);
             })
             .setHandler(context.succeeding())
 
             .compose(v -> {
-                KafkaConnect newStatus = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
+                KafkaConnectS2I newStatus = new KafkaConnectS2IBuilder(kafkaConnectS2IOperator.get(namespace, RESOURCE_NAME))
                         .withNewStatus()
                         .withConditions(new ConditionBuilder()
                                 .withType("Ready")
@@ -205,7 +201,7 @@ public class KafkaConnectCrdOperatorIT {
                         .build();
 
                 log.info("Updating resource status");
-                return kafkaConnectOperator.updateStatusAsync(newStatus);
+                return kafkaConnectS2IOperator.updateStatusAsync(newStatus);
             })
             .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(NullPointerException.class));
@@ -214,7 +210,7 @@ public class KafkaConnectCrdOperatorIT {
     }
 
     /**
-     * Tests what happens when the resource is modifed while updating the status
+     * Tests what happens when the resource is modified while updating the status
      *
      * @param context
      */
@@ -232,14 +228,13 @@ public class KafkaConnectCrdOperatorIT {
             })))
             .compose(pfa -> {
                 log.info("Creating resource");
-                return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+                return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, getResource());
             })
             .setHandler(context.succeeding())
             .compose(rr -> {
+                KafkaConnectS2I currentKafkaConnectS2I = kafkaConnectS2IOperator.get(namespace, RESOURCE_NAME);
 
-                KafkaConnect currentKafkaConnect = kafkaConnectOperator.get(namespace, RESOURCE_NAME);
-
-                KafkaConnect updated = new KafkaConnectBuilder(currentKafkaConnect)
+                KafkaConnectS2I updated = new KafkaConnectS2IBuilder(currentKafkaConnectS2I)
                         .editSpec()
                             .withNewLivenessProbe()
                                 .withInitialDelaySeconds(14)
@@ -247,22 +242,24 @@ public class KafkaConnectCrdOperatorIT {
                         .endSpec()
                         .build();
 
-                KafkaConnect newStatus = new KafkaConnectBuilder(currentKafkaConnect)
+
+                KafkaConnectS2I newStatus = new KafkaConnectS2IBuilder(currentKafkaConnectS2I)
                         .withNewStatus()
-                            .withConditions(new ConditionBuilder()
-                                    .withType("Ready")
-                                    .withStatus("True")
-                                    .build())
+                        .withConditions(new ConditionBuilder()
+                                .withType("Ready")
+                                .withStatus("True")
+                                .build())
                         .endStatus()
                         .build();
 
                 log.info("Updating resource (mocking an update due to some other reason)");
-                kafkaConnectOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
+                kafkaConnectS2IOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
 
                 log.info("Updating resource status after underlying resource has changed");
-                return kafkaConnectOperator.updateStatusAsync(newStatus);
+                return kafkaConnectS2IOperator.updateStatusAsync(newStatus);
             })
             .setHandler(context.failing(e -> context.verify(() -> {
+                System.out.println("please");
                 assertThat("Exception was not KubernetesClientException, it was : " + e.toString(),
                         e, instanceOf(KubernetesClientException.class));
                 updateFailed.complete();
@@ -270,7 +267,7 @@ public class KafkaConnectCrdOperatorIT {
 
         updateFailed.future().compose(v -> {
             log.info("Deleting resource");
-            return kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, null);
+            return kafkaConnectS2IOperator.reconcile(namespace, RESOURCE_NAME, null);
         })
         .setHandler(context.succeeding(v -> async.flag()));
     }

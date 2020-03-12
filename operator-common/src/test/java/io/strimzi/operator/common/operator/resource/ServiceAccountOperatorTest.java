@@ -63,7 +63,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
     @Override
     @Test
-    public void createWhenExistsIsAPatch(VertxTestContext context) {
+    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, true);
     }
     @Override

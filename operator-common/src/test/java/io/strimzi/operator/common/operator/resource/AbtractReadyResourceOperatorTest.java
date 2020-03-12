@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.atLeastOnce;
@@ -38,7 +36,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
     protected abstract AbstractReadyResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
-    public void waitUntilReadyWhenDoesNotExist(VertxTestContext context) {
+    public void testReadinessThrowsWhenResourceDoesNotExist(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
@@ -54,19 +52,18 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
 
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
         Checkpoint async = context.checkpoint();
-        Future<Void> fut = op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100);
-        fut.setHandler(ar -> {
-            assertThat(ar.failed(), is(true));
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, atLeastOnce()).get();
-            verify(mockResource, never()).isReady();
-            async.flag();
-        });
+        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                verify(mockResource, atLeastOnce()).get();
+                verify(mockResource, never()).isReady();
+                async.flag();
+            })));
 
     }
 
     @Test
-    public void waitUntilReadyExistenceCheckThrows(VertxTestContext context) {
+    public void testReadinessThrowsWhenExistenceCheckThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("This is a test exception");
 
@@ -85,26 +82,26 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertThat(ar.failed(), is(true));
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, never()).isReady();
-            async.flag();
-        });
+        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                verify(mockResource, never()).isReady();
+                async.flag();
+            })));
     }
 
     @Test
-    public void waitUntilReadySuccessfulImmediately(VertxTestContext context) {
+    public void testWaitUntilReadySuccessfulImmediately(VertxTestContext context) {
         waitUntilReadySuccessful(context, 0);
     }
 
     @Test
-    public void waitUntilReadySuccessfulAfterOneCall(VertxTestContext context) {
+    public void testWaitUntilReadySuccessfulAfterOneCall(VertxTestContext context) {
         waitUntilReadySuccessful(context, 1);
     }
 
     @Test
-    public void waitUntilReadySuccessfulAfterTwoCalls(VertxTestContext context) {
+    public void testWaitUntilReadySuccessfulAfterTwoCalls(VertxTestContext context) {
         waitUntilReadySuccessful(context, 2);
     }
 
@@ -137,23 +134,24 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
-            assertThat(ar.succeeded(), is(true));
-            verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
+            .setHandler(context.succeeding(v -> {
+                verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
 
-            if (Readiness.isReadinessApplicable(resource.getClass())) {
-                verify(mockResource, times(unreadyCount + 1)).isReady();
-            }
-            async.flag();
-        });
+                if (Readiness.isReadinessApplicable(resource.getClass())) {
+                    verify(mockResource, times(unreadyCount + 1)).isReady();
+                }
+                async.flag();
+            }));
     }
 
     @Test
-    public void waitUntilReadyUnsuccessful(VertxTestContext context) {
+    public void testWaitUntilReadyUnsuccessful(VertxTestContext context) {
         T resource = resource();
 
+        // This test does not apply to the resource types without the Ready field
         if (!Readiness.isReadinessApplicable(resource.getClass()))  {
-            return;
+            context.completeNow();
         }
 
         Resource mockResource = mock(resourceType());
@@ -172,21 +170,22 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertThat(ar.failed(), is(true));
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, atLeastOnce()).get();
-            verify(mockResource, atLeastOnce()).isReady();
-            async.flag();
-        });
+        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                verify(mockResource, atLeastOnce()).get();
+                verify(mockResource, atLeastOnce()).isReady();
+                async.flag();
+            })));
     }
 
     @Test
-    public void waitUntilReadyThrows(VertxTestContext context) {
+    public void testWaitUntilReadyThrows(VertxTestContext context) {
         T resource = resource();
 
+        // This test does not apply to the resource types without the Ready field
         if (!Readiness.isReadinessApplicable(resource.getClass()))  {
-            return;
+            context.completeNow();
         }
 
         RuntimeException ex = new RuntimeException("This is a test exception");
@@ -207,10 +206,10 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertThat(ar.failed(), is(true));
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            async.flag();
-        });
+        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(TimeoutException.class));
+                async.flag();
+            })));
     }
 }
