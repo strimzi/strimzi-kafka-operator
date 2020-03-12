@@ -20,9 +20,18 @@ function get_gc_opts {
   fi
 }
 
-MAX_HEAP=`get_heap_size`
-if [ -n "$MAX_HEAP" ]; then
-  JAVA_OPTS="-Xms${MAX_HEAP}m -Xmx${MAX_HEAP}m $JAVA_OPTS"
+if [[ $JAVA_OPTS != *"-Xms"* || $JAVA_OPTS != *"-Xmx"* ]]; then
+  MAX_HEAP=`get_heap_size`
+  if [[ $JAVA_OPTS != *"-Xms"* ]]; then
+      if [ -n "$MAX_HEAP" ]; then
+        JAVA_OPTS="-Xms${MAX_HEAP}m $JAVA_OPTS"
+      fi
+  fi
+  if [[ $JAVA_OPTS != *"-Xmx"* ]]; then
+      if [ -n "$MAX_HEAP" ]; then
+        JAVA_OPTS="-Xmx${MAX_HEAP}m $JAVA_OPTS"
+      fi
+  fi
 fi
 
 export MALLOC_ARENA_MAX=2
