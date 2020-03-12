@@ -34,6 +34,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -351,20 +352,24 @@ public class MirrorMakerST extends BaseST {
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName,
+                userSource.getMetadata().getName(), messagesCount, "TLS");
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName,
+                    userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
         );
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
-            Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
-            () -> sent == internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME));
+            Duration.ofSeconds(10).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            () -> sent == internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName,
+                    userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME, Duration.ofSeconds(10).toMillis()));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(),
+                    messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
         );
     }
 
