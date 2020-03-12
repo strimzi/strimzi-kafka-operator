@@ -30,7 +30,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -282,7 +281,7 @@ class ConnectS2IST extends BaseST {
 
         KafkaConnectS2I kafkaConnectS2i = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToLabels("type", "kafka-connect")
+                .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
             .editSpec()
                 .withResources(new ResourceRequirementsBuilder()
@@ -328,12 +327,19 @@ class ConnectS2IST extends BaseST {
 
         KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
 
-        String podName = PodUtils.getPodNameByPrefix(kafkaConnectS2IName);
+        String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
-        assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
-                "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
-                "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
+        TestUtils.waitFor("Resources are changed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
+            try {
+                assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
+                        "400M", "2", "300M", "1");
+                assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
+                        "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        });
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
     }
