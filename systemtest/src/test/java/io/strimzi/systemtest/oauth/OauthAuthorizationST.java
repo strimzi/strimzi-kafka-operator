@@ -17,8 +17,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,9 +53,6 @@ public class OauthAuthorizationST extends OauthBaseST {
 
     private static final String TEAM_A_CLIENT_SECRET = "team-a-client-secret";
     private static final String TEAM_B_CLIENT_SECRET = "team-b-client-secret";
-
-    private static final int MESSAGE_COUNT = 100;
-    private static final int TIMEOUT_SEND_RECV_MESSAGES = 10;
 
     private static final String TOPIC_A = "a-topic";
     private static final String TOPIC_B = "b-topic";
@@ -127,7 +122,7 @@ public class OauthAuthorizationST extends OauthBaseST {
         });
 
         Future<Integer> consumerWithCorrectConsumerGroup = teamAOauthKafkaClient.receiveMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME,
-               TEAM_A_CLIENT, MESSAGE_COUNT, "SSL","a_correct_consumer_group");
+               TEAM_A_CLIENT, MESSAGE_COUNT, "SSL", "a_correct_consumer_group");
 
         assertThat(consumerWithCorrectConsumerGroup.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
