@@ -64,28 +64,6 @@ public class KafkaConnectorIT {
 
     @BeforeEach
     public void before() throws IOException, InterruptedException {
-        Class<?> c = TestingConnector.class;
-        ClassLoader cl = c.getClassLoader();
-        File file = null;
-        if (cl instanceof URLClassLoader) {
-            URLClassLoader urlCl = (URLClassLoader) cl;
-            URL[] urls = urlCl.getURLs();
-            List<File> files = new ArrayList<>();
-            for (URL url : urls) {
-                log.info("{}", url.getFile());
-                if (url.getFile().endsWith("/cluster-operator/target/test-classes/")
-                        || url.getFile().contains("log4j")
-                        || url.getFile().contains("slf4j")) {
-                    files.add(new File(url.getFile()));
-                }
-            }
-            Path tempDirectory = Files.createTempDirectory(getClass().getName());
-            copy(files, tempDirectory);
-            file = tempDirectory.toFile();
-            listFiles(file);
-        }
-
-
         vertx = Vertx.vertx();
 
         // Start a 3 node Kafka cluster
@@ -100,8 +78,7 @@ public class KafkaConnectorIT {
         // Start a N node connect cluster
         connectCluster = new ConnectCluster()
                 .usingBrokers(cluster)
-                .addConnectNodes(3)
-                .addToPluginPath(file);
+                .addConnectNodes(3);
         connectCluster.startup();
     }
 
