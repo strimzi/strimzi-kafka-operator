@@ -16,9 +16,9 @@ endif
 SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
-all: yq_check $(SUBDIRS)
+all: prerequisites_check $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): yq_check $(SUBDIRS)
+$(DOCKER_TARGETS): prerequisites_check $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
@@ -157,11 +157,7 @@ $(SUBDIRS):
 systemtest_make:
 	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
-RED=\033[0;31m
-NO_COLOUR=\033[0m
-YQ_VERSION = $(shell yq --version | $(SED) 's/^.* //g')
+prerequisites_check:
+	SED=$(SED) ./prerequisites-check.sh
 
-yq_check: $(eval SHELL:=/bin/bash)
-	if [[ $(YQ_VERSION) != "3."* ]]; then echo "$(RED)yq version is $(YQ_VERSION), version must be 3.*$(NO_COLOUR)" && exit 1; fi
-
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check yq_check
+.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check
