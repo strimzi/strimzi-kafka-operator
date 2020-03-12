@@ -161,7 +161,7 @@ RED=\033[0;31m
 NO_COLOUR=\033[0m
 YQ_VERSION = $(shell yq --version | $(SED) 's/^.* //g')
 
-yq_check:
+yq_check: $(eval SHELL:=/bin/bash)
 	if [[ $(YQ_VERSION) != "3."* ]]; then echo "$(RED)yq version is $(YQ_VERSION), version must be 3.*$(NO_COLOUR)" && exit 1; fi
 
 .PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check yq_check
