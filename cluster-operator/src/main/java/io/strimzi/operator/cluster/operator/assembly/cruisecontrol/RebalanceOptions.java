@@ -31,6 +31,7 @@ public class RebalanceOptions {
 
     private RebalanceOptions(RebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
+        this.verbose = builder.verbose;
         this.goals = builder.goals;
         this.verbose = builder.verbose;
     }

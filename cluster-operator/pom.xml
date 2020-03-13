@@ -16,6 +16,11 @@
         </license>
     </licenses>
 
+    <properties>
+        <mockserver.version>5.8.1</mockserver.version>
+    </properties>
+
+
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -211,6 +216,24 @@
             <artifactId>vertx-micrometer-metrics</artifactId>
             <version>${vertx.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty</artifactId>
+            <version>${mockserver.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-core</artifactId>
+            <version>${mockserver.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-client-java</artifactId>
+            <version>${mockserver.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -253,6 +276,12 @@
                 <directory>..</directory>
                 <includes>
                     <include>kafka-versions.yaml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/test/resources/io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON</directory>
+                <includes>
+                    <include>*.json</include>
                 </includes>
             </resource>
         </resources>
