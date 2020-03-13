@@ -98,7 +98,7 @@ public class VerifiableClient {
             synchronized (lock) {
                 LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.debug("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
+                    LOGGER.info("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
                     if (ret == 0) {
                         parseToList(executor.out());
                     } else if (!executor.err().isEmpty()) {
