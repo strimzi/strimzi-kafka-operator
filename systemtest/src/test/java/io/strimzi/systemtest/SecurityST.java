@@ -121,8 +121,8 @@ class SecurityST extends BaseST {
         checkZookeeperCertificates(outputForZookeeperClient);
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
-            String commandForKafkaPort9091 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
-            String commandForKafkaPort9093 = "echo -n | " + generateOpenSSLCommandWithCAfile(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
+            String commandForKafkaPort9091 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
+            String commandForKafkaPort9093 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
 
             String outputForKafkaPort9091 =
                     cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9091).out();
@@ -131,22 +131,22 @@ class SecurityST extends BaseST {
 
             checkKafkaCertificates(outputForKafkaPort9091, outputForKafkaPort9093);
 
-            String commandForZookeeperPort2181 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
-            String commandForZookeeperPort2888 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
-            String commandForZookeeperPort3888 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
+            String commandForZookeeperPort2181 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
+            String commandForZookeeperPort2888 = generateOpenSSLCommandWithZookeeperCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
+            String commandForZookeeperPort3888 = generateOpenSSLCommandWithZookeeperCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
 
             String outputForZookeeperPort2181 =
                     cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
                             commandForZookeeperPort2181).out();
 
             String outputForZookeeperPort3888 =
-                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
+                    cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "tls-sidecar",  "/bin/bash", "-c",
                             commandForZookeeperPort3888).out();
             checkZookeeperCertificates(outputForZookeeperPort2181, outputForZookeeperPort3888);
 
             try {
                 String outputForZookeeperPort2888 =
-                        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
+                        cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "tls-sidecar", "/bin/bash", "-c",
                                 commandForZookeeperPort2888).out();
                 checkZookeeperCertificates(outputForZookeeperPort2888);
             } catch (KubeClusterException e) {
@@ -159,16 +159,22 @@ class SecurityST extends BaseST {
         });
     }
 
-    private String generateOpenSSLCommandWithCAfile(String podName, String hostname, String port) {
+    private String generateOpenSSLCommandWithCAfile(String podName, String hostname, String port, String caFilePath) {
         return "openssl s_client -connect " + podName + "." + hostname + ":" + port +
-                " -showcerts -CAfile /opt/kafka/cluster-ca-certs/ca.crt " +
-                "-verify_hostname " + podName + "." + hostname + "." + NAMESPACE + ".svc.cluster.local";
+                " -showcerts -CAfile " + caFilePath +
+                " -verify_hostname " + podName + "." + hostname + "." + NAMESPACE + ".svc.cluster.local";
     }
 
-    private String generateOpenSSLCommandWithCerts(String podName, String hostname, String port) {
-        return generateOpenSSLCommandWithCAfile(podName, hostname, port) +
+    private String generateOpenSSLCommandWithKafkaCerts(String podName, String hostname, String port) {
+        return generateOpenSSLCommandWithCAfile(podName, hostname, port, "/opt/kafka/cluster-ca-certs/ca.crt") +
                 " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
                 " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
+    }
+
+    private String generateOpenSSLCommandWithZookeeperCerts(String podName, String hostname, String port) {
+        return generateOpenSSLCommandWithCAfile(podName, hostname, port, "/etc/tls-sidecar/cluster-ca-certs/ca.crt") +
+                " -cert /etc/tls-sidecar/zookeeper-nodes/my-cluster-zookeeper-0.crt" +
+                " -key /etc/tls-sidecar/zookeeper-nodes/my-cluster-zookeeper-0.key";
     }
 
     private void checkKafkaCertificates(String... kafkaCertificates) {
@@ -754,10 +760,12 @@ class SecurityST extends BaseST {
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
     void testNetworkPoliciesWithPlainListener() {
+        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
+        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
         Map<String, String> matchLabelForPlain = new HashMap<>();
-        matchLabelForPlain.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        matchLabelForPlain.put("app", allowedKafkaClientsName);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -788,30 +796,30 @@ class SecurityST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "PLAIN"),
+            internalKafkaClient.receiveMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, userName, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE), "PLAIN")
         );
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
+        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(kafkaClientsNewPodName);
 
         LOGGER.info("Verifying that {} pod is not able to exchange messages", kafkaClientsNewPodName);
-        assertThrows(AssertionError.class, () ->  {
+        assertThrows(RuntimeException.class, () ->  {
             internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
-                internalKafkaClient.receiveMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "PLAIN"),
+                internalKafkaClient.receiveMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE), "PLAIN")
             );
         });
 
@@ -829,10 +837,12 @@ class SecurityST extends BaseST {
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
     void testNetworkPoliciesWithTlsListener() {
+        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
+        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
         Map<String, String> matchLabelsForTls = new HashMap<>();
-        matchLabelsForTls.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        matchLabelsForTls.put("app", allowedKafkaClientsName);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -860,9 +870,9 @@ class SecurityST extends BaseST {
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
         SecretUtils.waitForSecretReady(userName);
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
 
@@ -873,14 +883,14 @@ class SecurityST extends BaseST {
             internalKafkaClient.receiveMessagesTls(topic0, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
         );
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
+        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(kafkaClientsNewPodName);
 
         LOGGER.info("Verifying that {} pod is  not able to exchange messages", kafkaClientsNewPodName);
-        assertThrows(AssertionError.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
                 internalKafkaClient.receiveMessagesTls(topic1, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
