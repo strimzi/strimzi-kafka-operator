@@ -372,13 +372,16 @@ public class EntityOperator extends AbstractModel {
             });
         }
 
-        if (javaSystemProperties != null) {
-            strimziJavaOpts.append(' ').append(ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties));
+        String optsTrim = strimziJavaOpts.toString().trim();
+        if (!optsTrim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
         }
 
-        String trim = strimziJavaOpts.toString().trim();
-        if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, trim));
+        if (javaSystemProperties != null) {
+            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
+            if (!propsTrim.isEmpty()) {
+                envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
+            }
         }
     }
 }

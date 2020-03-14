@@ -20,8 +20,6 @@ function get_gc_opts {
   fi
 }
 
-set_xmx_xms
-
 export MALLOC_ARENA_MAX=2
 
 # Make sure that we use /dev/urandom
