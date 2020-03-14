@@ -48,6 +48,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
+// TestInstance lifecycle set to per class so that @BeforeAll and @AfterAll methods are non static
+// Methods must be be non static as they make a non-static call to getCrd()
+//  to correctly setup the test environment before the tests
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> {
     protected static final Logger log = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
