@@ -188,7 +188,7 @@ public class SimpleAclOperatorTest {
     }
 
     @Test
-    public void testReconcileInternalDelete(VertxTestContext context) throws InterruptedException {
+    public void testReconcileInternalDelete(VertxTestContext context) {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 

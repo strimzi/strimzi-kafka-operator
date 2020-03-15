@@ -178,41 +178,41 @@ public class KafkaUserOperatorTest {
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
             .setHandler(context.succeeding(v -> context.verify(() -> {
 
-            List<String> capturedNames = secretNameCaptor.getAllValues();
-            assertThat(capturedNames, hasSize(1));
-            assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
+                List<String> capturedNames = secretNameCaptor.getAllValues();
+                assertThat(capturedNames, hasSize(1));
+                assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
 
-            List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
-            assertThat(capturedNamespaces, hasSize(1));
-            assertThat(capturedNamespaces.get(0), is(ResourceUtils.NAMESPACE));
+                List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+                assertThat(capturedNamespaces, hasSize(1));
+                assertThat(capturedNamespaces.get(0), is(ResourceUtils.NAMESPACE));
 
-            List<Secret> capturedSecrets = secretCaptor.getAllValues();
-            assertThat(capturedSecrets, hasSize(1));
+                List<Secret> capturedSecrets = secretCaptor.getAllValues();
+                assertThat(capturedSecrets, hasSize(1));
 
-            Secret captured = capturedSecrets.get(0);
-            assertThat(captured.getMetadata().getName(), is(userCert.getMetadata().getName()));
-            assertThat(captured.getMetadata().getNamespace(), is(userCert.getMetadata().getNamespace()));
-            assertThat(captured.getMetadata().getLabels(), is(userCert.getMetadata().getLabels()));
-            assertThat(captured.getData().get("ca.crt"), is(userCert.getData().get("ca.crt")));
-            assertThat(captured.getData().get("user.crt"), is(userCert.getData().get("user.crt")));
-            assertThat(captured.getData().get("user.key"), is(userCert.getData().get("user.key")));
+                Secret captured = capturedSecrets.get(0);
+                assertThat(captured.getMetadata().getName(), is(userCert.getMetadata().getName()));
+                assertThat(captured.getMetadata().getNamespace(), is(userCert.getMetadata().getNamespace()));
+                assertThat(captured.getMetadata().getLabels(), is(userCert.getMetadata().getLabels()));
+                assertThat(captured.getData().get("ca.crt"), is(userCert.getData().get("ca.crt")));
+                assertThat(captured.getData().get("user.crt"), is(userCert.getData().get("user.crt")));
+                assertThat(captured.getData().get("user.key"), is(userCert.getData().get("user.key")));
 
-            List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            assertThat(capturedAclNames, hasSize(2));
-            assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
-            assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
+                List<String> capturedAclNames = aclNameCaptor.getAllValues();
+                assertThat(capturedAclNames, hasSize(2));
+                assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
+                assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
 
-            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+                List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            assertThat(capturedAcls, hasSize(2));
-            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+                assertThat(capturedAcls, hasSize(2));
+                Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
-            assertThat(aclRules, hasSize(ResourceUtils.createExpectedSimpleAclRules(user).size()));
-            assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
-            assertThat(capturedAcls.get(1), is(nullValue()));
+                assertThat(aclRules, hasSize(ResourceUtils.createExpectedSimpleAclRules(user).size()));
+                assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
+                assertThat(capturedAcls.get(1), is(nullValue()));
 
-            async.flag();
-        })));
+                async.flag();
+            })));
     }
 
     /**
@@ -929,7 +929,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
