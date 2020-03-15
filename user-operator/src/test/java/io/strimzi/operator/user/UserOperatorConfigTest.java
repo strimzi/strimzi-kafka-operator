@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UserOperatorConfigTest {
-    private static Map<String, String> envVars = new HashMap<>(5);
+    private static Map<String, String> envVars = new HashMap<>(8);
     private static Labels expectedLabels;
 
     static {
@@ -50,22 +50,22 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testMissingNamespace()  {
-        assertThrows(InvalidConfigurationException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
+    public void testNamespaceEnvVarMissingThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThrows(InvalidConfigurationException.class, () -> {
+            UserOperatorConfig.fromMap(envVars);
         });
     }
 
     @Test
     public void testMissingCaName()  {
-        assertThrows(InvalidConfigurationException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThrows(InvalidConfigurationException.class, () -> {
+            UserOperatorConfig.fromMap(envVars);
         });
     }
 
