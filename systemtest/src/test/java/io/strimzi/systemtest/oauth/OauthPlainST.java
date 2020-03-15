@@ -73,8 +73,8 @@ public class OauthPlainST extends OauthBaseST {
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As an oauth kafka connect, I should be able to sink messages from kafka broker topic.")
@@ -84,8 +84,8 @@ public class OauthPlainST extends OauthBaseST {
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
@@ -179,7 +179,7 @@ public class OauthPlainST extends OauthBaseST {
                         .withTls(null)
                     .endConsumer()
                     .withNewProducer()
-                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                        .withBootstrapServers(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
                         .withNewKafkaClientAuthenticationOAuth()
                             .withNewTokenEndpointUri(oauthTokenEndpointUri)
                             .withClientId("kafka-mirror-maker")
@@ -194,28 +194,26 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        // TODO: doesn't work...
         consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, targetKafkaCluster, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
-    @Disabled("MM doesn't replicate messages to target cluster. Investigate in the next PR")
     @Test
     void testProducerConsumerMirrorMaker2() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         String kafkaSourceClusterName = CLUSTER_NAME;
         String kafkaTargetClusterName = CLUSTER_NAME + "-target";
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + TOPIC_NAME;
     
-        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -279,11 +277,10 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        // TODO: doesn't work...
         consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, kafkaTargetClusterName, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As a oauth bridge, I should be able to send messages to bridge endpoint.")
@@ -293,8 +290,8 @@ public class OauthPlainST extends OauthBaseST {
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
@@ -383,8 +380,8 @@ public class OauthPlainST extends OauthBaseST {
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, introspectionKafka, MESSAGE_COUNT,
                 CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @BeforeAll
