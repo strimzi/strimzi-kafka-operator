@@ -30,7 +30,6 @@ import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
