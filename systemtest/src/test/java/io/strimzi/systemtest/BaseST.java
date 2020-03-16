@@ -735,18 +735,16 @@ public abstract class BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
-        boolean logError = false;
-        AssertionError assertionError = new AssertionError();
+        AssertionError assertionError = null;
         try {
             assertNoCoErrorsLogged(0);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
-            logError = true;
-            assertionError = e;
+            assertionError = new AssertionError(e);
         }
 
         if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent() || logError) {
+            if (context.getExecutionException().isPresent() || assertionError != null) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
                 KubernetesResource.applyDefaultNetworkPolicySettings(cluster.getBindingsNamespaces());
@@ -755,7 +753,7 @@ public abstract class BaseST implements TestSeparator {
             tearDownEnvironmentAfterEach();
         }
 
-        if (logError) {
+        if (assertionError != null) {
             throw assertionError;
         }
     }
