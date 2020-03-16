@@ -166,9 +166,9 @@ public class ResourceUtils {
     public static Secret createUserSecretScramSha()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                .withName(NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("password", Base64.getEncoder().encodeToString("my-password".getBytes()))
                 .build();

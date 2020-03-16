@@ -18,7 +18,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class ScramShaCredentialsIT {
@@ -43,110 +45,126 @@ public class ScramShaCredentialsIT {
     }
 
     @Test
-    public void normalCreate() {
-        scramShaCred.createOrUpdate("normalCreate", "foo-password");
-    }
-
-    @Test
-    public void doubleCreate() {
-        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
-        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
-    }
-
-    @Test
-    public void normalDelete() {
-        scramShaCred.createOrUpdate("normalDelete", "foo-password");
-        scramShaCred.delete("normalDelete");
-        assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(false));
-    }
-
-    @Test
-    public void doubleDelete() {
-        scramShaCred.createOrUpdate("doubleDelete", "foo-password");
-        scramShaCred.delete("doubleDelete");
-        scramShaCred.delete("doubleDelete");
-        assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(false));
-    }
-
-    @Test
-    public void changePassword() {
-        scramShaCred.createOrUpdate("changePassword", "changePassword-password");
-        scramShaCred.createOrUpdate("changePassword", "changePassword-password2");
-    }
-
-    @Test
-    public void userExists() {
+    public void testUserExistsAfterCreate() {
+        assertThat(scramShaCred.exists("userExists"), is(false));
         scramShaCred.createOrUpdate("userExists", "foo-password");
         assertThat(scramShaCred.exists("userExists"), is(true));
     }
 
     @Test
-    public void userNotExists() {
+    public void testUserDoeNotExistPriorToCreate() {
         assertThat(scramShaCred.exists("userNotExists"), is(false));
     }
 
     @Test
-    public void listSome() {
-        scramShaCred.createOrUpdate("listSome", "foo-password");
-        assertThat(scramShaCred.list().contains("listSome"), is(true));
+    public void testCreateOrUpdate() {
+        scramShaCred.createOrUpdate("normalCreate", "foo-password");
+        assertThat(scramShaCred.exists("normalCreate"), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/normalCreate"), is(true));
     }
 
     @Test
-    public void listNone() {
+    public void testCreateOrUpdateTwice() {
+        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
+        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
+        assertThat(scramShaCred.exists("doubleCreate"), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/doubleCreate"), is(true));
+    }
+
+    @Test
+    public void testDelete() {
+        scramShaCred.createOrUpdate("normalDelete", "foo-password");
+        assertThat(scramShaCred.exists("normalDelete"), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(true));
+        scramShaCred.delete("normalDelete");
+        assertThat(scramShaCred.exists("normalDelete"), is(false));
+        assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(false));
+    }
+
+    @Test
+    public void testDeleteTwice() {
+        scramShaCred.createOrUpdate("doubleDelete", "foo-password");
+        assertThat(scramShaCred.exists("doubleDelete"), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(true));
+
+        scramShaCred.delete("doubleDelete");
+        scramShaCred.delete("doubleDelete");
+        assertThat(scramShaCred.exists("doubleDelete"), is(false));
+        assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(false));
+    }
+
+    @Test
+    public void testCreateOrUpdatePasswordUpdate() {
+        scramShaCred.createOrUpdate("changePassword", "changePassword-password");
+        scramShaCred.createOrUpdate("changePassword", "changePassword-password2");
+        assertThat(scramShaCred.exists("changePassword"), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/changePassword"), is(true));
+    }
+
+    @Test
+    public void testListListsCreatedUsers() {
+        scramShaCred.createOrUpdate("listSome", "foo-password");
+        assertThat(scramShaCred.list(), hasItem("listSome"));
+    }
+
+    @Test
+    public void testListWithNoUsersReturnsEmptyList() {
+        // Ensure all users deleted from other tests
         for (String user : scramShaCred.list()) {
             scramShaCred.delete(user);
         }
-        assertThat(scramShaCred.list().isEmpty(), is(true));
+        assertThat(scramShaCred.list(), is(empty()));
     }
 
     @Test
     public void testValidation()    {
         JsonObject valid = new JsonObject().put("version", 1);
-        JsonObject invalid1 = new JsonObject();
-        JsonObject invalid2 = new JsonObject().put("version", 2);
+        JsonObject invalidEmptyJsonObject = new JsonObject();
+        JsonObject invalidVersion = new JsonObject().put("version", 2);
 
         scramShaCred.validateJsonVersion(valid);
 
-        try {
-            scramShaCred.validateJsonVersion(invalid1);
-            fail("Invalid Json 1 didn't raised exception");
-        } catch (RuntimeException e)    {
-            // noop
-        }
+        assertThrows(RuntimeException.class, () -> scramShaCred.validateJsonVersion(invalidEmptyJsonObject),
+                "Empty JsonObject should cause validate to throw Exception");
 
-        try {
-            scramShaCred.validateJsonVersion(invalid2);
-            fail("Invalid Json 2 didn't raised exception");
-        } catch (RuntimeException e)    {
-            // noop
-        }
+        assertThrows(RuntimeException.class, () -> scramShaCred.validateJsonVersion(invalidVersion),
+                "Invalid version (!=1) should cause validate to throw Exception");
     }
 
     @Test
-    public void testDeletion()  {
+    public void testRemoveScramCredentialsFromUserJsonUser()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials"));
-        original.getJsonObject("config").put("persist", 42);
-        JsonObject updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
+        JsonObject updated = scramShaCred.removeScramCredentialsFromUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getInteger("persist"), is(42));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials").put("SCRAM-SHA-256", "somecredentials"));
-        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
+        updated = scramShaCred.removeScramCredentialsFromUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
+        updated = scramShaCred.removeScramCredentialsFromUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-256", "somecredentials"));
-        updated = scramShaCred.deleteUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
+        updated = scramShaCred.removeScramCredentialsFromUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-256"), is("somecredentials"));
     }
 
     @Test
-    public void testUpdate()  {
+    public void testRemoveScramCredentialsFromJsonUserPersistsNonScramCredentialKeys()  {
+        JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials"));
+        String keyThatShouldPersist = "persist";
+        int valueThatShouldPersist = 42;
+        original.getJsonObject("config").put(keyThatShouldPersist, valueThatShouldPersist);
+        JsonObject updated = scramShaCred.removeScramCredentialsFromUserJson(original.encode().getBytes(StandardCharsets.UTF_8));
+        assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getInteger(keyThatShouldPersist), is(valueThatShouldPersist));
+    }
+
+    @Test
+    public void testUpdateUserJson()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("SCRAM-SHA-512", "somecredentials"));
         JsonObject updated = new JsonObject(new String(scramShaCred.updateUserJson(original.encode().getBytes(StandardCharsets.UTF_8), "password"), StandardCharsets.UTF_8));
         assertThat(updated.getJsonObject("config").getString("SCRAM-SHA-512"), is(notNullValue()));

@@ -7,18 +7,9 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
-
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -40,11 +31,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import scala.collection.Iterator;
+
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,7 +65,6 @@ public class SimpleAclOperatorTest {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
-        Checkpoint async = context.checkpoint();
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
         Acl fooAcl = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
         KafkaPrincipal bar = new KafkaPrincipal("User", "CN=bar");
@@ -88,13 +84,13 @@ public class SimpleAclOperatorTest {
 
         ArgumentCaptor<KafkaPrincipal> principalCaptor = ArgumentCaptor.forClass(KafkaPrincipal.class);
         when(mockAuthorizer.getAcls(principalCaptor.capture())).thenReturn(map);
-        async.flag();
 
-        context.verify(() -> assertThat(aclOp.getUsersWithAcls(), is(new HashSet(asList("foo", "bar", "baz")))));
+        assertThat(aclOp.getUsersWithAcls(), is(new HashSet(asList("foo", "bar", "baz"))));
+        context.completeNow();
     }
 
     @Test
-    public void testInternalCreate(VertxTestContext context) throws InterruptedException {
+    public void testReconcileInternalCreateAddsAclsToAuthorizer(VertxTestContext context) {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
@@ -106,75 +102,40 @@ public class SimpleAclOperatorTest {
         ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
         doNothing().when(mockAuthorizer).addAcls(aclCaptor.capture(), resourceCaptor.capture());
 
-        SimpleAclRuleResource resource1 = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
-        SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.READ);
-        SimpleAclRule rule2 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
-        SimpleAclRule rule3 = new SimpleAclRule(AclRuleType.ALLOW, resource1, "*", AclOperation.DESCRIBE);
+        SimpleAclRuleResource ruleResource1 = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
+        SimpleAclRuleResource ruleResource2 = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
+        SimpleAclRule resource1DescribeRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource1, "*", AclOperation.DESCRIBE);
+        SimpleAclRule resource2ReadRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.READ);
+        SimpleAclRule resource2WriteRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.WRITE);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
-        Acl acl1 = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
-        scala.collection.immutable.Set<Acl> set1 = new scala.collection.immutable.Set.Set1<>(acl1);
-        Acl acl2 = new Acl(foo, Allow$.MODULE$, "*", Write$.MODULE$);
-        scala.collection.immutable.Set<Acl> set2 = new scala.collection.immutable.Set.Set1<>(acl2);
-        Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
-        Acl acl3 = new Acl(foo, Allow$.MODULE$, "*", Describe$.MODULE$);
-        scala.collection.immutable.Set<Acl> set3 = new scala.collection.immutable.Set.Set1<>(acl3);
-        Resource res2 = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
+        Acl readAcl = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
+        Acl writeAcl = new Acl(foo, Allow$.MODULE$, "*", Write$.MODULE$);
+        Acl describeAcl = new Acl(foo, Allow$.MODULE$, "*", Describe$.MODULE$);
+        scala.collection.immutable.Set<Acl> expectedResource1RuleSet = new scala.collection.immutable.Set.Set1<>(describeAcl);
+        scala.collection.immutable.Set<Acl> expectedResource2RuleSet = new scala.collection.immutable.Set.Set2<>(readAcl, writeAcl);
+
+        Resource resource1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
+        Resource resource2 = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
 
         Checkpoint async = context.checkpoint();
-        Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(rule1, rule2, rule3)));
-        fut.setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
+        aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
+            .setHandler(context.succeeding(rr -> context.verify(() -> {
+                List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
+                List<Resource> capturedResource = resourceCaptor.getAllValues();
 
-            List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
-            List<Resource> capturedResource = resourceCaptor.getAllValues();
+                assertThat(capturedAcls, hasSize(2));
+                assertThat(capturedResource, hasSize(2));
 
-            context.verify(() -> assertThat(capturedAcls.size(), is(2)));
-            context.verify(() -> assertThat(capturedResource.size(), is(2)));
+                assertThat(capturedResource, hasItems(resource1, resource2));
+                assertThat(capturedAcls, hasItems(expectedResource1RuleSet, expectedResource2RuleSet));
 
-            context.verify(() -> assertThat(res1.equals(capturedResource.get(0)) && res2.equals(capturedResource.get(1)) || res1.equals(capturedResource.get(1)) && res2.equals(capturedResource.get(0)), is(true)));
-
-            if (capturedAcls.get(0).size() == 1) {
-                context.verify(() -> assertThat(capturedAcls.get(0), is(set3)));
-            } else {
-                // the order can be changed
-                if (capturedAcls.get(0).size() == 2) {
-                    Iterator<Acl> iter = capturedAcls.get(0).iterator();
-                    Acl aclFromSet1 = set1.head();
-                    Acl aclFromSet2 = set2.head();
-
-                    Acl capturedAcl1 = iter.next();
-                    Acl capturedAcl2 = iter.next();
-
-                    context.verify(() -> assertThat(aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2) || aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2), is(true)));
-                }
-            }
-
-            if (capturedAcls.get(1).size() == 1) {
-                context.verify(() -> assertThat(capturedAcls.get(1), is(set3)));
-            } else {
-                // the order can be changed
-                if (capturedAcls.get(1).size() == 2) {
-                    Iterator<Acl> iter = capturedAcls.get(1).iterator();
-                    Acl aclFromSet1 = set1.head();
-                    Acl aclFromSet2 = set2.head();
-
-                    Acl capturedAcl1 = iter.next();
-                    Acl capturedAcl2 = iter.next();
-
-                    context.verify(() -> assertThat(aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2) || aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2), is(true)));
-                }
-            }
-            async.flag();
-        });
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+                async.flag();
+            })));
     }
 
     @Test
-    public void testInternalUpdate(VertxTestContext context) throws InterruptedException {
+    public void testReconcileInternalUpdateCreatesNewAclsAndDeletesOldAcls(VertxTestContext context) {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
@@ -182,14 +143,15 @@ public class SimpleAclOperatorTest {
         SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
-        Acl acl1 = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
-        scala.collection.immutable.Set<Acl> set1 = new scala.collection.immutable.Set.Set1<>(acl1);
-        Acl acl2 = new Acl(foo, Allow$.MODULE$, "*", Write$.MODULE$);
-        scala.collection.immutable.Set<Acl> set2 = new scala.collection.immutable.Set.Set1<>(acl2);
-        Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
-        Resource res2 = new Resource(Topic$.MODULE$, "my-topic2", PatternType.LITERAL);
+        Acl readAcl = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
+        scala.collection.immutable.Set<Acl> readAclSet = new scala.collection.immutable.Set.Set1<>(readAcl);
+        Acl writeAcl = new Acl(foo, Allow$.MODULE$, "*", Write$.MODULE$);
+        scala.collection.immutable.Set<Acl> writeAclSet = new scala.collection.immutable.Set.Set1<>(writeAcl);
 
-        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> map = new scala.collection.immutable.Map.Map1<>(res1, set1);
+        Resource resource1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
+        Resource resource2 = new Resource(Topic$.MODULE$, "my-topic2", PatternType.LITERAL);
+
+        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> map = new scala.collection.immutable.Map.Map1<>(resource1, readAclSet);
         ArgumentCaptor<KafkaPrincipal> principalCaptor = ArgumentCaptor.forClass(KafkaPrincipal.class);
         when(mockAuthorizer.getAcls(principalCaptor.capture())).thenReturn(map);
 
@@ -202,44 +164,40 @@ public class SimpleAclOperatorTest {
         when(mockAuthorizer.removeAcls(deleteAclCaptor.capture(), deleterResourceCaptor.capture())).thenReturn(true);
 
         Checkpoint async = context.checkpoint();
-        Future<Void> fut = aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)));
-        fut.setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
+        aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)))
+            .setHandler(context.succeeding(rr -> context.verify(() -> {
+                List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
+                List<Resource> capturedResource = resourceCaptor.getAllValues();
+                List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
+                List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
 
-            List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
-            List<Resource> capturedResource = resourceCaptor.getAllValues();
-            List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
-            List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
+                // Create Write rule for resource 2
+                assertThat(capturedAcls, hasSize(1));
+                assertThat(capturedAcls, hasItem(writeAclSet));
+                assertThat(capturedResource, hasSize(1));
+                assertThat(capturedResource, hasItem(resource2));
 
-            context.verify(() -> assertThat(capturedAcls.size(), is(1)));
-            context.verify(() -> assertThat(capturedResource.size(), is(1)));
-            context.verify(() -> assertThat(deleteCapturedAcls.size(), is(1)));
-            context.verify(() -> assertThat(deleteCapturedResource.size(), is(1)));
+                // Delete read rule for resource 1
+                assertThat(deleteCapturedAcls, hasSize(1));
+                assertThat(deleteCapturedAcls, hasItem(readAclSet));
+                assertThat(deleteCapturedResource, hasSize(1));
+                assertThat(deleteCapturedResource, hasItem(resource1));
 
-            context.verify(() -> assertThat(capturedResource.get(0), is(res2)));
-            context.verify(() -> assertThat(deleteCapturedResource.get(0), is(res1)));
-
-            context.verify(() -> assertThat(capturedAcls.get(0), is(set2)));
-            context.verify(() -> assertThat(deleteCapturedAcls.get(0), is(set1)));
-            async.flag();
-
-        });
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+                async.flag();
+            })));
     }
 
     @Test
-    public void testInternalDelete(VertxTestContext context) throws InterruptedException {
+    public void testReconcileInternalDelete(VertxTestContext context) {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
-        Acl acl1 = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
-        scala.collection.immutable.Set<Acl> set1 = new scala.collection.immutable.Set.Set1<>(acl1);
-        Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
+        Acl readAcl = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
+        scala.collection.immutable.Set<Acl> readAclSet = new scala.collection.immutable.Set.Set1<>(readAcl);
+        Resource resource1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
 
-        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> map = new scala.collection.immutable.Map.Map1<>(res1, set1);
+        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> map = new scala.collection.immutable.Map.Map1<>(resource1, readAclSet);
         ArgumentCaptor<KafkaPrincipal> principalCaptor = ArgumentCaptor.forClass(KafkaPrincipal.class);
         when(mockAuthorizer.getAcls(principalCaptor.capture())).thenReturn(map);
 
@@ -248,24 +206,18 @@ public class SimpleAclOperatorTest {
         when(mockAuthorizer.removeAcls(deleteAclCaptor.capture(), deleterResourceCaptor.capture())).thenReturn(true);
 
         Checkpoint async = context.checkpoint();
-        Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", null);
-        fut.setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
+        aclOp.reconcile("CN=foo", null)
+            .setHandler(context.succeeding(rr -> context.verify(() -> {
+                List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
+                List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
 
-            List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
-            List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
+                // Delete correct read rule for resource 1
+                assertThat(deleteCapturedAcls, hasSize(1));
+                assertThat(deleteCapturedAcls, hasItem(readAclSet));
+                assertThat(deleteCapturedResource, hasSize(1));
+                assertThat(deleteCapturedResource, hasItem(resource1));
 
-            context.verify(() -> assertThat(deleteCapturedAcls.size(), is(1)));
-            context.verify(() -> assertThat(deleteCapturedResource.size(), is(1)));
-
-            context.verify(() -> assertThat(deleteCapturedResource.get(0), is(res1)));
-
-            context.verify(() -> assertThat(deleteCapturedAcls.get(0), is(set1)));
-
-            async.flag();
-        });
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+                async.flag();
+            })));
     }
 }
