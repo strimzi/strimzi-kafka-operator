@@ -7,11 +7,10 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 
 import java.util.ArrayList;
@@ -90,7 +89,7 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKafkaStorage(List<Condition> warnings) {
-        if (kafkaCluster.getReplicas() == 1 && usesEphemeral(kafkaCluster.getStorage())) {
+        if (kafkaCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(kafkaCluster.getStorage())) {
             warnings.add(buildCondition("KafkaStorage",
                     "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
         }
@@ -103,27 +102,10 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkZooKeeperStorage(List<Condition> warnings) {
-        if (zkCluster.getReplicas() == 1 && usesEphemeral(zkCluster.getStorage())) {
+        if (zkCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(zkCluster.getStorage())) {
             warnings.add(buildCondition("ZooKeeperStorage",
                     "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
         }
-    }
-
-    private boolean isEphemeral(Storage storage) {
-        return Storage.TYPE_EPHEMERAL.equals(storage.getType());
-    }
-
-    private boolean usesEphemeral(Storage storage) {
-        if (storage != null) {
-            if (isEphemeral(storage)) {
-                return true;
-            }
-            if (Storage.TYPE_JBOD.equals(storage.getType())) {
-                JbodStorage jbodStorage = (JbodStorage) storage;
-                return jbodStorage.getVolumes().stream().anyMatch(this::isEphemeral);
-            }
-        }
-        return false;
     }
 
     /**

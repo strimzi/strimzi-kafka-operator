@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 
 /**
  * Shared methods for working with Storage - for example comparing volume sizes
@@ -107,5 +109,31 @@ public class StorageUtils {
                 throw new IllegalArgumentException("Invalid memory suffix: " + suffix);
         }
         return factor;
+    }
+
+
+    private static boolean isEphemeral(Storage storage) {
+        return Storage.TYPE_EPHEMERAL.equals(storage.getType());
+    }
+
+    /**
+     * Helper method to check if the provided storage uses ephemeral storage.
+     * (Either if it is an ephemeral storage volume, or a jbod including at
+     * least one ephemeral volume).
+     *
+     * @param storage volume to check
+     * @return true if it uses ephemeral
+     */
+    public static boolean usesEphemeral(Storage storage) {
+        if (storage != null) {
+            if (isEphemeral(storage)) {
+                return true;
+            }
+            if (Storage.TYPE_JBOD.equals(storage.getType())) {
+                JbodStorage jbodStorage = (JbodStorage) storage;
+                return jbodStorage.getVolumes().stream().anyMatch(StorageUtils::isEphemeral);
+            }
+        }
+        return false;
     }
 }
