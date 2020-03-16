@@ -93,8 +93,8 @@ public class ListenersST extends BaseST {
         Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -143,8 +143,8 @@ public class ListenersST extends BaseST {
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -193,8 +193,8 @@ public class ListenersST extends BaseST {
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -243,8 +243,8 @@ public class ListenersST extends BaseST {
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -290,11 +290,11 @@ public class ListenersST extends BaseST {
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         externalBasicKafkaClient.setCaCertName(customCertServer1);
-        Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -340,11 +340,11 @@ public class ListenersST extends BaseST {
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         externalBasicKafkaClient.setCaCertName(customRootCA1);
-        Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -388,8 +388,8 @@ public class ListenersST extends BaseST {
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -433,8 +433,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(20));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(20));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -470,8 +470,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(40));
 
         sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
@@ -503,8 +503,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(60));
 
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-73");
         assertThat(received, is(60));
@@ -541,8 +541,8 @@ public class ListenersST extends BaseST {
         Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -586,8 +586,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(20));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(20));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -623,8 +623,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(40));
 
         sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
@@ -656,8 +656,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(60));
 
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-83");
         assertThat(received, is(60));
@@ -691,11 +691,11 @@ public class ListenersST extends BaseST {
         //External secret cert is same as internal in this case
         assertThat(externalSecretCerts, is(internalCerts));
 
-        Future producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
-        Future consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
+        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(10));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -739,8 +739,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 20, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(20));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(20));
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -776,8 +776,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 40, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(40));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(40));
 
         sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "TLS");
         assertThat(sent, is(10));
@@ -807,8 +807,8 @@ public class ListenersST extends BaseST {
         producer = externalBasicKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 10, "SSL");
         consumer = externalBasicKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "SSL");
 
-        assertThat("Producer didn't produce all messages", producer.get(1, TimeUnit.MINUTES), is(10));
-        assertThat("Consumer didn't consume all messages", consumer.get(1, TimeUnit.MINUTES), is(60));
+        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(10));
+        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(60));
 
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, 60, "TLS", "consumer-group-certs-93");
         assertThat(received, is(60));
