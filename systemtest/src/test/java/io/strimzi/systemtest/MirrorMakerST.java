@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -145,22 +144,17 @@ public class MirrorMakerST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testMirrorMakerTlsAuthenticated() {
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
         String kafkaUserTargetName = "my-user-target";
-
-        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withTls(listenerTls)
-                            .withNewTls()
+                        .withNewTls()
+                            .withAuth(new KafkaListenerAuthenticationTls())
                         .endTls()
                     .endListeners()
                 .endKafka()
@@ -171,8 +165,8 @@ public class MirrorMakerST extends BaseST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withTls(listenerTls)
-                            .withNewTls()
+                        .withNewTls()
+                            .withAuth(new KafkaListenerAuthenticationTls())
                         .endTls()
                     .endListeners()
                 .endKafka()
@@ -231,8 +225,6 @@ public class MirrorMakerST extends BaseST {
             .endSpec()
             .done();
 
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-
         int sent = internalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -251,7 +243,6 @@ public class MirrorMakerST extends BaseST {
      */
     @Test
     void testMirrorMakerTlsScramSha() {
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
@@ -348,8 +339,6 @@ public class MirrorMakerST extends BaseST {
         // Deploy topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
 
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-
         internalKafkaClient.setPodName(kafkaClientsPodName);
 
         int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName,
@@ -362,9 +351,9 @@ public class MirrorMakerST extends BaseST {
         );
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
-            Duration.ofSeconds(10).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            Duration.ofMinutes(1).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> sent == internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName,
-                    userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME, Duration.ofSeconds(10).toMillis()));
+                    userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME, Duration.ofMinutes(1).toMillis()));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
