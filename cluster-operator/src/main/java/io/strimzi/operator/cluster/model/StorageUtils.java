@@ -129,7 +129,7 @@ public class StorageUtils {
             if (isEphemeral(storage)) {
                 return true;
             }
-            if (Storage.TYPE_JBOD.equals(storage.getType())) {
+            if (Storage.TYPE_JBOD.equals(storage.getType()) && storage instanceof JbodStorage) {
                 JbodStorage jbodStorage = (JbodStorage) storage;
                 return jbodStorage.getVolumes().stream().anyMatch(StorageUtils::isEphemeral);
             }
