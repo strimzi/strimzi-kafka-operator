@@ -146,7 +146,7 @@ public class MirrorMakerST extends BaseST {
     void testMirrorMakerTlsAuthenticated() {
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
-        String kafkaUserTargetName = "my-user-target";
+        String kafkaTargetUserName = "my-user-target";
 
         // Deploy source kafka with tls listener and mutual tls auth
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
@@ -179,8 +179,8 @@ public class MirrorMakerST extends BaseST {
         KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
         SecretUtils.waitForSecretReady(kafkaSourceUserName);
 
-        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
-        SecretUtils.waitForSecretReady(kafkaUserTargetName);
+        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaTargetUserName).done();
+        SecretUtils.waitForSecretReady(kafkaTargetUserName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -216,11 +216,25 @@ public class MirrorMakerST extends BaseST {
                     .withNewTls()
                         .withTrustedCertificates(certSecretSource)
                     .endTls()
+                    .withNewKafkaClientAuthenticationTls()
+                        .withNewCertificateAndKey()
+                            .withNewSecretName(kafkaSourceUserName)
+                            .withNewCertificate("user.crt")
+                            .withNewKey("user.key")
+                        .endCertificateAndKey()
+                    .endKafkaClientAuthenticationTls()
                 .endConsumer()
                 .editProducer()
                     .withNewTls()
                         .withTrustedCertificates(certSecretTarget)
                     .endTls()
+                    .withNewKafkaClientAuthenticationTls()
+                        .withNewCertificateAndKey()
+                            .withNewSecretName(kafkaTargetUserName)
+                            .withNewCertificate("user.crt")
+                            .withNewKey("user.key")
+                        .endCertificateAndKey()
+                    .endKafkaClientAuthenticationTls()
                 .endProducer()
             .endSpec()
             .done();
@@ -347,13 +361,13 @@ public class MirrorMakerST extends BaseST {
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName,
-                    userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+                    userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
         );
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
-            Duration.ofMinutes(1).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> sent == internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName,
-                    userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME, Duration.ofMinutes(1).toMillis()));
+                    userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE), Duration.ofMinutes(1).toMillis()));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
