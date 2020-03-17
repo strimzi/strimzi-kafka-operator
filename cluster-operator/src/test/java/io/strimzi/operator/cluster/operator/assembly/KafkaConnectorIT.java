@@ -32,16 +32,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -77,27 +73,6 @@ public class KafkaConnectorIT {
                 .usingBrokers(cluster)
                 .addConnectNodes(3);
         connectCluster.startup();
-    }
-
-    private void copy(List<File> files, Path directory) throws IOException {
-        for (File f : files) {
-            Path resolve = directory.resolve(f.getName());
-            if (f.isFile()) {
-                Files.copy(f.toPath(), resolve);
-            } else if (f.isDirectory()) {
-                resolve.toFile().mkdirs();
-                copy(asList(f.listFiles()), resolve);
-            }
-        }
-    }
-
-    private void listFiles(File file) {
-        for (File f : file.listFiles()) {
-            log.info("{}", f.getAbsolutePath() + (f.isDirectory() ? "/" : ""));
-            if (f.isDirectory()) {
-                listFiles(f);
-            }
-        }
     }
 
     @AfterEach

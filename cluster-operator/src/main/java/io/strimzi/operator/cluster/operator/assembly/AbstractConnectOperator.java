@@ -376,18 +376,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             });
     }
 
-    private boolean needsReconfiguring(Reconciliation reconciliation, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> actual) {
+    private boolean needsReconfiguring(Reconciliation reconciliation, String connectorName,
+                                       KafkaConnectorSpec connectorSpec,
+                                       Map<String, String> actual) {
+        Map<String, String> desired = new HashMap<>(connectorSpec.getConfig().size());
         // The actual which comes from Connect API includes tasks.max, connector.class and name,
         // which connectorSpec.getConfig() does not
-        Map<String, Object> desired = log.isDebugEnabled() ? new TreeMap<>(connectorSpec.getConfig()) : new HashMap<>(connectorSpec.getConfig());
         desired.put("tasks.max", connectorSpec.getTasksMax().toString());
         desired.put("name", connectorName);
         desired.put("connector.class", connectorSpec.getClassName());
+        for (Map.Entry<String, Object> entry : connectorSpec.getConfig().entrySet()) {
+            desired.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
+        }
         if (log.isDebugEnabled()) {
-            log.debug("{}: Desired: {}", reconciliation, desired);
+            log.debug("{}: Desired: {}", reconciliation, new TreeMap<>(desired));
             log.debug("{}: Actual:  {}", reconciliation, new TreeMap<>(actual));
         }
-        return connectorSpec.getConfig().equals(actual);
+        return !desired.equals(actual);
     }
 
     protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,

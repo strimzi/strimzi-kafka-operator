@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
@@ -53,9 +54,9 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's config.
      */
-    Future<Map<String, Object>> getConnectorConfig(String host, int port, String connectorName);
+    Future<Map<String, String>> getConnectorConfig(String host, int port, String connectorName);
 
-    public Future<Map<String, Object>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName);
+    public Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}}.
@@ -218,12 +219,14 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     public Future<Map<String, Object>> getConnector(
             String host, int port,
             String connectorName) {
-        return doGet(host, port, String.format("/connectors/%s", connectorName), new HashSet<>(asList(200, 201)));
+        return doGet(host, port, String.format("/connectors/%s", connectorName),
+                new HashSet<>(asList(200, 201)),
+                new TypeReference<Map<String, Object>>() { });
     }
 
     @SuppressWarnings("unchecked")
-    private Future<Map<String, Object>> doGet(String host, int port, String path, Set<Integer> okStatusCodes) {
-        Future<Map<String, Object>> result = Future.future();
+    private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
+        Future<T> result = Future.future();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         log.debug("Making GET request to {}", path);
         vertx.createHttpClient(options)
@@ -235,7 +238,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         response.bodyHandler(buffer -> {
                             ObjectMapper mapper = new ObjectMapper();
                             try {
-                                Map t = mapper.readValue(buffer.getBytes(), Map.class);
+                                T t = mapper.readValue(buffer.getBytes(), type);
                                 log.debug("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
                                 result.complete(t);
                             } catch (IOException e) {
@@ -259,14 +262,16 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Map<String, Object>> getConnectorConfig(
+    public Future<Map<String, String>> getConnectorConfig(
             String host, int port,
             String connectorName) {
-        return doGet(host, port, String.format("/connectors/%s/config", connectorName), new HashSet<>(asList(200, 201)));
+        return doGet(host, port, String.format("/connectors/%s/config", connectorName),
+                new HashSet<>(asList(200, 201)),
+                new TypeReference<Map<String, String>>() { });
     }
 
     @Override
-    public Future<Map<String, Object>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName) {
+    public Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName) {
         return withBackoff(backOff, connectorName, Collections.singleton(409),
             () -> getConnectorConfig(host, port, connectorName), "config");
     }
@@ -302,11 +307,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             () -> status(host, port, connectorName), "status");
     }
 
-    private Future<Map<String, Object>> withBackoff(BackOff backOff, String connectorName,
+    private <T> Future<T> withBackoff(BackOff backOff, String connectorName,
                                                     Set<Integer> retriableStatusCodes,
-                                                    Supplier<Future<Map<String, Object>>> supplier,
+                                                    Supplier<Future<T>> supplier,
                                                     String attribute) {
-        Promise<Map<String, Object>> result = Promise.promise();
+        Promise<T> result = Promise.promise();
 
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -359,7 +364,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Map<String, Object>> status(String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName + "/status";
-        return doGet(host, port, path, Collections.singleton(200));
+        return doGet(host, port, path, Collections.singleton(200), new TypeReference<Map<String, Object>>() { });
     }
 
     @Override
