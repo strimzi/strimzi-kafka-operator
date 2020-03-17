@@ -17,7 +17,9 @@ This document gives a detailed breakdown of the various build processes and opti
 
 ## Build Pre-Requisites
 
-To build this project you must first install several command line utilities and a Kubernetes or OpenShift cluster
+To build this project you must first install several command line utilities and a Kubernetes or OpenShift cluster.
+
+You may want to try to use a ready-made Docker image based on CentOS 7 with all the tools pre-installed to quickly perform a build. See the instructions [here](HACKING-cli-image.md).
 
 #### Command line tools
 
@@ -60,7 +62,13 @@ The default minishift setup should allow the integration tests to be run without
 Sometimes however, updates to minikube may prevent the test cluster context being correctly set. If you have errors due to `oc` commands being called on your minikube cluster then explicitly set the `TEST_CLUSTER` environment variable before running the `make` commands.
 
     export TEST_CLUSTER=minikube
-                                                                                            
+
+##### Kubernetes Kind
+
+Currently the integration tests don't run with Kubernetes Kind, so you have to build by using:
+
+    MVN_ARGS=-DskipTests make clean docker_build
+
 ## Make targets
 
 Strimzi includes a `Makefile` with various Make targets to build the project.
@@ -109,6 +117,10 @@ The docker images can be built with an alternative container OS version by addin
 
 ## Building Strimzi
 
+In order to build Strimzi images you need a running Docker daemon (either local or remote).
+
+If you also want to run tests or deploy Strimzi CRDs and the Strimzi Cluster Operator you need access to Kubernetes API server.
+
 The `make all` target can be used to trigger both the `docker_build` and the `docker_push` targets described above. This will build the Docker images, tag them and push them to the configured repository.
 
 The build can be customised by:
@@ -121,6 +133,7 @@ Other build options:
  - [Local build with push to Docker Hub](#local-build-with-push-to-docker-hub)
  - [Local build with push to Minishift Docker registry](#local-build-with-push-to-minishift-docker-registry)
  - [Local build on Minishift or Minikube](#local-build-on-minishift-or-minikube)
+ - [Local build with push to Docker registry used by Kind](#local-build-with-push-to-docker-registry-used-by-kind)
 
 #### Kafka versions
 
@@ -188,7 +201,11 @@ Assuming your OpenShift login is `developer` (a user with the `cluster-admin` ro
 4. Now run the `docker_push` target to push the development images to that Docker repo. If you need to build/rebuild the Docker images as well, then run the `all` target instead:
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=$(oc project -q) make docker_push
-        
+   
+   If everything went right, there should be the built images in your local Docker Registry.
+
+        docker images | grep 172.30.1.1:5000
+   
 5. In order to use the built images in a deployment, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from DockerHub. That can be done using the following command:
 
     ```
@@ -218,6 +235,141 @@ or
     eval $(minikube docker-env)
 
 The images will then be built and stored in the cluster VM's local image store and then pushed to your configured Docker registry. 
+
+#### Local build with push to Docker registry used by Kind
+
+When developing locally you might want to push the docker images to the docker repository running as container in your Docker daemon and used by your Kind cluster deployed in the same Docker daemon. This can be quicker and more convenient than pushing to Docker Hub and works even without a network connection.
+
+1. Determine the IP where your Docker Registry can be reached from both your local environment and from docker containers.
+
+   When deploying Docker Registry container to Docker it will most likely be insecure (accessed over 'http://' url).
+   There are networking differences with different Docker deployments on different local environments.
+
+   On Linux:
+
+       export REGISTRY_IP=$(ifconfig docker0 | grep 'inet ' | awk '{print $2}') && echo $REGISTRY_IP
+
+   On MacOS:
+
+       export REGISTRY_IP=$(ifconfig en0 | grep 'inet ' | awk '{print $2}') && echo $REGISTRY_IP
+
+2. Deploy the Docker Registry if it has not been deployed yet
+
+       export REGISTRY_NAME=docker-registry
+       export REGISTRY_PORT=5000
+
+       docker run -d --restart=always -p "$REGISTRY_PORT:$REGISTRY_PORT" --name "$REGISTRY_NAME" registry:2
+
+   Using `-p` exposes the registry on port 5000 on localhost, but also on the network interface with $REGISTRY_IP address, making it available from your local host as well as from Docker daemon running in a VM, and also from Docker containers running inside Docker daemon (such as Kind cluster running as `kind-control-plane` container).
+
+3. Configure your Docker daemon to trust your Docker Registry.
+
+   The way we deployed the Docker Registry here is without configuring `https`, keystores, and certificates. Such a registry is considered `insecure`, and requires additional configuration of Docker daemon, and Kind cluster.
+   
+   On Linux there is usually a daemon config file at `/etc/docker/daemon.json`.
+
+   You should add the `insecure-registries` section to it. For example:
+
+   ```
+   {
+     "debug": true,
+     "experimental": false,
+     "insecure-registries": [
+       "REGISTRY_IP:5000"          <<< Replace REGISTRY_IP with actual IP from step 1
+     ]
+   }
+   ```
+
+   On MacOS if you're using Docker Desktop you can find this under 'Preferences' / 'Docker Engine'
+
+   After changing this configuration you have to restart the Docker daemon.
+
+4. Make sure you can push locally to Docker Registry
+
+   Execute the following, to make sure your Docker daemon can work with your Docker Registry
+
+   ```
+   docker pull gcr.io/google-samples/hello-app:1.0
+   docker tag gcr.io/google-samples/hello-app:1.0 $REGISTRY_IP:$REGISTRY_PORT/hello-app:1.0
+   docker push $REGISTRY_IP:$REGISTRY_PORT/hello-app:1.0
+   ```
+
+5. Start your Kind cluster to work with your Docker Registry
+
+   Rather than simply starting your Kind cluster with `kind create cluster` use the following:
+
+   ```
+   export KIND_CLUSTER_NAME=kind
+
+   cat << EOF | kind create cluster --name "${KIND_CLUSTER_NAME}" --config=-
+   kind: Cluster
+   apiVersion: kind.x-k8s.io/v1alpha4
+   containerdConfigPatches: 
+   - |-
+     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."$REGISTRY_IP:$REGISTRY_PORT"]
+       endpoint = ["http://$REGISTRY_IP:$REGISTRY_PORT"]
+   EOF
+   ```
+
+   Note, how we use `http` in `endpoint` value, which makes Kind work with your 'insecure' registry.
+
+6. Make sure Kind can deploy images from your Docker Registry
+
+   If the following works and results in a successful deployment of `hello-server` (status RUNNING) then you're all set.
+
+   ```
+   docker tag gcr.io/google-samples/hello-app:1.0 $REGISTRY_IP:$REGISTRY_PORT/hello-app:1.0
+   kubectl create deployment hello-server --image=$REGISTRY_IP:$REGISTRY_PORT/hello-app:1.0
+   kubectl get pod
+   ```
+   
+   You may need to repeat the last command a few times to make sure the pod reaches `Running` status.
+
+   Then, remove the deployment:
+
+       kubectl delete deployment hello-server
+
+7. Now run the `docker_push` target to push the development images to that Docker repo. If you need to build/rebuild the Docker images as well, then run the `all` target instead:
+
+       export DOCKER_REG=$REGISTRY_IP:$REGISTRY_PORT
+       DOCKER_REGISTRY=$DOCKER_REG DOCKER_ORG=strimzi make docker_push
+        
+8. In order to use the built images in a deployment, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `$REGISTRY_IP:$REGISTRY_PORT`, rather than from DockerHub.
+
+   That can be done using the following command:
+
+   ```
+   sed -Ei -e "s#(image|value): strimzi/([a-z0-9-]+):latest#\1: ${DOCKER_REG}/strimzi/\2:latest#" \
+       -e "s#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=${DOCKER_REG}/strimzi/\2#" \
+       install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+   ```
+
+   This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name from `$REGISTRY_IP:$REGISTRY_PORT/strimzi`.
+
+9. Change the `RoleBindings` and `ClusterRoleBindinga` namespace to `default`
+
+        sed -Ei -e 's/namespace: .*/namespace: default/' install/cluster-operator/*.yaml
+
+   As an alternative you may want to create your own namespace, and use that.
+
+   For example:
+   
+        kubectl create ns kafka
+        sed -Ei -e 's/namespace: .*/namespace: kafka/' install/cluster-operator/*.yaml
+
+   But, you then have to use `-n kafka` when issuing `kubectl` commands.
+   
+10. Then you can deploy the Cluster Operator by running:
+
+        kubectl create -f install/cluster-operator
+
+    You can follow it's status by executing:
+        
+        kubectl get events -w | grep operator
+        
+11. Finally, you can deploy the cluster custom resource by running:
+
+        kubectl create -f examples/kafka/kafka-ephemeral.yaml
 
 ##### Skipping the registry push
 

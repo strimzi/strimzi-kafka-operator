@@ -13,7 +13,7 @@ See our [website][strimzi] for more details about the project.
 
 ## Quickstart
 
-To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](https://strimzi.io/quickstarts/okd/) and [Minikube](https://strimzi.io/quickstarts/minikube/). 
+To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](https://strimzi.io/quickstarts/okd/), [Minikube](https://strimzi.io/quickstarts/minikube/), and [Kubernetes Kind](https://strimzi.io/quickstarts/kind/). 
 
 ## Documentation
 
