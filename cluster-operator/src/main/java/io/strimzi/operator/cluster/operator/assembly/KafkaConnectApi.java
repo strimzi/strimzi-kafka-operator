@@ -164,6 +164,10 @@ class ConnectRestException extends RuntimeException {
 @SuppressWarnings({"deprecation"})
 class KafkaConnectApiImpl implements KafkaConnectApi {
     private static final Logger log = LogManager.getLogger(KafkaConnectApiImpl.class);
+    public static final TypeReference<Map<String, Object>> TREE_TYPE = new TypeReference<Map<String, Object>>() {
+    };
+    public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<Map<String, String>>() {
+    };
     private final Vertx vertx;
 
     public KafkaConnectApiImpl(Vertx vertx) {
@@ -221,7 +225,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             String connectorName) {
         return doGet(host, port, String.format("/connectors/%s", connectorName),
                 new HashSet<>(asList(200, 201)),
-                new TypeReference<Map<String, Object>>() { });
+                TREE_TYPE);
     }
 
     @SuppressWarnings("unchecked")
@@ -267,7 +271,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             String connectorName) {
         return doGet(host, port, String.format("/connectors/%s/config", connectorName),
                 new HashSet<>(asList(200, 201)),
-                new TypeReference<Map<String, String>>() { });
+                MAP_OF_STRINGS);
     }
 
     @Override
@@ -364,7 +368,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Map<String, Object>> status(String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName + "/status";
-        return doGet(host, port, path, Collections.singleton(200), new TypeReference<Map<String, Object>>() { });
+        return doGet(host, port, path, Collections.singleton(200), TREE_TYPE);
     }
 
     @Override
