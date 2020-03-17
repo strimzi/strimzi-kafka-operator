@@ -9,9 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +51,6 @@ class UserST extends BaseST {
 
         // Create user with correct name
         KafkaUserResource.tlsUser(CLUSTER_NAME, userWithCorrectName).done();
-        SecretUtils.waitForSecretReady(userWithCorrectName);
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
@@ -91,8 +88,6 @@ class UserST extends BaseST {
         String kafkaUser = "test-user";
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-        SecretUtils.waitForSecretReady(kafkaUser);
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -154,14 +149,6 @@ class UserST extends BaseST {
 
         // Create user with correct name
         KafkaUserResource.userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
-        KafkaUserUtils.waitForKafkaUserCreation(userName);
-
-        String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
-
-        // Checking UO logs
-        String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOlogs.contains(messageUserWasAdded), is(true));
 
         String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
@@ -206,7 +193,6 @@ class UserST extends BaseST {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
 
-            KafkaUserUtils.waitForKafkaUserCreation(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);
