@@ -196,7 +196,7 @@ public class ConnectorMockTest {
             return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
         });
         when(api.statusWithBackOff(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
+            String host = invocation.getArgument(1);
             System.err.println("###### status " + host);
             return kafkaConnectApiStatusMock(invocation.getArgument(1), invocation.getArgument(2), invocation.getArgument(3));
         });
