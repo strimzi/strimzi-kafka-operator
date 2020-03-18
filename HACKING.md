@@ -133,7 +133,7 @@ Other build options:
  - [Local build with push to Docker Hub](#local-build-with-push-to-docker-hub)
  - [Local build with push to Minishift Docker registry](#local-build-with-push-to-minishift-docker-registry)
  - [Local build on Minishift or Minikube](#local-build-on-minishift-or-minikube)
- - [Local build with push to Docker registry used by Kind](#local-build-with-push-to-docker-registry-used-by-kind)
+ - [Local build pushing to the Docker registry used by Kind](#local-build-pushing-to-the-docker-registry-used-by-kind)
 
 #### Kafka versions
 

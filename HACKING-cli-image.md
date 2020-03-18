@@ -17,7 +17,7 @@ For using Strimzi Development CLI image you only need a working Docker daemon, a
 Starting the session
 --------------------
 
-First, make sure that you have the latest version of image (best to do this every time):
+First, make sure that you have the latest version of the image (best to do this every time you start a new session):
 
     docker pull quay.io/mstruk/strimzi-dev-cli
 
@@ -59,7 +59,7 @@ kubectl get ns
 docker ps
 ```
 
-Also, if running a local Docker Registry as another docker container [as explained here](HACKING.md#local-build-with-push-to-docker-registry-used-by-kind), you'll want to make sure that you can push to it from your interactive container:
+Also, if running a local Docker Registry as another docker container [as explained here](HACKING.md#local-build-pushing-to-the-docker-registry-used-by-kind), you'll want to make sure that you can push to it from your interactive container:
 
 ```
 # Set REGISTRY_IP to the same value you configured on Docker daemon
