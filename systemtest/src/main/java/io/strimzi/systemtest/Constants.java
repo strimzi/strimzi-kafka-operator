@@ -59,6 +59,9 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
 
+    int GLOBAL_STABILITY_COUNT = 20;
+    int GLOBAL_RECONCILIATION_COUNT = 30;
+
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
