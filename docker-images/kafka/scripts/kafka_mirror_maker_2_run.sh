@@ -63,4 +63,4 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
-./kafka_connect_run.sh
+exec ./kafka_connect_run.sh
