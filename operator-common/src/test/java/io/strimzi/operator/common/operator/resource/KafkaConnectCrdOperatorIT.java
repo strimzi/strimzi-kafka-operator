@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> {
     protected static final Logger log = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
 
     @Override
@@ -61,8 +61,8 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT 
     }
 
     @Override
-    protected CustomResource getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaConnectBuilder((KafkaConnect) resourceInCluster)
+    protected KafkaConnect getResourceWithModifications(KafkaConnect resourceInCluster) {
+        return new KafkaConnectBuilder(resourceInCluster)
                 .editSpec()
                     .withNewLivenessProbe()
                         .withInitialDelaySeconds(14)
@@ -72,8 +72,8 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT 
     }
 
     @Override
-    protected CustomResource getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaConnectBuilder((KafkaConnect) resourceInCluster)
+    protected KafkaConnect getResourceWithNewReadyStatus(KafkaConnect resourceInCluster) {
+        return new KafkaConnectBuilder(resourceInCluster)
                 .withNewStatus()
                     .withConditions(READY_CONDITION)
                 .endStatus()
@@ -81,9 +81,8 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT 
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        KafkaConnect kafkaConnect = (KafkaConnect) modifiedCustomResource;
-        context.verify(() -> assertThat(kafkaConnect.getStatus()
+    protected void assertReady(VertxTestContext context, KafkaConnect resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }

@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge> {
     protected static final Logger log = LogManager.getLogger(KafkaBridgeCrdOperatorIT.class);
 
     @Override
@@ -62,8 +62,8 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected CustomResource getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaBridgeBuilder((KafkaBridge) resourceInCluster)
+    protected KafkaBridge getResourceWithModifications(KafkaBridge resourceInCluster) {
+        return new KafkaBridgeBuilder(resourceInCluster)
                 .editSpec()
                 .withLogging(new InlineLogging())
                 .endSpec()
@@ -71,8 +71,8 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected CustomResource getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaBridgeBuilder((KafkaBridge) resourceInCluster)
+    protected KafkaBridge getResourceWithNewReadyStatus(KafkaBridge resourceInCluster) {
+        return new KafkaBridgeBuilder(resourceInCluster)
                 .withNewStatus()
                 .withConditions(new ConditionBuilder()
                         .withType("Ready")
@@ -83,9 +83,8 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        KafkaBridge kafkaBridge = (KafkaBridge) modifiedCustomResource;
-        context.verify(() -> assertThat(kafkaBridge.getStatus()
+    protected void assertReady(VertxTestContext context, KafkaBridge resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }

@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> {
     protected static final Logger log = LogManager.getLogger(KafkaUserCrdOperatorIT.class);
 
     @Override
@@ -60,8 +60,8 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected KafkaUser getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaUserBuilder((KafkaUser) resourceInCluster)
+    protected KafkaUser getResourceWithModifications(KafkaUser resourceInCluster) {
+        return new KafkaUserBuilder(resourceInCluster)
                 .editSpec()
                     .withNewKafkaUserTlsClientAuthentication().endKafkaUserTlsClientAuthentication()
                 .endSpec()
@@ -69,8 +69,8 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected KafkaUser getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaUserBuilder((KafkaUser) resourceInCluster)
+    protected KafkaUser getResourceWithNewReadyStatus(KafkaUser resourceInCluster) {
+        return new KafkaUserBuilder(resourceInCluster)
                 .withNewStatus()
                     .withConditions(READY_CONDITION)
                 .endStatus()
@@ -78,9 +78,8 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        KafkaUser kafkaUser = (KafkaUser) modifiedCustomResource;
-        context.verify(() -> assertThat(kafkaUser.getStatus()
+    protected void assertReady(VertxTestContext context, KafkaUser resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }

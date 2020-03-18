@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, Kafka, KafkaList, DoneableKafka> {
     protected static final Logger log = LogManager.getLogger(KafkaCrdOperatorIT.class);
 
     @Override
@@ -49,24 +49,24 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT {
         return new KafkaBuilder()
                 .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(getNamespace())
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
-                .withNewKafka()
-                .withReplicas(1)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(1)
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(1)
+                        .withNewListeners()
+                            .withNewPlain()
+                            .endPlain()
+                        .endListeners()
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
                 .endSpec()
                 .withNewStatus()
                 .endStatus()
@@ -74,8 +74,8 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected CustomResource getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaBuilder((Kafka) resourceInCluster)
+    protected Kafka getResourceWithModifications(Kafka resourceInCluster) {
+        return new KafkaBuilder(resourceInCluster)
                 .editSpec()
                 .editKafka()
                 .addToConfig("xxx", "yyy")
@@ -86,8 +86,8 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected CustomResource getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaBuilder((Kafka) resourceInCluster)
+    protected Kafka getResourceWithNewReadyStatus(Kafka resourceInCluster) {
+        return new KafkaBuilder(resourceInCluster)
                 .withNewStatus()
                 .withConditions(READY_CONDITION)
                 .endStatus()
@@ -95,9 +95,8 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT {
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        Kafka kafka = (Kafka) modifiedCustomResource;
-        context.verify(() -> assertThat(kafka.getStatus()
+    protected void assertReady(VertxTestContext context, Kafka resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }

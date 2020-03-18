@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> {
     protected static final Logger log = LogManager.getLogger(KafkaMirrorMakerCrdOperatorIT.class);
 
     @Override
@@ -61,8 +61,8 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
     }
 
     @Override
-    protected CustomResource getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaMirrorMakerBuilder((KafkaMirrorMaker) resourceInCluster)
+    protected KafkaMirrorMaker getResourceWithModifications(KafkaMirrorMaker resourceInCluster) {
+        return new KafkaMirrorMakerBuilder(resourceInCluster)
                 .editSpec()
                     .withLogging(new InlineLogging())
                 .endSpec()
@@ -70,8 +70,8 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
     }
 
     @Override
-    protected CustomResource getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaMirrorMakerBuilder((KafkaMirrorMaker) resourceInCluster)
+    protected KafkaMirrorMaker getResourceWithNewReadyStatus(KafkaMirrorMaker resourceInCluster) {
+        return new KafkaMirrorMakerBuilder(resourceInCluster)
                 .withNewStatus()
                     .withConditions(READY_CONDITION)
                 .endStatus()
@@ -79,9 +79,8 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        KafkaMirrorMaker kafkaMirrorMaker = (KafkaMirrorMaker) modifiedCustomResource;
-        context.verify(() -> assertThat(kafkaMirrorMaker.getStatus()
+    protected void assertReady(VertxTestContext context, KafkaMirrorMaker resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }

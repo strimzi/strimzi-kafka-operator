@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperatorIT {
+public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> {
     protected static final Logger log = LogManager.getLogger(KafkaMirrorMaker2CrdOperatorIT.class);
 
     @Override
@@ -61,29 +61,28 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
     }
 
     @Override
-    protected CustomResource getResourceWithModifications(CustomResource resourceInCluster) {
-        return new KafkaMirrorMaker2Builder((KafkaMirrorMaker2) resourceInCluster)
+    protected KafkaMirrorMaker2 getResourceWithModifications(KafkaMirrorMaker2 resourceInCluster) {
+        return new KafkaMirrorMaker2Builder(resourceInCluster)
                 .editSpec()
-                .withNewLivenessProbe()
-                .withInitialDelaySeconds(14)
-                .endLivenessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(14)
+                    .endLivenessProbe()
                 .endSpec()
                 .build();
     }
 
     @Override
-    protected CustomResource getResourceWithNewReadyStatus(CustomResource resourceInCluster) {
-        return new KafkaMirrorMaker2Builder((KafkaMirrorMaker2) resourceInCluster)
+    protected KafkaMirrorMaker2 getResourceWithNewReadyStatus(KafkaMirrorMaker2 resourceInCluster) {
+        return new KafkaMirrorMaker2Builder(resourceInCluster)
                 .withNewStatus()
-                .withConditions(READY_CONDITION)
+                    .withConditions(READY_CONDITION)
                 .endStatus()
                 .build();
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, CustomResource modifiedCustomResource) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = (KafkaMirrorMaker2) modifiedCustomResource;
-        context.verify(() -> assertThat(kafkaMirrorMaker2.getStatus()
+    protected void assertReady(VertxTestContext context, KafkaMirrorMaker2 resource) {
+        context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
     }
