@@ -1612,7 +1612,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    void testAppDomainLabels() throws Exception {
+    void testAppDomainLabels() {
         String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
