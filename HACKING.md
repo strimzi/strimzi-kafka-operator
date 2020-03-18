@@ -119,7 +119,7 @@ The docker images can be built with an alternative container OS version by addin
 
 In order to build Strimzi images you need a running Docker daemon (either local or remote).
 
-If you also want to run tests or deploy Strimzi CRDs and the Strimzi Cluster Operator you need access to Kubernetes API server.
+If you also want to run tests or deploy Strimzi CRDs and the Strimzi Cluster Operator you need access to a Kubernetes API server.
 
 The `make all` target can be used to trigger both the `docker_build` and the `docker_push` targets described above. This will build the Docker images, tag them and push them to the configured repository.
 
@@ -236,9 +236,9 @@ or
 
 The images will then be built and stored in the cluster VM's local image store and then pushed to your configured Docker registry. 
 
-#### Local build with push to Docker registry used by Kind
+#### Local build pushing to the Docker registry used by Kind
 
-When developing locally you might want to push the docker images to the docker repository running as container in your Docker daemon and used by your Kind cluster deployed in the same Docker daemon. This can be quicker and more convenient than pushing to Docker Hub and works even without a network connection.
+When developing locally you might want to push the docker images to the docker repository running as a container in your Docker daemon and used by your Kind cluster deployed in the same Docker daemon. This can be quicker and more convenient than pushing to Docker Hub and works even without a network connection.
 
 1. Determine the IP where your Docker Registry can be reached from both your local environment and from docker containers.
 
@@ -260,7 +260,7 @@ When developing locally you might want to push the docker images to the docker r
 
        docker run -d --restart=always -p "$REGISTRY_PORT:$REGISTRY_PORT" --name "$REGISTRY_NAME" registry:2
 
-   Using `-p` exposes the registry on port 5000 on localhost, but also on the network interface with $REGISTRY_IP address, making it available from your local host as well as from Docker daemon running in a VM, and also from Docker containers running inside Docker daemon (such as Kind cluster running as `kind-control-plane` container).
+   Using `-p` exposes the registry on port 5000 on localhost, but also on the network interface with $REGISTRY_IP address, making it available from your local host as well as from the Docker daemon running in a VM, and also from Docker containers running inside the Docker daemon (such as the Kind cluster running as the `kind-control-plane` container).
 
 3. Configure your Docker daemon to trust your Docker Registry.
 
@@ -284,7 +284,7 @@ When developing locally you might want to push the docker images to the docker r
 
    After changing this configuration you have to restart the Docker daemon.
 
-4. Make sure you can push locally to Docker Registry
+4. Make sure you can push locally to your Docker Registry
 
    Execute the following, to make sure your Docker daemon can work with your Docker Registry
 
@@ -311,7 +311,7 @@ When developing locally you might want to push the docker images to the docker r
    EOF
    ```
 
-   Note, how we use `http` in `endpoint` value, which makes Kind work with your 'insecure' registry.
+   Note, how we use `http` in the `endpoint` value, which makes Kind work with your 'insecure' registry.
 
 6. Make sure Kind can deploy images from your Docker Registry
 
@@ -363,7 +363,7 @@ When developing locally you might want to push the docker images to the docker r
 
         kubectl create -f install/cluster-operator
 
-    You can follow it's status by executing:
+    You can follow its status by executing:
         
         kubectl get events -w | grep operator
         

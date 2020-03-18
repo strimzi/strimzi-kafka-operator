@@ -5,7 +5,7 @@ Strimzi Development CLI image is a CentOS 7 based image that contains Java 8 and
 
 In order to build Strimzi Kafka Operator project you need a running Docker daemon.
 
-If you also want to try them out, deploy the Strimzi Cluster Operator, and run a test Kafka cluster on Kubernetes, you'll need access to Kubernetes API server.
+If you also want to try them out, deploy the Strimzi Cluster Operator, and run a test Kafka cluster on Kubernetes, you'll need access to a Kubernetes API server.
 
 There are several locally running options for Kubernetes as explained in [Strimzi Quickstarts](https://strimzi.io/quickstarts/).
 
@@ -30,10 +30,10 @@ For example, if you're using Kind you'll want to export its configuration specif
 Finally, run the interactive shell mounting local directories you want to share with your container session as volumes.
 
 For example:
-* if using Kind for Kubernetes, you'll want to make kube configuration file available inside container
-* if using local Docker daemon over UNIX socket, you'll want to make the socket file available inside container
+* if using Kind for Kubernetes, you'll want to make the kube configuration file available inside the container
+* if using your local Docker daemon over a UNIX domain socket, you'll want to make the socket file available inside the container
 * typically you want to mount the local directory that contains your strimzi-kafka-operator project so that you can make changes using your locally running IDE
-* you may want to use local directory for storing downloaded maven artifacts (although I/O operations on mounted volumes might be slower than on container's private filesystem)
+* you may want to use a local directory for storing downloaded maven artifacts (although I/O operations on mounted volumes might be slower than on container's private filesystem)
 
 ```
 # set DEV_DIR to point to directory where you have your cloned git repositories
@@ -44,12 +44,12 @@ export DEV_DIR=$HOME/devel
 docker run -ti --name strimzi-dev-cli -v $HOME/.kube:/root/.kube -v /var/run/docker.sock:/var/run/docker.sock -v $DEV_DIR:/root/devel -v $HOME/.m2:/root/.m2:cached quay.io/mstruk/strimzi-dev-cli /bin/sh
 ```
 
-Note: If you exit the container or it gets shut down, as long as it's not manually deleted you can reattach and continue interactive session:
+Note: If you exit the container or it gets shut down, as long as it's not manually deleted you can reattach and continue the interactive session:
 
     docker start strimzi-dev-cli
     docker attach strimzi-dev-cli
 
-Having starterd the interactive session you are now in the development environment where you have all the necessary tools including `docker`, `kind`, `kubectl`, `git`, `mvn` and all the rest you need to build Strimzi project.
+Having started the interactive session you are now in the development environment where you have all the necessary tools including `docker`, `kind`, `kubectl`, `git`, `mvn` and all the rest you need to build the Strimzi project.
 
 If you're using Kind for your local Kubernetes cluster you may want to check that everything works:
 
@@ -83,7 +83,7 @@ The quickest way to build the project is to run:
 
     MVN_ARGS="-DskipTests -Dcheckstyle.skip -Dmaven.javadoc.skip" make clean docker_build
 
-You then push the images to Docker Registry, which depends on your environment. For example:
+You then push the images to your Docker Registry, which depends on your environment. For example:
 
     export DOCKER_REG=$REGISTRY_IP:$REGISTRY_PORT
     DOCKER_REGISTRY=$DOCKER_REG DOCKER_ORG=strimzi make docker_push
