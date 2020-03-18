@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = Constants.KUBERNETES_API_BUILDER
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
 @JsonInclude(JsonInclude.Include.NON_NULL)

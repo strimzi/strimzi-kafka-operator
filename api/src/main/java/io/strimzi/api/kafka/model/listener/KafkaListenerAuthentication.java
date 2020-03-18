@@ -31,7 +31,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
         editableEnabled = false,
-        builderPackage = Constants.KUBERNETES_API_BUILDER
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @EqualsAndHashCode
 public abstract class KafkaListenerAuthentication implements UnknownPropertyPreserving, Serializable {

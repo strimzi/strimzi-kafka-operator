@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
-    builderPackage = Constants.KUBERNETES_API_BUILDER
+    builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @EqualsAndHashCode(callSuper = true)
 public class NodePortListenerConfiguration extends KafkaListenerExternalConfiguration {

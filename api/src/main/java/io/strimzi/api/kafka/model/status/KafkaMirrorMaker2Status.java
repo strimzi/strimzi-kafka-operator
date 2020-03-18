@@ -22,7 +22,7 @@ import lombok.ToString;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = Constants.KUBERNETES_API_BUILDER
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
