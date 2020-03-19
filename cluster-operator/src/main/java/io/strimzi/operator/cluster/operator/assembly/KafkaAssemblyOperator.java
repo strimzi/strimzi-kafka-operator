@@ -271,7 +271,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPersistentClaimDeletion())
 
                 .compose(state -> state.getKafkaClusterDescription())
-                .compose(state -> state.checkKafkaSpec())
+                .compose(state -> state.checkKafkaSpec(this::dateSupplier))
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaNetPolicy())
                 .compose(state -> state.kafkaManualRollingUpdate())
@@ -528,8 +528,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Checks the requested Kafka spec for potential issues, and adds warnings and advice for best
          * practice to the status.
          */
-        Future<ReconciliationState> checkKafkaSpec() {
-            KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
+        Future<ReconciliationState> checkKafkaSpec(Supplier<Date> dateSupplier) {
+            KafkaSpecChecker checker = new KafkaSpecChecker(dateSupplier, kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
             List<Condition> warnings = checker.run();
             kafkaStatus.addConditions(warnings);
             return Future.succeededFuture(this);

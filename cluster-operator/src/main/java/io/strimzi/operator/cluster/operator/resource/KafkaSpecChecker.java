@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,11 +45,11 @@ public class KafkaSpecChecker {
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
      */
-    public KafkaSpecChecker(KafkaSpec spec, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
+    public KafkaSpecChecker(Supplier<Date> dateSupplier, KafkaSpec spec, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
         this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
-        this.timestamp = ModelUtils.formatTimestamp(dateSupplier());
+        this.timestamp = ModelUtils.formatTimestamp(dateSupplier.get());
     }
 
     public List<Condition> run() {
@@ -132,8 +133,5 @@ public class KafkaSpecChecker {
                 .withReason(reason)
                 .withMessage(message)
                 .build();
-    }
-    private Date dateSupplier() {
-        return new Date();
     }
 }
