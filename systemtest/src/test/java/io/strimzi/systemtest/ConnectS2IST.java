@@ -29,6 +29,7 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -415,15 +416,9 @@ class ConnectS2IST extends BaseST {
         });
 
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
-        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, "sink-test");
-
-        // Wait for Cluster Operator reconciliation
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Check that KafkaConnect contains created connector
-        String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
-        assertThat(availableConnectors, containsString("sink-test"));
-
+        final String connectorName = "sink-test";
+        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
+        KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }

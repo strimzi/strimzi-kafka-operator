@@ -203,4 +203,22 @@ public class DeploymentUtils {
             });
         LOGGER.debug("Deployment {} was deleted", name);
     }
+
+    public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
+        // alternative to sync hassling AtomicInteger one could use an integer array instead
+        // not need to be final because reference to the array does not get another array assigned
+        int[] i = {0};
+
+        TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                if (!DeploymentUtils.depHasRolled(deploymentName, pods)) {
+                    LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
+                            Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
+                } else {
+                    throw new RuntimeException(pods.toString() + " pods are rolling!");
+                }
+            }
+        );
+    }
 }
