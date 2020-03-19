@@ -418,7 +418,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         final String connectorName = "sink-test";
         KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
-        KafkaConnectorUtils.waitForStabilityConnector(connectorName, connectS2IPodName);
+        KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }

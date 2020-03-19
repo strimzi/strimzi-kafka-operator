@@ -59,8 +59,10 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
 
-    int GLOBAL_STABILITY_COUNT = 20;
-    int GLOBAL_RECONCILIATION_COUNT = 30;
+    // stability count ensures that after some reconciliation we have some additional time
+    int GLOBAL_STABILITY_OFFSET_COUNT = 20;
+    // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
+    int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";

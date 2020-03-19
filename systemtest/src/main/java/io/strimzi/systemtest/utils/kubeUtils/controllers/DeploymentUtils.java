@@ -213,8 +213,8 @@ public class DeploymentUtils {
             () -> {
                 if (!DeploymentUtils.depHasRolled(deploymentName, pods)) {
                     LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
-                            (Constants.GLOBAL_STABILITY_COUNT + Constants.GLOBAL_RECONCILIATION_COUNT) - i[0]);
-                    return i[0]++ == (Constants.GLOBAL_STABILITY_COUNT + Constants.GLOBAL_RECONCILIATION_COUNT);
+                            Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
                 } else {
                     throw new RuntimeException(pods.toString() + " pods are rolling!");
                 }
