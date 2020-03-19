@@ -37,7 +37,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -1285,7 +1284,7 @@ class KafkaST extends BaseST {
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
 
         LOGGER.info("Waiting for PVC deletion");
-        waitForPVCDeletion(kafkaReplicas, jbodStorage);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
 
         LOGGER.info("Waiting for Kafka pods deletion");
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
@@ -1309,7 +1308,7 @@ class KafkaST extends BaseST {
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
 
         LOGGER.info("Waiting for PVC deletion");
-        waitForPVCDeletion(kafkaReplicas, jbodStorage);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
 
         LOGGER.info("Waiting for Kafka pods deletion");
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
@@ -1333,7 +1332,7 @@ class KafkaST extends BaseST {
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
 
         LOGGER.info("Waiting for PVC deletion");
-        waitForPVCDeletion(kafkaReplicas, jbodStorage);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
 
         LOGGER.info("Waiting for Kafka pods deletion");
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
@@ -1399,33 +1398,6 @@ class KafkaST extends BaseST {
                 pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
             }
         }
-    }
-
-    void waitForPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage) {
-        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
-            List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
-                    .map(pvc -> pvc.getMetadata().getName())
-                    .collect(Collectors.toList());
-            boolean isCorrect = false;
-
-            for (SingleVolumeStorage singleVolumeStorage : jbodStorage.getVolumes()) {
-                for (int i = 0; i < kafkaReplicas; i++) {
-                    String jbodPVCName = "data-" + singleVolumeStorage.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
-                    boolean deleteClaim = ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim();
-
-                    if ((deleteClaim && !pvcs.contains(jbodPVCName)) || (!deleteClaim && pvcs.contains(jbodPVCName))) {
-                        isCorrect = true;
-                    } else {
-                        isCorrect = false;
-                        break;
-                    }
-                }
-                if (!isCorrect)
-                    break;
-            }
-
-            return isCorrect;
-        });
     }
 
     @Test

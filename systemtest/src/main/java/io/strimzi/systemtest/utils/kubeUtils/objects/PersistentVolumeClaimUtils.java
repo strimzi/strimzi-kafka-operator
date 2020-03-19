@@ -5,6 +5,9 @@
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -67,5 +70,32 @@ public class PersistentVolumeClaimUtils {
                 }
             });
         LOGGER.info("PVC for cluster {} was deleted", clusterName);
+    }
+
+    public static void waitForPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage, String clusterName) {
+        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
+            List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+                    .map(pvc -> pvc.getMetadata().getName())
+                    .collect(Collectors.toList());
+            boolean isCorrect = false;
+
+            for (SingleVolumeStorage singleVolumeStorage : jbodStorage.getVolumes()) {
+                for (int i = 0; i < kafkaReplicas; i++) {
+                    String jbodPVCName = "data-" + singleVolumeStorage.getId() + "-" + clusterName + "-kafka-" + i;
+                    boolean deleteClaim = ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim();
+
+                    if ((deleteClaim && !pvcs.contains(jbodPVCName)) || (!deleteClaim && pvcs.contains(jbodPVCName))) {
+                        isCorrect = true;
+                    } else {
+                        isCorrect = false;
+                        break;
+                    }
+                }
+                if (!isCorrect)
+                    break;
+            }
+
+            return isCorrect;
+        });
     }
 }
