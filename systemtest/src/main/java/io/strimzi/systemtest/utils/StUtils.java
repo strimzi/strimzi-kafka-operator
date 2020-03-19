@@ -9,11 +9,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -51,22 +49,32 @@ public class StUtils {
 
     private StUtils() { }
 
+
+    public static void main(String[] args) {
+
+        List<String> list = Arrays.asList("my-cluster-kafka-0", "my-cluster-kafka-1", "entityy-shittt");
+
+        System.out.println(list.toString());
+
+        list = list.stream()
+                .filter(p -> p.startsWith("my-cluster-kafka")
+                    && p.endsWith(""))
+                .collect(Collectors.toList());
+
+        System.out.println(list.toString());
+
+    }
     /**
      * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
      * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
      * pod is considered as a stable. Otherwise this procedure will be repeat.
-     * @param rolledComponent kafka or zookeeper
+     * @param pods all pods that will be verified
      */
-    public static void waitForPodsStability(String rolledComponent) {
+    public static void waitUntilPodsStability(List<Pod> pods) {
         int[] stabilityCounter = {0};
 
         TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> pods = kubeClient().listPods().stream()
-                    .filter(p -> p.getMetadata().getName().startsWith(rolledComponent)
-                            && p.getMetadata().getLabels().containsKey(Labels.STRIMZI_KIND_LABEL))
-                    .collect(Collectors.toList());
-
                 for (Pod pod : pods) {
                     if (pod.getStatus().getPhase().equals("Running")) {
                         LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
@@ -77,7 +85,6 @@ public class StUtils {
                         return false;
                     }
                 }
-                LOGGER.info("All pods are in Running phase going to increase stability counter {}", stabilityCounter);
                 stabilityCounter[0]++;
 
                 if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
@@ -87,16 +94,6 @@ public class StUtils {
 
                 return false;
             });
-    }
-
-    public static void waitForReconciliation(String testClass, String testName, String namespace) {
-        LOGGER.info("Waiting for reconciliation");
-        String reconciliation = timeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 30000,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
-                timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
-        timeMeasuringSystem.stopOperation(reconciliation);
     }
 
     public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {

@@ -30,6 +30,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -700,6 +701,7 @@ class SecurityST extends BaseST {
         );
     }
 
+    // TODO: 1) here
     @Test
     void testCertRegeneratedAfterInternalCAisDeleted() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
@@ -734,7 +736,7 @@ class SecurityST extends BaseST {
             kubeClient().deleteSecret(s.getMetadata().getName());
         }
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         for (Secret s : secrets) {
@@ -1259,17 +1261,18 @@ class SecurityST extends BaseST {
                 .build());
         });
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount);
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME).stream().filter(
+                pod -> !pod.getMetadata().getName().endsWith("-kafka-0")).collect(Collectors.toList()));
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         List<String> podStatuses = kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
                     && p.getMetadata().getLabels().containsKey("strimzi.io/kind")
                     && p.getMetadata().getLabels().containsValue("Kafka"))
             .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
+
+        LOGGER.info("First pod of kafka is in pending phase because of selected cpu high resource");
         assertThat(podStatuses, hasItem("Pending"));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
