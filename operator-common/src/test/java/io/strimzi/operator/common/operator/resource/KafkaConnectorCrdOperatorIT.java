@@ -7,10 +7,10 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.KafkaConnectorList;
+import io.strimzi.api.kafka.model.DoneableKafkaConnector;
+import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -27,28 +27,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> {
-    protected static final Logger log = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
+public class KafkaConnectorCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> {
+    protected static final Logger log = LogManager.getLogger(KafkaConnectorCrdOperatorIT.class);
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
+        return new CrdOperator(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class);
     }
 
     @Override
     protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaConnect();
+        return Crds.kafkaConnector();
     }
 
     @Override
     protected String getNamespace() {
-        return "kafka-connect-crd-it-namespace";
+        return "kafka-connector-crd-it-namespace";
     }
 
     @Override
-    protected KafkaConnect getResource() {
-        return new KafkaConnectBuilder()
-                .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
+    protected KafkaConnector getResource() {
+        return new KafkaConnectorBuilder()
+                .withApiVersion(KafkaConnector.RESOURCE_GROUP + "/" + KafkaConnector.V1ALPHA1)
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(getNamespace())
@@ -61,19 +61,17 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
     }
 
     @Override
-    protected KafkaConnect getResourceWithModifications(KafkaConnect resourceInCluster) {
-        return new KafkaConnectBuilder(resourceInCluster)
-                .editSpec()
-                    .withNewLivenessProbe()
-                        .withInitialDelaySeconds(14)
-                    .endLivenessProbe()
-                .endSpec()
+    protected KafkaConnector getResourceWithModifications(KafkaConnector resourceInCluster) {
+        return new KafkaConnectorBuilder(resourceInCluster)
+                .editMetadata()
+                    .addToLabels("newLabelKey", "newLabelValue")
+                .endMetadata()
                 .build();
     }
 
     @Override
-    protected KafkaConnect getResourceWithNewReadyStatus(KafkaConnect resourceInCluster) {
-        return new KafkaConnectBuilder(resourceInCluster)
+    protected KafkaConnector getResourceWithNewReadyStatus(KafkaConnector resourceInCluster) {
+        return new KafkaConnectorBuilder(resourceInCluster)
                 .withNewStatus()
                     .withConditions(READY_CONDITION)
                 .endStatus()
@@ -81,7 +79,7 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, KafkaConnect resource) {
+    protected void assertReady(VertxTestContext context, KafkaConnector resource) {
         context.verify(() -> assertThat(resource.getStatus()
                 .getConditions()
                 .get(0), is(READY_CONDITION)));
