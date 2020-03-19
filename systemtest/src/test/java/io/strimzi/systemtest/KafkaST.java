@@ -755,8 +755,6 @@ class KafkaST extends BaseST {
                 .endEntityOperator()
             .endSpec().done();
 
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.NEXT_RECONCILIATION));
-
         // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
         String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
@@ -795,14 +793,10 @@ class KafkaST extends BaseST {
             }
         });
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-
-        // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        assertThat(StatefulSetUtils.ssHasRolled(zkStsName, zkPods), is(false));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStsName, kafkaPods), is(false));
-        assertThat(DeploymentUtils.depHasRolled(eoDepName, eoPods), is(false));
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+        StatefulSetUtils.waitForNoRollingUpdate(zkStsName, zkPods);
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaStsName, kafkaPods);
+        DeploymentUtils.waitForNoRollingUpdate(eoDepName, eoPods);
     }
 
     @Test
@@ -1551,7 +1545,6 @@ class KafkaST extends BaseST {
 
         verifyPresentLabels(labels, statefulSet);
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Verifying via kafka pods");
@@ -1597,7 +1590,6 @@ class KafkaST extends BaseST {
         LOGGER.info("Verifying kafka labels via stateful set");
         verifyNullLabels(labelKeys, statefulSet);
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
