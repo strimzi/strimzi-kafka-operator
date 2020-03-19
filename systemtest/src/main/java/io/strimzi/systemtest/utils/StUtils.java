@@ -6,8 +6,10 @@ package io.strimzi.systemtest.utils;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -47,6 +50,44 @@ public class StUtils {
     private static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 
     private StUtils() { }
+
+    /**
+     * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
+     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
+     * pod is considered as a stable. Otherwise this procedure will be repeat.
+     * @param rolledComponent kafka or zookeeper
+     */
+    public static void waitForPodsStability(String rolledComponent) {
+        int[] stabilityCounter = {0};
+
+        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> pods = kubeClient().listPods().stream()
+                    .filter(p -> p.getMetadata().getName().startsWith(rolledComponent)
+                            && p.getMetadata().getLabels().containsKey(Labels.STRIMZI_KIND_LABEL))
+                    .collect(Collectors.toList());
+
+                for (Pod pod : pods) {
+                    if (pod.getStatus().getPhase().equals("Running")) {
+                        LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
+                                pod.getMetadata().getName(), pod.getStatus().getPhase(),
+                                Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
+                    } else {
+                        LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        return false;
+                    }
+                }
+                LOGGER.info("All pods are in Running phase going to increase stability counter {}", stabilityCounter);
+                stabilityCounter[0]++;
+
+                if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
+                    LOGGER.info("All pods are stable {}", pods.toString());
+                    return true;
+                }
+
+                return false;
+            });
+    }
 
     public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
