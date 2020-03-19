@@ -699,8 +699,8 @@
       {
         "allValue": null,
         "current": {
-          "text": "my-cluster-mirror-maker-2",
-          "value": "my-cluster-mirror-maker-2"
+          "text": "my-mirror-maker-2-cluster",
+          "value": "my-mirror-maker-2-cluster"
         },
         "datasource": "${DS_PROMETHEUS}",
         "hide": 0,
