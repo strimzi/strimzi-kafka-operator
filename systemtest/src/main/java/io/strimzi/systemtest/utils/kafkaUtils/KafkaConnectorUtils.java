@@ -29,7 +29,7 @@ public class KafkaConnectorUtils {
             () -> {
                 String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectPodName);
                 if (availableConnectors.contains(connectorName)) {
-                    LOGGER.info("Connector with name {} is present remaining seconds for stability {}", connectorName,
+                    LOGGER.info("Connector with name {} is present. Remaining seconds for stability {}", connectorName,
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == (Constants.GLOBAL_RECONCILIATION_COUNT);
                 } else {

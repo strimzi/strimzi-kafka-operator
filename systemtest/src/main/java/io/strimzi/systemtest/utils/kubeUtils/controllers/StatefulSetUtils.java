@@ -202,7 +202,7 @@ public class StatefulSetUtils {
         TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 if (!StatefulSetUtils.ssHasRolled(statefulSetName, pods)) {
-                    LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
+                    LOGGER.info("{} pods didn't roll. Remaining seconds for stability: {}", pods.toString(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
                 } else {
