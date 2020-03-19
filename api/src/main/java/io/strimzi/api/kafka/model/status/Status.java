@@ -45,10 +45,21 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
         this.conditions = conditions;
     }
 
-    public void addCondition(Condition condition) {
+    private List<Condition> prepareConditionsUpdate() {
         List<Condition> oldConditions = getConditions();
         List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>();
+        return newConditions;
+    }
+
+    public void addCondition(Condition condition) {
+        List<Condition> newConditions = prepareConditionsUpdate();
         newConditions.add(condition);
+        setConditions(Collections.unmodifiableList(newConditions));
+    }
+
+    public void addConditions(List<Condition> conditions) {
+        List<Condition> newConditions = prepareConditionsUpdate();
+        newConditions.addAll(conditions);
         setConditions(Collections.unmodifiableList(newConditions));
     }
 

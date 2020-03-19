@@ -70,6 +70,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -103,7 +104,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -203,13 +203,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 readyCondition = new ConditionBuilder()
-                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
             } else {
                 readyCondition = new ConditionBuilder()
-                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
@@ -271,6 +271,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPersistentClaimDeletion())
 
                 .compose(state -> state.getKafkaClusterDescription())
+                .compose(state -> state.checkKafkaSpec(this::dateSupplier))
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaNetPolicy())
                 .compose(state -> state.kafkaManualRollingUpdate())
@@ -498,7 +499,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         log.debug("{}: Setting the initial status for a new resource", reconciliation);
 
                         Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                 .withType("NotReady")
                                 .withStatus("True")
                                 .withReason("Creating")
@@ -521,6 +522,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
 
             return initialStatusPromise.future();
+        }
+
+        /**
+         * Checks the requested Kafka spec for potential issues, and adds warnings and advice for best
+         * practice to the status.
+         */
+        Future<ReconciliationState> checkKafkaSpec(Supplier<Date> dateSupplier) {
+            KafkaSpecChecker checker = new KafkaSpecChecker(dateSupplier, kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
+            List<Condition> warnings = checker.run();
+            kafkaStatus.addConditions(warnings);
+            return Future.succeededFuture(this);
         }
 
         /**
@@ -1434,7 +1446,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.info(scaleMessage);
 
                                 zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                         .withType("ZK-Manual-Scaling")
                                         .withReason("replicaChange")
                                         .withStatus("True")
@@ -1453,7 +1465,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.info(scaleMessage);
 
                                 zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                         .withType("ZK-Manual-Scaling")
                                         .withReason("manualScaleAnnotationSet")
                                         .withStatus("True")
