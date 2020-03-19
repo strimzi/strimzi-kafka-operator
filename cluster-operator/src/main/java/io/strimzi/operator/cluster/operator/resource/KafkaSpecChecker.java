@@ -14,7 +14,6 @@ import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,7 +47,7 @@ public class KafkaSpecChecker {
         this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
-        this.timestamp = ModelUtils.formatTimestamp(dateSupplier());
+        this.timestamp = ModelUtils.formatTimestamp(ModelUtils.dateSupplier());
     }
 
     public List<Condition> run() {
@@ -132,8 +131,5 @@ public class KafkaSpecChecker {
                 .withReason(reason)
                 .withMessage(message)
                 .build();
-    }
-    private Date dateSupplier() {
-        return new Date();
     }
 }

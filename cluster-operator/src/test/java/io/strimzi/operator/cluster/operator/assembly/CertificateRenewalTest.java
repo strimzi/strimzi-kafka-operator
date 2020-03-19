@@ -129,7 +129,7 @@ public class CertificateRenewalTest {
                 .endSpec()
                 .build();
 
-        return reconcileCa(context, kafka, () -> new Date());
+        return reconcileCa(context, kafka, () -> ModelUtils.dateSupplier());
     }
 
     private ArgumentCaptor<Secret> reconcileCa(VertxTestContext context, Kafka kafka, Supplier<Date> dateSupplier) throws InterruptedException {
