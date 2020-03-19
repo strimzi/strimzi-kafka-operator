@@ -49,21 +49,6 @@ public class StUtils {
 
     private StUtils() { }
 
-
-    public static void main(String[] args) {
-
-        List<String> list = Arrays.asList("my-cluster-kafka-0", "my-cluster-kafka-1", "entityy-shittt");
-
-        System.out.println(list.toString());
-
-        list = list.stream()
-                .filter(p -> p.startsWith("my-cluster-kafka")
-                    && p.endsWith(""))
-                .collect(Collectors.toList());
-
-        System.out.println(list.toString());
-
-    }
     /**
      * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
      * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
