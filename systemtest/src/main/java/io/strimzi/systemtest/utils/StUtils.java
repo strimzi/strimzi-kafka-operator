@@ -91,7 +91,6 @@ public class StUtils {
                     LOGGER.info("All pods are stable {}", pods.toString());
                     return true;
                 }
-
                 return false;
             });
     }
