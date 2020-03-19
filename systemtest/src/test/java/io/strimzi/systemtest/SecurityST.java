@@ -1264,7 +1264,7 @@ class SecurityST extends BaseST {
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount);
 
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME).stream().filter(
-                pod -> !pod.getMetadata().getName().endsWith("-kafka-0")).collect(Collectors.toList()));
+            pod -> !pod.getMetadata().getName().endsWith("-kafka-0")).collect(Collectors.toList()));
 
         List<String> podStatuses = kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))

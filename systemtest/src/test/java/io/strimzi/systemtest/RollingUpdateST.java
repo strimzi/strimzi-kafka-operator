@@ -109,7 +109,7 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Verifying stability of zookeeper pods except the first one");
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
-                p -> !p.getMetadata().getName().endsWith("0")).collect(Collectors.toList()));
+            p -> !p.getMetadata().getName().endsWith("0")).collect(Collectors.toList()));
 
         LOGGER.info("First pod of zookeeper is in pending phase because of selected cpu high resource");
         assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0)).get(0).getStatus().getPhase(), is("Pending"));
@@ -185,7 +185,7 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Verifying stability of kafka pods except the first one");
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
-                p -> !p.getMetadata().getName().endsWith("0")).collect(Collectors.toList()));
+            p -> !p.getMetadata().getName().endsWith("0")).collect(Collectors.toList()));
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
