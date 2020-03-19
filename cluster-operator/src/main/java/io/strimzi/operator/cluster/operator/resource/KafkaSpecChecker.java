@@ -37,6 +37,7 @@ public class KafkaSpecChecker {
     private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
 
     /**
+     * @param dateSupplier Function to use for timestamps used in the warnings produced.
      * @param spec The spec requested by the user in the CR
      * @param kafkaCluster The model generated based on the spec. This is requested so that default
      *                     values not included in the spec can be taken into account, without needing
