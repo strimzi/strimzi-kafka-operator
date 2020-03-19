@@ -48,7 +48,7 @@ public class KafkaSpecChecker {
         this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
-        this.timestamp = ModelUtils.formatTimestamp(new Date());
+        this.timestamp = ModelUtils.formatTimestamp(dateSupplier());
     }
 
     public List<Condition> run() {
@@ -132,5 +132,8 @@ public class KafkaSpecChecker {
                 .withReason(reason)
                 .withMessage(message)
                 .build();
+    }
+    private Date dateSupplier() {
+        return new Date();
     }
 }

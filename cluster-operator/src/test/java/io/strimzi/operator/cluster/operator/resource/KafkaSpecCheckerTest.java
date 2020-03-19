@@ -26,6 +26,7 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,7 +57,7 @@ public class KafkaSpecCheckerTest {
     public void checkEmptyWarnings() {
         Kafka kafka = ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
-        assertThat(checker.run().isEmpty(), is(true));
+        assertThat(checker.run(), empty());
     }
 
     @Test
