@@ -203,13 +203,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 readyCondition = new ConditionBuilder()
-                        .withLastTransitionTime(ModelUtils.formatTimestamp(ModelUtils.dateSupplier()))
+                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
             } else {
                 readyCondition = new ConditionBuilder()
-                        .withLastTransitionTime(ModelUtils.formatTimestamp(ModelUtils.dateSupplier()))
+                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
@@ -244,8 +244,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         reconcileState.initialStatus()
-                .compose(state -> state.reconcileCas(ModelUtils::dateSupplier))
-                .compose(state -> state.clusterOperatorSecret(ModelUtils::dateSupplier))
+                .compose(state -> state.reconcileCas(this::dateSupplier))
+                .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 .compose(state -> state.getZookeeperDescription())
@@ -260,7 +260,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
                 .compose(state -> state.zkAncillaryCm())
-                .compose(state -> state.zkNodesSecret(ModelUtils::dateSupplier))
+                .compose(state -> state.zkNodesSecret(this::dateSupplier))
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkScaleUp())
@@ -292,7 +292,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaReplicaServicesReady())
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
-                .compose(state -> state.kafkaGenerateCertificates(ModelUtils::dateSupplier))
+                .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.customTlsListenerCertificate())
                 .compose(state -> state.customExternalListenerCertificate())
                 .compose(state -> state.kafkaAncillaryCm())
@@ -314,7 +314,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.topicOperatorServiceAccount())
                 .compose(state -> state.topicOperatorRoleBinding())
                 .compose(state -> state.topicOperatorAncillaryCm())
-                .compose(state -> state.topicOperatorSecret(ModelUtils::dateSupplier))
+                .compose(state -> state.topicOperatorSecret(this::dateSupplier))
                 .compose(state -> state.topicOperatorDeployment())
 
                 .compose(state -> state.getEntityOperatorDescription())
@@ -323,13 +323,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBinding())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorSecret(ModelUtils::dateSupplier))
+                .compose(state -> state.entityOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
                 .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
-                .compose(state -> state.kafkaExporterSecret(ModelUtils::dateSupplier))
+                .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
                 .compose(state -> state.kafkaExporterService())
                 .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterReady())
@@ -499,7 +499,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         log.debug("{}: Setting the initial status for a new resource", reconciliation);
 
                         Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(ModelUtils.formatTimestamp(ModelUtils.dateSupplier()))
+                                .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                 .withType("NotReady")
                                 .withStatus("True")
                                 .withReason("Creating")
@@ -1445,7 +1445,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.info(scaleMessage);
 
                                 zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(ModelUtils.formatTimestamp(ModelUtils.dateSupplier()))
+                                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                         .withType("ZK-Manual-Scaling")
                                         .withReason("replicaChange")
                                         .withStatus("True")
@@ -1464,7 +1464,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.info(scaleMessage);
 
                                 zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(ModelUtils.formatTimestamp(ModelUtils.dateSupplier()))
+                                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                         .withType("ZK-Manual-Scaling")
                                         .withReason("manualScaleAnnotationSet")
                                         .withStatus("True")
@@ -3315,6 +3315,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(Future.succeededFuture());
         }
 
+    }
+
+    /* test */ Date dateSupplier() {
+        return new Date();
     }
 
     private String getStringHash(String toBeHashed)  {

@@ -19,7 +19,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -421,7 +420,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.reconcileCas(ModelUtils::dateSupplier)
+            return reconcileState.reconcileCas(this::dateSupplier)
                     .compose(state -> state.getKafkaClusterDescription())
                     .compose(state -> state.customTlsListenerCertificate())
                     .compose(state -> state.customExternalListenerCertificate())

@@ -86,10 +86,6 @@ public class ModelUtils {
         return renewalDays;
     }
 
-    public static Date dateSupplier() {
-        return new Date();
-    }
-
     public static String formatTimestamp(Date date) {
         return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(date);
     }
