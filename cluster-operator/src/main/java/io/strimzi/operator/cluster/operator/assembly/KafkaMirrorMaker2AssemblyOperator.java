@@ -374,7 +374,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     private Future<Map<String, Object>> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
-        return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
+        return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                 .setHandler(result -> {
                     if (result.succeeded()) {
                         mirrorMaker2Status.getConnectors().add(result.result());

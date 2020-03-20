@@ -382,7 +382,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Map<String, String> desired = new HashMap<>(connectorSpec.getConfig().size());
         // The actual which comes from Connect API includes tasks.max, connector.class and name,
         // which connectorSpec.getConfig() does not
-        desired.put("tasks.max", connectorSpec.getTasksMax().toString());
+        if (connectorSpec.getTasksMax() != null) {
+            desired.put("tasks.max", connectorSpec.getTasksMax().toString());
+        }
         desired.put("name", connectorName);
         desired.put("connector.class", connectorSpec.getClassName());
         for (Map.Entry<String, Object> entry : connectorSpec.getConfig().entrySet()) {
