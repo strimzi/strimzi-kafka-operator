@@ -220,7 +220,7 @@ public class SimpleAclOperator {
     private Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> getResourceAclsIterator(scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules) {
         // this cast fixes an error with VSCode compiler (using the Eclipse JDT Language Server)
         // error details: The method iterator() is ambiguous for the type Map<Resource,Set<Acl>>
-        return ((scala.collection.GenIterableLike<Tuple2<Resource,scala.collection.immutable.Set<Acl>>, ?>)rules).iterator();
+        return ((scala.collection.GenIterableLike<Tuple2<Resource, scala.collection.immutable.Set<Acl>>, ?>) rules).iterator();
     }
 
     /**
