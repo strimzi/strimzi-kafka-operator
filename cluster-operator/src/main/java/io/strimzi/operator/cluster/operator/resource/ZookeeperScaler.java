@@ -44,7 +44,7 @@ public class ZookeeperScaler implements AutoCloseable {
     private final String keyStorePassword;
     private final File keyStoreFile;
 
-    private ZooKeeperAdmin zkAdmin;
+    //private ZooKeeperAdmin zkAdmin;
 
     /**
      * ZookeeperScaler constructor
@@ -79,22 +79,24 @@ public class ZookeeperScaler implements AutoCloseable {
      * @return          Future which succeeds / fails when the scaling is finished
      */
     public Future<Void> scale(int scaleTo) {
-        Promise<Void> scalePromise = Promise.promise();
+        return connect()
+                .compose(zkAdmin -> {
+                    Promise<Void> scalePromise = Promise.promise();
 
-        connect()
-                .compose(ignore -> getCurrentConfig())
-                .compose(servers -> scaleTo(servers, scaleTo))
-                .setHandler(res -> {
-                    closeConnection();
+                    getCurrentConfig(zkAdmin)
+                            .compose(servers -> scaleTo(zkAdmin, servers, scaleTo))
+                            .setHandler(res -> {
+                                closeConnection(zkAdmin);
 
-                    if (res.succeeded())    {
-                        scalePromise.complete();
-                    } else {
-                        scalePromise.fail(res.cause());
-                    }
+                                if (res.succeeded())    {
+                                    scalePromise.complete();
+                                } else {
+                                    scalePromise.fail(res.cause());
+                                }
+                            });
+
+                    return scalePromise.future();
                 });
-
-        return scalePromise.future();
     }
 
     /**
@@ -121,14 +123,54 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return      Future indicating success or failure
      */
-    private Future<Void> connect()    {
-        Promise<Void> connected = Promise.promise();
+    private Future<ZooKeeperAdmin> connect()    {
+        Promise<ZooKeeperAdmin> connected = Promise.promise();
+
+        try {
+            ZooKeeperAdmin zkAdmin = zooAdminProvider.createZookeeperAdmin(
+                this.zookeeperConnectionString,
+                10_000,
+                watchedEvent -> log.debug("Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
+                getClientConfig());
+
+            Util.waitFor(vertx,
+                String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
+                1_000,
+                operationTimeoutMs,
+                () -> zkAdmin.getState().isAlive() && zkAdmin.getState().isConnected())
+                .setHandler(res -> {
+                    if (res.succeeded())  {
+                        connected.complete(zkAdmin);
+                    } else {
+                        closeConnection(zkAdmin);
+                        log.warn("Failed to connect to Zookeeper {}. Connection was not ready in {} ms.", zookeeperConnectionString, operationTimeoutMs);
+                        connected.fail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + ". Connection was not ready in " + operationTimeoutMs + " ms.", res.cause()));
+                    }
+                });
+
+        } catch (IOException e)   {
+            log.warn("Failed to connect to {} to scale Zookeeper", zookeeperConnectionString, e);
+            connected.fail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString, e));
+        }
+
+        return connected.future();
+    }
+
+    /**
+     * Internal method used to create the Zookeeper Admin client and connect it to Zookeeper
+     *
+     * @return      Future indicating success or failure
+     */
+    /*private Future<ZooKeeperAdmin> connect()    {
+        Promise<ZooKeeperAdmin> connected = Promise.promise();
+
+        ZooKeeperAdmin zkAdmin = null;
 
         try {
             long timer = vertx.setTimer(operationTimeoutMs, ignored -> {
                 if (!connected.future().isComplete()) {
                     log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
-                    closeConnection();
+                    closeConnection(zkAdmin);
                     connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
                 }
             });
@@ -138,13 +180,13 @@ public class ZookeeperScaler implements AutoCloseable {
                     case SyncConnected:
                         if (!connected.future().isComplete()) {
                             log.debug("Successfully connected to {} to scale Zookeeper", zookeeperConnectionString);
-                            connected.tryComplete();
+                            connected.tryComplete(zkAdmin);
                         }
                         break;
                     default:
                         if (!connected.future().isComplete()) {
                             log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
-                            closeConnection();
+                            closeConnection(zkAdmin);
                             connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
                         }
                 }
@@ -157,7 +199,38 @@ public class ZookeeperScaler implements AutoCloseable {
         }
 
         return connected.future();
-    }
+    }*/
+
+    /*private Watcher connectionWatch(ZooKeeperAdmin zkAdmin, Promise connected)   {
+        return new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+                switch (event.getState()) {
+                    case SyncConnected:
+                        event.getWrapper().
+                        if (!connected.future().isComplete()) {
+                            log.debug("Successfully connected to {} to scale Zookeeper", zookeeperConnectionString);
+                            connected.tryComplete(zkAdmin);
+                        }
+                        break;
+                    default:
+                        if (!connected.future().isComplete()) {
+                            log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
+                            closeConnection(zkAdmin);
+                            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
+                        }
+                }
+            }
+        };
+    }*/
+
+    /*private void connectionTimoutTimer(ZooKeeperAdmin zkAdmin, Promise connected) {
+        if (!connected.future().isComplete()) {
+            log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
+            closeConnection(zkAdmin);
+            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
+        }
+    }*/
 
     /**
      * Internal method to scale Zookeeper up or down or check configuration. It will:
@@ -168,12 +241,12 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param scaleTo           Desired scale
      * @return                  Future indicating success or failure
      */
-    private Future<Void> scaleTo(Map<String, String> currentServers, int scaleTo) {
+    private Future<Void> scaleTo(ZooKeeperAdmin zkAdmin, Map<String, String> currentServers, int scaleTo) {
         Map<String, String> desiredServers = generateConfig(scaleTo);
 
         if (isDifferent(currentServers, desiredServers))    {
             log.debug("The Zookeeper server configuration needs to be updated");
-            return updateConfig(desiredServers).map((Void) null);
+            return updateConfig(zkAdmin, desiredServers).map((Void) null);
         } else {
             log.debug("The Zookeeper server configuration is already up to date");
             return Future.succeededFuture();
@@ -185,7 +258,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return  Future containing Map with the current Zookeeper configuration
      */
-    private Future<Map<String, String>> getCurrentConfig()    {
+    private Future<Map<String, String>> getCurrentConfig(ZooKeeperAdmin zkAdmin)    {
         Promise<Map<String, String>> configPromise = Promise.promise();
 
         vertx.executeBlocking(promise -> {
@@ -209,7 +282,7 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param newServers    New configuration which will be used for the update
      * @return              Future with the updated configuration
      */
-    private Future<Map<String, String>> updateConfig(Map<String, String> newServers)    {
+    private Future<Map<String, String>> updateConfig(ZooKeeperAdmin zkAdmin, Map<String, String> newServers)    {
         Promise<Map<String, String>> configPromise = Promise.promise();
 
         vertx.executeBlocking(promise -> {
@@ -232,14 +305,12 @@ public class ZookeeperScaler implements AutoCloseable {
     /**
      * Closes the Zookeeper connection
      */
-    private void closeConnection() {
+    private void closeConnection(ZooKeeperAdmin zkAdmin) {
         if (zkAdmin != null)    {
             try {
                 zkAdmin.close();
-            } catch (InterruptedException e) {
-                log.warn("Failed to close the ZooKeeperAdmin", e);
-            } finally {
-                zkAdmin = null;
+            } catch (Exception e) {
+                log.debug("Failed to close the ZooKeeperAdmin", e);
             }
         }
     }
@@ -339,5 +410,15 @@ public class ZookeeperScaler implements AutoCloseable {
         }
 
         return servers;
+    }
+
+    class ClientAndConfig {
+        final ZooKeeperAdmin zkAdmin;
+        final Map<String, String> configuration;
+
+        public ClientAndConfig(ZooKeeperAdmin zkAdmin, Map<String, String> configuration) {
+            this.zkAdmin = zkAdmin;
+            this.configuration = configuration;
+        }
     }
 }

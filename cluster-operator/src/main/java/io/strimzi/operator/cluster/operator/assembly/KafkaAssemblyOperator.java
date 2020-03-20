@@ -1464,7 +1464,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         if (res.succeeded())    {
                                             scalingPromise.complete(res.result());
                                         } else {
-                                            log.warn("{}: Failed to scale Zookeeper", res.cause());
+                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
                                             scalingPromise.fail(res.cause());
                                         }
                                     });
@@ -1509,7 +1509,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         if (res.succeeded())    {
                                             scalingPromise.complete(res.result());
                                         } else {
-                                            log.warn("{}: Failed to scale Zookeeper", res.cause());
+                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
                                             scalingPromise.fail(res.cause());
                                         }
                                     });
