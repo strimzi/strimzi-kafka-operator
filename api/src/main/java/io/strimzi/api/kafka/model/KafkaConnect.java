@@ -71,7 +71,6 @@ import static java.util.Collections.unmodifiableList;
 )
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder",
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
