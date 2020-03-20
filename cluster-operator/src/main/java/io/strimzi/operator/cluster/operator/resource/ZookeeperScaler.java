@@ -79,10 +79,22 @@ public class ZookeeperScaler implements AutoCloseable {
      * @return          Future which succeeds / fails when the scaling is finished
      */
     public Future<Void> scale(int scaleTo) {
-        return connect()
-                .compose(ignore -> getConfig())
+        Promise<Void> scalePromise = Promise.promise();
+
+        connect()
+                .compose(ignore -> getCurrentConfig())
                 .compose(servers -> scaleTo(servers, scaleTo))
-                .compose(ignore -> closeConnectionAsync());
+                .setHandler(res -> {
+                    closeConnection();
+
+                    if (res.succeeded())    {
+                        scalePromise.complete();
+                    } else {
+                        scalePromise.fail(res.cause());
+                    }
+                });
+
+        return scalePromise.future();
     }
 
     /**
@@ -91,8 +103,6 @@ public class ZookeeperScaler implements AutoCloseable {
      */
     @Override
     public void close() {
-        closeConnectionSync();
-
         if (trustStoreFile != null) {
             if (!trustStoreFile.delete())   {
                 log.debug("Failed to delete file {}", trustStoreFile);
@@ -118,7 +128,7 @@ public class ZookeeperScaler implements AutoCloseable {
             long timer = vertx.setTimer(operationTimeoutMs, ignored -> {
                 if (!connected.future().isComplete()) {
                     log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
-                    closeConnectionSync();
+                    closeConnection();
                     connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
                 }
             });
@@ -134,7 +144,7 @@ public class ZookeeperScaler implements AutoCloseable {
                     default:
                         if (!connected.future().isComplete()) {
                             log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
-                            closeConnectionSync();
+                            closeConnection();
                             connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
                         }
                 }
@@ -175,7 +185,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return  Future containing Map with the current Zookeeper configuration
      */
-    private Future<Map<String, String>> getConfig()    {
+    private Future<Map<String, String>> getCurrentConfig()    {
         Promise<Map<String, String>> configPromise = Promise.promise();
 
         vertx.executeBlocking(promise -> {
@@ -220,27 +230,9 @@ public class ZookeeperScaler implements AutoCloseable {
     }
 
     /**
-     * Closes the Zookeeper connection asynchronously
-     *
-     * @return
+     * Closes the Zookeeper connection
      */
-    private Future<Void> closeConnectionAsync() {
-        Promise<Void> closePromise = Promise.promise();
-
-        log.debug("Closing Zookeeper connection to {}", zookeeperConnectionString);
-
-        vertx.executeBlocking(promise -> {
-            closeConnectionSync();
-            promise.complete();
-        }, true, closePromise);
-
-        return closePromise.future();
-    }
-
-    /**
-     * Closes the Zookeeper connection synchronously
-     */
-    private void closeConnectionSync() {
+    private void closeConnection() {
         if (zkAdmin != null)    {
             try {
                 zkAdmin.close();
