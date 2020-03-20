@@ -119,7 +119,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 if (!connected.future().isComplete()) {
                     log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
                     closeConnectionSync();
-                    connected.tryFail(new RuntimeException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
+                    connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
                 }
             });
 
@@ -135,7 +135,7 @@ public class ZookeeperScaler implements AutoCloseable {
                         if (!connected.future().isComplete()) {
                             log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
                             closeConnectionSync();
-                            connected.tryFail(new RuntimeException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
+                            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
                         }
                 }
 
@@ -143,7 +143,7 @@ public class ZookeeperScaler implements AutoCloseable {
             }, getClientConfig());
         } catch (IOException e)   {
             log.warn("Failed to connect to {} to scale Zookeeper", zookeeperConnectionString, e);
-            connected.tryFail(new RuntimeException("Failed to connect to Zookeeper " + zookeeperConnectionString, e));
+            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString, e));
         }
 
         return connected.future();
@@ -154,7 +154,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *     1) Compare the current configuration with the desired configuration
      *     2) Update the configuration if needed
      *
-     * @param currentServers    Current configuration
+     * @param currentServers    Current list of servers from Zookeeper cluster
      * @param scaleTo           Desired scale
      * @return                  Future indicating success or failure
      */
@@ -186,7 +186,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 promise.complete(servers);
             } catch (KeeperException | InterruptedException e)    {
                 log.warn("Failed to get current Zookeeper server configuration", e);
-                promise.fail(new RuntimeException("Failed to get current Zookeeper server configuration", e));
+                promise.fail(new ZookeeperScalingException("Failed to get current Zookeeper server configuration", e));
             }
         }, false, configPromise);
 
@@ -212,7 +212,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 promise.complete(servers);
             } catch (KeeperException | InterruptedException e)    {
                 log.warn("Failed to update Zookeeper server configuration", e);
-                promise.fail(new RuntimeException("Failed to update Zookeeper server configuration", e));
+                promise.fail(new ZookeeperScalingException("Failed to update Zookeeper server configuration", e));
             }
         }, false, configPromise);
 
@@ -290,8 +290,8 @@ public class ZookeeperScaler implements AutoCloseable {
     }
 
     /**
-     * Parse the byte array we get from Zookeeper into a map we use internally. During the parsing, only server
-     * configurations are used. The version field is ignored.
+     * Parse the byte array we get from Zookeeper into a map we use internally. The returned Map will container only
+     * the server entries from the Zookeeper configuration. Other entries such as version will be ignored.
      *
      * @param byteConfig    byte[] from Zookeeper client
      * @return              Map with Zookeeper configuration
@@ -327,7 +327,7 @@ public class ZookeeperScaler implements AutoCloseable {
     /**
      * Generates a map with Zookeeper configuration
      *
-     * @param scale     Nubber of nodes which the Zookeeper cluster should have
+     * @param scale     Number of nodes which the Zookeeper cluster should have
      * @return          Map with configuration
      */
     /*test*/ static Map<String, String> generateConfig(int scale)   {

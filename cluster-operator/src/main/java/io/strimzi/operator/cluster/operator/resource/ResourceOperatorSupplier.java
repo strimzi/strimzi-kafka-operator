@@ -82,7 +82,7 @@ public class ResourceOperatorSupplier {
     public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
-    public final ZookeeperScalerProvider zooScalerProvider;
+    public final ZookeeperScalerProvider zkScalerProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -95,7 +95,7 @@ public class ResourceOperatorSupplier {
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
-                                    AdminClientProvider adminClientProvider, ZookeeperScalerProvider zooScalerProvider,
+                                    AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
                                     PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -124,7 +124,7 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class),
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
                 new NodeOperator(vertx, client, operationTimeoutMs),
-                zooScalerProvider);
+                zkScalerProvider);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -154,7 +154,7 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> mirrorMaker2Operator,
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
-                                    ZookeeperScalerProvider zooScalerProvider) {
+                                    ZookeeperScalerProvider zkScalerProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -182,6 +182,6 @@ public class ResourceOperatorSupplier {
         this.kafkaConnectorOperator = kafkaConnectorOperator;
         this.mirrorMaker2Operator = mirrorMaker2Operator;
         this.nodeOperator = nodeOperator;
-        this.zooScalerProvider = zooScalerProvider;
+        this.zkScalerProvider = zkScalerProvider;
     }
 }

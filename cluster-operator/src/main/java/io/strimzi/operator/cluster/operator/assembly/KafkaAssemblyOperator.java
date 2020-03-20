@@ -158,7 +158,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
-    private final ZookeeperScalerProvider zooScalerProvider;
+    private final ZookeeperScalerProvider zkScalerProvider;
 
     /**
      * @param vertx The Vertx instance
@@ -186,7 +186,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.storageClassOperator = supplier.storageClassOperations;
         this.crdOperator = supplier.kafkaOperator;
         this.nodeOperator = supplier.nodeOperator;
-        this.zooScalerProvider = supplier.zooScalerProvider;
+        this.zkScalerProvider = supplier.zkScalerProvider;
     }
 
     @Override
@@ -1391,9 +1391,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Prepares the Zookeeper connectionString
          * The format is host1:port1,host2:port2,...
          *
-         * USed by the Zookeeper 3.5 Admin client for scaling
+         * Used by the Zookeeper 3.5 Admin client for scaling
          *
-         * @param connectToReplicas     Number of replicas form the ZK STS which should be used
+         * @param connectToReplicas     Number of replicas from the ZK STS which should be used
          * @return                      The generated Zookeeper connection string
          */
         String zkConnectionString(int connectToReplicas)  {
@@ -1402,7 +1402,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             List<String> zooNodes = new ArrayList<>(connectToReplicas);
 
             for (int i = 0; i < connectToReplicas; i++)   {
-                zooNodes.add(String.format("%s.%s.%s.svc:%d", zkCluster.getPodName(i), KafkaResources.zookeeperHeadlessServiceName(name), namespace, ZookeeperCluster.CLIENT_PORT));
+                zooNodes.add(String.format("%s.%s.%s.svc:%d",
+                        zkCluster.getPodName(i),
+                        KafkaResources.zookeeperHeadlessServiceName(name),
+                        namespace,
+                        ZookeeperCluster.CLIENT_PORT));
             }
 
             return  String.join(",", zooNodes);
@@ -1410,8 +1414,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Helper method for getting the required secrets with certificates and creating the ZookeeperScaler instance
-         * for given cluster. The ZookeeperScaler instance created by this method should be clsoe dmanually after it is
-         * not used anymore.
+         * for the given cluster. The ZookeeperScaler instance created by this method should be closed manually after
+         * it is not used anymore.
          *
          * @param connectToReplicas     Number of pods from the Zookeeper STS which the scaler should use
          * @return                      Zookeeper scaler instance.
@@ -1434,9 +1438,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        ZookeeperScaler zooScaler = zooScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas), clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas), clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
-                        return Future.succeededFuture(zooScaler);
+                        return Future.succeededFuture(zkScaler);
                     });
         }
 
@@ -1450,12 +1454,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 log.info("{}: Scaling Zookeeper up from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
 
                 return zkScaler(zkCurrentReplicas)
-                        .compose(zooScaler -> {
+                        .compose(zkScaler -> {
                             Promise<ReconciliationState> scalingPromise = Promise.promise();
 
-                            zkScalingUp35ByOne(zooScaler, zkCurrentReplicas, desired)
+                            zkScalingUp35ByOne(zkScaler, zkCurrentReplicas, desired)
                                     .setHandler(res -> {
-                                        zooScaler.close();
+                                        zkScaler.close();
 
                                         if (res.succeeded())    {
                                             scalingPromise.complete(res.result());
@@ -1473,12 +1477,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        Future<ReconciliationState> zkScalingUp35ByOne(ZookeeperScaler zooScaler, int current, int desired) {
+        Future<ReconciliationState> zkScalingUp35ByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current < desired) {
                 return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
                         .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
-                        .compose(ignore -> zooScaler.scale(current + 1))
-                        .compose(ignore -> zkScalingUp35ByOne(zooScaler, current + 1, desired));
+                        .compose(ignore -> zkScaler.scale(current + 1))
+                        .compose(ignore -> zkScalingUp35ByOne(zkScaler, current + 1, desired));
             } else {
                 return Future.succeededFuture(this);
             }
@@ -1495,12 +1499,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // No need to check for pod readiness since we run right after the readiness check
                 return zkScaler(desired)
-                        .compose(zooScaler -> {
+                        .compose(zkScaler -> {
                             Promise<ReconciliationState> scalingPromise = Promise.promise();
 
-                            zkScalingDown35ByOne(zooScaler, zkCurrentReplicas, desired)
+                            zkScalingDown35ByOne(zkScaler, zkCurrentReplicas, desired)
                                     .setHandler(res -> {
-                                        zooScaler.close();
+                                        zkScaler.close();
 
                                         if (res.succeeded())    {
                                             scalingPromise.complete(res.result());
@@ -1518,12 +1522,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        Future<ReconciliationState> zkScalingDown35ByOne(ZookeeperScaler zooScaler, int current, int desired) {
+        Future<ReconciliationState> zkScalingDown35ByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
-                        .compose(ignore -> zooScaler.scale(current - 1))
+                        .compose(ignore -> zkScaler.scale(current - 1))
                         .compose(ignore -> zkSetOperations.scaleDown(namespace, zkCluster.getName(), current - 1))
-                        .compose(ignore -> zkScalingDown35ByOne(zooScaler, current - 1, desired));
+                        .compose(ignore -> zkScalingDown35ByOne(zkScaler, current - 1, desired));
             } else {
                 return Future.succeededFuture(this);
             }
@@ -1539,11 +1543,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // No need to check for pod readiness since we run right after the readiness check
                 return zkScaler(zkCluster.getReplicas())
-                        .compose(zooScaler -> {
+                        .compose(zkScaler -> {
                             Promise<ReconciliationState> scalingPromise = Promise.promise();
 
-                            zooScaler.scale(zkCluster.getReplicas()).setHandler(res -> {
-                                zooScaler.close();
+                            zkScaler.scale(zkCluster.getReplicas()).setHandler(res -> {
+                                zkScaler.close();
 
                                 if (res.succeeded())    {
                                     scalingPromise.complete(this);

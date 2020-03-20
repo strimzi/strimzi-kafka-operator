@@ -637,10 +637,7 @@ public class ResourceUtils {
             @Override
             public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
                 ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
-
                 when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
-                //when(mockZooScaler.close()).thenReturn(Future.succeededFuture());
-
                 return mockZooScaler;
             }
         };

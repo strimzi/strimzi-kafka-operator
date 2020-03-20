@@ -143,7 +143,7 @@ public class Util {
     }
 
     /**
-     * Created file with Keystore or Truststore from the byte arrays passed as param.
+     * Create a file with Keystore or Truststore from the given {@code bytes}.
      * The file will be set to get deleted when the JVM exist.
      *
      * @param prefix    Prefix which will be used for the filename

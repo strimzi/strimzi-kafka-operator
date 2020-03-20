@@ -156,7 +156,7 @@ public class ZookeeperScalerTest {
     }
 
     @Test
-    public void testTimeoutingConnection(VertxTestContext context)  {
+    public void testConnectionTimeout(VertxTestContext context)  {
         String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
         Secret dummyCaSecret = new SecretBuilder()
                 .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)

@@ -117,6 +117,17 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
     }
 
+    /**
+     * Generates the full DNS name of the pod including the cluster suffix
+     * (i.e. usually with the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc.cluster.local
+     *
+     * @param namespace     Namespace of the pod
+     * @param cluster       Name of the cluster
+     * @param podId         Id of the pod within the STS
+     *
+     * @return              Full DNS name
+     */
     public static String podDnsName(String namespace, String cluster, int podId) {
         return String.format("%s.%s.%s.svc.%s",
                 ZookeeperCluster.zookeeperPodName(cluster, podId),
@@ -125,6 +136,17 @@ public class ZookeeperCluster extends AbstractModel {
                 ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
     }
 
+    /**
+     * Generates the full DNS name of the pod without the cluster suffix
+     * (i.e. usually without the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc
+     *
+     * @param namespace     Namespace of the pod
+     * @param cluster       Name of the cluster
+     * @param podId         Id of the pod within the STS
+     *
+     * @return              Full DNS name
+     */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
         return String.format("%s.%s.%s.svc",
                 ZookeeperCluster.zookeeperPodName(cluster, podId),
