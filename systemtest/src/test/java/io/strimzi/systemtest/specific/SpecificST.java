@@ -215,7 +215,6 @@ public class SpecificST extends BaseST {
         });
     }
 
-
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
