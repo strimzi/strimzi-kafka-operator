@@ -107,7 +107,7 @@ class RollingUpdateST extends BaseST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
-        LOGGER.info("Verifying stability of kafka pods except the one, which is in Pending phase");
+        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
             p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
@@ -182,10 +182,10 @@ class RollingUpdateST extends BaseST {
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)));
 
         LOGGER.info("Some pod of kafka is in pending phase because of selected cpu high resource");
-        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream()
+        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream()
             .filter(pod -> !pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList()).get(0).getStatus().getPhase(), is("Pending"));
 
-        LOGGER.info("Verifying stability of kafka pods except the one, which is in Pending phase");
+        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
             p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
