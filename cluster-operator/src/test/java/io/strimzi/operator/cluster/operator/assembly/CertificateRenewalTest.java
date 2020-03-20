@@ -1155,7 +1155,7 @@ public class CertificateRenewalTest {
         String secretName = "my-secret";
         String commonName = "deployment";
         String keyCertName = "deployment";
-        Labels labels = Labels.forCluster("my-cluster");
+        Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -1189,7 +1189,7 @@ public class CertificateRenewalTest {
         String secretName = "my-secret";
         String commonName = "deployment";
         String keyCertName = "deployment";
-        Labels labels = Labels.forCluster("my-cluster");
+        Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -1223,7 +1223,7 @@ public class CertificateRenewalTest {
         String secretName = "my-secret";
         String commonName = "deployment";
         String keyCertName = "deployment";
-        Labels labels = Labels.forCluster("my-cluster");
+        Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -1257,7 +1257,7 @@ public class CertificateRenewalTest {
         String secretName = "my-secret";
         String commonName = "deployment";
         String keyCertName = "deployment";
-        Labels labels = Labels.forCluster("my-cluster");
+        Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = false;
 

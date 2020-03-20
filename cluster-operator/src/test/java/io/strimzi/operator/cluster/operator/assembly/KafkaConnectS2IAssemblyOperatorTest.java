@@ -792,12 +792,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectS2IOps.updateStatusAsync(any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Labels newLabels = Labels.forKind(KafkaConnectS2I.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true, null, null)));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true, null, null))
         );

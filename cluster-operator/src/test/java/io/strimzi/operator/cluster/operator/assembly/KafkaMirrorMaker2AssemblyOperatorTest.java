@@ -567,12 +567,12 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockMirrorMaker2Ops.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka MirrorMaker 2.0 clusters
-        Labels newLabels = Labels.forKind(KafkaMirrorMaker2.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker2.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka MirrorMaker 2.0 clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );

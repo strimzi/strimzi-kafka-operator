@@ -91,9 +91,9 @@ public class KafkaBridgeClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME,
+                Labels.KUBERNETES_NAME_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, this.cluster,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -105,11 +105,7 @@ public class KafkaBridgeClusterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
-    }
-
-    private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaBridgeResources.deploymentName(cluster));
+        return Labels.fromMap(expectedLabels(KafkaBridgeResources.deploymentName(cluster))).strimziSelectorLabels().toMap();
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -178,11 +174,11 @@ public class KafkaBridgeClusterTest {
 
         assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        Map<String, String> expectedLabels = expectedLabels();
-        assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
+        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaBridgeResources.deploymentName(cluster));
+        assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
         assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
-        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaBridgeResources.deploymentName(cluster)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(kbc.image));

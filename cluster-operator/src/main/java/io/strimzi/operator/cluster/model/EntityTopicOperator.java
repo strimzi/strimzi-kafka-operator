@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +34,7 @@ import static java.util.Collections.singletonList;
  * Represents the Topic Operator deployment
  */
 public class EntityTopicOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-topic-operator";
 
     protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-entity-topic-operator";
@@ -71,10 +71,9 @@ public class EntityTopicOperator extends AbstractModel {
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster overall cluster name
-     * @param labels
      */
-    protected EntityTopicOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityTopicOperator(String namespace, String cluster) {
+        super(namespace, cluster);
         this.name = topicOperatorName(cluster);
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -93,6 +92,8 @@ public class EntityTopicOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
+
+        this.applicationName = APPLICATION_NAME;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -203,9 +204,9 @@ public class EntityTopicOperator extends AbstractModel {
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
                 result = new EntityTopicOperator(
                         namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+                        kafkaAssembly.getMetadata().getName());
 
+                result.setDefaultLabels(kafkaAssembly);
                 result.setOwnerReference(kafkaAssembly);
                 String image = topicOperatorSpec.getImage();
                 if (image == null) {

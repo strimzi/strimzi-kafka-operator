@@ -73,7 +73,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @return A Future which will complete once all the pods has been deleted.
      */
     public Future<ReconcileResult<Pod>> deletePod(String namespace, String name) {
-        Labels labels = Labels.fromMap(null).withName(name);
+        Labels labels = Labels.EMPTY.withStrimziName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
         return podOperations.reconcile(namespace, podName, null);
     }

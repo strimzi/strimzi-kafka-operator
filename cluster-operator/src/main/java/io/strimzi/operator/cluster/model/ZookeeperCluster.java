@@ -56,6 +56,8 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
+    protected static final String APPLICATION_NAME = "zookeeper";
+
     public static final int CLIENT_PORT = 2181;
     protected static final String CLIENT_PORT_NAME = "clients";
     public static final int CLUSTERING_PORT = 2888;
@@ -171,11 +173,10 @@ public class ZookeeperCluster extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where Zookeeper cluster resources are going to be created
      * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
      */
-    private ZookeeperCluster(String namespace, String cluster, Labels labels) {
+    private ZookeeperCluster(String namespace, String cluster) {
 
-        super(namespace, cluster, labels);
+        super(namespace, cluster);
         this.name = zookeeperClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -188,6 +189,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
+        this.applicationName = APPLICATION_NAME;
 
         this.mountPath = "/var/lib/zookeeper";
 
@@ -201,8 +203,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
+        zk.setDefaultLabels(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
@@ -314,7 +316,8 @@ public class ZookeeperCluster extends AbstractModel {
             }
 
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                zk.templatePersistentVolumeClaimLabels = template.getPersistentVolumeClaim().getMetadata().getLabels();
+                zk.templatePersistentVolumeClaimLabels = mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
+                        zk.templateStatefulSetLabels);
                 zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
             }
 

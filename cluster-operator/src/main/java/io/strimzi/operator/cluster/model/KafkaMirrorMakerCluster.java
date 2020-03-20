@@ -31,7 +31,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaMirrorMakerCluster extends AbstractModel {
+    protected static final String APPLICATION_NAME = "kafka-mirror-maker";
+
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
     protected static final String TLS_CERTS_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-certs/";
@@ -108,10 +109,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where Kafka Mirror Maker cluster resources are going to be created
      * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
      */
-    protected KafkaMirrorMakerCluster(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected KafkaMirrorMakerCluster(String namespace, String cluster) {
+        super(namespace, cluster);
         this.name = KafkaMirrorMakerResources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
@@ -121,6 +121,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.livenessPath = "/";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED;
+        this.applicationName = APPLICATION_NAME;
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -129,8 +130,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker.getMetadata().getNamespace(),
-                kafkaMirrorMaker.getMetadata().getName(),
-                Labels.fromResource(kafkaMirrorMaker).withKind(kafkaMirrorMaker.getKind()));
+                kafkaMirrorMaker.getMetadata().getName());
+
+        kafkaMirrorMakerCluster.setDefaultLabels(kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);

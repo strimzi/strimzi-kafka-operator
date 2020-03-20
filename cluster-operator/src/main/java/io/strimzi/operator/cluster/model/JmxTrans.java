@@ -30,7 +30,6 @@ import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +43,7 @@ import java.util.Map;
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
 public class JmxTrans extends AbstractModel {
+    private static final String APPLICATION_NAME = "jmx-trans";
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
@@ -74,16 +74,16 @@ public class JmxTrans extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where JmxTrans resources are going to be created
      * @param kafkaCluster kafkaCluster name
-     * @param labels    labels to add to the kafkaCluster
      */
-    protected JmxTrans(String namespace, String kafkaCluster, Labels labels) {
-        super(namespace, kafkaCluster, labels);
+    protected JmxTrans(String namespace, String kafkaCluster) {
+        super(namespace, kafkaCluster);
         this.name = JmxTransResources.deploymentName(kafkaCluster);
         this.clusterName = kafkaCluster;
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.livenessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
+        this.applicationName = APPLICATION_NAME;
 
         this.mountPath = "/var/lib/kafka";
 
@@ -106,9 +106,10 @@ public class JmxTrans extends AbstractModel {
                 throw new InvalidResourceException(error);
             }
             result = new JmxTrans(kafkaAssembly.getMetadata().getNamespace(),
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+                    kafkaAssembly.getMetadata().getName());
             result.isDeployed = true;
+
+            result.setDefaultLabels(kafkaAssembly);
 
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
                 result.isJmxAuthenticated = true;

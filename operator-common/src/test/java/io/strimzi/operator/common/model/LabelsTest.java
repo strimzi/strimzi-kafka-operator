@@ -4,6 +4,11 @@
  */
 package io.strimzi.operator.common.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -12,9 +17,6 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
 
 public class LabelsTest {
     @Test
@@ -42,7 +44,7 @@ public class LabelsTest {
 
     @Test
     public void testParseNullLabelsInUserLabels()   {
-        assertThat(Labels.userLabels(null), is(Labels.EMPTY));
+        assertThat(Labels.EMPTY.withAdditionalLabels(null), is(Labels.EMPTY));
     }
 
     @Test
@@ -99,10 +101,10 @@ public class LabelsTest {
 
     @Test
     public void testWithUserLabels()   {
-        Labels start = Labels.forCluster("my-cluster");
+        Labels start = Labels.forStrimziCluster("my-cluster");
 
         // null user labels
-        Labels nullLabels = start.withUserLabels(null);
+        Labels nullLabels = start.withAdditionalLabels(null);
         assertThat(nullLabels.toMap(), is(start.toMap()));
 
         // Non-null values
@@ -114,19 +116,19 @@ public class LabelsTest {
         expected.putAll(start.toMap());
         expected.putAll(userLabels);
 
-        Labels nonNullLabels = start.withUserLabels(userLabels);
+        Labels nonNullLabels = start.withAdditionalLabels(userLabels);
         assertThat(nonNullLabels.toMap(), is(expected));
     }
 
     @Test
     public void testWithUserLabelsFiltersKubernetesDomainLabels()   {
-        Labels start = Labels.forCluster("my-cluster");
+        Labels start = Labels.forStrimziCluster("my-cluster");
 
         Map userLabels = new HashMap<String, String>(5);
-        userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
+        userLabels.put(Labels.KUBERNETES_NAME_LABEL, "kafka");
         userLabels.put("key1", "value1");
         userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
-        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "my-cluster");
+        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
         userLabels.put("key2", "value2");
         userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
         String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
@@ -144,7 +146,7 @@ public class LabelsTest {
         expected.putAll(start.toMap());
         expected.putAll(expectedUserLabels);
 
-        Labels labels = start.withUserLabels(userLabels);
+        Labels labels = start.withAdditionalLabels(userLabels);
         assertThat(labels.toMap(), is(expected));
     }
 
@@ -156,7 +158,7 @@ public class LabelsTest {
             userLabelsWithStrimzi.put("key2", "value2");
             userLabelsWithStrimzi.put(Labels.STRIMZI_DOMAIN + "something", "value3");
 
-            Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
+            Labels nonNullLabels = Labels.EMPTY.withAdditionalLabels(userLabelsWithStrimzi);
         });
     }
 
@@ -187,9 +189,9 @@ public class LabelsTest {
     @Test
     public void testFromResourceWithLabels()   {
         Map<String, String> userLabels = new HashMap<String, String>(5);
-        userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
+        userLabels.put(Labels.KUBERNETES_NAME_LABEL, "some-app");
         userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
-        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "my-cluster");
+        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
         userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
         userLabels.put("key1", "value1");
         userLabels.put("key2", "value2");
@@ -218,6 +220,83 @@ public class LabelsTest {
         expectedLabels.put("key2", "value2");
 
         Labels l = Labels.fromResource(kafka);
+        assertThat(l.toMap(), is(expectedLabels));
+    }
+
+    @Test
+    public void testWithKubernetesLabelsCorrect() {
+        String instance = "my-cluster";
+        String operatorName  = "my-operator";
+        String appName = "an-app";
+        String appArchitecture = "app-architecture";
+
+        Map<String, String> expectedLabels = new HashMap<>();
+        expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, appName);
+        expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+        expectedLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
+        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + instance);
+
+        Labels l = Labels.EMPTY
+            .withKubernetesName(appName)
+            .withKubernetesInstance(instance)
+            .withKubernetesManagedBy(operatorName)
+            .withKubernetesPartOf(instance);
+
+        assertThat(l.toMap(), is(expectedLabels));
+    }
+
+    @Test
+    public void testGenerateDefaultLabels() {
+        String instance = "my-cluster";
+        String operatorName  = "my-operator";
+        String appName = "an-app";
+        String appArchitecture = "app-architecture";
+
+        class ResourceWithMetadata implements HasMetadata {
+
+            String kind;
+            String apiVersion;
+            ObjectMeta metadata;
+
+            public ResourceWithMetadata(String kind, String apiVersion, ObjectMeta metadata) {
+                this.kind = kind;
+                this.apiVersion = apiVersion;
+                this.metadata = metadata;
+            }
+
+            public ObjectMeta getMetadata() {
+                return metadata;
+            }
+            public void setMetadata(ObjectMeta metadata) {
+                this.metadata = metadata;
+            }
+
+            public String getKind() {
+                return kind;
+            }
+
+            public String getApiVersion() {
+                return apiVersion;
+            }
+            public void setApiVersion(String apiVersion) {
+                this.apiVersion = apiVersion;
+            }
+
+        }
+
+        Map<String, String> expectedLabels = new HashMap<>();
+        expectedLabels.put(Labels.STRIMZI_KIND_LABEL, "MyResource");
+        expectedLabels.put(Labels.STRIMZI_NAME_LABEL, Labels.APPLICATION_NAME);
+        expectedLabels.put(Labels.STRIMZI_CLUSTER_LABEL, instance);
+        expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, appName);
+        expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+        expectedLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
+        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + instance);
+
+        Labels l = Labels.generateDefaultLabels(new ResourceWithMetadata("MyResource", "strimzi.io/v0", new ObjectMetaBuilder()
+            .withNewName(instance)
+            .build()), appName, operatorName);
+
         assertThat(l.toMap(), is(expectedLabels));
     }
 

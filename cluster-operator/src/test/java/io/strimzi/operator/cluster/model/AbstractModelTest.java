@@ -48,7 +48,7 @@ public class AbstractModelTest {
 
     private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax,
                                                    ResourceRequirements resources) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+        AbstractModel am = new AbstractModel(null, null) {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -59,6 +59,8 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(jvmOptions(xmx, xms));
         am.setResources(resources);
         List<EnvVar> envVars = new ArrayList<>(1);
@@ -141,7 +143,7 @@ public class AbstractModelTest {
     }
 
     private String getPerformanceOptions(JvmOptions opts) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+        AbstractModel am = new AbstractModel(null, null) {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -152,6 +154,8 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
         am.jvmPerformanceOptions(envVars);
@@ -172,7 +176,7 @@ public class AbstractModelTest {
                 .endMetadata()
                 .build();
 
-        AbstractModel am = new AbstractModel(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), Labels.forCluster("foo")) {
+        AbstractModel am = new AbstractModel(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()) {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -183,6 +187,7 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setOwnerReference(kafka);
 
         OwnerReference ref = am.createOwnerReference();
@@ -195,7 +200,7 @@ public class AbstractModelTest {
 
     @Test
     public void testDetermineImagePullPolicy()  {
-        AbstractModel am = new AbstractModel("my-namespace", "my-cluster", Labels.forCluster("my-cluster")) {
+        AbstractModel am = new AbstractModel("my-namespace", "my-cluster") {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -206,6 +211,7 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+        am.setLabels(Labels.forStrimziCluster("foo"));
 
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));

@@ -30,7 +30,6 @@ import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.List;
 import java.util.Map;
@@ -52,16 +51,16 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    private KafkaConnectS2ICluster(String namespace, String cluster) {
+        super(namespace, cluster);
     }
 
     public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I.getMetadata().getNamespace(),
-                kafkaConnectS2I.getMetadata().getName(),
-                Labels.fromResource(kafkaConnectS2I).withKind(kafkaConnectS2I.getKind())));
+                kafkaConnectS2I.getMetadata().getName()));
 
+        cluster.setDefaultLabels(kafkaConnectS2I);
         cluster.setOwnerReference(kafkaConnectS2I);
         cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
         cluster.setBuildResourceRequirements(spec.getBuildResources());
@@ -120,18 +119,18 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         DeploymentConfig dc = new DeploymentConfigBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName(templateDeploymentLabels))
+                    .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
                     .withAnnotations(mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(replicas)
-                    .withSelector(getSelectorLabelsAsMap())
+                    .withSelector(getSelectorLabels().toMap())
                     .withNewTemplate()
                         .withNewMetadata()
                             .withAnnotations(mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
-                            .withLabels(getLabelsWithName(templatePodLabels))
+                            .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                         .endMetadata()
                         .withNewSpec()
                             .withContainers(container)
@@ -175,7 +174,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(KafkaConnectS2IResources.sourceImageStreamName(cluster))
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName(KafkaConnectS2IResources.sourceImageStreamName(cluster)))
+                    .withLabels(getLabelsWithStrimziName(KafkaConnectS2IResources.sourceImageStreamName(cluster), null).toMap())
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -197,7 +196,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(KafkaConnectS2IResources.targetImageStreamName(cluster))
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName())
+                    .withLabels(getLabelsWithStrimziName(name, null).toMap())
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -224,7 +223,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         BuildConfig build = new BuildConfigBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectS2IResources.buildConfigName(cluster))
-                    .withLabels(getLabelsWithName())
+                    .withLabels(getLabelsWithStrimziName(name, null).toMap())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()

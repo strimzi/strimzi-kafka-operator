@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaBridgeCluster extends AbstractModel {
+    public static final String APPLICATION_NAME = "kafka-bridge";
+
 
     // Port configuration
     public static final int DEFAULT_REST_API_PORT = 8080;
@@ -116,10 +118,9 @@ public class KafkaBridgeCluster extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where Kafka Bridge cluster resources are going to be created
      * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
      */
-    protected KafkaBridgeCluster(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected KafkaBridgeCluster(String namespace, String cluster) {
+        super(namespace, cluster);
         this.name = KafkaBridgeResources.deploymentName(cluster);
         this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
@@ -129,6 +130,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
+        this.applicationName = APPLICATION_NAME;
 
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -138,7 +140,10 @@ public class KafkaBridgeCluster extends AbstractModel {
     public static KafkaBridgeCluster fromCrd(KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
         KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(kafkaBridge.getMetadata().getNamespace(),
-                kafkaBridge.getMetadata().getName(), Labels.fromResource(kafkaBridge).withKind(kafkaBridge.getKind()));
+                kafkaBridge.getMetadata().getName());
+
+
+        kafkaBridgeCluster.setDefaultLabels(kafkaBridge);
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.tracing = spec.getTracing();
@@ -187,7 +192,8 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
 
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
+                kafkaBridgeCluster.templateServiceLabels = mergeLabelsOrAnnotations(template.getApiService().getMetadata().getLabels(),
+                        ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS));
                 kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
             }
 
@@ -224,7 +230,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createDiscoverableService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+        return createDiscoverableService("ClusterIP", ports, mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
     /**

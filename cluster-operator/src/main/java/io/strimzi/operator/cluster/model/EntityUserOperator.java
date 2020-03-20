@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,8 +71,8 @@ public class EntityUserOperator extends AbstractModel {
      * @param cluster overall cluster name
      * @param labels
      */
-    protected EntityUserOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityUserOperator(String namespace, String cluster) {
+        super(namespace, cluster);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -188,10 +187,9 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+                result = new EntityUserOperator(namespace, kafkaAssembly.getMetadata().getName());
+
+                result.setDefaultLabels(kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();

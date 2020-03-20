@@ -109,12 +109,15 @@ public abstract class AbstractModel {
 
     protected final String cluster;
     protected final String namespace;
-    protected final Labels labels;
 
     // Docker image configuration
     protected String image;
     // Number of replicas
     protected int replicas;
+
+    // Name of the application that the extending class is deploying
+    protected String applicationName;
+
 
     protected String readinessPath;
     protected String livenessPath;
@@ -152,6 +155,7 @@ public abstract class AbstractModel {
     protected boolean gcLoggingEnabled = true;
     protected List<SystemProperty> javaSystemProperties = null;
 
+    protected Labels labels;
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
     protected Map<String, String> templateStatefulSetAnnotations;
@@ -179,6 +183,7 @@ public abstract class AbstractModel {
     private String ownerApiVersion;
     private String ownerKind;
     private String ownerUid;
+
     protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
     protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
 
@@ -188,18 +193,10 @@ public abstract class AbstractModel {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected AbstractModel(String namespace, String cluster, Labels labels) {
+    protected AbstractModel(String namespace, String cluster) {
         this.cluster = cluster;
         this.namespace = namespace;
-        this.labels = labels.withCluster(cluster)
-                            .withKubernetesName()
-                            .withKubernetesInstance(cluster)
-                            .withKubernetesPartOf(cluster)
-                            .withKubernetesManagedBy(STRIMZI_CLUSTER_OPERATOR_NAME);
-    }
-
-    public Labels getLabels() {
-        return labels;
+        this.labels = Labels.EMPTY;
     }
 
     public int getReplicas() {
@@ -208,6 +205,14 @@ public abstract class AbstractModel {
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
+    }
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
     }
 
     protected void setImage(String image) {
@@ -247,39 +252,26 @@ public abstract class AbstractModel {
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
-        return labels.withName(name).strimziSelectorLabels();
+        return getLabelsWithStrimziName(name, Collections.emptyMap()).strimziSelectorLabels();
+    }
+
+    protected Labels getLabelsWithStrimziName(String name, Map<String, String> additionalLabels) {
+        return labels.withStrimziName(name).withAdditionalLabels(additionalLabels);
+    }
+
+    protected Labels getLabelsWithNameAndDiscovery(String name, Map<String, String> additionalLabels) {
+        return getLabelsWithStrimziName(name, additionalLabels).withStrimziDiscovery();
     }
 
     /**
-     * @return The selector labels as Map.
+     * @param resource
+     * @return The default Labels set
      */
-    public Map<String, String> getSelectorLabelsAsMap() {
-        return getSelectorLabels().toMap();
+    protected Labels generateDefaultLabels(HasMetadata resource) {
+        return Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
-    protected Map<String, String> getLabelsWithName() {
-        return getLabelsWithName(name);
-    }
 
-    protected Map<String, String> getLabelsWithName(Map<String, String> userLabels) {
-        return getLabelsWithName(name, userLabels);
-    }
-
-    protected Map<String, String> getLabelsWithName(String name) {
-        return labels.withName(name).toMap();
-    }
-
-    protected Map<String, String> getLabelsWithName(String name, Map<String, String> userLabels) {
-        return labels.withName(name).withUserLabels(userLabels).toMap();
-    }
-
-    protected Map<String, String> getLabelsWithNameAndDiscovery(String name) {
-        return labels.withName(name).withDiscovery().toMap();
-    }
-
-    protected Map<String, String> getLabelsWithNameAndDiscovery(String name, Map<String, String> userLabels) {
-        return labels.withName(name).withDiscovery().withUserLabels(userLabels).toMap();
-    }
 
     /**
      * @return Whether metrics are enabled.
@@ -620,7 +612,8 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(mergeLabelsOrAnnotations(getLabelsWithName(templateStatefulSetLabels), templatePersistentVolumeClaimLabels))
+                    // labels with the Strimzi name set to that of the component
+                    .withLabels(getLabelsWithStrimziName(this.name, templatePersistentVolumeClaimLabels).toMap())
                     .withAnnotations(mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
@@ -672,37 +665,31 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabelsAsMap(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithStrimziName(serviceName, templateServiceLabels),
+                getSelectorLabels(), annotations);
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels), getSelectorLabelsAsMap(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels),
+                getSelectorLabels(), annotations);
     }
 
-    protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabelsAsMap(), annotations);
-    }
-
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithNameAndDiscovery(serviceName), templateServiceLabels, labels), getSelectorLabelsAsMap(), annotations);
-    }
-
-    protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
+    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations) {
         return createService(name, type, ports, labels, selector, annotations, null);
     }
 
-    protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations, String loadBalancerIP) {
+    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, String loadBalancerIP) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(labels)
+                    .withLabels(labels.toMap())
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withType(type)
-                    .withSelector(selector)
+                    .withSelector(selector.toMap())
                     .withPorts(ports)
                     .withLoadBalancerIP(loadBalancerIP)
                 .endSpec()
@@ -716,7 +703,7 @@ public abstract class AbstractModel {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
-                    .withLabels(getLabelsWithName(headlessServiceName, templateHeadlessServiceLabels))
+                    .withLabels(getLabelsWithStrimziName(headlessServiceName, templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -724,7 +711,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withType("ClusterIP")
                     .withClusterIP("None")
-                    .withSelector(getSelectorLabelsAsMap())
+                    .withSelector(getSelectorLabels().toMap())
                     .withPorts(ports)
                     .withPublishNotReadyAddresses(true)
                 .endSpec()
@@ -757,7 +744,7 @@ public abstract class AbstractModel {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
+                    .withLabels(getLabelsWithStrimziName(name, templateStatefulSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -765,13 +752,13 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withPodManagementPolicy(templatePodManagementPolicy.toValue())
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
                     .withServiceName(headlessServiceName)
                     .withReplicas(replicas)
                     .withNewTemplate()
                         .withNewMetadata()
                             .withName(name)
-                            .withLabels(getLabelsWithName(templatePodLabels))
+                            .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                             .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
@@ -808,7 +795,7 @@ public abstract class AbstractModel {
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName(templateDeploymentLabels))
+                    .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -816,10 +803,10 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withStrategy(updateStrategy)
                     .withReplicas(replicas)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withLabels(getLabelsWithName(templatePodLabels))
+                            .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                             .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
@@ -902,6 +889,18 @@ public abstract class AbstractModel {
             Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                 // On duplicates, last in wins
                 (u, v) -> v));
+    }
+
+    public Labels getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Labels labels) {
+        this.labels = labels;
+    }
+
+    public void setDefaultLabels(HasMetadata resource) {
+        this.labels = generateDefaultLabels(resource);
     }
 
     /**
@@ -1058,14 +1057,14 @@ public abstract class AbstractModel {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName(templatePodDisruptionBudgetLabels))
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
                 .endSpec()
                 .build();
     }

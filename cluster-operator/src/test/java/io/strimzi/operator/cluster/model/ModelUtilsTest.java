@@ -20,19 +20,17 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ModelUtilsTest {
 
@@ -142,7 +140,7 @@ public class ModelUtilsTest {
 
     private class Model extends AbstractModel   {
         public Model()  {
-            super("", "", Labels.EMPTY);
+            super("", "");
         }
 
         @Override
