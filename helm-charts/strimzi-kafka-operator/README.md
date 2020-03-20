@@ -18,7 +18,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **User Management** - Creates and manages Kafka Users within the cluster.
 * **Connector Management** - Creates and manages Kafka Connect connectors.
 * **Includes Kafka Mirror Maker** - Allows for morroring data between different Apache Kafka® clusters.
-* **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via HTTP protocol.
+* **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 
 ### Upgrading your Clusters
 
