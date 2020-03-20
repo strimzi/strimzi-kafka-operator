@@ -24,7 +24,6 @@ make spotbugs
 
 make crd_install
 make helm_install
-make docker_build
 
 if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
   echo "ERROR: documentation/modules/appendix_crds.adoc does not exist!"
@@ -33,6 +32,8 @@ fi
 
 CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
 GENERATED_FILES=$(git ls-files --other --exclude-standard -- install/ helm-charts/ cluster-operator/src/main/resources/cluster-roles)
+echo $CHANGED_DERIVED
+echo $GENERATED_FILES
 if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
   if [ -n "$CHANGED_DERIVED" ] ; then
     echo "ERROR: Uncommitted changes in derived resources:"
@@ -50,6 +51,8 @@ if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
   echo "    && git commit -s -m 'Update derived resources'"
   exit 1
 fi
+
+make docker_build
 
 # Push to the real docker org
 if [ "$PULL_REQUEST" != "false" ] ; then
