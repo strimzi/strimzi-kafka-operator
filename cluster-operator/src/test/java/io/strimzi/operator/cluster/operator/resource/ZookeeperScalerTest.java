@@ -169,10 +169,7 @@ public class ZookeeperScalerTest {
                 .build();
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
-        ZooKeeper.States mockZooStates = mock(ZooKeeper.States.class);
-        when(mockZooStates.isAlive()).thenReturn(false);
-        when(mockZooStates.isConnected()).thenReturn(false);
-        when(mockZooAdmin.getState()).thenReturn(mockZooStates);
+        when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
             @Override
@@ -207,10 +204,7 @@ public class ZookeeperScalerTest {
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getConfig(false, null)).thenReturn(config.getBytes(StandardCharsets.US_ASCII));
-        ZooKeeper.States mockZooStates = mock(ZooKeeper.States.class);
-        when(mockZooStates.isAlive()).thenReturn(true);
-        when(mockZooStates.isConnected()).thenReturn(true);
-        when(mockZooAdmin.getState()).thenReturn(mockZooStates);
+        when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
             @Override
@@ -251,10 +245,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getConfig(false, null)).thenReturn(config.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenReturn(updated.getBytes(StandardCharsets.US_ASCII));
-        ZooKeeper.States mockZooStates = mock(ZooKeeper.States.class);
-        when(mockZooStates.isAlive()).thenReturn(true);
-        when(mockZooStates.isConnected()).thenReturn(true);
-        when(mockZooAdmin.getState()).thenReturn(mockZooStates);
+        when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
             @Override
@@ -295,10 +286,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getConfig(false, null)).thenReturn(config.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenThrow(new KeeperException.NewConfigNoQuorum());
-        ZooKeeper.States mockZooStates = mock(ZooKeeper.States.class);
-        when(mockZooStates.isAlive()).thenReturn(true);
-        when(mockZooStates.isConnected()).thenReturn(true);
-        when(mockZooAdmin.getState()).thenReturn(mockZooStates);
+        when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
             @Override
@@ -349,5 +337,23 @@ public class ZookeeperScalerTest {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
             check.flag();
         })));
+    }
+
+    public enum ConnectedState {
+        CONNECTING, ASSOCIATING, CONNECTED, CONNECTEDREADONLY,
+        CLOSED, AUTH_FAILED, NOT_CONNECTED;
+
+        public boolean isAlive() {
+            return true;
+        }
+
+        /**
+         * Returns whether we are connected to a server (which
+         * could possibly be read-only, if this client is allowed
+         * to go to read-only mode)
+         * */
+        public boolean isConnected() {
+            return true;
+        }
     }
 }
