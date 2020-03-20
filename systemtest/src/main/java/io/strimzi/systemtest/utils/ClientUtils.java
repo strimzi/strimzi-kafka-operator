@@ -30,7 +30,7 @@ public class ClientUtils {
     // TODO: all topicName, namespace, clusterName, userName should be removed after -> https://github.com/strimzi/strimzi-kafka-operator/pull/2520
     public static void waitUntilClientReceivedMessagesTls(IKafkaClient<Integer> kafkaClient, String topicName, String namespace,
                                                        String clusterName, String userName, int exceptedMessages) {
-        TestUtils.waitFor("Internal kafka client received messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Kafka " + kafkaClient.toString() + " client received messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 int receivedMessages = 0;
                 try {

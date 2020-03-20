@@ -701,7 +701,6 @@ class SecurityST extends BaseST {
         );
     }
 
-    // TODO: 1) here
     @Test
     void testCertRegeneratedAfterInternalCAisDeleted() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
