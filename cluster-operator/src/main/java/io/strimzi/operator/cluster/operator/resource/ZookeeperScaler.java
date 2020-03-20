@@ -100,8 +100,7 @@ public class ZookeeperScaler implements AutoCloseable {
     }
 
     /**
-     * Close the ZookeeperScaler instance. This closes the Zookeeper connection in case it was left open and deletes
-     * the certificate files.
+     * Close the ZookeeperScaler instance. This deletes the certificate files.
      */
     @Override
     public void close() {
@@ -155,82 +154,6 @@ public class ZookeeperScaler implements AutoCloseable {
 
         return connected.future();
     }
-
-    /**
-     * Internal method used to create the Zookeeper Admin client and connect it to Zookeeper
-     *
-     * @return      Future indicating success or failure
-     */
-    /*private Future<ZooKeeperAdmin> connect()    {
-        Promise<ZooKeeperAdmin> connected = Promise.promise();
-
-        ZooKeeperAdmin zkAdmin = null;
-
-        try {
-            long timer = vertx.setTimer(operationTimeoutMs, ignored -> {
-                if (!connected.future().isComplete()) {
-                    log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
-                    closeConnection(zkAdmin);
-                    connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
-                }
-            });
-
-            zkAdmin = zooAdminProvider.createZookeeperAdmin(this.zookeeperConnectionString, 10_000, watchedEvent -> {
-                switch (watchedEvent.getState()) {
-                    case SyncConnected:
-                        if (!connected.future().isComplete()) {
-                            log.debug("Successfully connected to {} to scale Zookeeper", zookeeperConnectionString);
-                            connected.tryComplete(zkAdmin);
-                        }
-                        break;
-                    default:
-                        if (!connected.future().isComplete()) {
-                            log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
-                            closeConnection(zkAdmin);
-                            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
-                        }
-                }
-
-                vertx.cancelTimer(timer);
-            }, getClientConfig());
-        } catch (IOException e)   {
-            log.warn("Failed to connect to {} to scale Zookeeper", zookeeperConnectionString, e);
-            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString, e));
-        }
-
-        return connected.future();
-    }*/
-
-    /*private Watcher connectionWatch(ZooKeeperAdmin zkAdmin, Promise connected)   {
-        return new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                switch (event.getState()) {
-                    case SyncConnected:
-                        event.getWrapper().
-                        if (!connected.future().isComplete()) {
-                            log.debug("Successfully connected to {} to scale Zookeeper", zookeeperConnectionString);
-                            connected.tryComplete(zkAdmin);
-                        }
-                        break;
-                    default:
-                        if (!connected.future().isComplete()) {
-                            log.warn("Failed to connect to {} to scale Zookeeper because of state {}", zookeeperConnectionString, watchedEvent.getState());
-                            closeConnection(zkAdmin);
-                            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString + " - got state " + watchedEvent.getState()));
-                        }
-                }
-            }
-        };
-    }*/
-
-    /*private void connectionTimoutTimer(ZooKeeperAdmin zkAdmin, Promise connected) {
-        if (!connected.future().isComplete()) {
-            log.debug("Failed to connected to {} to scale Zookeeper for {} ms. The connection will be closed.", this.zookeeperConnectionString, operationTimeoutMs);
-            closeConnection(zkAdmin);
-            connected.tryFail(new ZookeeperScalingException("Failed to connect to Zookeeper " + this.zookeeperConnectionString + " for " + operationTimeoutMs + " ms"));
-        }
-    }*/
 
     /**
      * Internal method to scale Zookeeper up or down or check configuration. It will:
@@ -410,15 +333,5 @@ public class ZookeeperScaler implements AutoCloseable {
         }
 
         return servers;
-    }
-
-    class ClientAndConfig {
-        final ZooKeeperAdmin zkAdmin;
-        final Map<String, String> configuration;
-
-        public ClientAndConfig(ZooKeeperAdmin zkAdmin, Map<String, String> configuration) {
-            this.zkAdmin = zkAdmin;
-            this.configuration = configuration;
-        }
     }
 }
