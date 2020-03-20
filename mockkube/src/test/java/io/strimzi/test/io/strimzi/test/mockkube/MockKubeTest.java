@@ -36,8 +36,8 @@ import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource & KubernetesResourceList,
         DT extends Doneable<RT>> {
@@ -130,7 +130,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     @SuppressWarnings("unchecked")
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("parameters")
-    public void podCreateDeleteUnscoped(Class<RT> cls,
+    public void testPodCreateDeleteUnscoped(Class<RT> cls,
                                         Consumer<MockKube> init,
                                         Supplier<RT> factory,
                                         Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
@@ -143,12 +143,9 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         mixedOp.apply(client).create(pod);
         assertThat(w.lastEvent().action, is(Watcher.Action.ADDED));
         assertThat(w.lastEvent().resource, is(pod));
-        try {
-            mixedOp.apply(client).create(pod);
-            fail();
-        } catch (KubernetesClientException e) {
-            assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
-        }
+
+        KubernetesClientException e = assertThrows(KubernetesClientException.class, () ->  mixedOp.apply(client).create(pod));
+        assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
 
         // Delete
         assertThat(mixedOp.apply(client).delete(pod), is(true));
@@ -157,7 +154,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         RT resource = (RT) w.lastEvent().resource;
         resource.getMetadata().setResourceVersion(null);
         resource.getMetadata().setGeneration(null);
-        assertEquals(resource, pod);
+        assertThat(pod, is(resource));
         assertThat(mixedOp.apply(client).delete(pod), is(false));
 
         // TODO createOrReplace(), createOrReplaceWithName()
@@ -167,7 +164,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     @SuppressWarnings("unchecked")
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("parameters")
-    public void podNameScopedCreateListGetDelete(Class<RT> cls,
+    public void testPodNameScopedCreateListGetDelete(Class<RT> cls,
                                                  Consumer<MockKube> init,
                                                  Supplier<RT> factory,
                                                  Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
@@ -182,16 +179,12 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         mixedOp.apply(client).withName(pod.getMetadata().getName()).create(pod);
         assertThat(w.lastEvent().action, is(Watcher.Action.ADDED));
         assertThat(w.lastEvent().resource, is(pod));
-        try {
-            mixedOp.apply(client).create(pod);
-            fail();
-        } catch (KubernetesClientException e) {
-            assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
-        }
+        KubernetesClientException e = assertThrows(KubernetesClientException.class, () ->  mixedOp.apply(client).create(pod));
+        assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
 
         // List
         List<RT> items = mixedOp.apply(client).list().getItems();
-        assertThat(items.size(), is(1));
+        assertThat(items, hasSize(1));
         RT item = items.get(0);
         item.getMetadata().setResourceVersion(null);
         item.getMetadata().setGeneration(null);
@@ -199,38 +192,38 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
 
         // List with namespace
         items = mixedOp.apply(client).inNamespace("other").list().getItems();
-        // TODO assertEquals(0, items.size());
+        // TODO assertThat(items.size(), is(0));
 
         // List with labels
         items = mixedOp.apply(client).withLabel("my-label").list().getItems();
-        assertThat(items.size(), is(1));
+        assertThat(items, hasSize(1));
         RT actual = items.get(0);
         actual.getMetadata().setResourceVersion(null);
         actual.getMetadata().setGeneration(null);
         assertThat(actual, is(pod));
 
         items = mixedOp.apply(client).withLabel("other-label").list().getItems();
-        assertThat(items.size(), is(0));
+        assertThat(items, hasSize(0));
 
         items = mixedOp.apply(client).withLabel("my-label", "foo").list().getItems();
-        assertThat(items.size(), is(1));
+        assertThat(items, hasSize(1));
         RT actual1 = items.get(0);
         actual1.getMetadata().setResourceVersion(null);
         actual1.getMetadata().setGeneration(null);
         assertThat(actual1, is(pod));
 
         items = mixedOp.apply(client).withLabel("my-label", "bar").list().getItems();
-        assertThat(items.size(), is(0));
+        assertThat(items, hasSize(0));
 
         items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "bar")).list().getItems();
-        assertThat(items.size(), is(1));
+        assertThat(items, hasSize(1));
         RT actual2 = items.get(0);
         actual2.getMetadata().setResourceVersion(null);
         actual2.getMetadata().setGeneration(null);
         assertThat(actual2, is(pod));
 
         items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "gee")).list().getItems();
-        assertThat(items.size(), is(0));
+        assertThat(items, hasSize(0));
 
         // Get
         RT gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
@@ -251,7 +244,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(resource, is(pod));
 
         items = mixedOp.apply(client).list().getItems();
-        assertThat(items.size(), is(0));
+        assertThat(items, hasSize(0));
 
         gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
         assertThat(gotResource, is(nullValue()));
@@ -265,7 +258,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     @SuppressWarnings("unchecked")
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("parameters")
-    public void watches(Class<RT> cls,
+    public void testWatches(Class<RT> cls,
                         Consumer<MockKube> init,
                         Supplier<RT> factory,
                         Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
