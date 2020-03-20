@@ -434,31 +434,4 @@ public class ModelUtils {
         }
         return String.join(" ", javaSystemPropertiesList);
     }
-
-    /**
-     * Detects the StatefulSet pod index from the Pod resource.
-     * When the Pod doesn't have name of metadata, it returns null
-     *
-     * @param pod   Pod from which the name should be extracted
-     * @return      The index of the pod within the STS
-     */
-    public static Integer getIndexFromPod(Pod pod)    {
-        if (pod != null
-                && pod.getMetadata() != null
-                && pod.getMetadata().getName() != null)    {
-            return getIndexFromPodName(pod.getMetadata().getName());
-        }
-
-        return null;
-    }
-
-    /**
-     * Gets the index from STS pod Name name
-     *
-     * @param podName   Name of the STS pod
-     * @return          The index of the pod within the STS
-     */
-    private static int getIndexFromPodName(String podName)    {
-        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
-    }
 }
