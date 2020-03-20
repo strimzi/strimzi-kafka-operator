@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -111,9 +112,15 @@ class RollingUpdateST extends BaseST {
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
             p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
-        LOGGER.info("Some pod of kafka is in pending phase because of selected cpu high resource");
-        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream()
-                .filter(pod -> !pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList()).get(0).getStatus().getPhase(), is("Pending"));
+        TestUtils.waitFor("Waiting for some zookeeper pod to be in the pending phase because of selected high cpu resource",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
+                        .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                LOGGER.info("Filtered pods are {}", filteredPod.toString());
+                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+            }
+        );
 
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
@@ -181,9 +188,15 @@ class RollingUpdateST extends BaseST {
 
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)));
 
-        LOGGER.info("Some pod of kafka is in pending phase because of selected cpu high resource");
-        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream()
-            .filter(pod -> !pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList()).get(0).getStatus().getPhase(), is("Pending"));
+        TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
+                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                LOGGER.info("Filtered pods are {}", filteredPod.toString());
+                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+            }
+        );
 
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
