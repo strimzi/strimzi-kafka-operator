@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -119,6 +120,30 @@ public class ModelUtils {
             }
         }
         throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
+    }
+
+    /**
+     * @param pod The StatefulSet
+     * @param containerName The name of the container whoes environment variables are to be retrieved
+     * @param envVarName Name of the environment variable which we should get
+     * @return The environment of the Kafka container in the sts.
+     */
+    public static String getPodEnv(Pod pod, String containerName, String envVarName) {
+        if (pod != null) {
+            for (Container container : pod.getSpec().getContainers()) {
+                if (containerName.equals(container.getName())) {
+                    if (container.getEnv() != null) {
+                        for (EnvVar envVar : container.getEnv()) {
+                            if (envVarName.equals(envVar.getName()))    {
+                                return envVar.getValue();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public static List<EnvVar> envAsList(Map<String, String> env) {
@@ -408,5 +433,32 @@ public class ModelUtils {
             javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
         }
         return String.join(" ", javaSystemPropertiesList);
+    }
+
+    /**
+     * Detects the StatefulSet pod index from the Pod resource.
+     * When the Pod doesn't have name of metadata, it returns null
+     *
+     * @param pod   Pod from which the name should be extracted
+     * @return      The index of the pod within the STS
+     */
+    public static Integer getIndexFromPod(Pod pod)    {
+        if (pod != null
+                && pod.getMetadata() != null
+                && pod.getMetadata().getName() != null)    {
+            return getIndexFromPodName(pod.getMetadata().getName());
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the index from STS pod Name name
+     *
+     * @param podName   Name of the STS pod
+     * @return          The index of the pod within the STS
+     */
+    private static int getIndexFromPodName(String podName)    {
+        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
     }
 }

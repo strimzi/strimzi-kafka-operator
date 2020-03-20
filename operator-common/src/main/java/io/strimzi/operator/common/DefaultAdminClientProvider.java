@@ -12,13 +12,8 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Properties;
 
 public class DefaultAdminClientProvider implements AdminClientProvider {
@@ -29,11 +24,11 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
     public Admin createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
 
         Admin ac;
-        String trustStorePassword = new String(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
-        File truststoreFile = createFileStore(decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
+        String trustStorePassword = new String(Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
+        File truststoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
         try {
-            String keyStorePassword = new String(decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
-            File keystoreFile = createFileStore(decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
+            String keyStorePassword = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
+            File keystoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
             try {
                 Properties p = new Properties();
                 p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, hostname);
@@ -60,26 +55,5 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
             }
         }
         return ac;
-    }
-
-    private File createFileStore(byte[] bytes) {
-        File f = null;
-        try {
-            f = File.createTempFile(getClass().getName(), "ts");
-            f.deleteOnExit();
-            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                os.write(bytes);
-            }
-            return f;
-        } catch (IOException e) {
-            if (f != null && !f.delete()) {
-                LOGGER.warn("Failed to delete temporary file in exception handler");
-            }
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static byte[] decodeFromSecret(Secret secret, String key) {
-        return Base64.getDecoder().decode(secret.getData().get(key));
     }
 }

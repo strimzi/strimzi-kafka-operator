@@ -34,7 +34,6 @@ import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -342,14 +341,18 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    @Disabled("Zookeeper scaleUp/scaleDown is currently covered by manual procedure for Kafka 2.4.x. " +
-            "This should be removed after implementation of Zookeeper Dynamic configuration")
     void testZookeeperScaleUpScaleDown() {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withVersion("2.3.1")
+                    .endKafka()
+                .endSpec()
+                .done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         String userName = "alice";

@@ -56,15 +56,14 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
-
-    protected static final int CLIENT_PORT = 2181;
+    public static final int CLIENT_PORT = 2181;
     protected static final String CLIENT_PORT_NAME = "clients";
-    protected static final int CLUSTERING_PORT = 2888;
+    public static final int CLUSTERING_PORT = 2888;
     protected static final String CLUSTERING_PORT_NAME = "clustering";
-    protected static final int LEADER_ELECTION_PORT = 3888;
+    public static final int LEADER_ELECTION_PORT = 3888;
     protected static final String LEADER_ELECTION_PORT_NAME = "leader-election";
 
-    protected static final String ZOOKEEPER_NAME = "zookeeper";
+    public static final String ZOOKEEPER_NAME = "zookeeper";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_NODES_VOLUME_NAME = "zookeeper-nodes";
     protected static final String TLS_SIDECAR_NODES_VOLUME_MOUNT = "/etc/tls-sidecar/zookeeper-nodes/";
@@ -124,6 +123,13 @@ public class ZookeeperCluster extends AbstractModel {
                 ZookeeperCluster.headlessServiceName(cluster),
                 namespace,
                 ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+    }
+
+    public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
+        return String.format("%s.%s.%s.svc",
+                ZookeeperCluster.zookeeperPodName(cluster, podId),
+                ZookeeperCluster.headlessServiceName(cluster),
+                namespace);
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
@@ -679,4 +685,5 @@ public class ZookeeperCluster extends AbstractModel {
     public void disableSnapshotChecks() {
         this.isSnapshotCheckEnabled = false;
     }
+
 }
