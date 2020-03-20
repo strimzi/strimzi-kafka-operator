@@ -346,13 +346,7 @@ class RollingUpdateST extends BaseST {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withVersion("2.3.1")
-                    .endKafka()
-                .endSpec()
-                .done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         String userName = "alice";
