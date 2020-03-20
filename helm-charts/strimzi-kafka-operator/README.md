@@ -43,7 +43,6 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 ## Prerequisites
 
 - Kubernetes 1.11+
-- PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
 
