@@ -1,8 +1,8 @@
 # Strimzi: Kafka as a Service
 
-Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on
+Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
-See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more details about the project.
+See our [website](https://strimzi.io) for more details about the project.
 
 ## Introduction
 
@@ -10,9 +10,39 @@ This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cl
 Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io)
 cluster using the [Helm](https://helm.sh) package manager.
 
+### Supported Features
+
+* **Manages the Kafka Cluster** - Deploys and manages all of the components of this complex application, including dependencies like Apache ZooKeeper® that are traditionally hard to administer.
+* **Includes Kafka Connect** - Allows for configuration of common data sources and sinks to move data into and out of the Kafka cluster.
+* **Topic Management** - Creates and manages Kafka Topics within the cluster.
+* **User Management** - Creates and manages Kafka Users within the cluster.
+* **Connector Management** - Creates and manages Kafka Connect connectors.
+* **Includes Kafka Mirror Maker** - Allows for morroring data between different Apache Kafka® clusters.
+* **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via HTTP protocol.
+
+### Upgrading your Clusters
+
+The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
+When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
+See [the upgrade guide](https://strimzi.io/docs/latest/#assembly-upgrading-kafka-versions-str) for more information.
+
+### Documentation
+
+Documentation to all releases can be found on our [website](https://strimzi.io/documentation).
+
+### Getting help
+
+If you encounter any issues while using Strimzi, you can get help using:
+* [Strimzi mailing list on CNCF](https://lists.cncf.io/g/cncf-strimzi-users/topics)
+* [Strimzi Slack channel on CNCF workspace](https://cloud-native.slack.com/messages/strimzi)
+
+### License
+
+Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/strimzi/strimzi-kafka-operator/blob/master/LICENSE).
+
 ## Prerequisites
 
-- Kubernetes 1.9+
+- Kubernetes 1.11+
 - PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
