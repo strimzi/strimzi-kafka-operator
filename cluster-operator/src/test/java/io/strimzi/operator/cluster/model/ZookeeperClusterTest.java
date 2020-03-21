@@ -362,6 +362,7 @@ public class ZookeeperClusterTest {
         X509Certificate cert = Ca.cert(secret, "foo-zookeeper-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-zookeeper, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+                asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc"),
                 asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc.cluster.local"),
                 asList(2, "foo-zookeeper-client"),
                 asList(2, "foo-zookeeper-client.test"),

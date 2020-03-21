@@ -11,6 +11,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -117,7 +118,7 @@ public class ZookeeperLeaderFinder {
                                             "cluster-operator.key", "cluster-operator.crt",
                                         "cluster-operator.p12", "cluster-operator.password");
         if (coCertKey == null) {
-            throw StatefulSetOperator.missingSecretFuture(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
+            throw Util.missingSecretException(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
         }
         CertificateFactory x509 = x509Factory();
         try {
@@ -143,7 +144,7 @@ public class ZookeeperLeaderFinder {
         Future<Secret> clusterCaKeySecretFuture = secretOperator.getAsync(namespace, clusterCaSecretName);
         return clusterCaKeySecretFuture.compose(clusterCaCertificateSecret -> {
             if (clusterCaCertificateSecret  == null) {
-                return Future.failedFuture(StatefulSetOperator.missingSecretFuture(namespace, clusterCaSecretName));
+                return Future.failedFuture(Util.missingSecretException(namespace, clusterCaSecretName));
             }
             try {
                 NetClientOptions netClientOptions = clientOptions(coKeySecret, clusterCaCertificateSecret);

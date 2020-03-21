@@ -451,6 +451,12 @@
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-web-common</artifactId>
                 <version>${vertx.version}</version>
@@ -857,6 +863,7 @@
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.12:jar</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>

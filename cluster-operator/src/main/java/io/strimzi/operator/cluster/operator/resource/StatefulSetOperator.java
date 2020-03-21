@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -102,18 +103,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return CompositeFuture.join(clusterCaKeySecretFuture, coKeySecretFuture).compose(compositeFuture -> {
             Secret clusterCaKeySecret = compositeFuture.resultAt(0);
             if (clusterCaKeySecret == null) {
-                return Future.failedFuture(missingSecretFuture(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
+                return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
             }
             Secret coKeySecret = compositeFuture.resultAt(1);
             if (coKeySecret == null) {
-                return Future.failedFuture(missingSecretFuture(namespace, ClusterOperator.secretName(cluster)));
+                return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(cluster)));
             }
             return maybeRollingUpdate(sts, podNeedsRestart, clusterCaKeySecret, coKeySecret);
         });
-    }
-
-    static RuntimeException missingSecretFuture(String namespace, String secretName) {
-        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
     }
 
     public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
