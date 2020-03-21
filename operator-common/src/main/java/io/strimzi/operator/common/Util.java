@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -12,6 +13,12 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,5 +129,53 @@ public class Util {
         } else {
             return Collections.emptyMap();
         }
+    }
+
+    /**
+     * Returns exception when secret is missing. This is used from several different methods to provide identical exception.
+     *
+     * @param namespace     Namespace of the Secret
+     * @param secretName    Name of the Secret
+     * @return              RuntimeException
+     */
+    public static RuntimeException missingSecretException(String namespace, String secretName) {
+        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
+    }
+
+    /**
+     * Create a file with Keystore or Truststore from the given {@code bytes}.
+     * The file will be set to get deleted when the JVM exist.
+     *
+     * @param prefix    Prefix which will be used for the filename
+     * @param suffix    Suffix which will be used for the filename
+     * @param bytes     Byte array with the certificate store
+     * @return          File with the certificate store
+     */
+    public static File createFileStore(String prefix, String suffix, byte[] bytes) {
+        File f = null;
+        try {
+            f = File.createTempFile(prefix, suffix);
+            f.deleteOnExit();
+            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
+                os.write(bytes);
+            }
+            return f;
+        } catch (IOException e) {
+            if (f != null && !f.delete()) {
+                LOGGER.warn("Failed to delete temporary file in exception handler");
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode binary item from Kubernetes Secret from base64 into byte array
+     *
+     * @param secret    Kubernetes Secret
+     * @param key       Key which should be retrived and decoded
+     * @return          Decoded bytes
+     */
+    public static byte[] decodeFromSecret(Secret secret, String key) {
+        return Base64.getDecoder().decode(secret.getData().get(key));
     }
 }

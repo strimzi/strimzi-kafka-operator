@@ -125,6 +125,7 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.3", String.format("%s.%s.svc", ZookeeperCluster.serviceName(cluster), namespace));
             sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", ZookeeperCluster.serviceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
             sbjAltNames.put("DNS.5", ZookeeperCluster.podDnsName(namespace, cluster, i));
+            sbjAltNames.put("DNS.6", ZookeeperCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
 
             Subject subject = new Subject();
             subject.setOrganizationName("io.strimzi");

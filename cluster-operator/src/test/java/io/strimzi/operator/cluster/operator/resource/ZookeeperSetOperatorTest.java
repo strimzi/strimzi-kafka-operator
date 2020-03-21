@@ -60,9 +60,9 @@ public class ZookeeperSetOperatorTest {
     }
 
     @Test
-    public void testNeedsRollingUpdateReplicas() {
+    public void testNotNeedsRollingUpdateReplicas() {
         a.getSpec().setReplicas(b.getSpec().getReplicas() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(false));
     }
 
     @Test
