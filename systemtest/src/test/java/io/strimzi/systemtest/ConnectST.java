@@ -126,7 +126,6 @@ class ConnectST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     @Tag(TRAVIS)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)

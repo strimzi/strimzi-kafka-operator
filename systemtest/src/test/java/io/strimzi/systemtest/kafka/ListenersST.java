@@ -260,6 +260,7 @@ public class ListenersST extends BaseST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
@@ -667,7 +668,6 @@ public class ListenersST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     @OpenShiftOnly
     void testCustomCertRouteAndTlsRollingUpdate() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
