@@ -48,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -78,6 +80,7 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As an oauth kafka connect, I should be able to sink messages from kafka broker topic.")
     @Test
+    @Tag(CONNECT)
     void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
@@ -122,6 +125,7 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
+    @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMaker() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
@@ -200,6 +204,7 @@ public class OauthPlainST extends OauthBaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,

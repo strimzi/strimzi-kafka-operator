@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -31,6 +32,9 @@ import java.util.List;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -80,6 +84,8 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECTOR_OPERATOR)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
@@ -96,6 +102,9 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
+    @OpenShiftOnly
+    @Tag(CONNECT_S2I)
+    @Tag(CONNECTOR_OPERATOR)
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);

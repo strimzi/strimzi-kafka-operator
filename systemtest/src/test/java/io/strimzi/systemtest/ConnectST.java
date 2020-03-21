@@ -51,6 +51,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
@@ -65,6 +67,7 @@ import static org.hamcrest.Matchers.not;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
+@Tag(CONNECT)
 class ConnectST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
@@ -238,6 +241,7 @@ class ConnectST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectAndConnectorFileSinkPlugin() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -593,6 +597,7 @@ class ConnectST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithConnectAndConnectS2IWithSameName() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
@@ -671,6 +676,7 @@ class ConnectST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";

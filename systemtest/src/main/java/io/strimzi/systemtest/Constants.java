@@ -122,10 +122,6 @@ public interface Constants {
      */
     String FLAKY = "flaky";
     /**
-     * Tag for strimzi bridge tests.
-     */
-    String BRIDGE = "bridge";
-    /**
      * Tag for scalability tests
      */
     String SCALABILITY = "scalability";
@@ -165,4 +161,28 @@ public interface Constants {
      * Tag for recovery tests
      */
     String RECOVERY = "recovery";
+    /**
+     * Tag for tests which deploys KafkaConnector resource
+     */
+    String CONNECTOR_OPERATOR = "connectoroperator";
+    /**
+     * Tag for tests which deploys KafkaConnect resource
+     */
+    String CONNECT = "connect";
+    /**
+     * Tag for tests which deploys KafkaConnectS2I resource
+     */
+    String CONNECT_S2I = "connects2i";
+    /**
+     * Tag for tests which deploys KafkaMirrorMaker resource
+     */
+    String MIRROR_MAKER = "mirrormaker";
+    /**
+     * Tag for tests which deploys KafkaMirrorMaker2 resource
+     */
+    String MIRROR_MAKER2 = "mirrormaker2";
+    /**
+     * Tag for tests which deploys KafkaBridge resource
+     */
+    String BRIDGE = "bridge";
 }

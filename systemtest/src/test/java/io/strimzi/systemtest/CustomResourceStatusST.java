@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -64,6 +65,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
@@ -149,6 +155,7 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatus() {
         // Deploy Mirror Maker
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
@@ -168,6 +175,7 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap() {
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
         waitForKafkaMirrorMakerStatus("Ready");
@@ -201,6 +209,8 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectAndConnectorStatus() {
         String connectUrl = KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083);
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
@@ -252,6 +262,8 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    @OpenShiftOnly
+    @Tag(CONNECT_S2I)
     void testKafkaConnectS2IStatus() {
         String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_CLUSTER_NAME);
         String connectS2IUrl = KafkaConnectS2IResources.url(CONNECTS2I_CLUSTER_NAME, NAMESPACE, 8083);
@@ -313,6 +325,7 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2Status() {
         String mm2Url = KafkaMirrorMaker2Resources.url(CLUSTER_NAME, NAMESPACE, 8083);
         String targetClusterName = "target-cluster";
