@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
@@ -218,7 +217,6 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(FLAKY)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -374,7 +372,6 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    @Tag(FLAKY)
     void testZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -419,7 +416,6 @@ class RollingUpdateST extends BaseST {
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-//        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
         received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
