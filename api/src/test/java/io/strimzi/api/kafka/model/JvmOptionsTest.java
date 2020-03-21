@@ -11,7 +11,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 public class JvmOptionsTest {
     @Test
-    public void testXmxXms() {
+    public void testSetXmxXms() {
         JvmOptions opts = TestUtils.fromJson("{" +
                 "  \"-Xmx\": \"2g\"," +
                 "  \"-Xms\": \"1g\"" +
@@ -37,7 +37,6 @@ public class JvmOptionsTest {
 
         assertThat(opts.isServer(), is(true));
 
-
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": true" +
                 "}", JvmOptions.class);
@@ -46,6 +45,12 @@ public class JvmOptionsTest {
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": \"false\"" +
+                "}", JvmOptions.class);
+
+        assertThat(opts.isServer(), is(false));
+
+        opts = TestUtils.fromJson("{" +
+                "  \"-server\": false" +
                 "}", JvmOptions.class);
 
         assertThat(opts.isServer(), is(false));
@@ -67,6 +72,10 @@ public class JvmOptionsTest {
                 "}", JvmOptions.class);
 
         assertThat(opts.getXx(), is(TestUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10")));
+
+        opts = TestUtils.fromJson("{}", JvmOptions.class);
+
+        assertThat(opts.getXx(), is(nullValue()));
     }
 }
 
