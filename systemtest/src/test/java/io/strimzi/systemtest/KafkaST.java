@@ -473,8 +473,8 @@ class KafkaST extends BaseST {
             entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
@@ -1272,11 +1272,16 @@ class KafkaST extends BaseST {
 
         KafkaResource.kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(2, 2, 10);
+        verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
+
         LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pvc", "data-0-" + KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
-        PersistentVolumeClaimUtils.waitUntilPVCDeletion(CLUSTER_NAME);
-        verifyPVCDeletion(2, jbodStorage);
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
+
+        LOGGER.info("Waiting for PVC deletion");
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
+
+        LOGGER.info("Waiting for Kafka pods deletion");
+        verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
     @Test
@@ -1291,12 +1296,15 @@ class KafkaST extends BaseST {
 
         KafkaResource.kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
 
-        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
-        LOGGER.info("Deleting Kafka cluster {}", CLUSTER_NAME);
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
+        LOGGER.info("Deleting cluster");
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
+
+        LOGGER.info("Waiting for PVC deletion");
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
+
         LOGGER.info("Waiting for Kafka pods deletion");
-        PodUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
@@ -1312,11 +1320,15 @@ class KafkaST extends BaseST {
 
         KafkaResource.kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
+        verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
+
         LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME);
+
+        LOGGER.info("Waiting for PVC deletion");
+        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, CLUSTER_NAME);
+
         LOGGER.info("Waiting for Kafka pods deletion");
-        PodUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
