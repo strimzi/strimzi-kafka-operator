@@ -556,6 +556,13 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void withRackAndAffinityWithMoreTerms() throws IOException {
+        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, KafkaCluster::fromCrd, this.getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
+        resourceTester.assertDesiredResource("-STS.yaml",
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withRackAndAffinity() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, KafkaCluster::fromCrd, this.getClass().getSimpleName() + ".withRackAndAffinity");
         resourceTester.assertDesiredResource("-STS.yaml",

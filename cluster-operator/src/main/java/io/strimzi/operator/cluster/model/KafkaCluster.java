@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
@@ -1544,15 +1545,7 @@ public class KafkaCluster extends AbstractModel {
         Affinity userAffinity = getUserAffinity();
         AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
         if (rack != null) {
-            NodeSelectorTerm selector = new NodeSelectorTermBuilder()
-                    .withMatchExpressions(new NodeSelectorRequirementBuilder()
-                            .withNewOperator("Exists")
-                            .withNewKey(rack.getTopologyKey())
-                            .build())
-                    .build();
-
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
-            // and node affinity to make sure the pods are scheduled only on nodes with the rack label
             builder = builder
                     .editOrNewPodAntiAffinity()
                         .addNewPreferredDuringSchedulingIgnoredDuringExecution()
@@ -1565,13 +1558,48 @@ public class KafkaCluster extends AbstractModel {
                                 .endLabelSelector()
                             .endPodAffinityTerm()
                         .endPreferredDuringSchedulingIgnoredDuringExecution()
-                    .endPodAntiAffinity()
-                    .editOrNewNodeAffinity()
-                        .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
-                            .addToNodeSelectorTerms(selector)
-                        .endRequiredDuringSchedulingIgnoredDuringExecution()
-                    .endNodeAffinity();
+                    .endPodAntiAffinity();
+
+            // We also need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
+            NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
+                    .withNewOperator("Exists")
+                    .withNewKey(rack.getTopologyKey())
+                    .build();
+
+            if (userAffinity != null
+                    && userAffinity.getNodeAffinity() != null
+                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
+                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
+                // User has specified some Node Selector Terms => we should enhance them
+                List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
+                List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
+
+                for (NodeSelectorTerm term : oldTerms) {
+                    NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
+                            .addToMatchExpressions(selector)
+                            .build();
+                    enhancedTerms.add(enhancedTerm);
+                }
+
+                builder = builder
+                        .editOrNewNodeAffinity()
+                            .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                                .withNodeSelectorTerms(enhancedTerms)
+                            .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .endNodeAffinity();
+            } else {
+                // User has not specified any selector terms => we add our own
+                builder = builder
+                        .editOrNewNodeAffinity()
+                            .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                                .addNewNodeSelectorTerm()
+                                    .withMatchExpressions(selector)
+                                .endNodeSelectorTerm()
+                            .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .endNodeAffinity();
+            }
         }
+
         return builder.build();
     }
 
