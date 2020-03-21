@@ -162,7 +162,7 @@ public class PartialRollingUpdateTest {
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
         return new ResourceOperatorSupplier(vertx, bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
-                ResourceUtils.adminClientProvider(),
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 60_000L);
     }
 

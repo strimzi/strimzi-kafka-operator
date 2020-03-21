@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -565,6 +566,12 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(anyString(), any())).thenReturn(
                 Future.succeededFuture(null)
         );
+        when(mockSecretOps.getAsync(clusterCmNamespace, KafkaResources.clusterCaCertificateSecretName(clusterCmName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
+        when(mockSecretOps.getAsync(clusterCmNamespace, ClusterOperator.secretName(clusterCmName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
 
         Set<String> createdOrUpdatedSecrets = new HashSet<>();
         when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -1018,6 +1025,12 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ClusterOperator.secretName(clusterName))).thenReturn(
+                Future.succeededFuture(new Secret())
         );
 
         // Mock NetworkPolicy get

@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -72,11 +73,14 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -154,6 +158,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+    private final ZookeeperScalerProvider zkScalerProvider;
 
     /**
      * @param vertx The Vertx instance
@@ -181,6 +186,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.storageClassOperator = supplier.storageClassOperations;
         this.crdOperator = supplier.kafkaOperator;
         this.nodeOperator = supplier.nodeOperator;
+        this.zkScalerProvider = supplier.zkScalerProvider;
     }
 
     @Override
@@ -255,17 +261,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkVersionChange())
                 .compose(state -> state.zookeeperServiceAccount())
                 .compose(state -> state.zkPvcs())
-                .compose(state -> state.zkScalingSetup())
-                .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
                 .compose(state -> state.zkAncillaryCm())
                 .compose(state -> state.zkNodesSecret(this::dateSupplier))
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
-                .compose(state -> state.zkScaleUp())
+                .compose(state -> state.zkScaling34())
+                .compose(state -> state.zkScalingDown35())
                 .compose(state -> state.zkRollingUpdate())
                 .compose(state -> state.zkPodsReady())
+                .compose(state -> state.zkScalingUp35())
+                .compose(state -> state.zkScalingCheck35())
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.zkPersistentClaimDeletion())
@@ -367,9 +374,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Service zkHeadlessService;
         private ConfigMap zkMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
-        private boolean zkScalingUp = false;
-        private boolean zkScalingDown = false;
-        private boolean zkManualScaling = false;
+        private Integer zkCurrentReplicas = null;
 
         private KafkaCluster kafkaCluster = null;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
@@ -1268,6 +1273,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkService = zkCluster.generateService();
                         this.zkHeadlessService = zkCluster.generateHeadlessService();
 
+                        if (sts != null && sts.getSpec() != null)   {
+                            this.zkCurrentReplicas = sts.getSpec().getReplicas();
+                        }
+
                         if (zkCluster.getLogging() instanceof  ExternalLogging) {
                             return configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName());
                         } else {
@@ -1299,10 +1308,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceAccountOperations.reconcile(namespace,
                     ZookeeperCluster.containerServiceAccountName(zkCluster.getCluster()),
                     zkCluster.generateServiceAccount()));
-        }
-
-        Future<ReconciliationState> zkScaleDown() {
-            return withVoid(zkSetOperations.scaleDown(namespace, zkCluster.getName(), zkCluster.getReplicas()));
         }
 
         Future<ReconciliationState> zkService() {
@@ -1358,125 +1363,233 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
-            Annotations.annotations(zkSts).put(Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE, String.valueOf(zkManualScaling));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            if (zkManualScaling && (KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0)) {
-                log.info("Skipping cluster roll due to ongoing manual scaling operations. " +
-                        "If you have completed the manual scaling operation then set the " +
-                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE + " to false to re-enable rolling updates.");
-                return Future.succeededFuture(this);
-            } else {
-                log.debug("No manual scaling operation detected, continuing with ZK cluster roll");
-                return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                        isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)));
-            }
+            // Scale-down and Scale-up might have change the STS. we should get a fresh one.
+            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                    .compose(sts -> zkSetOperations.maybeRollingUpdate(sts,
+                        pod -> isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
+                    .map(this);
         }
 
         /**
-         * This method setups to the scaling behaviour for the zookeeper cluster.
+         * Prepares the Zookeeper connectionString
+         * The format is host1:port1,host2:port2,...
          *
-         * For 3.4.x clusters the scale by one -> roll cluster -> scale by one -> roll cluster method used.
-         * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
-         * Each step performs scale up by one replica and full rolling update of Zookeeper cluster.
-         * This approach ensures a valid configuration of each Zk pod.
-         * Together with modified `maybeRollingUpdate` the quorum is not lost after the scale up operation is performed.
-         * There is one special case of scaling from standalone (single one) Zookeeper pod.
-         * In this case quorum cannot be preserved.
+         * Used by the Zookeeper 3.5 Admin client for scaling
          *
-         * For 3.5.x clusters scaling is limited to one server at a time (or an exception is thrown) and currently
-         * requires user intervention to manually add/remove servers to/from the quorum.
+         * @param connectToReplicas     Number of replicas from the ZK STS which should be used
+         * @return                      The generated Zookeeper connection string
          */
-        Future<ReconciliationState> zkScalingSetup() {
-            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .compose(sts -> {
-                        if (sts != null) {
-                            int currentReplicas = sts.getSpec().getReplicas();
-                            int desiredReplicas = zkCluster.getReplicas();
-                            int replicaDiff = Math.abs(currentReplicas - desiredReplicas);
-                            boolean isZK35x = KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0;
+        String zkConnectionString(int connectToReplicas)  {
+            // Prepare Zoo connection string. We want to connect only to nodes which existed before
+            // scaling and will exist after it is finished
+            List<String> zooNodes = new ArrayList<>(connectToReplicas);
 
-                            if (isZK35x && replicaDiff > 1) {
-                                // If the user is scaling a 3.5.x cluster and has specified as scale up or down of more than one
-                                // then log the error and throw an exception halting the reconciliation.
-                                String scaleErrorMessage = String.format(
-                                        "Scaling of Zookeeper 3.5.x clusters must be done in steps of one only. " +
-                                                "A change of %d was specified. Please set the Zookeeper replica count " +
-                                                "to one greater or lesser than the original value (%d).",
-                                        replicaDiff, currentReplicas);
+            for (int i = 0; i < connectToReplicas; i++)   {
+                zooNodes.add(String.format("%s.%s.%s.svc:%d",
+                        zkCluster.getPodName(i),
+                        KafkaResources.zookeeperHeadlessServiceName(name),
+                        namespace,
+                        ZookeeperCluster.CLIENT_PORT));
+            }
 
-                                log.error(scaleErrorMessage);
+            return  String.join(",", zooNodes);
+        }
 
-                                return Future.failedFuture(new IllegalArgumentException(scaleErrorMessage));
-                            } else if (desiredReplicas > currentReplicas) {
-                                // If this is a scale up of a 3.4.x cluster we want to scale in steps of one at a time
-                                // automatically. If it is 3.5 then it is limited to one at a time anyway by the check
-                                // in the clause above.
-                                zkCluster.setReplicas(currentReplicas + 1);
-                                zkScalingUp = true;
-                            } else if (desiredReplicas < currentReplicas) {
-                                zkScalingDown = true;
-                            }
+        /**
+         * Helper method for getting the required secrets with certificates and creating the ZookeeperScaler instance
+         * for the given cluster. The ZookeeperScaler instance created by this method should be closed manually after
+         * it is not used anymore.
+         *
+         * @param connectToReplicas     Number of pods from the Zookeeper STS which the scaler should use
+         * @return                      Zookeeper scaler instance.
+         */
+        Future<ZookeeperScaler> zkScaler(int connectToReplicas)  {
+            Future<Secret> clusterCaCertSecretFuture = secretOperations.getAsync(namespace, KafkaResources.clusterCaCertificateSecretName(name));
+            Future<Secret> coKeySecretFuture = secretOperations.getAsync(namespace, ClusterOperator.secretName(name));
 
-                            ConditionBuilder zkManualScalingCondition = null;
-
-                            if ((zkScalingUp || zkScalingDown) && isZK35x) {
-                                // This is a scale up or down of a ZK 3.5.x cluster
-                                String scaleMessage = String.format(
-                                        "Scaling Zookeeper 3.5.x cluster: Rolling updates will be skipped and the manual " +
-                                        "update process defined in the documentation should be followed. When finished set " +
-                                         "%s annotation on the Zookeeper StatefulSet to false.",
-                                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE);
-
-                                log.info(scaleMessage);
-
-                                zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                                        .withType("ZK-Manual-Scaling")
-                                        .withReason("replicaChange")
-                                        .withStatus("True")
-                                        .withMessage(scaleMessage);
-
-                                // Setting this will add the annotation to the STS in the state.zkStatefulSet() method
-                                zkManualScaling = true;
-                            } else if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE, false)) {
-                                // This is an on-going manual scaling operation. Once the annotation has been set to true by the operator
-                                // only the user can set it to false.
-                                String scaleMessage = String.format("Detected manual Zookeeper 3.5.x scaling operation in progress. " +
-                                                "After following the manual process defined in the documentation, set %s annotation on the " +
-                                                "Zookeeper stateful set to false.",
-                                        Annotations.ANNO_STRIMZI_IO_MANUAL_ZK_SCALE);
-
-                                log.info(scaleMessage);
-
-                                zkManualScalingCondition = new ConditionBuilder()
-                                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                                        .withType("ZK-Manual-Scaling")
-                                        .withReason("manualScaleAnnotationSet")
-                                        .withStatus("True")
-                                        .withMessage(scaleMessage);
-
-                                zkManualScaling = true;
-                            } else {
-                                // Either this is a ZK 3.4.x cluster or the user is not manually scaling the 3.5.x cluster.
-                                zkManualScaling = false;
-                            }
-
-                            if (zkManualScalingCondition != null && isZK35x) {
-                                this.kafkaStatus.addCondition(zkManualScalingCondition.build());
-                            }
+            return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture)
+                    .compose(compositeFuture -> {
+                        // Handle Cluster CA for connecting to Zoo
+                        Secret clusterCaCertSecret = compositeFuture.resultAt(0);
+                        if (clusterCaCertSecret == null) {
+                            return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaKeySecretName(name)));
                         }
-                        return Future.succeededFuture(this);
+
+                        // Handle CO key for connecting to Zoo
+                        Secret coKeySecret = compositeFuture.resultAt(1);
+                        if (coKeySecret == null) {
+                            return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
+                        }
+
+                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas), clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+
+                        return Future.succeededFuture(zkScaler);
                     });
         }
 
-        Future<ReconciliationState> zkScaleUp() {
-            if (zkScalingUp) {
-                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas())
-                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(zkCluster.getReplicas() - 1), 1_000, operationTimeoutMs))
-                        .map(this);
+        Future<ReconciliationState> zkScalingUp35() {
+            int desired = zkCluster.getReplicas();
+
+            if (zkCurrentReplicas != null
+                    && zkCurrentReplicas < desired
+                    && KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0) {
+                // Zoo 3.5 or higher with scaling
+                log.info("{}: Scaling Zookeeper up from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+
+                return zkScaler(zkCurrentReplicas)
+                        .compose(zkScaler -> {
+                            Promise<ReconciliationState> scalingPromise = Promise.promise();
+
+                            zkScalingUp35ByOne(zkScaler, zkCurrentReplicas, desired)
+                                    .setHandler(res -> {
+                                        zkScaler.close();
+
+                                        if (res.succeeded())    {
+                                            scalingPromise.complete(res.result());
+                                        } else {
+                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
+                                            scalingPromise.fail(res.cause());
+                                        }
+                                    });
+
+                            return scalingPromise.future();
+                        });
+            } else {
+                // No scaling up or not on Zookeeper 3.5 => do nothing
+                return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScalingUp35ByOne(ZookeeperScaler zkScaler, int current, int desired) {
+            if (current < desired) {
+                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
+                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
+                        .compose(ignore -> zkScaler.scale(current + 1))
+                        .compose(ignore -> zkScalingUp35ByOne(zkScaler, current + 1, desired));
+            } else {
+                return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScalingDown35() {
+            int desired = zkCluster.getReplicas();
+
+            if (zkCurrentReplicas != null
+                    && zkCurrentReplicas > desired
+                    && KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0) {
+                // Zoo 3.5 or higher with scaling
+                log.info("{}: Scaling Zookeeper down from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+
+                // No need to check for pod readiness since we run right after the readiness check
+                return zkScaler(desired)
+                        .compose(zkScaler -> {
+                            Promise<ReconciliationState> scalingPromise = Promise.promise();
+
+                            zkScalingDown35ByOne(zkScaler, zkCurrentReplicas, desired)
+                                    .setHandler(res -> {
+                                        zkScaler.close();
+
+                                        if (res.succeeded())    {
+                                            scalingPromise.complete(res.result());
+                                        } else {
+                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
+                                            scalingPromise.fail(res.cause());
+                                        }
+                                    });
+
+                            return scalingPromise.future();
+                        });
+            } else {
+                // No scaling down or not on Zookeeper 3.5 => do nothing
+                return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScalingDown35ByOne(ZookeeperScaler zkScaler, int current, int desired) {
+            if (current > desired) {
+                return podsReady(zkCluster, current - 1)
+                        .compose(ignore -> zkScaler.scale(current - 1))
+                        .compose(ignore -> zkSetOperations.scaleDown(namespace, zkCluster.getName(), current - 1))
+                        .compose(ignore -> zkScalingDown35ByOne(zkScaler, current - 1, desired));
+            } else {
+                return Future.succeededFuture(this);
+            }
+        }
+
+
+        Future<ReconciliationState> zkScalingCheck35() {
+            // No scaling, but we should check the configuration
+            // This can cover any previous failures in the Zookeeper reconfiguration
+            if (KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") > 0) {
+                // Zoo 3.5 or higher
+                log.debug("{}: Verifying that Zookeeper is configured to run with {} replicas", reconciliation, zkCurrentReplicas);
+
+                // No need to check for pod readiness since we run right after the readiness check
+                return zkScaler(zkCluster.getReplicas())
+                        .compose(zkScaler -> {
+                            Promise<ReconciliationState> scalingPromise = Promise.promise();
+
+                            zkScaler.scale(zkCluster.getReplicas()).setHandler(res -> {
+                                zkScaler.close();
+
+                                if (res.succeeded())    {
+                                    scalingPromise.complete(this);
+                                } else {
+                                    log.warn("{}: Failed to verify Zookeeper configuration", res.cause());
+                                    scalingPromise.fail(res.cause());
+                                }
+                            });
+
+                            return scalingPromise.future();
+                        });
+            } else {
+                // Not Zookeeper 3.5 => do nothing
+                return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScaling34() {
+            int desired = zkCluster.getReplicas();
+
+            if (zkCurrentReplicas != null
+                    && zkCurrentReplicas != desired
+                    && KafkaVersion.compareDottedVersions(zkCluster.getVersion(), "3.4.99") <= 0) {
+                // Zookeeper 3.4
+                if (zkCurrentReplicas > desired) {
+                    // Scale-down
+                    log.info("{}: Scaling Zookeeper 3.4 down from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+                    return zk34ScaleDown(desired);
+                } else {
+                    // Scale-up
+                    log.info("{}: Scaling Zookeeper 3.4 up from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+                    return zk34ScaleUp(zkCurrentReplicas, desired);
+                }
+            } else {
+                // No scaling or not on Zookeeper 3.4 => do nothing
+                return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zk34ScaleDown(int desired) {
+            return zkSetOperations.scaleDown(namespace, zkCluster.getName(), desired)
+                    .map(this);
+        }
+
+        Future<ReconciliationState> zk34ScaleUp(int current, int desired) {
+            if (current < desired) {
+                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
+                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
+                        .compose(ignore -> zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name)))
+                        .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, pod -> {
+                            String env = ModelUtils.getPodEnv(pod, ZookeeperCluster.ZOOKEEPER_NAME, ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT);
+                            // If the Pod is not yet configured for current+1 nodes, we need to roll it
+                            return !String.valueOf(current + 1).equals(env);
+                        }))
+                        .compose(ignore -> zk34ScaleUp(current + 1, desired));
             } else {
                 return Future.succeededFuture(this);
             }
@@ -2323,7 +2436,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodsReady() {
-            return podsReady(zkCluster);
+            if (zkCurrentReplicas != null)  {
+                // When scaling up we wait only for old pods to be ready, the new ones were not created yet
+                return podsReady(zkCluster, zkCurrentReplicas);
+            } else {
+                return podsReady(zkCluster);
+            }
         }
 
         Future<ReconciliationState> kafkaPodsReady() {
@@ -2332,6 +2450,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> podsReady(AbstractModel model) {
             int replicas = model.getReplicas();
+            return podsReady(model, replicas);
+        }
+
+        Future<ReconciliationState> podsReady(AbstractModel model, int replicas) {
             List<Future> podFutures = new ArrayList<>(replicas);
 
             for (int i = 0; i < replicas; i++) {
@@ -2935,6 +3057,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodToRestart(StatefulSet sts, Pod pod,
                                        boolean nodeCertsChange,
                                        Ca... cas) {
+            if (pod == null)    {
+                // When the Pod doesn't exist, it doesn't need to be restarted.
+                // It will be created with new configuration.
+                return false;
+            }
+
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
             boolean isCustomCertExternalListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER);

@@ -80,6 +80,7 @@ public class ResourceOperatorSupplier {
     public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
+    public final ZookeeperScalerProvider zkScalerProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -87,11 +88,12 @@ public class ResourceOperatorSupplier {
             // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                 () -> new BackOff(5_000, 2, 4)),
                     new DefaultAdminClientProvider(),
+                    new DefaultZookeeperScalerProvider(),
                     pfa, operationTimeoutMs);
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
-                                    AdminClientProvider adminClientProvider,
+                                    AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
                                     PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -119,7 +121,8 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class),
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class),
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
-                new NodeOperator(vertx, client, operationTimeoutMs));
+                new NodeOperator(vertx, client, operationTimeoutMs),
+                zkScalerProvider);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -148,7 +151,8 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> kafkaConnectorOperator,
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> mirrorMaker2Operator,
                                     StorageClassOperator storageClassOperator,
-                                    NodeOperator nodeOperator) {
+                                    NodeOperator nodeOperator,
+                                    ZookeeperScalerProvider zkScalerProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -176,5 +180,6 @@ public class ResourceOperatorSupplier {
         this.kafkaConnectorOperator = kafkaConnectorOperator;
         this.mirrorMaker2Operator = mirrorMaker2Operator;
         this.nodeOperator = nodeOperator;
+        this.zkScalerProvider = zkScalerProvider;
     }
 }
