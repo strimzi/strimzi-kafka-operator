@@ -19,7 +19,6 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
-    generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @EqualsAndHashCode(callSuper = true)
