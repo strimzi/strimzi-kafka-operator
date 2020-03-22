@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -24,7 +23,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @ExtendWith(VertxExtension.class)
 public class MainIT {
@@ -45,11 +44,7 @@ public class MainIT {
 
     @Test
     public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
+        assertDoesNotThrow(() -> KubeCluster.bootstrap());
         Map<String, String> envVars = new HashMap<>(6);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
