@@ -28,6 +28,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -42,7 +43,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -463,29 +463,10 @@ class LogSettingST extends BaseST {
             }
         });
 
-        assertThat(checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
-        assertThat(checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
-        assertThat(checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
-        assertThat(checkLogForJSONFormat(eoPods, "user-operator"), is(true));
-    }
-
-    private boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
-        List<String> podNames = new ArrayList<>(pods.keySet());
-        boolean isJSON = false;
-
-        for (String podName : podNames) {
-            String logs = kubeClient().logs(podName, containerName).replaceFirst("([^{]+)", "");
-            try {
-                new JsonObject(logs);
-                LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
-                isJSON = true;
-            } catch (Exception e) {
-                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
-                isJSON = false;
-                break;
-            }
-        }
-        return isJSON;
+        assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
