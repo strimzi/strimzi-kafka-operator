@@ -14,7 +14,7 @@ public class KafkaVersionUtilsTest {
 
     @Test
     public void parsingTest() throws Exception {
-        List<TestKafkaVersion> versions = TestKafkaVersion.getInstance().getKafkaVersions();
+        List<TestKafkaVersion> versions = TestKafkaVersion.getKafkaVersions();
         assertTrue(versions.size() > 0);
     }
 }

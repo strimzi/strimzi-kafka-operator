@@ -125,7 +125,7 @@ public class KafkaResource {
                 .editKafka()
                     .withVersion(Environment.ST_KAFKA_VERSION)
                     .withReplicas(kafkaReplicas)
-                    .addToConfig("log.message.format.version", TestKafkaVersion.getInstance().getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).protocolVersion())
+                    .addToConfig("log.message.format.version", TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).protocolVersion())
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))

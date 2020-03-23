@@ -21,22 +21,15 @@ import java.util.stream.Collectors;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
-    private static TestKafkaVersion instance;
     private static List<TestKafkaVersion> kafkaVersions;
 
-    public static synchronized TestKafkaVersion getInstance() {
-        if (instance == null) {
-            instance = new TestKafkaVersion();
-            try {
-                kafkaVersions = parseKafkaVersions();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    static {
+        try {
+            kafkaVersions = parseKafkaVersions();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return instance;
     }
-
-    private TestKafkaVersion() {}
 
     @JsonProperty("version")
     String version;
@@ -128,10 +121,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return version.equals(that.version);
     }
 
-    public List<TestKafkaVersion> getKafkaVersions() {
-        return kafkaVersions;
-    }
-
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource and return a sorted list
      * from earliest to latest kafka version.
@@ -154,13 +143,17 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return testKafkaVersions;
     }
 
+    public static List<TestKafkaVersion> getKafkaVersions() {
+        return kafkaVersions;
+    }
+
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource and return a map
      * of kafka versions data with a version as key
      *
      * @return A map of the kafka versions listed in the kafka-versions.yaml file where key is specific version
      */
-    public Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
+    public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
         return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
     }
 }
