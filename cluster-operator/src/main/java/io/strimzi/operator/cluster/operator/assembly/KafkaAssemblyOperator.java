@@ -1385,7 +1385,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Scale-down and Scale-up might have change the STS. we should get a fresh one.
             return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                     .compose(sts -> zkSetOperations.maybeRollingUpdate(sts,
-                        pod -> isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
+                        pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
                     .map(this);
         }
 
@@ -1602,7 +1602,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, pod -> {
                             String env = ModelUtils.getPodEnv(pod, ZookeeperCluster.ZOOKEEPER_NAME, ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT);
                             // If the Pod is not yet configured for current+1 nodes, we need to roll it
-                            return !String.valueOf(current + 1).equals(env);
+                            return String.valueOf(current + 1).equals(env) ? "Pod is not yet configured for current+1 nodes" : null;
                         }))
                         .compose(ignore -> zk34ScaleUp(current + 1, desired));
             } else {
