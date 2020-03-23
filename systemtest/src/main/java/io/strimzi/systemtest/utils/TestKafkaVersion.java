@@ -15,9 +15,29 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
+
+    private static TestKafkaVersion instance;
+    private static List<TestKafkaVersion> kafkaVersions;
+
+    public static synchronized TestKafkaVersion getInstance() {
+        if (instance == null) {
+            instance = new TestKafkaVersion();
+        }
+        return instance;
+    }
+
+    private TestKafkaVersion() {
+        try {
+            kafkaVersions = parseKafkaVersions();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @JsonProperty("version")
     String version;
@@ -109,13 +129,17 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return version.equals(that.version);
     }
 
+    public static List<TestKafkaVersion> getKafkaVersions() {
+        return kafkaVersions;
+    }
+
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource and return a sorted list
      * from earliest to latest kafka version.
      *
      * @return A list of the kafka versions listed in the kafka-versions.yaml file
      */
-    public static List<TestKafkaVersion> parseKafkaVersions() throws IOException {
+    private static List<TestKafkaVersion> parseKafkaVersions() throws IOException {
 
         YAMLMapper mapper = new YAMLMapper();
 
@@ -129,5 +153,15 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         Collections.sort(testKafkaVersions);
 
         return testKafkaVersions;
+    }
+
+    /**
+     * Parse the version information present in the {@code /kafka-versions} classpath resource and return a map
+     * of kafka versions data with a version as key
+     *
+     * @return A map of the kafka versions listed in the kafka-versions.yaml file where key is specific version
+     */
+    public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
+        return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
     }
 }
