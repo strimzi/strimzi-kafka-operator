@@ -109,12 +109,12 @@ public class CertificateRenewalTest {
     }
 
     @BeforeAll
-    public static void initVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         if (vertx != null) {
             vertx.close();
         }

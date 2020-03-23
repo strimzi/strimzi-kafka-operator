@@ -8,6 +8,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
@@ -25,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -59,10 +64,51 @@ public abstract class AbstractOperator<
     protected final S resourceOperator;
     private final String kind;
 
-    public AbstractOperator(Vertx vertx, String kind, S resourceOperator) {
+    protected final MetricsProvider metrics;
+    private final Counter periodicReconciliationsCounter;
+    private final Counter reconciliationsCounter;
+    private final Counter failedReconciliationsCounter;
+    private final Counter successfulReconciliationsCounter;
+    private final Counter lockedReconciliationsCounter;
+    private final AtomicInteger resourceCounter;
+    private final Timer reconciliationsTimer;
+
+    public AbstractOperator(Vertx vertx, String kind, S resourceOperator, MetricsProvider metrics) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
+        this.metrics = metrics;
+
+        // Setup metrics
+        Tags metricTags = Tags.of(Tag.of("kind", kind()));
+
+        periodicReconciliationsCounter = metrics.counter("strimzi.reconciliations.periodical",
+                "Number of periodical reconciliations done by the operator",
+                metricTags);
+
+        reconciliationsCounter = metrics.counter("strimzi.reconciliations",
+                "Number of reconciliations done by the operator for individual resources",
+                metricTags);
+
+        failedReconciliationsCounter = metrics.counter("strimzi.reconciliations.failed",
+                "Number of reconciliations done by the operator for individual resources which failed",
+                metricTags);
+
+        successfulReconciliationsCounter = metrics.counter("strimzi.reconciliations.successful",
+                "Number of reconciliations done by the operator for individual resources which were successful",
+                metricTags);
+
+        lockedReconciliationsCounter = metrics.counter("strimzi.reconciliations.locked",
+                "Number of reconciliations skipped because another reconciliation for the same resource was still running",
+                metricTags);
+
+        resourceCounter = metrics.gauge("strimzi.resources",
+                "Number of custom resources the operator sees",
+                metricTags);
+
+        reconciliationsTimer = metrics.timer("strimzi.reconciliations.duration",
+                "The time the reconciliation takes to complete",
+                metricTags);
     }
 
     @Override
@@ -115,6 +161,10 @@ public abstract class AbstractOperator<
     public final Future<Void> reconcile(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
+
+        reconciliationsCounter.increment();
+        Timer.Sample reconciliationTimerSample = Timer.start(metrics.meterRegistry());
+
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
             T cr = resourceOperator.get(namespace, name);
             if (cr != null) {
@@ -139,11 +189,13 @@ public abstract class AbstractOperator<
                 });
             }
         });
+
         Promise<Void> result = Promise.promise();
         handler.setHandler(reconcileResult -> {
-            handleResult(reconciliation, reconcileResult);
+            handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
             result.handle(reconcileResult);
         });
+
         return result.future();
     }
 
@@ -257,17 +309,32 @@ public abstract class AbstractOperator<
     /**
      * Log the reconciliation outcome.
      */
-    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result) {
+    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
         if (result.succeeded()) {
+            successfulReconciliationsCounter.increment();
+            reconciliationTimerSample.stop(reconciliationsTimer);
             log.info("{}: reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
             if (cause instanceof InvalidConfigParameterException) {
+                failedReconciliationsCounter.increment();
+                reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-            } else if (!(cause instanceof UnableToAcquireLockException)) {
+            } else if (cause instanceof UnableToAcquireLockException) {
+                lockedReconciliationsCounter.increment();
+            } else  {
+                failedReconciliationsCounter.increment();
+                reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }
     }
 
+    public Counter getPeriodicReconciliationsCounter() {
+        return periodicReconciliationsCounter;
+    }
+
+    public AtomicInteger getResourceCounter() {
+        return resourceCounter;
+    }
 }

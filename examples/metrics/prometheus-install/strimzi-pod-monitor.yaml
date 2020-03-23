@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cluster-operator-metrics
+  labels:
+    app: strimzi
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: cluster-operator
+  namespaceSelector:
+    matchNames:
+      - myproject
+  podMetricsEndpoints:
+  - path: /metrics
+    port: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: entity-operator-metrics
+  labels:
+    app: strimzi
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: entity-operator
+  namespaceSelector:
+    matchNames:
+      - myproject
+  podMetricsEndpoints:
+  - path: /metrics
+    port: healthcheck

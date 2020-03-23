@@ -138,7 +138,8 @@ public class Main {
                     kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
-                    kafkaBridgeAssemblyOperator);
+                    kafkaBridgeAssemblyOperator,
+                    resourceOperatorSupplier.metricsProvider);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

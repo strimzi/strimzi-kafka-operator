@@ -28,6 +28,9 @@ spec:
       containers:
         - name: strimzi-cluster-operator
           image: {{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
+          ports:
+            - containerPort: 8080
+              name: http
           {{- if .Values.image.imagePullPolicy }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
           {{- end }}
@@ -78,13 +81,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthy
-              port: 8080
+              port: http
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8080
+              port: http
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           resources:
