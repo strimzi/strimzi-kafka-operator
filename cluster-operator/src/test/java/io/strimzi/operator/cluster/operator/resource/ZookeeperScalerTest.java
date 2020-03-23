@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.operator.MockCertManager;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -47,6 +48,16 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZookeeperScalerTest {
     private static Vertx vertx;
+
+    // Shared values used in tests
+    String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
+    Secret dummyCaSecret = new SecretBuilder()
+            .addToData(Ca.CA_CRT, MockCertManager.clusterCaCert())
+            .build();
+    Secret dummyCoSecret = new SecretBuilder()
+            .addToData("cluster-operator.password", dummyBase64Value)
+            .addToData("cluster-operator.p12", dummyBase64Value)
+            .build();
 
     @BeforeAll
     public static void initVertx() {
@@ -158,16 +169,6 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testConnectionTimeout(VertxTestContext context)  {
-        String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
-        Secret dummyCaSecret = new SecretBuilder()
-                .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)
-                .addToData(Ca.CA_STORE, dummyBase64Value)
-                .build();
-        Secret dummyCoSecret = new SecretBuilder()
-                .addToData("cluster-operator.password", dummyBase64Value)
-                .addToData("cluster-operator.p12", dummyBase64Value)
-                .build();
-
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
 
@@ -189,16 +190,6 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testNoChange(VertxTestContext context) throws KeeperException, InterruptedException {
-        String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
-        Secret dummyCaSecret = new SecretBuilder()
-                .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)
-                .addToData(Ca.CA_STORE, dummyBase64Value)
-                .build();
-        Secret dummyCoSecret = new SecretBuilder()
-                .addToData("cluster-operator.password", dummyBase64Value)
-                .addToData("cluster-operator.p12", dummyBase64Value)
-                .build();
-
         String config = "server.1=127.0.0.1:28880:38880:participant;127.0.0.1:21810\n" +
                 "version=100000000b";
 
@@ -225,16 +216,6 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testWithChange(VertxTestContext context) throws KeeperException, InterruptedException {
-        String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
-        Secret dummyCaSecret = new SecretBuilder()
-                .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)
-                .addToData(Ca.CA_STORE, dummyBase64Value)
-                .build();
-        Secret dummyCoSecret = new SecretBuilder()
-                .addToData("cluster-operator.password", dummyBase64Value)
-                .addToData("cluster-operator.p12", dummyBase64Value)
-                .build();
-
         String config = "server.1=127.0.0.1:28880:38880:participant;127.0.0.1:21810\n" +
                 "server.2=127.0.0.1:28881:38881:participant;127.0.0.1:21811\n" +
                 "version=100000000b";
@@ -266,21 +247,8 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testWhenThrows(VertxTestContext context) throws KeeperException, InterruptedException {
-        String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
-        Secret dummyCaSecret = new SecretBuilder()
-                .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)
-                .addToData(Ca.CA_STORE, dummyBase64Value)
-                .build();
-        Secret dummyCoSecret = new SecretBuilder()
-                .addToData("cluster-operator.password", dummyBase64Value)
-                .addToData("cluster-operator.p12", dummyBase64Value)
-                .build();
-
         String config = "server.1=127.0.0.1:28880:38880:participant;127.0.0.1:21810\n" +
                 "server.2=127.0.0.1:28881:38881:participant;127.0.0.1:21811\n" +
-                "version=100000000b";
-
-        String updated = "server.1=127.0.0.1:28880:38880:participant;127.0.0.1:21810\n" +
                 "version=100000000b";
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
@@ -307,29 +275,6 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
-        String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
-        Secret dummyCaSecret = new SecretBuilder()
-                .addToData(Ca.CA_STORE_PASSWORD, dummyBase64Value)
-                .addToData(Ca.CA_STORE, dummyBase64Value)
-                .build();
-        Secret dummyCoSecret = new SecretBuilder()
-                .addToData("cluster-operator.password", dummyBase64Value)
-                .addToData("cluster-operator.p12", dummyBase64Value)
-                .build();
-
-        /*ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
-        ZooKeeper.States mockZooStates = mock(ZooKeeper.States.class);
-        when(mockZooStates.isAlive()).thenReturn(false);
-        when(mockZooStates.isConnected()).thenReturn(false);
-        when(mockZooAdmin.getState()).thenReturn(mockZooStates);
-
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                return mockZooAdmin;
-            }
-        };*/
-
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", dummyCaSecret, dummyCoSecret, 2_000);
 
         Checkpoint check = context.checkpoint();
@@ -337,23 +282,5 @@ public class ZookeeperScalerTest {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
             check.flag();
         })));
-    }
-
-    public enum ConnectedState {
-        CONNECTING, ASSOCIATING, CONNECTED, CONNECTEDREADONLY,
-        CLOSED, AUTH_FAILED, NOT_CONNECTED;
-
-        public boolean isAlive() {
-            return true;
-        }
-
-        /**
-         * Returns whether we are connected to a server (which
-         * could possibly be read-only, if this client is allowed
-         * to go to read-only mode)
-         * */
-        public boolean isConnected() {
-            return true;
-        }
     }
 }
