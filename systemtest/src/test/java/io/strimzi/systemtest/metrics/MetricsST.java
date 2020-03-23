@@ -33,7 +33,7 @@ import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -125,7 +125,7 @@ public class MetricsST extends BaseST {
     }
 
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange() {
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 

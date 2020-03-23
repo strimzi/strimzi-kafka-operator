@@ -190,7 +190,11 @@ public interface Constants {
      */
     String BRIDGE = "bridge";
     /**
-     * Tag for tests which use internal or external Kafka clients
+     * Tag for tests which use internal Kafka clients (used clients in cluster)
      */
-    String CLIENTS_USED = "clients";
+    String INTERNAL_CLIENTS_USED = "internalclients";
+    /**
+     * Tag for tests which use external Kafka clients (called from test code)
+     */
+    String EXTERNAL_CLIENTS_USED = "externalclients";
 }

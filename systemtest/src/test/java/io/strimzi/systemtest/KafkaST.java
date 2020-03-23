@@ -87,7 +87,8 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -523,7 +524,7 @@ class KafkaST extends BaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous() {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -554,7 +555,7 @@ class KafkaST extends BaseST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -600,7 +601,7 @@ class KafkaST extends BaseST {
      */
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha() throws InterruptedException {
         String kafkaUsername = "my-user";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -655,7 +656,7 @@ class KafkaST extends BaseST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha() {
         String kafkaUsername = "my-user";
         int messagesCount = 200;
@@ -1093,7 +1094,7 @@ class KafkaST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(CLIENTS_USED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -1184,7 +1185,7 @@ class KafkaST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(CLIENTS_USED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -1213,7 +1214,7 @@ class KafkaST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(CLIENTS_USED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -1240,7 +1241,7 @@ class KafkaST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(CLIENTS_USED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -1404,7 +1405,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize() {
         String[] diskSizes = {"70Gi", "20Gi"};
         int kafkaRepl = 2;
@@ -1486,7 +1487,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster() throws Exception {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1768,7 +1769,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk() {
         String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
@@ -1832,7 +1833,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles() {
         String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         Map<String, Object> kafkaConfig = new HashMap<>();

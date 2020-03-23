@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.systemtest.Constants.CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
@@ -64,7 +64,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
-@Tag(CLIENTS_USED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class OauthPlainST extends OauthBaseST {
 
     private OauthKafkaClient oauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);

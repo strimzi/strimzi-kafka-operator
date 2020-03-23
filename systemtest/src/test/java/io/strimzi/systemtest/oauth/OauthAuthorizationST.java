@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static io.strimzi.systemtest.Constants.CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
-@Tag(CLIENTS_USED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class OauthAuthorizationST extends OauthBaseST {
 
     private OauthKafkaClient teamAOauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);
