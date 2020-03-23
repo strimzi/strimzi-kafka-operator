@@ -18,6 +18,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,5 +182,41 @@ public class Util {
      */
     public static byte[] decodeFromSecret(Secret secret, String key) {
         return Base64.getDecoder().decode(secret.getData().get(key));
+    }
+
+    /**
+     * Create a Truststore file containing the given {@code certificate} and protected with {@code password}.
+     * The file will be set to get deleted when the JVM exist.
+     *
+     * @param prefix Prefix which will be used for the filename
+     * @param suffix Suffix which will be used for the filename
+     * @param certificate X509 certificate to put inside the Truststore
+     * @param password Password protecting the Truststore
+     * @return File with the Truststore
+     */
+    public static File createFileTrustStore(String prefix, String suffix, X509Certificate certificate, char[] password) {
+        try {
+            KeyStore trustStore = null;
+            trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(null, password);
+            trustStore.setEntry(certificate.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(certificate), null);
+
+            File f = null;
+            try {
+                f = File.createTempFile(prefix, suffix);
+                f.deleteOnExit();
+                try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
+                    trustStore.store(os, password);
+                }
+                return f;
+            } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
+                if (f != null && !f.delete()) {
+                    LOGGER.warn("Failed to delete temporary file in exception handler");
+                }
+                throw e;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
