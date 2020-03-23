@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -211,6 +212,7 @@ class CustomResourceStatusST extends BaseST {
     @Test
     @Tag(CONNECT)
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorStatus() {
         String connectUrl = KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083);
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
@@ -264,6 +266,7 @@ class CustomResourceStatusST extends BaseST {
     @Test
     @OpenShiftOnly
     @Tag(CONNECT_S2I)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectS2IStatus() {
         String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_CLUSTER_NAME);
         String connectS2IUrl = KafkaConnectS2IResources.url(CONNECTS2I_CLUSTER_NAME, NAMESPACE, 8083);
@@ -326,6 +329,7 @@ class CustomResourceStatusST extends BaseST {
 
     @Test
     @Tag(MIRROR_MAKER2)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaMirrorMaker2Status() {
         String mm2Url = KafkaMirrorMaker2Resources.url(CLUSTER_NAME, NAMESPACE, 8083);
         String targetClusterName = "target-cluster";

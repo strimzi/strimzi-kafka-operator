@@ -53,6 +53,7 @@ import java.util.concurrent.TimeoutException;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
@@ -68,6 +69,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
 @Tag(CONNECT)
+@Tag(CONNECT_COMPONENTS)
 class ConnectST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);

@@ -52,6 +52,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -65,6 +66,7 @@ import static org.hamcrest.Matchers.not;
 @OpenShiftOnly
 @Tag(REGRESSION)
 @Tag(CONNECT_S2I)
+@Tag(CONNECT_COMPONENTS)
 class ConnectS2IST extends BaseST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";

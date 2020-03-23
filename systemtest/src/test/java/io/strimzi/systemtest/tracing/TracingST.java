@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -160,6 +161,7 @@ public class TracingST extends BaseST {
 
     @Test
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testConnectService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
@@ -593,6 +595,7 @@ public class TracingST extends BaseST {
     @Test
     @Tag(CONNECT)
     @Tag(MIRROR_MAKER)
+    @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
@@ -755,6 +758,7 @@ public class TracingST extends BaseST {
     @Test
     @OpenShiftOnly
     @Tag(CONNECT_S2I)
+    @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()

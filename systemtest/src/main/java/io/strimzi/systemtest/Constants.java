@@ -182,7 +182,15 @@ public interface Constants {
      */
     String MIRROR_MAKER2 = "mirrormaker2";
     /**
+     * Tag for tests which deploys any of KafkaConnect, KafkaConnects2i, KafkaConnector, KafkaMirrorMaker2
+     */
+    String CONNECT_COMPONENTS = "connectcomponents";
+    /**
      * Tag for tests which deploys KafkaBridge resource
      */
     String BRIDGE = "bridge";
+    /**
+     * Tag for tests which use internal or external Kafka clients
+     */
+    String CLIENTS_USED = "clients";
 }
