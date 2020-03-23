@@ -226,4 +226,22 @@ public class StUtils {
         jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth).getValue(0));
         return jsonArray;
     }
+
+    public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
+        boolean isJSON = false;
+
+        for (String podName : pods.keySet()) {
+            String logs = kubeClient().logs(podName, containerName).replaceFirst("([^{]+)", "");
+            try {
+                new JsonObject(logs);
+                LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
+                isJSON = true;
+            } catch (Exception e) {
+                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
+                isJSON = false;
+                break;
+            }
+        }
+        return isJSON;
+    }
 }
