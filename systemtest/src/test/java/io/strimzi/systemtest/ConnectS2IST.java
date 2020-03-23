@@ -103,7 +103,6 @@ class ConnectS2IST extends BaseST {
 
         String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
 
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
         assertThat(connectorStatus, containsString("RUNNING"));
     }
 
