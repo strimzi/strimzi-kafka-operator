@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
@@ -153,6 +154,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
+    @Tag(CLIENTS_USED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -432,6 +434,7 @@ class ConnectS2IST extends BaseST {
 
     @Test
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(CLIENTS_USED)
     void testMultiNodeKafkaConnectS2IWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectS2IClusterName = "connect-s2i-cluster";

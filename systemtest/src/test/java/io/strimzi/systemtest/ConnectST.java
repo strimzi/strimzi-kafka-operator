@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -127,6 +128,7 @@ class ConnectST extends BaseST {
     @Tag(ACCEPTANCE)
     @Tag(TRAVIS)
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(CLIENTS_USED)
     void testKafkaConnectWithFileSinkPlugin() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -170,6 +172,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(CLIENTS_USED)
     void testKafkaConnectWithPlainAndScramShaAuthentication() throws InterruptedException, ExecutionException, TimeoutException, IOException {
         // Use a Kafka with plain listener disabled
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -244,6 +247,7 @@ class ConnectST extends BaseST {
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(CLIENTS_USED)
     void testKafkaConnectAndConnectorFileSinkPlugin() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -359,6 +363,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -437,6 +442,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -679,6 +685,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(CLIENTS_USED)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";

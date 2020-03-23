@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
+import static io.strimzi.systemtest.Constants.CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
@@ -76,6 +77,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @Tag(TRACING)
+@Tag(CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
 public class TracingST extends BaseST {
 

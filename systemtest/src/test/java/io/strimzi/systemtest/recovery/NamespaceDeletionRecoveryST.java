@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Random;
 
+import static io.strimzi.systemtest.Constants.CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -38,6 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(RECOVERY)
+@Tag(CLIENTS_USED)
 class NamespaceDeletionRecoveryST extends BaseST {
 
     static final String NAMESPACE = "namespace-recovery-cluster-test";
