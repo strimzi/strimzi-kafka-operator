@@ -200,23 +200,26 @@ public class Util {
             trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(null, password);
             trustStore.setEntry(certificate.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(certificate), null);
-
-            File f = null;
-            try {
-                f = File.createTempFile(prefix, suffix);
-                f.deleteOnExit();
-                try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                    trustStore.store(os, password);
-                }
-                return f;
-            } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
-                if (f != null && !f.delete()) {
-                    LOGGER.warn("Failed to delete temporary file in exception handler");
-                }
-                throw e;
-            }
+            return store(prefix, suffix, trustStore, password);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static File store(String prefix, String suffix, KeyStore trustStore, char[] password) throws Exception {
+        File f = null;
+        try {
+            f = File.createTempFile(prefix, suffix);
+            f.deleteOnExit();
+            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
+                trustStore.store(os, password);
+            }
+            return f;
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
+            if (f != null && !f.delete()) {
+                LOGGER.warn("Failed to delete temporary file in exception handler");
+            }
+            throw e;
         }
     }
 }
