@@ -93,7 +93,7 @@ public class ZookeeperScaler implements AutoCloseable {
             trustStore.load(null, password);
             trustStore.setEntry(caCertCO.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(caCertCO), null);
             return store(prefix, suffix, password, trustStore);
-        } catch (Exception e) {
+        } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException e) {
             throw new RuntimeException(e);
         }
     }
