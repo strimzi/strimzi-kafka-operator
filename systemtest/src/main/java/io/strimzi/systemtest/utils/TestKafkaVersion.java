@@ -27,17 +27,16 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public static synchronized TestKafkaVersion getInstance() {
         if (instance == null) {
             instance = new TestKafkaVersion();
+            try {
+                kafkaVersions = parseKafkaVersions();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return instance;
     }
 
-    private TestKafkaVersion() {
-        try {
-            kafkaVersions = parseKafkaVersions();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    private TestKafkaVersion() {}
 
     @JsonProperty("version")
     String version;
@@ -129,7 +128,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return version.equals(that.version);
     }
 
-    public static List<TestKafkaVersion> getKafkaVersions() {
+    public List<TestKafkaVersion> getKafkaVersions() {
         return kafkaVersions;
     }
 
@@ -161,7 +160,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
      *
      * @return A map of the kafka versions listed in the kafka-versions.yaml file where key is specific version
      */
-    public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
+    public Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
         return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
     }
 }
