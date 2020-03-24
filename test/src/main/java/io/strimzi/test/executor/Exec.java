@@ -163,6 +163,7 @@ public class Exec {
             ret = executor.execute(input, command, timeout);
             synchronized (LOCK) {
                 if (logToOutput) {
+                    LOGGER.info("Command: {}", command);
                     LOGGER.info("Return code: {}", ret);
                     LOGGER.info("stdout: \n{}", executor.out());
                     LOGGER.info("stderr: \n{}", executor.err());
