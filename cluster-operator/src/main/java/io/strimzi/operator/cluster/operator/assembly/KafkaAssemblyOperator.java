@@ -3072,7 +3072,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * @param sts Stateful set to which pod belongs
          * @param pod Pod to restart
-         * @param cas cas
+         * @param cas Certificate authorities to be checked for changes
          * @return null or empty if the restart is not needed, reason String otherwise
          */
         private String getReasonsToRestartPod(StatefulSet sts, Pod pod,
