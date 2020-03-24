@@ -105,94 +105,117 @@ public interface Constants {
      * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
      */
     String ACCEPTANCE = "acceptance";
+
     /**
      * Tag for regression tests which are stable.
      */
     String REGRESSION = "regression";
+
     /**
      * Tag for upgrade tests.
      */
     String UPGRADE = "upgrade";
+
     /**
      * Tag for acceptance tests executed during Travis builds.
      */
     String TRAVIS = "travis";
+
     /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";
+
     /**
      * Tag for scalability tests
      */
     String SCALABILITY = "scalability";
+
     /**
      * Tag for tests, which are working only on specific environment and we usually don't want to execute them on all environments.
      */
     String SPECIFIC = "specific";
+
     /**
      * Tag for tests, which are using NodePort.
      */
     String NODEPORT_SUPPORTED = "nodeport";
+
     /**
      * Tag for tests, which are using LoadBalancer.
      */
     String LOADBALANCER_SUPPORTED = "loadbalancer";
+
     /**
      * Tag for tests, which are using NetworkPolicies.
      */
     String NETWORKPOLICIES_SUPPORTED = "networkpolicies";
+
     /**
      * Tag for Prometheus tests
      */
     String PROMETHEUS = "prometheus";
+
     /**
      * Tag for Tracing tests
      */
     String TRACING = "tracing";
+
     /**
      * Tag for Helm tests
      */
     String HELM = "helm";
+
     /**
      * Tag for oauth tests
      */
     String OAUTH = "oauth";
+
     /**
      * Tag for recovery tests
      */
     String RECOVERY = "recovery";
+
     /**
      * Tag for tests which deploys KafkaConnector resource
      */
     String CONNECTOR_OPERATOR = "connectoroperator";
+
     /**
      * Tag for tests which deploys KafkaConnect resource
      */
     String CONNECT = "connect";
+
     /**
      * Tag for tests which deploys KafkaConnectS2I resource
      */
     String CONNECT_S2I = "connects2i";
+
     /**
      * Tag for tests which deploys KafkaMirrorMaker resource
      */
     String MIRROR_MAKER = "mirrormaker";
+
     /**
      * Tag for tests which deploys KafkaMirrorMaker2 resource
      */
     String MIRROR_MAKER2 = "mirrormaker2";
+
     /**
      * Tag for tests which deploys any of KafkaConnect, KafkaConnects2i, KafkaConnector, KafkaMirrorMaker2
      */
     String CONNECT_COMPONENTS = "connectcomponents";
+
     /**
      * Tag for tests which deploys KafkaBridge resource
      */
     String BRIDGE = "bridge";
+
     /**
      * Tag for tests which use internal Kafka clients (used clients in cluster)
      */
     String INTERNAL_CLIENTS_USED = "internalclients";
+
     /**
      * Tag for tests which use external Kafka clients (called from test code)
      */
