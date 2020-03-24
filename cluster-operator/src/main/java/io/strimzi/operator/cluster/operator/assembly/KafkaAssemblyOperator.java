@@ -120,8 +120,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Function;
 import java.util.TreeSet;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -685,9 +685,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!reason.isEmpty()) {
                 String reasons = reason.stream().collect(Collectors.joining(", "));
                 Future<Void> zkRollFuture;
-                Predicate<Pod> rollPodAndLogReason = pod -> {
+                Function<Pod, String> rollPodAndLogReason = pod -> {
                     log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
-                    return true;
+                    return reasons;
                 };
                 if (this.clusterCa.keyReplaced()) {
                     zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
@@ -742,7 +742,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
-                                return true;
+                                return "manual rolling update";
                             });
                         }
                     }
@@ -765,7 +765,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 log.debug("{}: Rolling Zookeeper pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
-                                return true;
+                                return "manual rolling update";
                             });
                         }
                     }
@@ -837,10 +837,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return kafkaSetOperations.maybeRollingUpdate(sts,
                     pod -> {
                         boolean notUpToDate = !isPodUpToDate(sts, pod);
+                        String reason = null;
                         if (notUpToDate) {
                             log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                            reason = "upgrade quiescence";
                         }
-                        return notUpToDate;
+                        return reason;
                     });
             } else {
                 return Future.succeededFuture();
@@ -1055,8 +1057,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(newSts, pod -> {
-                            log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                            return true;
+                            log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                            return "Upgrade phase 1 of " + (twoPhase ? 2 : 1) + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                         }).map(resultSts);
                     })
                     .compose(ss2 -> {
@@ -1113,8 +1115,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                        return true;
+                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                        return "Upgrade: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                     }))
                     .compose(ignored -> {
                         log.info("{}: {}, phase 2 of 2 completed", reconciliation, upgrade);
@@ -1211,8 +1213,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                            log.info("{}: Downgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                            return true;
+                            log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                            return "Downgrade phase 1 of " + phases + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                         }).map(resultSts);
                     })
                     .compose(ss2 -> {
@@ -1268,8 +1270,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
-                        return true;
+                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
+                        return "Upgrade phase 2 of 2: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName();
                     }))
                     .compose(ignored -> {
                         log.info("{}: {}, phase 2 of 2 completed", reconciliation, versionChange);
@@ -1383,7 +1385,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Scale-down and Scale-up might have change the STS. we should get a fresh one.
             return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                     .compose(sts -> zkSetOperations.maybeRollingUpdate(sts,
-                        pod -> isPodToRestart(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
+                        pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
                     .map(this);
         }
 
@@ -1600,7 +1602,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, pod -> {
                             String env = ModelUtils.getPodEnv(pod, ZookeeperCluster.ZOOKEEPER_NAME, ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT);
                             // If the Pod is not yet configured for current+1 nodes, we need to roll it
-                            return !String.valueOf(current + 1).equals(env);
+                            return String.valueOf(current + 1).equals(env) ? "Pod is not yet configured for current+1 nodes" : null;
                         }))
                         .compose(ignore -> zk34ScaleUp(current + 1, desired));
             } else {
@@ -2440,7 +2442,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)
+                    getReasonsToRestartPod(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -3067,75 +3069,58 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return podThumbprint.equals(stsThumbprint);
         }
 
-        private boolean isPodToRestart(StatefulSet sts, Pod pod,
+        /**
+         * @param sts Stateful set to which pod belongs
+         * @param pod Pod to restart
+         * @param cas Certificate authorities to be checked for changes
+         * @return null or empty if the restart is not needed, reason String otherwise
+         */
+        private String getReasonsToRestartPod(StatefulSet sts, Pod pod,
                                        boolean nodeCertsChange,
                                        Ca... cas) {
             if (pod == null)    {
                 // When the Pod doesn't exist, it doesn't need to be restarted.
                 // It will be created with new configuration.
-                return false;
+                return null;
             }
 
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
             boolean isCustomCertExternalListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER);
-            boolean isPodCaCertUpToDate = true;
-            boolean isCaCertsChanged = false;
-            boolean isFsResizeNeeded = false;
 
+            List<String> reasons = new ArrayList<>();
             for (Ca ca: cas) {
-                isCaCertsChanged |= ca.certRenewed() || ca.certsRemoved();
-                isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
-            }
-
-            boolean isPodToRestart = !isPodUpToDate;
-            isPodToRestart |= !isCustomCertTlsListenerUpToDate;
-            isPodToRestart |= !isCustomCertExternalListenerUpToDate;
-            isPodToRestart |= isCaCertsChanged;
-            isPodToRestart |= nodeCertsChange;
-            isPodToRestart |= !isPodCaCertUpToDate;
-
-            if (fsResizingRestartRequest.contains(pod.getMetadata().getName())) {
-                isFsResizeNeeded = true;
-            }
-            isPodToRestart |= isFsResizeNeeded;
-
-            if (log.isDebugEnabled()) {
-                List<String> reasons = new ArrayList<>();
-                for (Ca ca: cas) {
-                    if (ca.certRenewed()) {
-                        reasons.add(ca + " certificate renewal");
-                    }
-                    if (ca.certsRemoved()) {
-                        reasons.add(ca + " certificate removal");
-                    }
-                    if (!isPodCaCertUpToDate(pod, ca)) {
-                        reasons.add("Pod has old " + ca + " certificate generation");
-                    }
+                if (ca.certRenewed()) {
+                    reasons.add(ca + " certificate renewal");
                 }
-                if (!isPodUpToDate) {
-                    reasons.add("Pod has old generation");
+                if (ca.certsRemoved()) {
+                    reasons.add(ca + " certificate removal");
                 }
-                if (isFsResizeNeeded)   {
-                    reasons.add("file system needs to be resized");
-                }
-                if (!isCustomCertTlsListenerUpToDate)   {
-                    reasons.add("custom certificate on the TLS listener changes");
-                }
-                if (!isCustomCertExternalListenerUpToDate)   {
-                    reasons.add("custom certificate on the external listener changes");
-                }
-                if (nodeCertsChange) {
-                    reasons.add("server certificates changed");
-                }
-                if (!reasons.isEmpty()) {
-                    if (isPodToRestart) {
-                        log.debug("{}: Rolling pod {} due to {}",
-                                reconciliation, pod.getMetadata().getName(), reasons);
-                    }
+                if (!isPodCaCertUpToDate(pod, ca)) {
+                    reasons.add("Pod has old " + ca + " certificate generation");
                 }
             }
-            return isPodToRestart;
+            if (!isPodUpToDate) {
+                reasons.add("Pod has old generation");
+            }
+            if (fsResizingRestartRequest.contains(pod.getMetadata().getName()))   {
+                reasons.add("file system needs to be resized");
+            }
+            if (!isCustomCertTlsListenerUpToDate) {
+                reasons.add("custom certificate on the TLS listener changes");
+            }
+            if (!isCustomCertExternalListenerUpToDate) {
+                reasons.add("custom certificate on the external listener changes");
+            }
+            if (nodeCertsChange) {
+                reasons.add("server certificates changed");
+            }
+            if (!reasons.isEmpty()) {
+                log.debug("{}: Rolling pod {} due to {}",
+                        reconciliation, pod.getMetadata().getName(), reasons);
+                return String.join(", ", reasons);
+            }
+            return null;
         }
 
         private boolean isMaintenanceTimeWindowsSatisfied(Supplier<Date> dateSupplier) {

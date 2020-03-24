@@ -36,7 +36,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -129,7 +128,7 @@ public class KafkaRoller {
         runnable -> new Thread(runnable, "kafka-roller"));
 
     private ConcurrentHashMap<Integer, RestartContext> podToContext = new ConcurrentHashMap<>();
-    private Predicate<Pod> podNeedsRestart;
+    private Function<Pod, String> podNeedsRestart;
 
     /**
      * Asynchronously perform a rolling restart of some subset of the pods,
@@ -139,7 +138,7 @@ public class KafkaRoller {
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
      * @return A Future completed when rolling is complete.
      */
-    Future<Void> rollingRestart(Predicate<Pod> podNeedsRestart) {
+    Future<Void> rollingRestart(Function<Pod, String> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         List<Future> futures = new ArrayList<>(numPods);
         List<Integer> podIds = new ArrayList<>(numPods);
@@ -216,7 +215,7 @@ public class KafkaRoller {
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();
-                    log.debug("Could not roll pod {} due to {}, retrying after at least {}ms",
+                    log.info("Could not roll pod {} due to {}, retrying after at least {}ms",
                             podId, e, delay1);
                     schedule(podId, delay1, TimeUnit.MILLISECONDS);
                 }
@@ -243,8 +242,9 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + podName(podId), e);
         }
 
-        if (pod != null && podNeedsRestart.test(pod)) {
-            log.debug("Pod {} needs to be restarted", podId);
+        String reasonToRestartPod = podNeedsRestart.apply(pod);
+        if (reasonToRestartPod != null && !reasonToRestartPod.isEmpty()) {
+            log.info("Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
             Admin adminClient = null;
             try {
                 try {
