@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -17,17 +18,17 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
@@ -46,7 +47,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -81,7 +81,6 @@ class RollingUpdateST extends BaseST {
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-        int messageCount = 50;
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
@@ -95,9 +94,9 @@ class RollingUpdateST extends BaseST {
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
 
-        assertThat(sent, is(messageCount));
+        assertThat(sent, is(MESSAGE_COUNT));
 
         LOGGER.info("Update resources for pods");
 
@@ -109,19 +108,25 @@ class RollingUpdateST extends BaseST {
                     .build());
         });
 
-        // first part
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
-        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
+            p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
-        // second part
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        TestUtils.waitFor("Waiting for some zookeeper pod to be in the pending phase because of selected high cpu resource",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
+                        .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                LOGGER.info("Filtered pods are {}", filteredPod.toString());
+                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+            }
+        );
 
-        assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
@@ -133,16 +138,16 @@ class RollingUpdateST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
-        sent = internalKafkaClient.sendMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS");
-        assertThat(sent, is(messageCount));
-        received = internalKafkaClient.receiveMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        sent = internalKafkaClient.sendMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
+        assertThat(sent, is(MESSAGE_COUNT));
+        received = internalKafkaClient.receiveMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
     }
 
@@ -181,18 +186,25 @@ class RollingUpdateST extends BaseST {
                     .build());
         });
 
-        // Wait for first reconciliation
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-        // Wait for second reconciliation and check that pods are not rolled
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
-        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)));
 
-        assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
+                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                LOGGER.info("Filtered pods are {}", filteredPod.toString());
+                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+            }
+        );
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
+            p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
+
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
@@ -204,8 +216,7 @@ class RollingUpdateST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
-        assertThat(received, is(sent));
+        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -213,8 +224,9 @@ class RollingUpdateST extends BaseST {
 
         sent = internalKafkaClient.sendMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
         assertThat(sent, is(MESSAGE_COUNT));
-        received = internalKafkaClient.receiveMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
+        int received = internalKafkaClient.receiveMessagesTls(newTopicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS", "group" + new Random().nextInt(Integer.MAX_VALUE));
         assertThat(received, is(sent));
+
     }
 
     @Test
@@ -362,10 +374,8 @@ class RollingUpdateST extends BaseST {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
-        // Wait for first reconciliation
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-        // Wait for second reconciliation and check that pods are not rolled
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
+
         Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         for (Map.Entry<String, String> entry : kafkaPodsScaleDown.entrySet()) {
@@ -572,7 +582,7 @@ class RollingUpdateST extends BaseST {
             kafka.getSpec().getZookeeper().setMetrics(singletonMap("somethingelse", "changed"));
         });
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
@@ -612,7 +622,7 @@ class RollingUpdateST extends BaseST {
         configMap.getData().put("new.kafka.config", "new.config.value");
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
 
-        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
 
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
@@ -715,31 +725,6 @@ class RollingUpdateST extends BaseST {
         LOGGER.info("Cluster Operator pod deleted");
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-    }
-
-    void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
-        List<String> podStatuses = kubeClient().listPods().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(rolledComponent)
-                        && p.getMetadata().getLabels().containsKey(Labels.STRIMZI_KIND_LABEL)
-                        && p.getMetadata().getLabels().containsValue("Kafka"))
-                .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
-
-        assertThat(rolledComponent + " doesn't have any pod in desired state: \"Pending\"", podStatuses.contains("Pending"));
-
-        Map<String, Long> statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        LOGGER.info("{} pods statutes: {}", rolledComponent, statusCount);
-
-        assertThat(statusCount.get("Pending"), is(1L));
-        assertThat(statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size() - 1)));
-
-        podStatuses = kubeClient().listPods().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(stableComponent))
-                .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
-
-        statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        LOGGER.info("{} pods statutes: {}", stableComponent, statusCount);
-
-        assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
