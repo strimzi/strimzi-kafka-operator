@@ -203,7 +203,8 @@ public class OauthPlainST extends OauthBaseST {
                             MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
                     return MESSAGE_COUNT == oauthConsumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
                 } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.info("Consumer doesn't received messages {}", e.getMessage());
+                    LOGGER.error("Consumer doesn't received messages {}", e.getMessage());
+                    e.printStackTrace();
                     return false;
                 }
             });
@@ -287,7 +288,7 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
+        TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 try {
@@ -295,7 +296,8 @@ public class OauthPlainST extends OauthBaseST {
                          MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
                     return MESSAGE_COUNT == oauthConsumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
                 } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.info("Consumer doesn't received messages {}", e.getMessage());
+                    LOGGER.error("Consumer doesn't received messages {}", e.getMessage());
+                    e.printStackTrace();
                     return false;
                 }
             });
