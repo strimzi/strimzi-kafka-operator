@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -31,7 +32,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -735,7 +735,7 @@ class SecurityST extends BaseST {
             kubeClient().deleteSecret(s.getMetadata().getName());
         }
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         for (Secret s : secrets) {
@@ -1262,8 +1262,15 @@ class SecurityST extends BaseST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount);
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME).stream().filter(
-            pod -> !pod.getMetadata().getName().endsWith("-kafka-0")).collect(Collectors.toList()));
+        TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
+                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                LOGGER.info("Filtered pods are {}", filteredPod.toString());
+                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+            }
+        );
 
         List<String> podStatuses = kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
@@ -1271,7 +1278,7 @@ class SecurityST extends BaseST {
                     && p.getMetadata().getLabels().containsValue("Kafka"))
             .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 
-        LOGGER.info("First pod of kafka is in pending phase because of selected cpu high resource");
+        LOGGER.info("Some of pod kafka is in pending phase because of selected cpu high resource");
         assertThat(podStatuses, hasItem("Pending"));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {

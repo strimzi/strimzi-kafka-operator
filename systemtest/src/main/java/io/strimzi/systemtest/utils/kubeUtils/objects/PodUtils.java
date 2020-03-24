@@ -217,4 +217,35 @@ public class PodUtils {
             LOGGER.info("Kafka pod label {} change to {}", labelKey, null);
         }
     }
+
+    /**
+     * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
+     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
+     * pod is considered as a stable. Otherwise this procedure will be repeat.
+     * @param pods all pods that will be verified
+     */
+    public static void waitUntilPodsStability(List<Pod> pods) {
+        int[] stabilityCounter = {0};
+
+        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                for (Pod pod : pods) {
+                    if (pod.getStatus().getPhase().equals("Running")) {
+                        LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
+                            pod.getMetadata().getName(), pod.getStatus().getPhase(),
+                            Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
+                    } else {
+                        LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        return false;
+                    }
+                }
+                stabilityCounter[0]++;
+
+                if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
+                    LOGGER.info("All pods are stable {}", pods.toString());
+                    return true;
+                }
+                return false;
+            });
+    }
 }

@@ -25,10 +25,10 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
@@ -109,7 +109,7 @@ class RollingUpdateST extends BaseST {
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).stream().filter(
             p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
         TestUtils.waitFor("Waiting for some zookeeper pod to be in the pending phase because of selected high cpu resource",
@@ -122,7 +122,7 @@ class RollingUpdateST extends BaseST {
             }
         );
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
@@ -186,7 +186,7 @@ class RollingUpdateST extends BaseST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)));
 
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -199,7 +199,7 @@ class RollingUpdateST extends BaseST {
         );
 
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).stream().filter(
             p -> p.getStatus().getPhase().equals("Running")).collect(Collectors.toList()));
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT);
@@ -372,7 +372,7 @@ class RollingUpdateST extends BaseST {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
 
         Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -580,7 +580,7 @@ class RollingUpdateST extends BaseST {
             kafka.getSpec().getZookeeper().setMetrics(singletonMap("somethingelse", "changed"));
         });
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
@@ -620,7 +620,7 @@ class RollingUpdateST extends BaseST {
         configMap.getData().put("new.kafka.config", "new.config.value");
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
 
-        StUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
 
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));

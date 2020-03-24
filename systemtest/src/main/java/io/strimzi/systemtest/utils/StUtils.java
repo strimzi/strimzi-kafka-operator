@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
@@ -47,37 +46,6 @@ public class StUtils {
     private static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 
     private StUtils() { }
-
-    /**
-     * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
-     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
-     * pod is considered as a stable. Otherwise this procedure will be repeat.
-     * @param pods all pods that will be verified
-     */
-    public static void waitUntilPodsStability(List<Pod> pods) {
-        int[] stabilityCounter = {0};
-
-        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                for (Pod pod : pods) {
-                    if (pod.getStatus().getPhase().equals("Running")) {
-                        LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
-                                pod.getMetadata().getName(), pod.getStatus().getPhase(),
-                                Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
-                    } else {
-                        LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
-                        return false;
-                    }
-                }
-                stabilityCounter[0]++;
-
-                if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
-                    LOGGER.info("All pods are stable {}", pods.toString());
-                    return true;
-                }
-                return false;
-            });
-    }
 
     public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
         TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
