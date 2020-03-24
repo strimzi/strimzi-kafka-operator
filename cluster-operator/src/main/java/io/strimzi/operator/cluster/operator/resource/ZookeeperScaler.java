@@ -18,17 +18,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.client.ZKClientConfig;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,43 +70,11 @@ public class ZookeeperScaler implements AutoCloseable {
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
         PasswordGenerator pg = new PasswordGenerator(12);
         trustStorePassword = pg.generate();
-        trustStoreFile = setupTrustStore(getClass().getName(), "p12", trustStorePassword.toCharArray(), Ca.cert(clusterCaCertSecret, Ca.CA_CRT));
+        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
 
         // Setup keystore from PKCS12 in cluster-operator secret
         keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
         keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
-    }
-
-    private File setupTrustStore(String prefix, String suffix, char[] password, X509Certificate caCertCO) {
-        try {
-            KeyStore trustStore = null;
-            trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(null, password);
-            trustStore.setEntry(caCertCO.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(caCertCO), null);
-            return store(prefix, suffix, password, trustStore);
-        } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private File store(String prefix, String suffix, char[] password, KeyStore trustStore) throws RuntimeException {
-        File f = null;
-        try {
-            f = File.createTempFile(prefix, suffix);
-            f.deleteOnExit();
-
-            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                trustStore.store(os, password);
-            }
-
-            return f;
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
-            if (f != null && !f.delete()) {
-                log.warn("Failed to delete temporary file in exception handler");
-            }
-
-            throw new RuntimeException(e);
-        }
     }
 
     /**
