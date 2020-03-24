@@ -22,8 +22,8 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
 
     @Override
     public Admin createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-        PasswordGenerator pg = new PasswordGenerator(12);
         Admin ac;
+        PasswordGenerator pg = new PasswordGenerator(12);
         String trustStorePassword = pg.generate();
         File truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
         try {
