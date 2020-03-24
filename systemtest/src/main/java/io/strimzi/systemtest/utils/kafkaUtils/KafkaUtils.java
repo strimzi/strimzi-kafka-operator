@@ -50,8 +50,13 @@ public class KafkaUtils {
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
         TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-                Condition condition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0);
-                return condition.getMessage().matches(message);
+                List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                for (Condition condition : conditions) {
+                    if (condition.getMessage().matches(message)) {
+                        return true;
+                    }
+                }
+                return false;
             });
     }
 
