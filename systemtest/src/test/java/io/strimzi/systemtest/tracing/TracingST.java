@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -57,6 +58,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
@@ -71,6 +77,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @Tag(TRACING)
+@Tag(EXTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
 public class TracingST extends BaseST {
 
@@ -155,6 +162,8 @@ public class TracingST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testConnectService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
@@ -467,6 +476,7 @@ public class TracingST extends BaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
@@ -585,6 +595,9 @@ public class TracingST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECT)
+    @Tag(MIRROR_MAKER)
+    @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
@@ -745,6 +758,9 @@ public class TracingST extends BaseST {
     }
 
     @Test
+    @OpenShiftOnly
+    @Tag(CONNECT_S2I)
+    @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()

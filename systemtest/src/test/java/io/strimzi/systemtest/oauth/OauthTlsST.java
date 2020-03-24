@@ -48,6 +48,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -61,6 +65,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class OauthTlsST extends OauthBaseST {
 
     private OauthKafkaClient oauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);
@@ -82,6 +87,8 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As an oauth kafka connect, i am able to sink messages from kafka broker topic using encrypted communication.")
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
                 MESSAGE_COUNT, "SSL");
@@ -219,6 +226,7 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As a oauth mirror maker, i am able to replicate topic data using using encrypted communication")
     @Test
+    @Tag(MIRROR_MAKER)
     void testMirrorMaker() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
             MESSAGE_COUNT, "SSL");

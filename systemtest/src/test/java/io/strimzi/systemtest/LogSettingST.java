@@ -48,6 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -57,6 +62,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@Tag(CONNECT)
+@Tag(MIRROR_MAKER)
+@Tag(MIRROR_MAKER2)
+@Tag(BRIDGE)
+@Tag(CONNECT_COMPONENTS)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends BaseST {
     static final String NAMESPACE = "log-setting-cluster-test";
