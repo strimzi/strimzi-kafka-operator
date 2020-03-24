@@ -66,7 +66,7 @@ class UserST extends BaseST {
         KafkaUserUtils.waitForKafkaUserCreation(saslUserWithLongName);
 
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
-            .editSpec()
+            .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
             .endSpec()
@@ -86,45 +86,43 @@ class UserST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testUpdateUser() {
-        String kafkaUser = "test-user";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-
-        String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
+        String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
-        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
-        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
+        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get().getStatus().getObservedGeneration();
 
-        KafkaUserResource.replaceUserResource(kafkaUser, ku -> {
+        KafkaUserResource.replaceUserResource(USER_NAME, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
-        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, kafkaUser);
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, USER_NAME);
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
-        kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
+        kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get();
+        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get();
         kafkaUserAsJson = TestUtils.toJsonString(kUser);
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
         Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).delete(kUser);
-        KafkaUserUtils.waitForKafkaUserDeletion(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserDeletion(USER_NAME);
     }
 
     @Tag(SCALABILITY)

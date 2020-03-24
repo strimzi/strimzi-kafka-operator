@@ -9,6 +9,7 @@ import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule;
@@ -120,7 +121,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             return plainProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new WaitException(e);
         }
     }
 
@@ -161,7 +162,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             return tlsProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new WaitException(e);
         }
     }
 
@@ -198,7 +199,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             return plainConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new WaitException(e);
         }
     }
 
@@ -242,7 +243,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             return tlsConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new WaitException(e);
         }
     }
 
