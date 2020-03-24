@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -64,8 +65,14 @@ public class ZookeeperScaler implements AutoCloseable {
         this.zooAdminProvider = zooAdminProvider;
         this.zookeeperConnectionString = zookeeperConnectionString;
         this.operationTimeoutMs = operationTimeoutMs;
-        trustStorePassword = new String(Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
-        trustStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
+
+        // Setup truststore from PEM file in cluster CA secret
+        // We cannot use P12 because of custom CAs which for simplicity provide only PEM
+        PasswordGenerator pg = new PasswordGenerator(12);
+        trustStorePassword = pg.generate();
+        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
+
+        // Setup keystore from PKCS12 in cluster-operator secret
         keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
         keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
     }
