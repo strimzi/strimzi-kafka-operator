@@ -4,7 +4,10 @@
  */
 package io.strimzi.systemtest.tracing;
 
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -47,6 +50,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -970,6 +974,33 @@ public class TracingST extends BaseST {
         }
 
         installJaegerInstance();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+            .withNewApiVersion("networking.k8s.io/v1")
+            .withNewKind("NetworkPolicy")
+            .withNewMetadata()
+                .withName("jaeger-allow")
+            .endMetadata()
+            .withNewSpec()
+                .addNewIngress()
+                    .addNewFrom()
+                        .withPodSelector(new LabelSelectorBuilder().addToMatchLabels(Collections.singletonMap("tests", "user-app")).build())
+                    .endFrom()
+                    .addNewPort()
+                        .withNewPort(16686)
+                        .withNewProtocol("TCP")
+                    .endPort()
+                  .endIngress()
+                .withNewPodSelector()
+                    .addToMatchLabels("app", "jaeger")
+                .endPodSelector()
+                .withPolicyTypes("Ingress")
+            .endSpec()
+            .build();
+
+        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        KubernetesResource.deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy for jaeger successfully applied");
     }
 
     /**
