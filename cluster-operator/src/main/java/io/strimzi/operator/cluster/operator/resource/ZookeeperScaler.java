@@ -79,7 +79,6 @@ public class ZookeeperScaler implements AutoCloseable {
         PasswordGenerator pg = new PasswordGenerator(12);
         trustStorePassword = pg.generate();
         trustStoreFile = setupTrustStore(getClass().getName(), "p12", trustStorePassword.toCharArray(), Ca.cert(clusterCaCertSecret, Ca.CA_CRT));
-        //trustStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
 
         // Setup keystore from PKCS12 in cluster-operator secret
         keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
