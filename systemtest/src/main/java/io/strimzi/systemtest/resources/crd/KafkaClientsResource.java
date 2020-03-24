@@ -53,13 +53,11 @@ public class KafkaClientsResource {
             .withNewSpec()
                 .withNewSelector()
                     .addToMatchLabels("app", kafkaClientsName)
-                    .addToMatchLabels("tests", "user-app")
                 .endSelector()
                 .withReplicas(1)
                 .withNewTemplate()
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
-                        .addToLabels("tests", "user-app")
                     .endMetadata()
                     .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
                 .endTemplate()
@@ -219,7 +217,6 @@ public class KafkaClientsResource {
 
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
-        consumerLabels.put("tests", "user-app");
 
         return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
                     .withNewMetadata()
@@ -293,7 +290,6 @@ public class KafkaClientsResource {
 
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
-        producerLabels.put("tests", "user-app");
 
         return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
             .withNewMetadata()
@@ -363,7 +359,6 @@ public class KafkaClientsResource {
 
         Map<String, String> kafkaStreamLabels = new HashMap<>();
         kafkaStreamLabels.put("app", kafkaStreamsName);
-        kafkaStreamLabels.put("tests", "user-app");
 
         return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
             .withNewMetadata()
