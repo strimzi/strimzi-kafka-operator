@@ -1265,7 +1265,7 @@ class SecurityST extends BaseST {
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
+                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
                 LOGGER.info("Filtered pods are {}", filteredPod.toString());
                 return filteredPod.get(0).getStatus().getPhase().equals("Pending");
