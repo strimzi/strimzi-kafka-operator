@@ -22,10 +22,10 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
 
     @Override
     public Admin createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-
         Admin ac;
-        String trustStorePassword = new String(Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE_PASSWORD), StandardCharsets.US_ASCII);
-        File truststoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(clusterCaCertSecret, Ca.CA_STORE));
+        PasswordGenerator pg = new PasswordGenerator(12);
+        String trustStorePassword = pg.generate();
+        File truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
         try {
             String keyStorePassword = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
             File keystoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
