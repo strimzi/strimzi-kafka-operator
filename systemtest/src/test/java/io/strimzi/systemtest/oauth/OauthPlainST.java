@@ -48,6 +48,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -59,6 +64,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class OauthPlainST extends OauthBaseST {
 
     private OauthKafkaClient oauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);
@@ -78,6 +84,8 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As an oauth kafka connect, I should be able to sink messages from kafka broker topic.")
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
@@ -122,6 +130,7 @@ public class OauthPlainST extends OauthBaseST {
 
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
+    @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMaker() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,
@@ -200,6 +209,8 @@ public class OauthPlainST extends OauthBaseST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
+    @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerMirrorMaker2() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = oauthKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = oauthKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT,

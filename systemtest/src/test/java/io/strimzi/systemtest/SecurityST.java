@@ -66,6 +66,8 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -315,6 +317,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewClusterCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME)),
@@ -327,6 +330,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewClientsCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clientsCaCertificateSecretName(CLUSTER_NAME)),
@@ -340,6 +344,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewAllCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME),
@@ -471,6 +476,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoReplaceClusterCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME)),
                 true,
@@ -479,6 +485,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clientsCaKeySecretName(CLUSTER_NAME)),
                 false,
@@ -487,6 +494,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoReplaceAllCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME),
                 clientsCaKeySecretName(CLUSTER_NAME)),
@@ -524,6 +532,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
@@ -641,6 +650,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow() {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
@@ -701,6 +711,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
 
@@ -759,6 +770,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithPlainListener() {
         String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
         String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
@@ -836,6 +848,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NETWORKPOLICIES_SUPPORTED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithTlsListener() {
         String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
         String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
@@ -1024,6 +1037,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite() throws Exception {
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
@@ -1123,6 +1137,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
             .editMetadata()
@@ -1216,6 +1231,7 @@ class SecurityST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()

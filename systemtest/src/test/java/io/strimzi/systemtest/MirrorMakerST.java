@@ -39,6 +39,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -47,6 +49,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@Tag(MIRROR_MAKER)
+@Tag(INTERNAL_CLIENTS_USED)
 public class MirrorMakerST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);

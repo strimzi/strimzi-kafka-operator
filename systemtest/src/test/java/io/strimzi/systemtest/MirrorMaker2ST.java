@@ -38,6 +38,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +50,9 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
+@Tag(MIRROR_MAKER2)
+@Tag(CONNECT_COMPONENTS)
+@Tag(INTERNAL_CLIENTS_USED)
 class MirrorMaker2ST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMaker2ST.class);

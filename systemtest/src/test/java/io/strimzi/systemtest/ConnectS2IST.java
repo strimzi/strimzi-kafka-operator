@@ -52,6 +52,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -63,6 +67,8 @@ import static org.hamcrest.Matchers.not;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
+@Tag(CONNECT_S2I)
+@Tag(CONNECT_COMPONENTS)
 class ConnectS2IST extends BaseST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
@@ -107,6 +113,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-11";
         // Calls to Connect API are executed from kafka-0 pod
@@ -149,6 +156,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -349,6 +357,7 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
@@ -427,6 +436,8 @@ class ConnectS2IST extends BaseST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testMultiNodeKafkaConnectS2IWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectS2IClusterName = "connect-s2i-cluster";
