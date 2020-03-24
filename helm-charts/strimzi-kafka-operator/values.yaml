@@ -8,7 +8,7 @@ watchAnyNamespace: false
 image:
   repository: strimzi
   name: operator
-  tag: 0.17.0-rc3
+  tag: 0.17.0-rc4
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
@@ -26,57 +26,57 @@ zookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 kafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 topicOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.17.0-rc3
+    tag: 0.17.0-rc4
 userOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.17.0-rc3
+    tag: 0.17.0-rc4
 kafkaInit:
   image:
     repository: strimzi
     name: operator
-    tag: 0.17.0-rc3
+    tag: 0.17.0-rc4
 tlsSidecarZookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 kafkaMirrorMaker:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 kafkaBridge:
   image:
     repository: strimzi
@@ -86,17 +86,17 @@ kafkaExporter:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 jmxTrans:
   image:
     repository: strimzi
     name: jmxtrans
-    tag: 0.17.0-rc3
+    tag: 0.17.0-rc4
 kafkaMirrorMaker2:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.17.0-rc3
+    tagPrefix: 0.17.0-rc4
 resources:
   limits:
     memory: 256Mi
