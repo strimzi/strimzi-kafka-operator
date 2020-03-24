@@ -35,10 +35,10 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Predicate)}
+ * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Function)}
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -93,7 +93,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart) {
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String namespace = sts.getMetadata().getNamespace();
         Future<Secret> clusterCaKeySecretFuture = secretOperations.getAsync(
@@ -113,7 +113,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         });
     }
 
-    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
 
     public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
@@ -135,17 +135,17 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * in any case return a Future which completes when the given (possibly recreated) pod is ready.
      * @param sts The StatefulSet.
      * @param podName The name of the Pod to possibly restart.
-     * @param podNeedsRestart The predicate for deciding whether to restart the pod.
+     * @param podNeedsRestart The function for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Predicate<Pod> podNeedsRestart) {
+    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Function<Pod, String> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
-            if (podNeedsRestart.test(pod)) {
+            if (podNeedsRestart.apply(pod) != null) {
                 fut = restartPod(sts, pod);
             } else {
                 log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);

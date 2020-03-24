@@ -40,7 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Base64;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -173,8 +173,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
         });
 
         ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        ArgumentCaptor<Predicate<Pod>> isPodToRestartPredicateCaptor = ArgumentCaptor.forClass(Predicate.class);
-        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartPredicateCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
+        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -204,10 +204,10 @@ public class KafkaAssemblyOperatorCustomCertTest {
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, ""), is(getTlsThumbprint()));
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, ""), is(getExternalThumbprint()));
 
-            assertThat(isPodToRestartPredicateCaptor.getAllValues().size(), is(1));
+            assertThat(isPodToRestartFunctionCaptor.getAllValues().size(), is(1));
 
-            Predicate<Pod> isPodToRestart = isPodToRestartPredicateCaptor.getValue();
-            assertThat(isPodToRestart.test(getPod(reconcileSts)), is(false));
+            Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
+            assertThat(isPodToRestart.apply(getPod(reconcileSts)), is(nullValue()));
 
             async.flag();
         });
@@ -234,8 +234,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
         });
 
         ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        ArgumentCaptor<Predicate<Pod>> isPodToRestartPredicateCaptor = ArgumentCaptor.forClass(Predicate.class);
-        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartPredicateCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
+        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -265,13 +265,13 @@ public class KafkaAssemblyOperatorCustomCertTest {
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, ""), is(getTlsThumbprint()));
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, ""), is(getExternalThumbprint()));
 
-            assertThat(isPodToRestartPredicateCaptor.getAllValues().size(), is(1));
+            assertThat(isPodToRestartFunctionCaptor.getAllValues().size(), is(1));
 
             Pod pod = getPod(reconcileSts);
             pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
-            Predicate<Pod> isPodToRestart = isPodToRestartPredicateCaptor.getValue();
-            assertThat(isPodToRestart.test(pod), is(true));
+            Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
+            assertThat(isPodToRestart.apply(pod), is("custom certificate on the TLS listener changes"));
 
             async.flag();
         });
@@ -298,8 +298,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
         });
 
         ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        ArgumentCaptor<Predicate<Pod>> isPodToRestartPredicateCaptor = ArgumentCaptor.forClass(Predicate.class);
-        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartPredicateCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
+        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -329,13 +329,13 @@ public class KafkaAssemblyOperatorCustomCertTest {
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, ""), is(getTlsThumbprint()));
             assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, ""), is(getExternalThumbprint()));
 
-            assertThat(isPodToRestartPredicateCaptor.getAllValues().size(), is(1));
+            assertThat(isPodToRestartFunctionCaptor.getAllValues().size(), is(1));
 
             Pod pod = getPod(reconcileSts);
             pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
-            Predicate<Pod> isPodToRestart = isPodToRestartPredicateCaptor.getValue();
-            assertThat(isPodToRestart.test(pod), is(true));
+            Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
+            assertThat(isPodToRestart.apply(pod), is("custom certificate on the external listener changes"));
 
             async.flag();
         });
@@ -373,7 +373,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         });
 
         ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        ArgumentCaptor<Predicate<Pod>> isPodToRestartPredicateCaptor = ArgumentCaptor.forClass(Predicate.class);
+        ArgumentCaptor<Function<Pod, String>> isPodToRestartPredicateCaptor = ArgumentCaptor.forClass(Function.class);
         when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartPredicateCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the ConfigMapOperator
@@ -406,8 +406,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
             assertThat(isPodToRestartPredicateCaptor.getAllValues().size(), is(1));
 
-            Predicate<Pod> isPodToRestart = isPodToRestartPredicateCaptor.getValue();
-            assertThat(isPodToRestart.test(getPod(reconcileSts)), is(false));
+            Function<Pod, String> isPodToRestart = isPodToRestartPredicateCaptor.getValue();
+            assertThat(isPodToRestart.apply(getPod(reconcileSts)), is(nullValue()));
 
             async.flag();
         });
