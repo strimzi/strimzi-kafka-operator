@@ -121,7 +121,7 @@ public class LabelsTest {
     }
 
     @Test
-    public void testWithUserLabelsFiltersKubernetesDomainLabels()   {
+    public void testWithUserLabelsFiltersKubernetesDomainLabelsWithExceptionPartOfLabel()   {
         Labels start = Labels.forStrimziCluster("my-cluster");
 
         Map userLabels = new HashMap<String, String>(5);
@@ -140,7 +140,7 @@ public class LabelsTest {
         expectedUserLabels.put("key1", "value1");
         expectedUserLabels.put("key2", "value2");
         expectedUserLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
-
+        expectedUserLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
 
         Map<String, String> expected = new HashMap<String, String>();
         expected.putAll(start.toMap());
@@ -188,18 +188,18 @@ public class LabelsTest {
 
     @Test
     public void testFromResourceWithLabels()   {
-        Map<String, String> userLabels = new HashMap<String, String>(5);
-        userLabels.put(Labels.KUBERNETES_NAME_LABEL, "some-app");
-        userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
-        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
-        userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
-        userLabels.put("key1", "value1");
-        userLabels.put("key2", "value2");
+        Map<String, String> userProvidedLabels = new HashMap<String, String>(6);
+        userProvidedLabels.put(Labels.KUBERNETES_NAME_LABEL, "some-app");
+        userProvidedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
+        userProvidedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "some-other-application-name");
+        userProvidedLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
+        userProvidedLabels.put("key1", "value1");
+        userProvidedLabels.put("key2", "value2");
 
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName("my-kafka")
-                    .withLabels(userLabels)
+                    .withLabels(userProvidedLabels)
                 .endMetadata()
                 .withNewSpec()
                     .withNewZookeeper()
@@ -215,9 +215,10 @@ public class LabelsTest {
                 .endSpec()
                 .build();
 
-        Map<String, String> expectedLabels = new HashMap<String, String>(2);
+        Map<String, String> expectedLabels = new HashMap<String, String>(3);
         expectedLabels.put("key1", "value1");
         expectedLabels.put("key2", "value2");
+        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "some-other-application-name");
 
         Labels l = Labels.fromResource(kafka);
         assertThat(l.toMap(), is(expectedLabels));

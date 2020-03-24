@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -113,7 +114,6 @@ import static java.util.Collections.singletonMap;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
-    // Name of component kafka
     protected static final String APPLICATION_NAME = "kafka";
 
     protected static final String INIT_NAME = "kafka-init";
@@ -258,11 +258,10 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka cluster resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    private KafkaCluster(String namespace, String cluster) {
-        super(namespace, cluster);
+    private KafkaCluster(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -271,7 +270,6 @@ public class KafkaCluster extends AbstractModel {
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
-        this.applicationName = APPLICATION_NAME;
 
         setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
 
@@ -396,9 +394,7 @@ public class KafkaCluster extends AbstractModel {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
-        KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
-
-        result.setDefaultLabels(kafkaAssembly);
+        KafkaCluster result = new KafkaCluster(kafkaAssembly);
 
         result.setOwnerReference(kafkaAssembly);
 

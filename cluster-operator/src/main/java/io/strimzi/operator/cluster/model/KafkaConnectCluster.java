@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
@@ -112,11 +113,20 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected KafkaConnectCluster(String namespace, String cluster) {
-        super(namespace, cluster);
+    protected KafkaConnectCluster(HasMetadata resource) {
+        this(resource, APPLICATION_NAME);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param applicationName configurable allow other classes to extend this class
+     */
+    protected KafkaConnectCluster(HasMetadata resource, String applicationName) {
+        super(resource, applicationName);
         this.name = KafkaConnectResources.deploymentName(cluster);
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.ancillaryConfigName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
@@ -130,16 +140,14 @@ public class KafkaConnectCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
-        this.applicationName = APPLICATION_NAME;
     }
 
     public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
 
         KafkaConnectCluster cluster = fromSpec(kafkaConnect.getSpec(), versions,
-                new KafkaConnectCluster(kafkaConnect.getMetadata().getNamespace(), kafkaConnect.getMetadata().getName()));
+                new KafkaConnectCluster(kafkaConnect));
 
         cluster.setOwnerReference(kafkaConnect);
-        cluster.setDefaultLabels(kafkaConnect);
 
         return cluster;
     }

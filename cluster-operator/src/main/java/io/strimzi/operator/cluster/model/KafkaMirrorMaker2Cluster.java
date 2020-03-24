@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -55,17 +56,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster
-     *                  resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    private KafkaMirrorMaker2Cluster(String namespace, String cluster) {
-        super(namespace, cluster);
+    private KafkaMirrorMaker2Cluster(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
-
-        this.applicationName = APPLICATION_NAME;
     }
 
     /**
@@ -77,10 +74,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, 
                                                    KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2.getMetadata().getNamespace(),
-                kafkaMirrorMaker2.getMetadata().getName());
+        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
-        cluster.setDefaultLabels(kafkaMirrorMaker2);
         cluster.setOwnerReference(kafkaMirrorMaker2);
 
         String specVersion = spec.getVersion();

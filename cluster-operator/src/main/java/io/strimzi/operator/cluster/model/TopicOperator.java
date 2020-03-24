@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -90,19 +91,17 @@ public class TopicOperator extends AbstractModel {
     private String tlsSidecarImage;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected TopicOperator(String namespace, String cluster) {
+    protected TopicOperator(HasMetadata resource) {
 
-        super(namespace, cluster);
+        super(resource, APPLICATION_NAME);
         this.name = topicOperatorName(cluster);
         this.replicas = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.applicationName = APPLICATION_NAME;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -220,8 +219,7 @@ public class TopicOperator extends AbstractModel {
         TopicOperator result;
         if (kafkaAssembly.getSpec().getTopicOperator() != null) {
             String namespace = kafkaAssembly.getMetadata().getNamespace();
-            result = new TopicOperator(namespace, kafkaAssembly.getMetadata().getName());
-            result.setDefaultLabels(kafkaAssembly);
+            result = new TopicOperator(kafkaAssembly);
 
             io.strimzi.api.kafka.model.TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 

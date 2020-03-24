@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -69,11 +70,10 @@ public class EntityTopicOperator extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected EntityTopicOperator(String namespace, String cluster) {
-        super(namespace, cluster);
+    protected EntityTopicOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = topicOperatorName(cluster);
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -92,8 +92,6 @@ public class EntityTopicOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
-
-        this.applicationName = APPLICATION_NAME;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -202,11 +200,8 @@ public class EntityTopicOperator extends AbstractModel {
             if (topicOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityTopicOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName());
+                result = new EntityTopicOperator(kafkaAssembly);
 
-                result.setDefaultLabels(kafkaAssembly);
                 result.setOwnerReference(kafkaAssembly);
                 String image = topicOperatorSpec.getImage();
                 if (image == null) {

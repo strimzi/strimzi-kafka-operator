@@ -5,11 +5,14 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -70,6 +73,13 @@ public class ModelUtilsTest {
 
     @Test
     public void testParsePodDisruptionBudgetTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
         PodDisruptionBudgetTemplate template = new PodDisruptionBudgetTemplateBuilder()
                 .withNewMetadata()
                 .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
@@ -78,7 +88,7 @@ public class ModelUtilsTest {
                 .withMaxUnavailable(2)
                 .build();
 
-        Model model = new Model();
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
         assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -88,7 +98,14 @@ public class ModelUtilsTest {
 
     @Test
     public void testParseNullPodDisruptionBudgetTemplate()  {
-        Model model = new Model();
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
         assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
@@ -98,6 +115,13 @@ public class ModelUtilsTest {
 
     @Test
     public void testParsePodTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
@@ -111,7 +135,7 @@ public class ModelUtilsTest {
                 .withTerminationGracePeriodSeconds(123)
                 .build();
 
-        Model model = new Model();
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodTemplate(model, template);
         assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -128,7 +152,14 @@ public class ModelUtilsTest {
 
     @Test
     public void testParseNullPodTemplate()  {
-        Model model = new Model();
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodTemplate(model, null);
         assertThat(model.templatePodLabels, is(nullValue()));
@@ -139,8 +170,8 @@ public class ModelUtilsTest {
     }
 
     private class Model extends AbstractModel   {
-        public Model()  {
-            super("", "");
+        public Model(HasMetadata resource) {
+            super(resource, "model-app");
         }
 
         @Override

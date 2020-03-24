@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -72,18 +73,16 @@ public class JmxTrans extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where JmxTrans resources are going to be created
-     * @param kafkaCluster kafkaCluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected JmxTrans(String namespace, String kafkaCluster) {
-        super(namespace, kafkaCluster);
-        this.name = JmxTransResources.deploymentName(kafkaCluster);
-        this.clusterName = kafkaCluster;
+    protected JmxTrans(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
+        this.name = JmxTransResources.deploymentName(cluster);
+        this.clusterName = cluster;
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.livenessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.applicationName = APPLICATION_NAME;
 
         this.mountPath = "/var/lib/kafka";
 
@@ -105,11 +104,8 @@ public class JmxTrans extends AbstractModel {
                 log.warn(error);
                 throw new InvalidResourceException(error);
             }
-            result = new JmxTrans(kafkaAssembly.getMetadata().getNamespace(),
-                    kafkaAssembly.getMetadata().getName());
+            result = new JmxTrans(kafkaAssembly);
             result.isDeployed = true;
-
-            result.setDefaultLabels(kafkaAssembly);
 
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
                 result.isJmxAuthenticated = true;

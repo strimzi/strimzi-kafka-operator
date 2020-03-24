@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -59,15 +60,13 @@ public class EntityOperator extends AbstractModel {
     private String tlsSidecarImage;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected EntityOperator(String namespace, String cluster) {
-        super(namespace, cluster);
+    protected EntityOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = entityOperatorName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
-        this.applicationName = APPLICATION_NAME;
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {
@@ -131,11 +130,8 @@ public class EntityOperator extends AbstractModel {
         if (entityOperatorSpec != null) {
 
             String namespace = kafkaAssembly.getMetadata().getNamespace();
-            result = new EntityOperator(
-                    namespace,
-                    kafkaAssembly.getMetadata().getName());
+            result = new EntityOperator(kafkaAssembly);
 
-            result.setDefaultLabels(kafkaAssembly);
             result.setOwnerReference(kafkaAssembly);
 
             result.setUserAffinity(affinity(entityOperatorSpec));

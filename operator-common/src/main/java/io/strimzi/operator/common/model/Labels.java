@@ -136,10 +136,12 @@ public class Labels {
         }
 
         // Remove Kubernetes Domain specific labels
+        // Exceptions app.kubernetes.io/part-of
         Map<String, String> filteredLabels = additionalLabels
                 .entrySet()
                 .stream()
-                .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+                .filter(entryset ->
+                        !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN) || entryset.getKey().equals(KUBERNETES_PART_OF_LABEL))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new Labels(filteredLabels);
@@ -274,8 +276,7 @@ public class Labels {
      * @param instance Theoriginal name of the instance
      * @return Either the original instance name or a modified version to match label value criteria
      */
-    /*test*/
-    static String getOrValidInstanceLabelValue(String instance) {
+    /*test*/ static String getOrValidInstanceLabelValue(String instance) {
         if (instance == null) {
             return "";
         }
@@ -363,7 +364,7 @@ public class Labels {
     public Labels strimziSelectorLabels() {
         Map<String, String> newLabels = new HashMap<>(3);
 
-        List<String> strimziSelectorLabels = new ArrayList<>();
+        List<String> strimziSelectorLabels = new ArrayList<>(3);
         strimziSelectorLabels.add(STRIMZI_CLUSTER_LABEL);
         strimziSelectorLabels.add(STRIMZI_NAME_LABEL);
         strimziSelectorLabels.add(STRIMZI_KIND_LABEL);
@@ -395,6 +396,11 @@ public class Labels {
     }
 
     /**
+     *
+     * When adding new labels, ensure the names of any resources are truncated for sanitization purposes to be compatible with Kubernetes
+     * Note: Valid label values must be a maximum length of 63 characters
+     * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+     *
      * @param resource        a resource with metadata
      * @param applicationName the name of the application of the component
      * @param managedBy       a resource with meta

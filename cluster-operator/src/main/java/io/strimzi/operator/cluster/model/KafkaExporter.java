@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -66,20 +67,17 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Exporter resources are going to be created
-     * @param kafkaCluster kafkaCluster name
-     * @param labels    labels to add to the kafkaCluster
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected KafkaExporter(String namespace, String kafkaCluster) {
-        super(namespace, kafkaCluster);
-        this.name = KafkaExporterResources.deploymentName(kafkaCluster);
-        this.serviceName = KafkaExporterResources.serviceName(kafkaCluster);
+    protected KafkaExporter(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
+        this.name = KafkaExporterResources.deploymentName(cluster);
+        this.serviceName = KafkaExporterResources.serviceName(cluster);
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/metrics";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.applicationName = APPLICATION_NAME;
 
         this.saramaLoggingEnabled = false;
         this.mountPath = "/var/lib/kafka";
@@ -90,10 +88,7 @@ public class KafkaExporter extends AbstractModel {
     }
 
     public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly.getMetadata().getNamespace(),
-                kafkaAssembly.getMetadata().getName());
-
-        kafkaExporter.setDefaultLabels(kafkaAssembly);
+        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly);
 
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
         if (spec != null) {

@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -34,6 +35,7 @@ import static java.util.Collections.singletonList;
  * Represents the User Operator deployment
  */
 public class EntityUserOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-user-operator";
 
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
@@ -67,12 +69,10 @@ public class EntityUserOperator extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param labels
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected EntityUserOperator(String namespace, String cluster) {
-        super(namespace, cluster);
+    protected EntityUserOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -187,9 +187,7 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(namespace, kafkaAssembly.getMetadata().getName());
-
-                result.setDefaultLabels(kafkaAssembly);
+                result = new EntityUserOperator(kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();

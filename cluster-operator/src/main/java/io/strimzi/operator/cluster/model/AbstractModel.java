@@ -115,10 +115,6 @@ public abstract class AbstractModel {
     // Number of replicas
     protected int replicas;
 
-    // Name of the application that the extending class is deploying
-    protected String applicationName;
-
-
     protected String readinessPath;
     protected String livenessPath;
 
@@ -190,13 +186,13 @@ public abstract class AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource         Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param applicationName  Name of the application that the extending class is deploying
      */
-    protected AbstractModel(String namespace, String cluster) {
-        this.cluster = cluster;
-        this.namespace = namespace;
-        this.labels = Labels.EMPTY;
+    protected AbstractModel(HasMetadata resource, String applicationName) {
+        this.cluster = resource.getMetadata().getName();
+        this.namespace = resource.getMetadata().getNamespace();
+        this.labels = Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
     public int getReplicas() {
@@ -205,14 +201,6 @@ public abstract class AbstractModel {
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
-    }
-
-    public String getApplicationName() {
-        return applicationName;
-    }
-
-    public void setApplicationName(String applicationName) {
-        this.applicationName = applicationName;
     }
 
     protected void setImage(String image) {
@@ -262,15 +250,6 @@ public abstract class AbstractModel {
     protected Labels getLabelsWithNameAndDiscovery(String name, Map<String, String> additionalLabels) {
         return getLabelsWithStrimziName(name, additionalLabels).withStrimziDiscovery();
     }
-
-    /**
-     * @param resource
-     * @return The default Labels set
-     */
-    protected Labels generateDefaultLabels(HasMetadata resource) {
-        return Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
-    }
-
 
 
     /**
@@ -897,10 +876,6 @@ public abstract class AbstractModel {
 
     public void setLabels(Labels labels) {
         this.labels = labels;
-    }
-
-    public void setDefaultLabels(HasMetadata resource) {
-        this.labels = generateDefaultLabels(resource);
     }
 
     /**
