@@ -24,6 +24,13 @@ The `Secret` should contain the private key of the Certificate Authority under t
 .. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Kubernetes namespace in which you want the operator to watch for  `KafkaUser` resources.
 .. The `STRIMZI_JAVA_OPTS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
 .. The `STRIMZI_JAVA_SYSTEM_PROPERTIES` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the list of `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+.. The `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the Kafka brokers, given as a comma-separated list of `_hostname_:‍_port_` pairs.
+.. The `STRIMZI_CLUSTER_CA_CERT_SECRET_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to a Kubernetes `Secret` which should contain the public key of the Certificate Authority used for signing Kafka brokers certificates for enabling TLS based communication.
+The `Secret` should contain the public key of the Certificate Authority under the key `ca.crt`.
+This environment variable is optional and should be set only if the communication with the Kafka cluster is TLS based.
+.. The `STRIMZI_EO_KEY_SECRET_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to a Kubernetes `Secret` which should contain the private key and related certificate for TLS Client Authentication against the Kafka cluster.
+The `Secret` should contain the keystore with the private key and certificate under the key `entity-operator.p12` and the related password under the key `entity-operator.password`.
+This environment variable is optional and should be set if the TLS Client Authentication is needed when the communication with the Kafka cluster is TLS based.
 
 . Deploy the User Operator.
 +

@@ -10,12 +10,9 @@ import io.strimzi.api.kafka.model.AclRuleGroupResourceBuilder;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResourceBuilder;
 import io.strimzi.api.kafka.model.AclRuleTransactionalIdResourceBuilder;
-import kafka.security.auth.Cluster$;
-import kafka.security.auth.Group$;
-import kafka.security.auth.Resource;
-import kafka.security.auth.Topic$;
-import kafka.security.auth.TransactionalId$;
 import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -98,192 +95,192 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testToKafkaResourceForTopicResource()  {
+    public void testToKafkaResourcePatternForTopicResource()  {
         // Regular topic
         SimpleAclRuleResource topicResourceRules = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        Resource expectedKafkaResource = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
-        assertThat(topicResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        ResourcePattern expectedKafkaResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
+        assertThat(topicResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
 
         // Prefixed topic
         topicResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.PREFIX);
-        expectedKafkaResource = new Resource(Topic$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(topicResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        expectedKafkaResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-", PatternType.PREFIXED);
+        assertThat(topicResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
     }
 
     @Test
-    public void testToKafkaResourceForGroupResource()  {
+    public void testToKafkaResourcePatternForGroupResource()  {
         // Regular group
         SimpleAclRuleResource groupResourceRules = new SimpleAclRuleResource("my-group", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.LITERAL);
-        Resource expectedKafkaResource = new Resource(Group$.MODULE$, "my-group", PatternType.LITERAL);
-        assertThat(groupResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        ResourcePattern expectedKafkaResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
+        assertThat(groupResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
 
         // Prefixed group
         groupResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.PREFIX);
-        expectedKafkaResource = new Resource(Group$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(groupResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        expectedKafkaResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-", PatternType.PREFIXED);
+        assertThat(groupResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
     }
 
     @Test
-    public void testToKafkaResourceForClusterResource()  {
+    public void testToKafkaResourcePatternForClusterResource()  {
         // Regular cluster
         SimpleAclRuleResource clusterResourceRules = new SimpleAclRuleResource(null, SimpleAclRuleResourceType.CLUSTER, null);
-        Resource expectedKafkaResource = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
-        assertThat(clusterResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        ResourcePattern expectedKafkaResourcePattern = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
+        assertThat(clusterResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
     }
 
     @Test
-    public void testToKafkaResourceForTransactionalIdResource()  {
+    public void testToKafkaResourcePatternForTransactionalIdResource()  {
         // Regular transactionalId
         SimpleAclRuleResource transactionalIdResourceRules = new SimpleAclRuleResource("my-transactionalId", SimpleAclRuleResourceType.TRANSACTIONAL_ID, null);
-        Resource expectedKafkaResource = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
-        assertThat(transactionalIdResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        ResourcePattern expectedKafkaResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-transactionalId", PatternType.LITERAL);
+        assertThat(transactionalIdResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
 
         // Prefixed transactionalId
         transactionalIdResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.PREFIX);
-        expectedKafkaResource = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(transactionalIdResourceRules.toKafkaResource(), is(expectedKafkaResource));
+        expectedKafkaResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-", PatternType.PREFIXED);
+        assertThat(transactionalIdResourceRules.toKafkaResourcePattern(), is(expectedKafkaResourcePattern));
     }
 
     @Test
-    public void testFromKafkaResourceWithTopicResource()  {
+    public void testFromKafkaResourcePatternWithTopicResource()  {
         // Regular topic
-        Resource kafkaTopicResource = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
+        ResourcePattern kafkaTopicResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
         SimpleAclRuleResource expectedTopicResourceRules = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaTopicResource), is(expectedTopicResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaTopicResourcePattern), is(expectedTopicResourceRules));
 
         // Prefixed topic
-        kafkaTopicResource = new Resource(Topic$.MODULE$, "my-", PatternType.PREFIXED);
+        kafkaTopicResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-", PatternType.PREFIXED);
         expectedTopicResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.PREFIX);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaTopicResource), is(expectedTopicResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaTopicResourcePattern), is(expectedTopicResourceRules));
     }
 
     @Test
-    public void testFromKafkaResourceWithGroupResource()  {
+    public void testFromKafkaResourcePatternWithGroupResource()  {
         // Regular group
-        Resource kafkaGroupResource = new Resource(Group$.MODULE$, "my-group", PatternType.LITERAL);
+        ResourcePattern kafkaGroupResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
         SimpleAclRuleResource expectedGroupResourceRules = new SimpleAclRuleResource("my-group", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaGroupResource), is(expectedGroupResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaGroupResourcePattern), is(expectedGroupResourceRules));
 
         // Prefixed group
-        kafkaGroupResource = new Resource(Group$.MODULE$, "my-", PatternType.PREFIXED);
+        kafkaGroupResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-", PatternType.PREFIXED);
         expectedGroupResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.PREFIX);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaGroupResource), is(expectedGroupResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaGroupResourcePattern), is(expectedGroupResourceRules));
     }
 
     @Test
-    public void testFromKafkaResourceWithClusterResource()  {
+    public void testFromKafkaResourcePatternWithClusterResource()  {
         // Regular cluster
-        Resource kafkaClusterResource = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
+        ResourcePattern kafkaClusterResourcePattern = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
         SimpleAclRuleResource expectedClusterResourceRules = new SimpleAclRuleResource("kafka-cluster", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaClusterResource), is(expectedClusterResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaClusterResourcePattern), is(expectedClusterResourceRules));
     }
 
     @Test
-    public void testFromKafkaResourceWithTransactionalIdResource()  {
+    public void testFromKafkaResourcePatternWithTransactionalIdResource()  {
         // Regular transactionalId
-        Resource kafkaTransactionalIdResource = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
+        ResourcePattern kafkaTransactionalIdResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-transactionalId", PatternType.LITERAL);
         SimpleAclRuleResource expectedTransactionalIdResourceRules = new SimpleAclRuleResource("my-transactionalId", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaTransactionalIdResource), is(expectedTransactionalIdResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaTransactionalIdResourcePattern), is(expectedTransactionalIdResourceRules));
 
         // Prefixed transactionalId
-        kafkaTransactionalIdResource = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
+        kafkaTransactionalIdResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-", PatternType.PREFIXED);
         expectedTransactionalIdResourceRules = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.PREFIX);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafkaTransactionalIdResource), is(expectedTransactionalIdResourceRules));
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafkaTransactionalIdResourcePattern), is(expectedTransactionalIdResourceRules));
     }
 
     @Test
-    public void testFromKafkaResourceToKafkaResourceRoundTripForTopicResource()    {
-        // Regular group
-        Resource kafka = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+    public void testFromKafkaResourcePatternToKafkaResourcePatternRoundTripForTopicResource()    {
+        // Regular topic
+        ResourcePattern kafka = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
 
         // Prefixed topic
-        kafka = new Resource(Topic$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        kafka = new ResourcePattern(ResourceType.TOPIC, "my-", PatternType.PREFIXED);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
     }
 
     @Test
-    public void testFromKafkaResourceToKafkaResourceRoundTripForGroupResource()  {
+    public void testFromKafkaResourcePatternToKafkaResourcePatternRoundTripForGroupResource()  {
         // Regular group
-        Resource kafka = new Resource(Group$.MODULE$, "my-group", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        ResourcePattern kafka = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
 
         // Prefixed group
-        kafka = new Resource(Group$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        kafka = new ResourcePattern(ResourceType.GROUP, "my-", PatternType.PREFIXED);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
     }
 
     @Test
-    public void testFromKafkaResourceToKafkaResourceRoundTripForClusterResource()  {
+    public void testFromKafkaResourcePatternToKafkaResourcePatternRoundTripForClusterResource()  {
         // Regular cluster
-        Resource kafka = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        ResourcePattern kafka = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
     }
 
     @Test
-    public void testFromKafkaResourceToKafkaResourceRoundTripForTransactionalIdResource()  {
+    public void testFromKafkaResourcePatternToKafkaResourcePatternRoundTripForTransactionalIdResource()  {
         // Regular transactionID
-        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionID", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        ResourcePattern kafka = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-transactionID", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
 
         // Prefixed transactionID
-        kafka = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(SimpleAclRuleResource.fromKafkaResource(kafka).toKafkaResource(), is(kafka));
+        kafka = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-", PatternType.PREFIXED);
+        assertThat(SimpleAclRuleResource.fromKafkaResourcePattern(kafka).toKafkaResourcePattern(), is(kafka));
     }
 
     @Test
-    public void testFromCrdToKafkaResourceForTopicResource()    {
+    public void testFromCrdToKafkaResourcePatternForTopicResource()    {
         // Regular group
         AclRuleResource resource = new AclRuleTopicResourceBuilder()
-            .withName("my-topic")
-            .withPatternType(AclResourcePatternType.LITERAL)
-            .build();
-        Resource expectedKafkaTopicResource = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaTopicResource));
+                .withName("my-topic")
+                .withPatternType(AclResourcePatternType.LITERAL)
+                .build();
+        ResourcePattern expectedKafkaTopicResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaTopicResourcePattern));
 
         // Prefixed topic
         resource = new AclRuleTopicResourceBuilder()
-            .withName("my-")
-            .withPatternType(AclResourcePatternType.PREFIX)
-            .build();
-        expectedKafkaTopicResource = new Resource(Topic$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaTopicResource));
+                .withName("my-")
+                .withPatternType(AclResourcePatternType.PREFIX)
+                .build();
+        expectedKafkaTopicResourcePattern = new ResourcePattern(ResourceType.TOPIC, "my-", PatternType.PREFIXED);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaTopicResourcePattern));
     }
 
     @Test
-    public void testFromCrdToKafkaResourceForGroupResource()  {
+    public void testFromCrdToKafkaResourcePatternForGroupResource()  {
         // Regular group
         AclRuleResource resource = new AclRuleGroupResourceBuilder()
-            .withName("my-group")
-            .withPatternType(AclResourcePatternType.LITERAL)
-            .build();
-        Resource expectedKafkaGroupResource = new Resource(Group$.MODULE$, "my-group", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaGroupResource));
+                .withName("my-group")
+                .withPatternType(AclResourcePatternType.LITERAL)
+                .build();
+        ResourcePattern expectedKafkaGroupResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaGroupResourcePattern));
 
         // Prefixed group
         resource = new AclRuleGroupResourceBuilder()
-            .withName("my-")
-            .withPatternType(AclResourcePatternType.PREFIX)
-            .build();
-        expectedKafkaGroupResource = new Resource(Group$.MODULE$, "my-", PatternType.PREFIXED);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaGroupResource));
+                .withName("my-")
+                .withPatternType(AclResourcePatternType.PREFIX)
+                .build();
+        expectedKafkaGroupResourcePattern = new ResourcePattern(ResourceType.GROUP, "my-", PatternType.PREFIXED);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaGroupResourcePattern));
     }
 
     @Test
-    public void testFromCrdToKafkaResourceForClusterResource()  {
+    public void testFromCrdToKafkaResourcePatternForClusterResource()  {
         // Regular cluster
         AclRuleResource resource = new AclRuleClusterResource();
-        Resource expectedKafkaClusterResource = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaClusterResource));
+        ResourcePattern expectedKafkaClusterResourcePattern = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaClusterResourcePattern));
     }
 
     @Test
-    public void testFromCrdToKafkaResourceForTransactionalIdResource()  {
+    public void testFromCrdToKafkaResourcePatternForTransactionalIdResource()  {
         // Regular transactionalId
         AclRuleResource resource = new AclRuleTransactionalIdResourceBuilder()
-            .withName("my-transactionalId")
-            .build();
-        Resource expectedKafkaTransactionalIdResource = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
-        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResource(), is(expectedKafkaTransactionalIdResource));
+                .withName("my-transactionalId")
+                .build();
+        ResourcePattern expectedKafkaTransactionalIdResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-transactionalId", PatternType.LITERAL);
+        assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaTransactionalIdResourcePattern));
     }
 }
