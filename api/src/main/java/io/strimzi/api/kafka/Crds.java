@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -37,15 +38,13 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.Constants.CRD_KIND;
 import static java.util.Collections.singletonList;
 
 /**
  * "Static" information about the CRDs defined in this package
  */
 public class Crds {
-
-    public static final String CRD_KIND = "CustomResourceDefinition";
-    public static final String STRIMZI_CATEGORY = "strimzi";
 
     @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
@@ -249,7 +248,7 @@ public class Crds {
     }
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Alpha1Operation(KubernetesClient client) {
-        return client.customResources(crd(Kafka.class, "v1alpha1"), Kafka.class, KafkaList.class, DoneableKafka.class);
+        return client.customResources(crd(Kafka.class, Constants.V1ALPHA1), Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {

@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
