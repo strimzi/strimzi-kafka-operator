@@ -48,21 +48,20 @@ public class KafkaUserUtils {
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
-    public static void waitForKafkaUserCreationError(String userName, String eoPodName) {
-        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
-        final String messageUserWasNotAdded = "User(" + kubeClient().getNamespace() + "/" + userName + "): createOrUpdate failed";
-        TestUtils.waitFor("User operator has expected error", Constants.GLOBAL_POLL_INTERVAL, 60000,
-            () -> {
-                String logs = kubeClient().logs(eoPodName, "user-operator");
-                return logs.contains(errorMessage) && logs.contains(messageUserWasNotAdded);
-            });
-    }
-
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
         LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
         TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
         );
         LOGGER.info("Kafka user name:{} is created in CRDs", userName);
+    }
+
+    public static void waitForKafkaUserStatus(String userName, String state) {
+        LOGGER.info("Waiting till kafka user name: {} is in desired state: {}", userName, state);
+        TestUtils.waitFor("Waiting for " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
+                    .withName(userName).get().getStatus().getConditions().get(0).getType().equals(state)
+        );
+        LOGGER.info("Kafka user name: {} is in desired state: {}", userName, state);
     }
 }
