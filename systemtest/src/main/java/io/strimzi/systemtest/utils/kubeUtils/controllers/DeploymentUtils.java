@@ -221,4 +221,21 @@ public class DeploymentUtils {
             }
         );
     }
+
+    /**
+     * Wait until the given DeploymentConfig is ready.
+     * @param name The name of the DeploymentConfig.
+     */
+    public static void waitForDeploymentConfigReady(String name, int expectPods) {
+        LOGGER.debug("Waiting until DeploymentConfig {} is ready", name);
+        TestUtils.waitFor("DeploymentConfig " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getDeploymentConfigStatus(name));
+
+        LOGGER.debug("DeploymentConfig {} is ready", name);
+        LOGGER.debug("Waiting for Pods of DeploymentConfig {} to be ready", name);
+
+        LabelSelector deploymentConfigSelector =
+                new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
+        PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);
+    }
 }

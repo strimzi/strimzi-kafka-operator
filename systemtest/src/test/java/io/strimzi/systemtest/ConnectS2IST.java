@@ -12,12 +12,14 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
+import io.strimzi.api.kafka.model.KafkaConnectTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -28,6 +30,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -37,6 +40,7 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -61,6 +65,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -75,6 +80,8 @@ class ConnectS2IST extends BaseST {
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
+    private static final String CONNECT_S2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
+    private static final String SECOND_CLUSTER_NAME = "second-" + CLUSTER_NAME;
 
     private String kafkaClientsPodName;
 
@@ -485,6 +492,91 @@ class ConnectS2IST extends BaseST {
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+    }
+
+    @Test
+    void testChangeConnectS2IConfig() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3, 1).done();
+
+        String bootstrapAddress = KafkaResources.tlsBootstrapAddress(SECOND_CLUSTER_NAME);
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect-s2i")
+                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .editSpec()
+                    .withVersion(TestKafkaVersion.getKafkaVersions().get(0).version())
+                .endSpec()
+                .done();
+
+        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
+        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, 1);
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+
+        LOGGER.info("===== SCALING UP AND DOWN =====");
+
+        final int initialReplicas = connectPods.size();
+        assertThat(initialReplicas, is(1));
+
+        final int scaleReplicasTo = initialReplicas + 3;
+
+        //scale up
+        LOGGER.info("Scaling up to {}", scaleReplicasTo);
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+                cs2i.getSpec().setReplicas(scaleReplicasTo));
+        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, scaleReplicasTo);
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+        assertThat(connectPods.size(), Matchers.is(scaleReplicasTo));
+        LOGGER.info("Scaling to {} finished", scaleReplicasTo);
+
+        //scale down
+        LOGGER.info("Scaling down to {}", initialReplicas);
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+                cs2i.getSpec().setReplicas(initialReplicas));
+        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+        assertThat(connectPods.size(), is(initialReplicas));
+
+        LOGGER.info("Scaling to {} finished", initialReplicas);
+
+        LOGGER.info("===== UPDATE BOOTSTRAP SERVER ADDRESS =====");
+
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> {
+            kafkaConnectS2I.getSpec().setBootstrapServers(bootstrapAddress);
+            kafkaConnectS2I.getSpec().setTls(new KafkaConnectTlsBuilder()
+                    .addNewTrustedCertificate()
+                        .withNewSecretName(SECOND_CLUSTER_NAME + "-cluster-ca-cert")
+                        .withCertificate("ca.crt")
+                    .withNewSecretName(SECOND_CLUSTER_NAME + "-cluster-ca-cert")
+                    .withCertificate("ca.crt")
+                    .endTrustedCertificate()
+                    .build());
+        });
+
+        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+        assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
+
+        LOGGER.info("===== KAFKA VERSION CHANGE =====");
+
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME,
+            kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getKafkaVersions().get(1).version()));
+        LOGGER.info("Version successfully changed to {} ", TestKafkaVersion.getKafkaVersions().get(1).version());
+
+        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+
+        String versionCommand = "ls libs | grep -Po 'connect-api-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
+        String actualVersion = cmdKubeClient().execInPodContainer(kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I").get(0),
+                "", "/bin/bash", "-c", versionCommand).out().trim();
+
+        assertThat(actualVersion, is(TestKafkaVersion.getKafkaVersions().get(1).version()));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
