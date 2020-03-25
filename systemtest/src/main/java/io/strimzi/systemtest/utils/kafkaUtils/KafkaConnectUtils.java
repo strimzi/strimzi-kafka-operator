@@ -36,13 +36,6 @@ public class KafkaConnectUtils {
         LOGGER.info("Kafka Connect {} is in desired state: {}", name, status);
     }
 
-    public static void waitForConnectorReady(String name) {
-        LOGGER.info("Waiting for Kafka Connector {}", name);
-        TestUtils.waitFor(" Kafka Connector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals("Ready"));
-        LOGGER.info("Kafka Connector {} is ready", name);
-    }
-
     public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
         LOGGER.info("Waiting until kafka connect service is present");
         TestUtils.waitFor("Waiting until kafka connect service is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
@@ -60,18 +53,5 @@ public class KafkaConnectUtils {
     public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName) {
         waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName,
                 "\"Sending messages\": \"Hello-world - 99\"");
-    }
-
-    public static String getCreatedConnectors(String connectPodName) {
-        return cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c",
-                "curl -X GET http://localhost:8083/connectors"
-        ).out();
-    }
-
-    public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
-        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            String availableConnectors = KafkaConnectUtils.getCreatedConnectors(connectS2IPodName);
-            return availableConnectors.contains(connectorName);
-        });
     }
 }

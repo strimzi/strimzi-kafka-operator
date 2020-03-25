@@ -5,7 +5,10 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,5 +71,14 @@ public class KafkaTopicUtils {
                 Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
                     .withName(topicName).get().getSpec().getPartitions() == partitions
         );
+    }
+
+    public static void waitForKafkaTopicStatus(String status, String topicName) {
+        LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
+        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0);
+            return kafkaCondition.getType().equals(status);
+        });
+        LOGGER.info("Kafka Topic {} is in desired state: {}", topicName, status);
     }
 }
