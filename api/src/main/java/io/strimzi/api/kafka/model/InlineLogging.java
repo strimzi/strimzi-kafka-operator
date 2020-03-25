@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonPropertyOrder({"type", "loggers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
