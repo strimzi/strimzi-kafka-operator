@@ -38,7 +38,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
     @Test
     void testKafkaClusterUpgrade(TestInfo testinfo) throws IOException, InterruptedException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
@@ -48,7 +48,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
     @Test
     void testKafkaClusterDowngrade(TestInfo testInfo) throws IOException, InterruptedException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);

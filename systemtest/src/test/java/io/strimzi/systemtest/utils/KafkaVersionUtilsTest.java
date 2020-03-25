@@ -5,15 +5,16 @@
 package io.strimzi.systemtest.utils;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KafkaVersionUtilsTest {
 
     @Test
     public void parsingTest() throws Exception {
-        List<TestKafkaVersion> versions = TestKafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> versions = TestKafkaVersion.getKafkaVersions();
         assertTrue(versions.size() > 0);
     }
 }
