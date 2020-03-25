@@ -126,7 +126,6 @@ class ConnectST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     @Tag(TRAVIS)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
@@ -687,6 +686,7 @@ class ConnectST extends BaseST {
     @Test
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ACCEPTANCE)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
