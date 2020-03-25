@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.tracing;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -972,6 +974,26 @@ public class TracingST extends BaseST {
         }
 
         installJaegerInstance();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+            .withNewApiVersion("networking.k8s.io/v1")
+            .withNewKind("NetworkPolicy")
+            .withNewMetadata()
+                .withName("jaeger-allow")
+            .endMetadata()
+            .withNewSpec()
+                .addNewIngress()
+                .endIngress()
+                .withNewPodSelector()
+                    .addToMatchLabels("app", "jaeger")
+                .endPodSelector()
+                .withPolicyTypes("Ingress")
+            .endSpec()
+            .build();
+
+        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        KubernetesResource.deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy for jaeger successfully applied");
     }
 
     /**
