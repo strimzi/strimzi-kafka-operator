@@ -15,9 +15,21 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
+
+    private static List<TestKafkaVersion> kafkaVersions;
+
+    static {
+        try {
+            kafkaVersions = parseKafkaVersions();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @JsonProperty("version")
     String version;
@@ -115,7 +127,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
      *
      * @return A list of the kafka versions listed in the kafka-versions.yaml file
      */
-    public static List<TestKafkaVersion> parseKafkaVersions() throws IOException {
+    private static List<TestKafkaVersion> parseKafkaVersions() throws IOException {
 
         YAMLMapper mapper = new YAMLMapper();
 
@@ -129,5 +141,19 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         Collections.sort(testKafkaVersions);
 
         return testKafkaVersions;
+    }
+
+    public static List<TestKafkaVersion> getKafkaVersions() {
+        return kafkaVersions;
+    }
+
+    /**
+     * Parse the version information present in the {@code /kafka-versions} classpath resource and return a map
+     * of kafka versions data with a version as key
+     *
+     * @return A map of the kafka versions listed in the kafka-versions.yaml file where key is specific version
+     */
+    public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
+        return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
     }
 }

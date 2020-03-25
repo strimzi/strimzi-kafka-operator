@@ -27,6 +27,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -124,7 +125,7 @@ public class KafkaResource {
                 .editKafka()
                     .withVersion(Environment.ST_KAFKA_VERSION)
                     .withReplicas(kafkaReplicas)
-                    .addToConfig("log.message.format.version", Environment.ST_KAFKA_VERSION.substring(0, 3))
+                    .addToConfig("log.message.format.version", TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).protocolVersion())
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
