@@ -48,7 +48,7 @@ public class KafkaUtils {
                             .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
                             .collect(Collectors.toList());
 
-            for(Condition condition : conditions) {
+            for (Condition condition : conditions) {
                 if (!condition.getType().matches(state))
                     return false;
             }
