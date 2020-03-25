@@ -60,7 +60,7 @@ public class EntityOperator extends AbstractModel {
     private String tlsSidecarImage;
 
     /**
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+
      */
     protected EntityOperator(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
@@ -129,7 +129,6 @@ public class EntityOperator extends AbstractModel {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
 
-            String namespace = kafkaAssembly.getMetadata().getNamespace();
             result = new EntityOperator(kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
