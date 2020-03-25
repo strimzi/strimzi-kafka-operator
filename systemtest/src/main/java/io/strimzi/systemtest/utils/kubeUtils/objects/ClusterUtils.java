@@ -21,6 +21,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName
 public class ClusterUtils {
     private static final Logger LOGGER = LogManager.getLogger(ClusterUtils.class);
 
+    @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String clusterName) {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];

@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.kafkaclients.ClientFactory;
 import io.strimzi.systemtest.kafkaclients.EClientType;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -35,6 +34,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ClusterUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -57,7 +57,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -73,8 +72,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.TestUtils.map;
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -537,7 +534,8 @@ class SecurityST extends BaseST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         // 1. Create the Secrets already, and a certificate that's already expired
-        String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
+        String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
+        SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // 2. Now create a cluster
@@ -563,10 +561,10 @@ class SecurityST extends BaseST {
         );
 
         // Wait until the certificates have been replaced
-        waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
+        SecretUtils.waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
 
         // Wait until the pods are all up and ready
-        waitForClusterStability();
+        ClusterUtils.waitForClusterStability(CLUSTER_NAME);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
@@ -577,77 +575,6 @@ class SecurityST extends BaseST {
             internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS"),
             internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
         );
-    }
-
-    @SuppressWarnings("unchecked")
-    private void waitForClusterStability() {
-        LOGGER.info("Waiting for cluster stability");
-        Map<String, String>[] zkPods = new Map[1];
-        Map<String, String>[] kafkaPods = new Map[1];
-        Map<String, String>[] eoPods = new Map[1];
-        AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
-        kafkaPods[0] = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        eoPods[0] = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
-            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-            boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
-            boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
-            boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
-            if (!zkSameAsLast) {
-                LOGGER.info("ZK Cluster not stable");
-            }
-            if (!kafkaSameAsLast) {
-                LOGGER.info("Kafka Cluster not stable");
-            }
-            if (!eoSameAsLast) {
-                LOGGER.info("EO not stable");
-            }
-            if (zkSameAsLast
-                    && kafkaSameAsLast
-                    && eoSameAsLast) {
-                int c = count.getAndIncrement();
-                LOGGER.info("All stable for {} polls", c);
-                return c > 60;
-            }
-            zkPods[0] = zkSnapshot;
-            kafkaPods[0] = kafkaSnaptop;
-            count.set(0);
-            return false;
-        });
-    }
-
-    private void waitForCertToChange(String originalCert, String secretName) {
-        waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Secret secret = kubeClient().getSecret(secretName);
-            if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
-                String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
-                boolean changed = !originalCert.equals(currentCert);
-                if (changed) {
-                    LOGGER.info("Certificate in Secret {} has changed, was {}, is now {}", secretName, originalCert, currentCert);
-                }
-                return changed;
-            } else {
-                return false;
-            }
-        });
-    }
-
-    private String createSecret(String resourceName, String secretName, String keyName) {
-        String certAsString = TestUtils.readResource(getClass(), resourceName);
-        Secret secret = new SecretBuilder()
-                .withNewMetadata()
-                    .withName(secretName)
-                    .addToLabels(map(
-                        Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME,
-                        Labels.STRIMZI_KIND_LABEL, "Kafka"))
-                .endMetadata()
-                .withData(singletonMap(keyName, Base64.getEncoder().encodeToString(certAsString.getBytes(StandardCharsets.US_ASCII))))
-            .build();
-        kubeClient().createSecret(secret);
-        return certAsString;
     }
 
     @Test
@@ -1265,7 +1192,10 @@ class SecurityST extends BaseST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
+
+        String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
+        SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
+
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
@@ -1309,7 +1239,7 @@ class SecurityST extends BaseST {
         });
 
         // Wait until the certificates have been replaced
-        waitForCertToChange(clusterCaCert, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+        SecretUtils.waitForCertToChange(clusterCaCert, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
