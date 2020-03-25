@@ -243,11 +243,24 @@ public abstract class AbstractModel {
         return getLabelsWithStrimziName(name, Collections.emptyMap()).strimziSelectorLabels();
     }
 
+    /**
+     * @param name the value for the {@code strimzi.io/name} key
+     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
+     *
+     * @return Labels object with the default labels merged with the provided additional labels and the new {@code strimzi.io/name} label
+     */
     protected Labels getLabelsWithStrimziName(String name, Map<String, String> additionalLabels) {
         return labels.withStrimziName(name).withAdditionalLabels(additionalLabels);
     }
 
-    protected Labels getLabelsWithNameAndDiscovery(String name, Map<String, String> additionalLabels) {
+    /**
+     * @param name the value for the {@code strimzi.io/name} key
+     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
+     *
+     * @return Labels object with the default labels merged with the provided additional labels, the new {@code strimzi.io/name} label
+     * and {@code strimzi.io/discovery} set to true to make the service discoverable
+     */
+    protected Labels getLabelsWithStrimziNameAndDiscovery(String name, Map<String, String> additionalLabels) {
         return getLabelsWithStrimziName(name, additionalLabels).withStrimziDiscovery();
     }
 
@@ -649,7 +662,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels),
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(serviceName, templateServiceLabels),
                 getSelectorLabels(), annotations);
     }
 
