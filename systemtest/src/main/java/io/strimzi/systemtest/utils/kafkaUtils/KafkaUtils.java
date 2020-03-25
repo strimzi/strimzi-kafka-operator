@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -39,11 +40,21 @@ public class KafkaUtils {
         waitUntilKafkaStatus(clusterName, "NotReady");
     }
 
-    private static void waitUntilKafkaStatus(String clusterName, String state) {
+    public static void waitUntilKafkaStatus(String clusterName, String state) {
         LOGGER.info("Waiting till Kafka CR will be in state: {}", state);
-        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
-        );
+        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            List<Condition> conditions =
+                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName)
+                            .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
+                            .collect(Collectors.toList());
+
+            for(Condition condition : conditions) {
+                if (!condition.getType().matches(state))
+                    return false;
+            }
+
+            return true;
+        });
         LOGGER.info("Kafka CR is in state: {}", state);
     }
 
