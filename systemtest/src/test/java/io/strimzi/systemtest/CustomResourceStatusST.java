@@ -48,6 +48,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -94,7 +95,7 @@ class CustomResourceStatusST extends BaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
-        waitForKafkaStatus("Ready");
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
         Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
@@ -111,7 +112,7 @@ class CustomResourceStatusST extends BaseST {
         });
 
         LOGGER.info("Wait until cluster will be in NotReady state ...");
-        waitForKafkaStatus("NotReady");
+        KafkaUtils.waitUntilKafkaStatus(CLUSTER_NAME, "NotReady");
 
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -119,7 +120,8 @@ class CustomResourceStatusST extends BaseST {
                     .addToRequests("cpu", new Quantity("100m"))
                     .build());
         });
-        waitForKafkaStatus("Ready");
+
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
         assertKafkaStatus(3, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
     }
 
@@ -142,8 +144,7 @@ class CustomResourceStatusST extends BaseST {
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
-        String eoPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
+        KafkaUserUtils.waitForKafkaUserStatus(userName, "NotReady");
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
@@ -153,6 +154,8 @@ class CustomResourceStatusST extends BaseST {
         LOGGER.info("Kafka User Reason: {}", kafkaCondition.getReason());
         assertThat("Kafka User is in wrong state!", kafkaCondition.getType(), is("NotReady"));
         LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
+
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
     }
 
     @Test
