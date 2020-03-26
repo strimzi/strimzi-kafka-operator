@@ -117,7 +117,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
@@ -142,9 +141,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Map<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 cluster {} in {}", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 generatePodDisruptionBudget {}", reconciliation, mirrorMaker2Cluster.generatePodDisruptionBudget());
+        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
                 .compose(i -> networkPolicyOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), true)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
