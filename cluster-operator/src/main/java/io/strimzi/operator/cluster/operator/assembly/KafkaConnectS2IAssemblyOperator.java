@@ -120,7 +120,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         HashMap<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-        log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation, name, namespace);
+        log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation);
 
         connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
                 .compose(otherConnect -> {

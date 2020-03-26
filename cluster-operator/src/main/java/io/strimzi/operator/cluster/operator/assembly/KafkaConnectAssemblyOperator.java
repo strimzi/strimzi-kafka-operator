@@ -115,7 +115,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Map<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-        log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
+        log.debug("{}: Updating Kafka Connect cluster", reconciliation);
 
         Future<KafkaConnectS2I> connectS2ICheck;
         if (connectS2IOperations != null)   {
