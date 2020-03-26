@@ -73,7 +73,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         Promise<Void> createOrUpdatePromise = Promise.promise();
 
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaMirrorMakerCluster mirror;
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = new KafkaMirrorMakerStatus();
         if (assemblyResource.getSpec() == null) {

@@ -95,7 +95,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
-        String name = reconciliation.name();
         String namespace = reconciliation.namespace();
         KafkaConnectS2ICluster connect;
         KafkaConnectS2IStatus kafkaConnectS2Istatus = new KafkaConnectS2IStatus();

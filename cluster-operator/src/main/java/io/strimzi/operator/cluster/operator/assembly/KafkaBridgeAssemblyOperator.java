@@ -71,7 +71,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaBridgeCluster bridge;
         KafkaBridgeStatus kafkaBridgeStatus = new KafkaBridgeStatus();
         if (assemblyResource.getSpec() == null) {

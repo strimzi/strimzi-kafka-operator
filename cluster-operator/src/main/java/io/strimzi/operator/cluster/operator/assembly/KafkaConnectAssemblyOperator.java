@@ -90,7 +90,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaConnectCluster connect;
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {

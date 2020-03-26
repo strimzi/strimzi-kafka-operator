@@ -117,7 +117,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
