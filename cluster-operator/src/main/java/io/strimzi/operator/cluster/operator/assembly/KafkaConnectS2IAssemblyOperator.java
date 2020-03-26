@@ -95,7 +95,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
-        String name = reconciliation.name();
         String namespace = reconciliation.namespace();
         KafkaConnectS2ICluster connect;
         KafkaConnectS2IStatus kafkaConnectS2Istatus = new KafkaConnectS2IStatus();
@@ -120,7 +119,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         HashMap<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-        log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation, name, namespace);
+        log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation);
 
         connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
                 .compose(otherConnect -> {
