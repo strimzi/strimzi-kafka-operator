@@ -32,6 +32,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -1241,6 +1242,8 @@ class SecurityST extends BaseST {
                     .withValidityDays(3)
                 .endClusterCa()
             .endSpec().done();
+
+        KafkaUtils.waitUntilKafkaStatus(CLUSTER_NAME, "Ready");
 
         String userName = "alice";
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
