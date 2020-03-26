@@ -124,7 +124,7 @@ public abstract class AbstractModel {
     protected String name;
 
     protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "prometheus";
+    protected static final String METRICS_PORT_NAME = "tcp-prometheus";
     protected boolean isMetricsEnabled;
 
     protected static final int JMX_PORT = 9999;
