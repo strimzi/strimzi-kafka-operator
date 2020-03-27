@@ -141,7 +141,7 @@ public class ResourceUtils {
         ObjectMetaBuilder meta = new ObjectMetaBuilder();
         meta.withNamespace(clusterCmNamespace);
         meta.withName(clusterCmName);
-        meta.withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
+        meta.withLabels(Labels.fromMap(singletonMap("my-user-label", "cromulent")).toMap());
         KafkaBuilder builder = new KafkaBuilder();
         return builder.withMetadata(meta.build())
                 .withNewSpec()
@@ -225,7 +225,7 @@ public class ResourceUtils {
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0")
-                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
                 .addToData("ca.p12", caStore)
@@ -239,7 +239,7 @@ public class ResourceUtils {
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0")
-                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.key", caKey)
                 .build();
@@ -258,7 +258,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCaKeySecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.key", MockCertManager.clientsCaKey())
                         .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
@@ -270,7 +270,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCaCertSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
                         .build()
@@ -281,7 +281,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.brokersSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
 
@@ -295,7 +295,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(KafkaCluster.clusterCaCertSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).toMap())
+                            .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -309,7 +309,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(ZookeeperCluster.nodesSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).toMap())
+                            .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -358,7 +358,7 @@ public class ResourceUtils {
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
         meta.setName(clusterCmName);
-        meta.setLabels(Labels.userLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap());
+        meta.setLabels(Labels.fromMap(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap());
         result.setMetadata(meta);
 
         KafkaSpec spec = new KafkaSpec();

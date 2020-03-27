@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -44,6 +45,7 @@ import static java.util.Collections.singletonList;
 @Deprecated
 @SuppressWarnings("deprecation")
 public class TopicOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "topic-operator";
 
     protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-topic-operator";
@@ -89,12 +91,11 @@ public class TopicOperator extends AbstractModel {
     private String tlsSidecarImage;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected TopicOperator(String namespace, String cluster, Labels labels) {
+    protected TopicOperator(HasMetadata resource) {
 
-        super(namespace, cluster, labels);
+        super(resource, APPLICATION_NAME);
         this.name = topicOperatorName(cluster);
         this.replicas = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
@@ -218,10 +219,8 @@ public class TopicOperator extends AbstractModel {
         TopicOperator result;
         if (kafkaAssembly.getSpec().getTopicOperator() != null) {
             String namespace = kafkaAssembly.getMetadata().getNamespace();
-            result = new TopicOperator(
-                    namespace,
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+            result = new TopicOperator(kafkaAssembly);
+
             io.strimzi.api.kafka.model.TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 
             result.setOwnerReference(kafkaAssembly);

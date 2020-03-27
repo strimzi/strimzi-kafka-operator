@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
@@ -56,6 +57,8 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
+    protected static final String APPLICATION_NAME = "zookeeper";
+
     public static final int CLIENT_PORT = 2181;
     protected static final String CLIENT_PORT_NAME = "clients";
     public static final int CLUSTERING_PORT = 2888;
@@ -169,13 +172,11 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Zookeeper cluster resources are going to be created
-     * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    private ZookeeperCluster(String namespace, String cluster, Labels labels) {
+    private ZookeeperCluster(HasMetadata resource) {
 
-        super(namespace, cluster, labels);
+        super(resource, APPLICATION_NAME);
         this.name = zookeeperClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -201,8 +202,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
@@ -314,7 +314,8 @@ public class ZookeeperCluster extends AbstractModel {
             }
 
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                zk.templatePersistentVolumeClaimLabels = template.getPersistentVolumeClaim().getMetadata().getLabels();
+                zk.templatePersistentVolumeClaimLabels = mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
+                        zk.templateStatefulSetLabels);
                 zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
             }
 

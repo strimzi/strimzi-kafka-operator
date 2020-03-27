@@ -206,7 +206,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
-                        .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
+                        .withLabels(TestUtils.map("foo", "bar"))
                         .build())
                 .withNewSpec()
                     .withNewKafka()

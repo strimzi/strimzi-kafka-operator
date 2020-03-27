@@ -116,7 +116,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         // When deleting KafkaConnect we need to update the status of all selected KafkaConnector
-        return connectorOperator.listAsync(reconciliation.namespace(), Labels.forCluster(reconciliation.name())).compose(connectors -> {
+        return connectorOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name())).compose(connectors -> {
             List<Future> connectorFutures = new ArrayList<>();
             for (KafkaConnector connector : connectors) {
                 connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,

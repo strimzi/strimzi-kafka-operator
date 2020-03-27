@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -129,7 +128,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
-                        .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
+                        .withLabels(TestUtils.map("foo", "bar"))
                         .build())
                 .withNewSpec()
                 .withReplicas(replicas)

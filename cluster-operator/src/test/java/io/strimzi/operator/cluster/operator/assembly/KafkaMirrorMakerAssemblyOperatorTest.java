@@ -599,13 +599,13 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
-        Labels newLabels = Labels.forKind(KafkaMirrorMaker.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaMirrorMakerCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka Mirror Maker clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaMirrorMakerCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
