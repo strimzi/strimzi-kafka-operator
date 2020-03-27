@@ -56,7 +56,7 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
-elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
+elif [ "${REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
     make docu_html
     make docu_htmlnoheader
     echo "Building in a fork and not in a Strimzi repository. Will not attempt to push anything."
@@ -67,16 +67,15 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
 else
     if [ "${MAIN_BUILD}" = "TRUE" ] ; then
         echo "Login into Docker Hub ..."
-        docker login -u $DOCKER_USER -p $DOCKER_PASS
+        docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
 
-        export DOCKER_ORG=strimzi
+#        export DOCKER_ORG=strimzi
         export DOCKER_TAG=$TAG
         echo "Pushing to docker org $DOCKER_ORG"
         make docker_push
         if [ "$BRANCH" = "master" ]; then
             make docu_pushtowebsite
         fi
-#        TODO vratit zpet!!!!
-#        make pushtonexus
+        make pushtonexus
     fi
 fi
