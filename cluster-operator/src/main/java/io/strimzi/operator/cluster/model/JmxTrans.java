@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -30,7 +31,6 @@ import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +44,7 @@ import java.util.Map;
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
 public class JmxTrans extends AbstractModel {
+    private static final String APPLICATION_NAME = "jmx-trans";
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
@@ -72,14 +73,12 @@ public class JmxTrans extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where JmxTrans resources are going to be created
-     * @param kafkaCluster kafkaCluster name
-     * @param labels    labels to add to the kafkaCluster
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected JmxTrans(String namespace, String kafkaCluster, Labels labels) {
-        super(namespace, kafkaCluster, labels);
-        this.name = JmxTransResources.deploymentName(kafkaCluster);
-        this.clusterName = kafkaCluster;
+    protected JmxTrans(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
+        this.name = JmxTransResources.deploymentName(cluster);
+        this.clusterName = cluster;
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.livenessPath = "/metrics";
@@ -105,9 +104,7 @@ public class JmxTrans extends AbstractModel {
                 log.warn(error);
                 throw new InvalidResourceException(error);
             }
-            result = new JmxTrans(kafkaAssembly.getMetadata().getNamespace(),
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+            result = new JmxTrans(kafkaAssembly);
             result.isDeployed = true;
 
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
