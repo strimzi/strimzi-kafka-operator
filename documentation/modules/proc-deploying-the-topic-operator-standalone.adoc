@@ -20,6 +20,8 @@ For instance, it can operate _with_ any Kafka cluster, not necessarily one deplo
 .. The `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_hostname_:‍_port_` pairs.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same ZooKeeper cluster that your Kafka cluster is using.
 .. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Kubernetes namespace in which you want the operator to watch for  `KafkaTopic` resources.
+.. The `STRIMZI_JAVA_OPTS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Java options (for example,  `Xmx` and `Xms`) used for the JVM running Topic Operator.
+.. The `STRIMZI_JAVA_SYSTEM_PROPERTIES` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the list of `-D` options which are set to the Topic Operator.
 
 . Deploy the Topic Operator.
 +
