@@ -387,8 +387,12 @@ public abstract class Ca {
                 reasons.add("certificate is expiring");
             }
 
+            if (renewalType == RenewalType.CREATE) {
+                reasons.add("certificate added");
+            }
+
             if (!reasons.isEmpty())  {
-                log.debug("Certificate for pod {} need to be regenerated because:", podName, String.join(", ", reasons));
+                log.debug("Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
                 CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
@@ -735,6 +739,10 @@ public abstract class Ca {
      */
     public boolean keyReplaced() {
         return renewalType == RenewalType.REPLACE_KEY;
+    }
+
+    public boolean keyCreated() {
+        return renewalType == RenewalType.CREATE;
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {
