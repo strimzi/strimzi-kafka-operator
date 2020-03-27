@@ -117,6 +117,7 @@ public class StrimziUpgradeST extends BaseST {
             logCollector.collectEvents();
             logCollector.collectConfigMaps();
             logCollector.collectLogsFromPods();
+            logCollector.collectStrimzi();
 
             deleteInstalledYamls(coDir);
         }
@@ -325,7 +326,6 @@ public class StrimziUpgradeST extends BaseST {
         LOGGER.info("Waiting for Kafka StatefulSet roll");
         StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
-
         // Check the TO and UO also got upgraded
         DeploymentUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
         checkAllImages(images);
