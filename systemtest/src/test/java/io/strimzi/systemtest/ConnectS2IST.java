@@ -214,12 +214,12 @@ class ConnectS2IST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
 
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String tlsKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient.setPodName(tlsKafkaClientsPodName);
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
@@ -227,8 +227,8 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", defaultKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(defaultKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
+        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesTls(CONNECT_S2I_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS"),
@@ -512,7 +512,7 @@ class ConnectS2IST extends BaseST {
                 .done();
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, 1);
+
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
 
         LOGGER.info("===== SCALING UP AND DOWN =====");
@@ -537,7 +537,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(initialReplicas));
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
+        Map<String, String> depConfSnapshot = DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
         KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
@@ -559,20 +559,19 @@ class ConnectS2IST extends BaseST {
                     .build());
         });
 
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+        depConfSnapshot = DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
 
-        LOGGER.info("===== KAFKA VERSION CHANGE =====");
+        LOGGER.info("===== CONNECTS2I VERSION CHANGE =====");
 
+        LOGGER.info("Setting version from to {}", TestKafkaVersion.getKafkaVersions().get(1).version());
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME,
             kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getKafkaVersions().get(1).version()));
-        LOGGER.info("Version successfully changed to {} ", TestKafkaVersion.getKafkaVersions().get(1).version());
 
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+        DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
 
         String versionCommand = "ls libs | grep -Po 'connect-api-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
+
         String actualVersion = cmdKubeClient().execInPodContainer(kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I").get(0),
                 "", "/bin/bash", "-c", versionCommand).out().trim();
 
