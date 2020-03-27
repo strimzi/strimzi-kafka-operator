@@ -34,7 +34,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ClusterUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -564,7 +563,7 @@ class SecurityST extends BaseST {
         SecretUtils.waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
 
         // Wait until the pods are all up and ready
-        ClusterUtils.waitForClusterStability(CLUSTER_NAME);
+        KafkaUtils.waitForClusterStability(CLUSTER_NAME);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
