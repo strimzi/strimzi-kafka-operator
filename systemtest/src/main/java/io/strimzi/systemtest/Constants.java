@@ -221,4 +221,10 @@ public interface Constants {
      * Tag for tests which use external Kafka clients (called from test code)
      */
     String EXTERNAL_CLIENTS_USED = "externalclients";
+
+    /**
+     * Constants for Kafka clients labels
+     */
+    String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
+    String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
 }
