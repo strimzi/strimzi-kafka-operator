@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -29,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,18 +48,22 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
+        Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
+                .withLabels(label)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
                     .addToMatchLabels("app", kafkaClientsName)
+                    .addToMatchLabels(label)
                 .endSelector()
                 .withReplicas(1)
                 .withNewTemplate()
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
+                        .addToLabels(label)
                     .endMetadata()
                     .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
                 .endTemplate()
