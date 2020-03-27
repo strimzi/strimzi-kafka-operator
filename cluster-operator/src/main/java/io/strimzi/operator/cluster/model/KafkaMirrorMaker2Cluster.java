@@ -4,11 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.function.Supplier;
-
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -28,9 +25,13 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
-import io.strimzi.operator.common.model.Labels;
+
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
 
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
+    protected static final String APPLICATION_NAME = "kafka-mirror-maker-2";
 
     // Kafka MirrorMaker 2.0 connector configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS = "KAFKA_MIRRORMAKER_2_CLUSTERS";
@@ -55,12 +56,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster
-     *                  resources are going to be created
-     * @param cluster   overall cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    private KafkaMirrorMaker2Cluster(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    private KafkaMirrorMaker2Cluster(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
@@ -75,9 +74,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, 
                                                    KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2.getMetadata().getNamespace(),
-                kafkaMirrorMaker2.getMetadata().getName(),
-                Labels.fromResource(kafkaMirrorMaker2).withKind(kafkaMirrorMaker2.getKind()));
+        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
         cluster.setOwnerReference(kafkaMirrorMaker2);
 

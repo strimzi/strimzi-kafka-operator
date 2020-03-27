@@ -46,9 +46,12 @@ public class AbstractModelTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax,
-                                                   ResourceRequirements resources) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax, ResourceRequirements resources) {
+        Kafka resource = new KafkaBuilder()
+                .withNewMetadata()
+                .endMetadata()
+                .build();
+        AbstractModel am = new AbstractModel(resource, "") {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -59,6 +62,8 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(jvmOptions(xmx, xms));
         am.setResources(resources);
         List<EnvVar> envVars = new ArrayList<>(1);
@@ -141,7 +146,12 @@ public class AbstractModelTest {
     }
 
     private String getPerformanceOptions(JvmOptions opts) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                .endMetadata()
+                .build();
+
+        AbstractModel am = new AbstractModel(kafka, "") {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -152,6 +162,8 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
         am.jvmPerformanceOptions(envVars);
@@ -164,15 +176,15 @@ public class AbstractModelTest {
     }
 
     @Test
-    public void testOwnerReference()    {
+    public void testOwnerReference() {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName("my-cluster")
-                .withNamespace("my-namespace")
+                    .withNamespace("my-namespace")
                 .endMetadata()
                 .build();
 
-        AbstractModel am = new AbstractModel(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), Labels.forCluster("foo")) {
+        AbstractModel am = new AbstractModel(kafka, "my-app") {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -183,6 +195,7 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setOwnerReference(kafka);
 
         OwnerReference ref = am.createOwnerReference();
@@ -195,7 +208,14 @@ public class AbstractModelTest {
 
     @Test
     public void testDetermineImagePullPolicy()  {
-        AbstractModel am = new AbstractModel("my-namespace", "my-cluster", Labels.forCluster("my-cluster")) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        AbstractModel am = new AbstractModel(kafka, "my-app") {
             @Override
             protected String getDefaultLogConfigFileName() {
                 return "";
@@ -206,6 +226,7 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
+        am.setLabels(Labels.forStrimziCluster("foo"));
 
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));

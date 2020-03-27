@@ -111,9 +111,9 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKind(KafkaUser.RESOURCE_KIND)
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
@@ -443,9 +443,9 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                                is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKind(KafkaUser.RESOURCE_KIND)
-                                .withKubernetesName()
+                                is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
@@ -527,12 +527,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
                 assertThat(captured.getData().get("ca.crt"), is(userCert.getData().get("ca.crt")));
                 assertThat(captured.getData().get("user.crt"), is(userCert.getData().get("user.crt")));
@@ -554,6 +554,7 @@ public class KafkaUserOperatorTest {
 
                 async.flag();
             })));
+
     }
 
     @Test
@@ -628,9 +629,9 @@ public class KafkaUserOperatorTest {
         KafkaUser existingScramShaUser = ResourceUtils.createKafkaUserTls();
         existingScramShaUser.getMetadata().setName("existing-scram-sha-user");
 
-        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.userLabels(ResourceUtils.LABELS).toMap()))))).thenReturn(
+        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
                 Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
-        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
         when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
         when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
@@ -654,7 +655,7 @@ public class KafkaUserOperatorTest {
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps,
                 aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE) {
 
@@ -732,12 +733,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
 
                 assertThat(scramPasswordCaptor.getValue(), is(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD)))));
@@ -770,7 +771,7 @@ public class KafkaUserOperatorTest {
         KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretScramSha();
@@ -816,12 +817,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
                 assertThat(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
                 assertThat(scramPasswordCaptor.getValue(), is(password));
@@ -842,6 +843,7 @@ public class KafkaUserOperatorTest {
 
                 async.flag();
             })));
+
     }
 
     @Test
@@ -853,7 +855,7 @@ public class KafkaUserOperatorTest {
         KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -924,7 +926,7 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
@@ -962,7 +964,7 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
