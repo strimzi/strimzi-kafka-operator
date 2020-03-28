@@ -648,11 +648,11 @@ class ConnectST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
         // Check that KafkaConnect contains created connector
         String connectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForConnectorCreation(connectPodName, CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorCreation(connectPodName, CLUSTER_NAME);
 
         KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
 
@@ -677,7 +677,7 @@ class ConnectST extends BaseST {
 
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         final String connectorName = "sink-test";
-        KafkaConnectUtils.waitForConnectorCreation(connectPodName, connectorName);
+        KafkaConnectorUtils.waitForConnectorCreation(connectPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectPodName);
         KafkaConnectS2IUtils.waitForConnectS2IStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
@@ -714,7 +714,7 @@ class ConnectST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
-        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 

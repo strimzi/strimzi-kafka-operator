@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -112,5 +114,21 @@ public class SecretUtils {
         certsPaths.put("ca.key", keyPath);
 
         SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
+    }
+
+    public static void waitForCertToChange(String originalCert, String secretName) {
+        waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+            Secret secret = kubeClient().getSecret(secretName);
+            if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
+                String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
+                boolean changed = !originalCert.equals(currentCert);
+                if (changed) {
+                    LOGGER.info("Certificate in Secret {} has changed, was {}, is now {}", secretName, originalCert, currentCert);
+                }
+                return changed;
+            } else {
+                return false;
+            }
+        });
     }
 }
