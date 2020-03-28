@@ -141,7 +141,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
             .endSpec().done();
 
-        KafkaConnectUtils.waitForConnectorReady(kafkaConnectS2IName);
+        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
@@ -409,11 +409,11 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
         // Check that KafkaConnectS2I contains created connector
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
 
@@ -438,7 +438,7 @@ class ConnectS2IST extends BaseST {
 
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         final String connectorName = "sink-test";
-        KafkaConnectUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
+        KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
@@ -473,7 +473,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
-        KafkaConnectUtils.waitForConnectorReady(CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
 
         internalKafkaClient.setPodName(kafkaClientsPodName);
 

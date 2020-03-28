@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,7 +93,7 @@ public class KafkaConnectorResource {
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
         LOGGER.info("Waiting for Kafka Connector {}", kafkaConnector.getMetadata().getName());
-        KafkaConnectUtils.waitForConnectorReady(kafkaConnector.getMetadata().getName());
+        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnector.getMetadata().getName(), "Ready");
         LOGGER.info("Kafka Connector {} is ready", kafkaConnector.getMetadata().getName());
         return kafkaConnector;
     }
