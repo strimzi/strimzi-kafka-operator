@@ -60,11 +60,11 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
 
     public static final int CLIENT_PORT = 2181;
-    protected static final String CLIENT_PORT_NAME = "clients";
+    protected static final String CLIENT_PORT_NAME = "tcp-clients";
     public static final int CLUSTERING_PORT = 2888;
-    protected static final String CLUSTERING_PORT_NAME = "clustering";
+    protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";
     public static final int LEADER_ELECTION_PORT = 3888;
-    protected static final String LEADER_ELECTION_PORT_NAME = "leader-election";
+    protected static final String LEADER_ELECTION_PORT_NAME = "tcp-election";
 
     public static final String ZOOKEEPER_NAME = "zookeeper";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
