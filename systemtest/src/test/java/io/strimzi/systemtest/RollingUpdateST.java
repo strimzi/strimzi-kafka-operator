@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -232,6 +233,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(AZURE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 

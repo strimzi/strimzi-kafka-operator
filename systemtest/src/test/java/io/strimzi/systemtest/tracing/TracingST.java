@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -405,6 +406,7 @@ public class TracingST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(AZURE)
     void testProducerConsumerStreamsService() {
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");

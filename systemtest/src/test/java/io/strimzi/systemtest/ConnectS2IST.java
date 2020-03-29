@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -367,6 +368,7 @@ class ConnectS2IST extends BaseST {
     @Test
     @Tag(CONNECTOR_OPERATOR)
     @Tag(ACCEPTANCE)
+    @Tag(AZURE)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";

@@ -65,6 +65,12 @@ public interface Constants {
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
     int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
 
+    /**
+     * Constants for Kafka clients labels
+     */
+    String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
+    String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
+
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
@@ -223,8 +229,7 @@ public interface Constants {
     String EXTERNAL_CLIENTS_USED = "externalclients";
 
     /**
-     * Constants for Kafka clients labels
+     * Tag for tests running on Azure Pipelines
      */
-    String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
-    String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
+    String AZURE = "azure";
 }

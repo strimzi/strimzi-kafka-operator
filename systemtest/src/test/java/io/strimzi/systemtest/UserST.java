@@ -25,6 +25,8 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.AZURE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -83,6 +85,7 @@ class UserST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(AZURE)
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
@@ -138,6 +141,7 @@ class UserST extends BaseST {
     }
 
     @Test
+    @Tag(AZURE)
     void testUserWithQuotas() {
         String userName = "arnost";
         Integer prodRate = 1111;
