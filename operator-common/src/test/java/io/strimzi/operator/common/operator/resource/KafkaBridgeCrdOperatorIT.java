@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
