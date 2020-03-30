@@ -18,6 +18,7 @@ import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -36,38 +37,34 @@ public abstract class AbstractCrdIT {
         assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));
         createDelete(ssStr);
         T model = TestUtils.fromYaml(resource, resourceClass, false);
-        ssStr = TestUtils.toYamlString(model);
-        try {
-            createDelete(ssStr);
-        } catch (Error | RuntimeException e) {
-            System.err.println(ssStr);
-            throw new AssertionError("Create delete failed after first round-trip -- maybe a problem with a defaulted value?", e);
-        }
+
+        String modelStr = TestUtils.toYamlString(model);
+        assertDoesNotThrow(() -> createDelete(modelStr), "Create delete failed after first round-trip -- maybe a problem with a defaulted value?\nApplied string: " + modelStr);
     }
 
     private void createDelete(String ssStr) {
-        RuntimeException thrown = null;
-        RuntimeException thrown2 = null;
+        RuntimeException creationException = null;
+        RuntimeException deletionException = null;
         try {
             try {
                 cmdKubeClient().applyContent(ssStr);
             } catch (RuntimeException t) {
-                thrown = t;
+                creationException = t;
             }
         } finally {
             try {
                 cmdKubeClient().deleteContent(ssStr);
             } catch (RuntimeException t) {
-                thrown2 = t;
+                deletionException = t;
             }
         }
-        if (thrown != null) {
-            if (thrown2 != null) {
-                thrown.addSuppressed(thrown2);
+        if (creationException != null) {
+            if (deletionException != null) {
+                creationException.addSuppressed(deletionException);
             }
-            throw thrown;
-        } else if (thrown2 != null) {
-            throw thrown2;
+            throw creationException;
+        } else if (deletionException != null) {
+            throw deletionException;
         }
     }
 

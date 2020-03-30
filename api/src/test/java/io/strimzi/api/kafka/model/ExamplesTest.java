@@ -13,14 +13,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionSpec;
-import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -55,7 +54,7 @@ public class ExamplesTest {
         validateRecursively(new File("../examples"));
     }
 
-    private void validateRecursively(File directory) throws IOException {
+    private void validateRecursively(File directory) {
         for (File f : directory.listFiles()) {
             if (f.isDirectory()) {
                 if (f.getAbsolutePath().contains("examples/metrics/grafana") || f.getAbsolutePath().contains("examples/metrics/prometheus"))  {
