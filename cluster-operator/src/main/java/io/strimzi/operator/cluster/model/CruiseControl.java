@@ -50,6 +50,7 @@ public class CruiseControl extends AbstractModel {
 
     public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
 
+    protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_NAME = "cc-certs";
     protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cc-certs/";
@@ -57,6 +58,7 @@ public class CruiseControl extends AbstractModel {
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
+
 
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
 
@@ -335,7 +337,7 @@ public class CruiseControl extends AbstractModel {
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>();
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(CRUISE_CONTROL_CONTAINER_NAME)
                 .withImage(getImage())
                 .withCommand("/opt/cruise-control/cruise_control_run.sh")
                 .withEnv(getEnvVars())
