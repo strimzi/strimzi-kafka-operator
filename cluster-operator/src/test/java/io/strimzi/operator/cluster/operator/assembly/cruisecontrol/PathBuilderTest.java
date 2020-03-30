@@ -58,8 +58,8 @@ public class PathBuilderTest {
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .addParameter(CruiseControlParameters.JSON, "true")
-                .addParameter(CruiseControlParameters.DRY_RUN, "true")
-                .addParameter(CruiseControlParameters.VERBOSE, "false")
+                .addParameter(CruiseControlParameters.DRY_RUN, "false")
+                .addParameter(CruiseControlParameters.VERBOSE, "true")
                 .addParameter(CruiseControlParameters.GOALS, GOALS)
                 .build();
 
