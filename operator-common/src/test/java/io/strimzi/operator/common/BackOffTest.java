@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BackOffTest {
 
@@ -35,12 +35,9 @@ public class BackOffTest {
         assertThat(b.delayMs(), is(3200L));
         assertThat(b.cumulativeDelayMs(), is(6200L));
         assertThat(b.done(), is(true));
-        try {
-            b.delayMs();
-            fail("Should throw");
-        } catch (MaxAttemptsExceededException e) {
 
-        }
+        assertThrows(MaxAttemptsExceededException.class, () -> b.delayMs());
+
         assertThat(b.done(), is(true));
         assertThat(b.totalDelayMs(), is(6200L));
     }
@@ -59,12 +56,8 @@ public class BackOffTest {
         assertThat(b.delayMs(), is(100L));
         //attempt
         assertThat(b.delayMs(), is(1000L));
-        try {
-            b.delayMs();
-            fail("Should throw");
-        } catch (MaxAttemptsExceededException e) {
 
-        }
+        assertThrows(MaxAttemptsExceededException.class, () -> b.delayMs());
 
         assertThat(b.totalDelayMs(), is(1111L));
     }
@@ -75,12 +68,9 @@ public class BackOffTest {
         assertThat(b.delayMs(), is(0L));
         assertThat(b.delayMs(), is(200L));
         assertThat(b.delayMs(), is(400L));
-        try {
-            b.delayMs();
-            fail("Should throw");
-        } catch (MaxAttemptsExceededException e) {
 
-        }
+        assertThrows(MaxAttemptsExceededException.class, () -> b.delayMs());
+
         assertThat(b.totalDelayMs(), is(600L));
     }
 }
