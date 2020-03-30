@@ -1245,7 +1245,6 @@ class KafkaST extends BaseST {
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(AZURE)
     void testLoadBalancerTls() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()

@@ -67,7 +67,7 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
 else
     if [ "${MAIN_BUILD}" = "TRUE" ] ; then
         echo "Login into Docker Hub ..."
-        docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
 
         export DOCKER_ORG=strimzi
         export DOCKER_TAG=$TAG

@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -112,7 +111,6 @@ public class ListenersST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(AZURE)
     void testCustomChainCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 

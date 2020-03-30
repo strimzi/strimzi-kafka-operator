@@ -123,6 +123,7 @@ class ConnectST extends BaseST {
     @Test
     @Tag(TRAVIS)
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(AZURE)
     void testKafkaConnectWithFileSinkPlugin() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -336,6 +337,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(AZURE)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()

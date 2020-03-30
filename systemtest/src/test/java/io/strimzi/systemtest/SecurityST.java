@@ -1160,6 +1160,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(AZURE)
     void testCaRenewalBreakInMiddle() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()

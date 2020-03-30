@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
@@ -64,6 +65,7 @@ public class OauthAuthorizationST extends OauthBaseST {
 
     @Description("As a member of team A, I should be able to read and write to all topics starting with a-")
     @Test
+    @Tag(AZURE)
     void smokeTestForClients() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         Future<Integer> producer = teamAOauthKafkaClient.sendMessagesTls(TOPIC_A, NAMESPACE, CLUSTER_NAME, TEAM_A_CLIENT,
                 MESSAGE_COUNT, "SSL");
@@ -177,6 +179,7 @@ public class OauthAuthorizationST extends OauthBaseST {
 
     @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
     @Test
+    @Tag(AZURE)
     void testSuperUserWithOauthAuthorization() throws InterruptedException, ExecutionException, TimeoutException, IOException {
 
         LOGGER.info("Verifying that team B is not able write to topic starting with 'x-' because in kafka cluster" +

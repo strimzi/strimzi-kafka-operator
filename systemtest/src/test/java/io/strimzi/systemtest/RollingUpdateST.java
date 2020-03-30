@@ -472,6 +472,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
+    @Tag(AZURE)
     void testManualTriggeringRollingUpdate() {
         // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
@@ -697,6 +698,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
+    @Tag(AZURE)
     void testClusterOperatorFinishAllRollingUpdates() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
