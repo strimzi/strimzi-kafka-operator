@@ -1020,7 +1020,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-        void testEntityOperatorWithoutUserOperator() {
+    void testEntityOperatorWithoutUserOperator() {
         LOGGER.info("Deploying Kafka cluster without UO in EO");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)

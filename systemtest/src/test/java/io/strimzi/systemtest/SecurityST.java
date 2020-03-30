@@ -577,8 +577,6 @@ class SecurityST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow() {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
