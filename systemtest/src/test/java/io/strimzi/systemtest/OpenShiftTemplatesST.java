@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -69,7 +68,6 @@ public class OpenShiftTemplatesST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
     void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
