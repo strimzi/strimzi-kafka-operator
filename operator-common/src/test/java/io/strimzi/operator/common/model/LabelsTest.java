@@ -151,15 +151,13 @@ public class LabelsTest {
     }
 
     @Test
-    public void testWithInvalidUserLabels()   {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Map userLabelsWithStrimzi = new HashMap<String, String>(2);
-            userLabelsWithStrimzi.put("key1", "value1");
-            userLabelsWithStrimzi.put("key2", "value2");
-            userLabelsWithStrimzi.put(Labels.STRIMZI_DOMAIN + "something", "value3");
+    public void testWithInvalidUserSuppliedLabels()   {
+        Map userLabelsWithStrimzi = new HashMap<String, String>(3);
+        userLabelsWithStrimzi.put("key1", "value1");
+        userLabelsWithStrimzi.put("key2", "value2");
+        userLabelsWithStrimzi.put(Labels.STRIMZI_DOMAIN + "something", "value3");
 
-            Labels nonNullLabels = Labels.EMPTY.withAdditionalLabels(userLabelsWithStrimzi);
-        });
+        assertThrows(IllegalArgumentException.class, () -> Labels.EMPTY.withAdditionalLabels(userLabelsWithStrimzi));
     }
 
     @Test
