@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class MockKubeRegressionTest {
@@ -30,7 +31,7 @@ public class MockKubeRegressionTest {
     }
 
     @Test
-    public void test1() {
+    public void testStatefulSetCreationAndDeletion() {
         client.apps().statefulSets().inNamespace("ns").withName("foo").createNew()
                 .withNewMetadata()
                     .withName("foo")
@@ -43,10 +44,10 @@ public class MockKubeRegressionTest {
                         .withNewSpec().endSpec()
                     .endTemplate()
                 .endSpec()
-            .done();
+                .done();
 
         List<Pod> ns = client.pods().inNamespace("ns").list().getItems();
-        assertThat(ns.size(), is(3));
+        assertThat(ns, hasSize(3));
 
         AtomicBoolean deleted = new AtomicBoolean(false);
         AtomicBoolean recreated = new AtomicBoolean(false);
@@ -79,7 +80,7 @@ public class MockKubeRegressionTest {
         watch.close();
 
         ns = client.pods().inNamespace("ns").list().getItems();
-        assertThat(ns.size(), is(3));
+        assertThat(ns, hasSize(3));
 
         client.apps().statefulSets().inNamespace("ns").withName("foo").cascading(true).delete();
 

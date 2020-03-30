@@ -11,25 +11,15 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LabelsTest {
 
     @Test
-    public void testCtorError() {
-        try {
-            new Labels("foo");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            new Labels("foo", "1", "bar");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
+    public void testOddNumberOfArgumentsThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new Labels("foo"));
+        assertThrows(IllegalArgumentException.class, () -> new Labels("foo", "1", "bar"));
     }
 
     /**
@@ -38,43 +28,41 @@ public class LabelsTest {
      */
     @Test
     public void testParser() {
-        asserParseFails("foo");
+        assertParseThrows("foo");
 
-        asserParseFails("foo=bar,");
+        assertParseThrows("foo=bar,");
 
         // Disallow these for now
-        asserParseFails("foo==bar");
-        asserParseFails("foo!=bar");
-        asserParseFails("foo=bar,");
-        asserParseFails("foo=bar,,");
-        asserParseFails(",foo=bar");
-        asserParseFails(",,foo=bar");
-        asserParseFails("8/foo=bar");
-        asserParseFails("//foo=bar");
-        asserParseFails("a/b/foo=bar");
-        asserParseFails("foo=bar/");
+        assertParseThrows("foo==bar");
+        assertParseThrows("foo!=bar");
+        assertParseThrows("foo=bar,");
+        assertParseThrows("foo=bar,,");
+        assertParseThrows(",foo=bar");
+        assertParseThrows(",,foo=bar");
+        assertParseThrows("8/foo=bar");
+        assertParseThrows("//foo=bar");
+        assertParseThrows("a/b/foo=bar");
+        assertParseThrows("foo=bar/");
 
-        // label values can be empty
-        Labels.fromString("foo=");
+        assertDoesNotThrow(() -> {
+            // label values can be empty
+            Labels.fromString("foo=");
 
-        // single selector
-        Labels.fromString("foo=bar");
-        Labels.fromString("foo/bar=baz");
-        Labels.fromString("foo.io/bar=baz");
+            // single selector
+            Labels.fromString("foo=bar");
+            Labels.fromString("foo/bar=baz");
+            Labels.fromString("foo.io/bar=baz");
 
-        // multiple selectors
-        Labels.fromString("foo=bar,name=gee");
-        Labels.fromString("foo=bar,name=");
-        Labels.fromString("foo=bar,lala/name=");
+            // multiple selectors
+            Labels.fromString("foo=bar,name=gee");
+            Labels.fromString("foo=bar,name=");
+            Labels.fromString("foo=bar,lala/name=");
+        });
+
     }
 
-    private void asserParseFails(String foo) {
-        try {
-            Labels.fromString(foo);
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
+    private void assertParseThrows(String unparsable) {
+        assertThrows(IllegalArgumentException.class, () -> Labels.fromString(unparsable));
     }
 
     @Test
@@ -83,6 +71,7 @@ public class LabelsTest {
         Map<String, String> m = new HashMap<>(2);
         m.put("foo", "1");
         m.put("bar", "2");
+
         assertThat(p.labels(), is(m));
     }
 }

@@ -12,8 +12,8 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigTest {
 
@@ -26,28 +26,28 @@ public class ConfigTest {
     }
 
     @Test
-    public void unknownKey() {
+    public void testUnknownKeyThrows() {
         assertThrows(IllegalArgumentException.class, () -> {
             new Config(Collections.singletonMap("foo", "bar"));
         });
     }
 
     @Test
-    public void empty() {
+    public void testEmptyMapThrows() {
         assertThrows(IllegalArgumentException.class, () -> {
             Config c = new Config(Collections.emptyMap());
         });
     }
 
     @Test
-    public void defaults() {
+    public void testDefaultInput() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         Config c = new Config(map);
         assertThat(c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(), is(20_000));
     }
 
     @Test
-    public void override() {
+    public void testOverrideZookeeperSessionTimeout() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13000");
 
@@ -56,24 +56,18 @@ public class ConfigTest {
     }
 
     @Test
-    public void intervals() {
+    public void testNewInvalidTimeout() {
         Map<String, String> map = new HashMap<>(MANDATORY);
-
         map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13000");
-        new Config(map);
 
+        assertDoesNotThrow(() -> new Config(map));
 
-        try {
-            map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "foos");
-            new Config(map);
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
+        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "foos");
+        assertThrows(IllegalArgumentException.class, () -> new Config(map));
     }
 
     @Test
-    public void topicMetadataMaxAttempts() {
+    public void testTopicMetadataMaxAttemptsIsSetCorrectly() {
 
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
