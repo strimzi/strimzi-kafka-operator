@@ -779,13 +779,12 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testAccidentallyRemovedCaTriggersRollingUpdate() {
+    void testClusterCaRemovedTriggersRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
-        String userName = "alice";
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
         final String defaultKafkaClientsPodName =
@@ -796,12 +795,14 @@ class RollingUpdateST extends BaseST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
+        int sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS");
         assertThat(sent, is(MESSAGE_COUNT));
 
         String zkCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
         String kCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
-        kubeClient(NAMESPACE).deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
+
+        // some kind of accident happened and the CA secret has been deleted
+        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zkCrtBeforeAccident)));
@@ -809,7 +810,7 @@ class RollingUpdateST extends BaseST {
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
 
-        int sentAfter = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "TLS");
+        int sentAfter = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, USER_NAME, MESSAGE_COUNT, "TLS");
         assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
