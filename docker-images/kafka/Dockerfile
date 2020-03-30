@@ -38,6 +38,13 @@ RUN curl -LO https://github.com/danielqsj/kafka_exporter/releases/download/v${KA
 COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 
 #####
+# Add Cruise Control
+#####
+ENV CRUISE_CONTROL_HOME=/opt/cruise-control
+RUN mkdir $CRUISE_CONTROL_HOME
+COPY ./cruise-control-scripts $CRUISE_CONTROL_HOME
+
+#####
 # Add Strimzi agents
 #####
 COPY ./tmp/kafka-agent.jar ${KAFKA_HOME}/libs/
@@ -48,6 +55,10 @@ COPY ./tmp/tracing-agent.jar ${KAFKA_HOME}/libs/
 # Add 3dr party libs
 #####
 COPY kafka-thirdparty-libs/${THIRD_PARTY_LIBS}/target/dependency/ ${KAFKA_HOME}/libs/
+
+RUN  mkdir -p ${CRUISE_CONTROL_HOME}/libs/
+COPY kafka-thirdparty-libs/cc/target/dependency/ ${CRUISE_CONTROL_HOME}/libs/
+COPY kafka-thirdparty-libs/cc/target/dependency/cruise-control-metrics-reporter-*.jar ${KAFKA_HOME}/libs/
 
 #####
 # Add Stunnel

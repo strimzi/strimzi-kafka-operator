@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
@@ -360,7 +361,8 @@ public class ResourceUtils {
                                            SingleVolumeStorage zkStorage,
                                            TopicOperatorSpec topicOperatorSpec,
                                            Logging kafkaLogging, Logging zkLogging,
-                                           KafkaExporterSpec keSpec) {
+                                           KafkaExporterSpec keSpec,
+                                           CruiseControlSpec ccSpec) {
         Kafka result = new Kafka();
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
@@ -412,6 +414,7 @@ public class ResourceUtils {
 
         spec.setTopicOperator(topicOperatorSpec);
         spec.setKafkaExporter(keSpec);
+        spec.setCruiseControl(ccSpec);
 
         spec.setZookeeper(zk);
         result.setSpec(spec);

@@ -32,3 +32,4 @@ Kafka MirrorMaker:: Kafka MirrorMaker replicates data between two Kafka clusters
 MirrorMaker takes messages from a source Kafka cluster and writes them to a target Kafka cluster.
 Kafka Bridge:: Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 Kafka Exporter:: Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics. Consumer lag is the delay between the last message written to a partition and the message currently being picked up from that partition by a consumer
+Cruise Control:: Cruise Control monitors and balances data across a Kafka cluster.

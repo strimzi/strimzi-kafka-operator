@@ -1,0 +1,9 @@
+// This module is included in:
+//
+// overview/assembly-metrics-overview.adoc
+
+[id="metrics-overview-cruisecontrol_{context}"]
+= Cruise Control
+
+Cruise Control is an open source project for simplifying the monitoring and balancing of data across a Kafka cluster.
+Cruise Control is deployed alongside a Kafka cluster to monitor its traffic, propose more balanced partition assignments, and trigger partition reassignments based on those proposals.

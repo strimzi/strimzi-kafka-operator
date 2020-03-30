@@ -110,6 +110,8 @@ spec:
           cpu: "1"
   kafkaExporter: <20>
     # ...
+  cruiseControl: <21>
+    # ...
 ----
 
 <1> Replicas xref:assembly-kafka-broker-replicas-{context}[specifies the number of broker nodes].
@@ -132,3 +134,4 @@ spec:
 <18> xref:assembly-zookeeper-node-configuration-{context}[ZooKeeper-specific configuration], which contains properties similar to the Kafka configuration.
 <19> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <20> Kafka Exporter configuration, which is used xref:assembly-kafka-exporter-configuration-{context}[to expose data as Prometheus metrics].
+<21> Cruise Control configuration, which is used xref:proc-deploying-cruise-control-str[to monitor and balance data across the Kafka cluster].
