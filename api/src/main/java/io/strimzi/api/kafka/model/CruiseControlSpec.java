@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.kafka.model.balancing.CruiseControlBrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
@@ -28,7 +29,7 @@ import lombok.EqualsAndHashCode;
         "replicas", "image", "config",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "logging", "tlsSidecar", "template"})
+        "logging", "tlsSidecar", "template", "capacity"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
@@ -48,6 +49,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private JvmOptions jvmOptions;
     private Logging logging;
     private CruiseControlTemplate template;
+    private CruiseControlBrokerCapacity capacity;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -81,6 +83,16 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
 
     public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
+    }
+
+    @Description("The Cruise Control broker capacity config.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public CruiseControlBrokerCapacity getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(CruiseControlBrokerCapacity capacity) {
+        this.capacity = capacity;
     }
 
     @Description("The Cruise Control config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)

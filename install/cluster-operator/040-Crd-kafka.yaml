@@ -5572,6 +5572,27 @@ spec:
                       description: Template for the Cruise Control container.
                   description: Template to specify how Cruise Control resources, `Deployments`
                     and `Pods`, are generated.
+                capacity:
+                  type: object
+                  properties:
+                    disk:
+                      type: integer
+                      description: Broker capacity for disk in megabytes.
+                    cpu:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                      description: Broker capacity for CPU utilization as a percentage
+                        (0 - 100).
+                    networkIn:
+                      type: integer
+                      description: Broker capacity for network inbound throughput
+                        in kilobytes per second.
+                    networkOut:
+                      type: integer
+                      description: Broker capacity for network outbound throughput
+                        in kilobytes per second.
+                  description: The Cruise Control broker capacity config.
               required:
               - replicas
               description: Configuration of Cruise Control.

@@ -1370,6 +1370,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template to specify how Cruise Control resources, `Deployments` and `Pods`, are generated.
 |xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`]
+|capacity        1.2+<.<|The Cruise Control broker capacity config.
+|xref:type-CruiseControlBrokerCapacity-{context}[`CruiseControlBrokerCapacity`]
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1393,6 +1395,25 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |cruiseControlContainer  1.2+<.<|Template for the Cruise Control container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|====
+
+[id='type-CruiseControlBrokerCapacity-{context}']
+### `CruiseControlBrokerCapacity` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|disk        1.2+<.<|Broker capacity for disk in megabytes.
+|integer
+|cpu         1.2+<.<|Broker capacity for CPU utilization as a percentage (0 - 100).
+|integer
+|networkIn   1.2+<.<|Broker capacity for network inbound throughput in kilobytes per second.
+|integer
+|networkOut  1.2+<.<|Broker capacity for network outbound throughput in kilobytes per second.
+|integer
 |====
 
 [id='type-JmxTransSpec-{context}']

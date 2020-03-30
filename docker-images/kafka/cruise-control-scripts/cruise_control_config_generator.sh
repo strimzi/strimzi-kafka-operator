@@ -4,21 +4,22 @@ CC_CAPACITY_FILE="/tmp/capacity.json"
 CC_CLUSTER_CONFIG_FILE="/tmp/clusterConfig.json"
 
 # Generate capacity file
-# TODO: Update DISK value based on volume sizes
 cat <<EOF > $CC_CAPACITY_FILE
 {
 	"brokerCapacities": [{
 		"brokerId": "-1",
 		"capacity": {
-			"DISK": "100000",
-			"CPU": "100",
-			"NW_IN": "10000",
-			"NW_OUT": "10000"
+			"DISK": "$BROKER_DISK_CAPACITY",
+			"CPU": "$BROKER_CPU_CAPACITY",
+			"NW_IN": "$BROKER_NETWORK_IN_CAPACITY",
+			"NW_OUT": "$BROKER_NETWORK_OUT_CAPACITY"
 		},
 		"doc": "This is the default capacity. Capacity unit used for disk is in MB, cpu is in percentage, network throughput is in KB."
 	}]
 }
 EOF
+
+cat $CC_CAPACITY_FILE
 
 # Generate cluster config
 cat <<EOF > $CC_CLUSTER_CONFIG_FILE

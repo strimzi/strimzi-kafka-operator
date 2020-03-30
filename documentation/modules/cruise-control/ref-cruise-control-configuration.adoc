@@ -55,3 +55,38 @@ spec:
       send.buffer.bytes: 131072
     # ...
 ----
+== Capacity configuration
+
+Cruise Control uses capacity limits to determine if goals related to broker resources are being violated.
+
+Capacity limits for broker resources can be specified in the `capacity` property in `Kafka.spec.cruiseControl`.
+Capacity limits can be set for the following broker resources in the described units:
+
+* `disk`  - Disk storage in MB
+* `cpu`   - CPU utilization as a percent (0-100)
+* `networkIn`  - Network inbound throughput in KB/s
+* `networkOut` - Newtork outbound throughput in KB/s
+
+Since {ProductName} brokers are homogenous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
+
+.An example Cruise Control capacity configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    capacity:
+      disk: 100000
+      cpu: 100
+      networkIn: 10000
+      networkOut: 10000
+    # ...
+----
+
+.Additional resources
+For information, refer to the xref:type-CruiseControlBrokerCapacity-reference[Capacity schema reference].

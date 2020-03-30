@@ -24,11 +24,15 @@ import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.balancing.CruiseControlBrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -39,6 +43,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_CPU_CAPACITY;
+import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_DISK_CAPACITY;
+import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_NETWORK_IN_CAPACITY;
+import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_NETWORK_OUT_CAPACITY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_CPU_CAPACITY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_DISK_CAPACITY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_NW_IN_CAPACITY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_NW_OUT_CAPACITY;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -125,10 +137,82 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(CruiseControl.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_DISK_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_DISK_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_CPU_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_CPU_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_NETWORK_IN_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_NW_IN_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_NETWORK_OUT_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_NW_OUT_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(configuration.getConfiguration()).build());
 
         return expected;
+    }
+
+    public String getCapacityConfigurationFromEnvVar(Kafka resource, String envVar) {
+        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        Deployment dep = cc.generateDeployment(true, null, null, null);
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        // checks on the main Cruise Control container
+        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
+        List<EnvVar> ccEnvVars = ccContainer.getEnv();
+
+        return ccEnvVars.stream().filter(var -> envVar.equals(var.getName())).map(EnvVar::getValue).findFirst().get();
+    }
+
+    @Test
+    public void testBrokerCapacities() {
+        // Test user defined capacities
+        CruiseControlBrokerCapacity userDefinedCapacity = new CruiseControlBrokerCapacity();
+        userDefinedCapacity.setDisk(20000);
+        userDefinedCapacity.setCpu(95);
+        userDefinedCapacity.setNetworkIn(50000);
+        userDefinedCapacity.setNetworkOut(50000);
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            .editSpec()
+                .editKafka()
+                    .withVersion(version)
+                .endKafka()
+                .withNewCruiseControl()
+                    .withImage(ccImage)
+                    .withCapacity(userDefinedCapacity)
+                .endCruiseControl()
+            .endSpec()
+            .build();
+
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(userDefinedCapacity.getDisk())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_CAPACITY), is(Integer.toString(userDefinedCapacity.getCpu())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_IN_CAPACITY), is(Integer.toString(userDefinedCapacity.getNetworkIn())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_OUT_CAPACITY), is(Integer.toString(userDefinedCapacity.getNetworkOut())));
+
+        // Test generated disk capacity
+        JbodStorage jbodStorage = new JbodStorage();
+        List<SingleVolumeStorage> volumes = new ArrayList<SingleVolumeStorage>();
+
+        PersistentClaimStorage p1 = new PersistentClaimStorage();
+        p1.setId(0);
+        p1.setSize("50Gi");
+        volumes.add(p1);
+
+        PersistentClaimStorage p2 = new PersistentClaimStorage();
+        p2.setId(1);
+        p2.setSize("50G");
+        volumes.add(p2);
+
+        jbodStorage.setVolumes(volumes);
+
+        resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            .editSpec()
+                .editKafka()
+                    .withVersion(version)
+                    .withStorage(jbodStorage)
+                .endKafka()
+                .withCruiseControl(cruiseControlSpec)
+            .endSpec()
+            .build();
+
+        Capacity generatedCapacity = new Capacity(resource.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(generatedCapacity.getDisk())));
     }
 
     @Test

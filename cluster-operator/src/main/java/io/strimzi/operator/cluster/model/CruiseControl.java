@@ -37,7 +37,9 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.Annotations;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -80,6 +82,11 @@ public class CruiseControl extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
+    private int brokerDiskCapacity;
+    private int brokerCpuCapacity;
+    private int brokerNetworkInCapacity;
+    private int brokerNetworkOutCapacity;
+
 
     public static final String REST_API_PORT_NAME = "rest-api";
     public static final int REST_API_PORT = 9090;
@@ -92,6 +99,10 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
+    protected static final String ENV_VAR_BROKER_DISK_CAPACITY = "BROKER_DISK_CAPACITY";
+    protected static final String ENV_VAR_BROKER_CPU_CAPACITY = "BROKER_CPU_CAPACITY";
+    protected static final String ENV_VAR_BROKER_NETWORK_IN_CAPACITY = "BROKER_NETWORK_IN_CAPACITY";
+    protected static final String ENV_VAR_BROKER_NETWORK_OUT_CAPACITY = "BROKER_NETWORK_OUT_CAPACITY";
 
 
     // Templates
@@ -169,10 +180,18 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setTlsSidecar(tlsSidecar);
 
             cruiseControl = updateConfiguration(spec, cruiseControl);
-            KafkaConfiguration configuration = new KafkaConfiguration(kafkaAssembly.getSpec().getKafka().getConfig().entrySet());
+
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
                 cruiseControl.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
             }
+
+            Capacity capacity = new Capacity(kafkaAssembly.getSpec());
+            cruiseControl.brokerDiskCapacity = capacity.getDisk();
+            cruiseControl.brokerCpuCapacity = capacity.getCpu();
+            cruiseControl.brokerNetworkInCapacity = capacity.getNwIn();
+            cruiseControl.brokerNetworkOutCapacity = capacity.getNwOut();
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
@@ -381,6 +400,11 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, String.valueOf(defaultBootstrapServers(cluster))));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
+
+        varList.add(buildEnvVar(ENV_VAR_BROKER_DISK_CAPACITY, String.valueOf(brokerDiskCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_BROKER_CPU_CAPACITY, String.valueOf(brokerCpuCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_BROKER_NETWORK_IN_CAPACITY, String.valueOf(brokerNetworkInCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_BROKER_NETWORK_OUT_CAPACITY, String.valueOf(brokerNetworkOutCapacity)));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
