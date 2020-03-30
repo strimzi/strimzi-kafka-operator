@@ -22,8 +22,8 @@ The `Secret` should contain the public key of the Certificate Authority under th
 The `Secret` should contain the private key of the Certificate Authority under the key `ca.key`.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same ZooKeeper cluster that your Kafka cluster is using.
 .. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Kubernetes namespace in which you want the operator to watch for  `KafkaUser` resources.
-.. The `STRIMZI_JAVA_OPTS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Java options (for example, `Xmx` and `Xms`) used for the JVM running User Operator.
-.. The `STRIMZI_JAVA_SYSTEM_PROPERTIES` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the list of `-D` options which are set to the User Operator.
+.. The `STRIMZI_JAVA_OPTS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
+.. The `STRIMZI_JAVA_SYSTEM_PROPERTIES` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the list of `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
 
 . Deploy the User Operator.
 +
