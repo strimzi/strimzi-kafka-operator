@@ -9,31 +9,31 @@ import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.api.model.NodeAddressBuilder;
 import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class InitWriterTest {
 
     @TempDir
     public File tempDir;
 
-    private static Map<String, String> envVars = new HashMap<>(2);
+    private static Map<String, String> envVars = new HashMap<>(3);
     private static Map<String, String> labels = new HashMap<>(4);
     private static List<NodeAddress> addresses = new ArrayList<>(3);
 
@@ -54,7 +54,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testWriteRackId() throws IOException {
+    public void testWriteRackId() {
 
         // create and configure (env vars) the path to the rack-id file
         File kafkaFolder = new File(tempDir.getPath() + "opt/kafka");
@@ -73,7 +73,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testWriteExternalAddress() throws IOException {
+    public void testWriteExternalAddress() {
 
         // create and configure (env vars) the path to the rack-id file
         File kafkaFolder = new File(tempDir.getPath(), "/opt/kafka");
@@ -92,7 +92,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testNoLabel() {
+    public void testWriteRackFailWithMissingKubernetesZoneLabel() {
 
         // the cluster node will not have the requested label
         Map<String, String> labels = new HashMap<>(InitWriterTest.labels);
@@ -107,7 +107,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testNoFolder() throws IOException {
+    public void testWriteRackFailsWhenInitFolderDoesNotExist() {
 
         // specify a not existing folder for emulating IOException in the rack writer
         Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
@@ -122,11 +122,13 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testFindAddressWithType()   {
+    public void testFindAddressWithAddressType()   {
         Map<String, String> envs = new HashMap<>(envVars);
         envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
+
         InitWriterConfig config = InitWriterConfig.fromMap(envs);
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+
         InitWriter writer = new InitWriter(client, config);
         String address = writer.findAddress(addresses);
 
@@ -134,7 +136,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testFindAddress()   {
+    public void testFindAddressReturnsExternalAddress()   {
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
         InitWriter writer = new InitWriter(client, config);
@@ -144,7 +146,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testFindAddressNotFound()   {
+    public void testFindAddressNullWithInvalidAddressTypes()   {
         List<NodeAddress> addresses = new ArrayList<>(3);
         addresses.add(new NodeAddressBuilder().withType("SomeAddress").withAddress("my.external.address").build());
         addresses.add(new NodeAddressBuilder().withType("SomeOtherAddress").withAddress("my.internal.address").build());
@@ -159,7 +161,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testFindAddressesNull()   {
+    public void testFindAddressNullWhenAddressesNull()   {
         List<NodeAddress> addresses = null;
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);

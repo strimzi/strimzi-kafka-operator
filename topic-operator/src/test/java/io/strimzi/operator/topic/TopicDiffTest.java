@@ -11,100 +11,118 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class TopicDiffTest {
 
-    Map<String, String> config = new HashMap<>();
+    Map<String, String> topicAConfig = new HashMap<>();
 
     {
-        config.put("a", "1");
-        config.put("b", "2");
-        config.put("c", "3");
+        topicAConfig.put("a", "1");
+        topicAConfig.put("b", "2");
+        topicAConfig.put("c", "3");
     }
-    Topic topicA = new Topic.Builder("test", 2, config).build();
+    Topic topicA = new Topic.Builder("test", 2, topicAConfig).build();
 
+    Map<String, String> topicBConfig = new HashMap<>();
     {
-        config.clear();
-        config.put("b", "two");
-        config.put("c", "3");
-        config.put("d", "4");
+        topicBConfig.put("b", "two");
+        topicBConfig.put("c", "3");
+        topicBConfig.put("d", "4");
     }
-    Topic topicB = new Topic.Builder("test", 3, config).build();
+    Topic topicB = new Topic.Builder("test", 3, topicBConfig).build();
 
     @Test
-    public void testDiff() {
+    public void testDiffTwoTopicsThenApplyOneReturnsTheOther() {
         TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
         assertThat(diffAB.apply(topicA), is(topicB));
 
         TopicDiff diffBA = TopicDiff.diff(topicB, topicA);
         assertThat(diffBA.apply(topicB), is(topicA));
-
-        Topic topicWrongName = new Topic.Builder("another_name", 3, config).build();
-        try {
-            TopicDiff.diff(topicA, topicWrongName);
-            fail("Should throw");
-        } catch (IllegalArgumentException e) {
-
-        }
     }
 
     @Test
-    public void testConflicts() {
-        final TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
+    public void testDiffDifferentTopicNamesThrows() {
+        Topic topicBWrongName = new Topic.Builder("another_name", 3, topicBConfig).build();
+        assertThrows(IllegalArgumentException.class,  () -> TopicDiff.diff(topicA, topicBWrongName));
+    }
+
+    @Test
+    public void testSameDiffsNoConflicts() {
+        TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
         TopicDiff diffABAgain = TopicDiff.diff(topicA, topicB);
-        assertThat(diffAB == diffABAgain, is(false));
-        assertThat(diffABAgain, is(diffAB));
+
+        assertThat("The objects by comparison should not match", diffAB == diffABAgain, is(false));
+        assertThat("The objects by equals should match", diffABAgain, is(diffAB));
         assertThat(diffAB.conflicts(diffABAgain), is(false));
         assertThat(diffABAgain.conflicts(diffAB), is(false));
 
+        Topic topicD = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), topicB.getConfig()).build();
+        TopicDiff diffAD = TopicDiff.diff(topicA, topicD);
+
+        assertThat(diffAB.conflicts(diffAD), is(false));
+        assertThat(diffAD.conflicts(diffAB), is(false));
+    }
+
+    @Test
+    public void testDifferentDiffsHaveConflicts() {
         Topic topicC = new Topic.Builder(topicA.getTopicName(), 4, topicA.getConfig()).build();
+
+        TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
         TopicDiff diffAC = TopicDiff.diff(topicA, topicC);
         assertThat(diffAB.conflicts(diffAC), is(true));
         assertThat(diffAC.conflicts(diffAB), is(true));
+    }
 
+    @Test
+    public void testTwoDiffsChangingSameConfigOptiionReturnConflict() {
         Topic topicD = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), topicB.getConfig()).build();
         TopicDiff diffAD = TopicDiff.diff(topicA, topicD);
-        assertThat(diffAB.conflicts(diffAD), is(false));
-        assertThat(diffAD.conflicts(diffAB), is(false));
+        Map<String, String> configWithNewB = new HashMap(topicB.getConfig());
+        configWithNewB.put("b", "deux");
+        Topic topicE = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), configWithNewB).build();
+        TopicDiff diffAE = TopicDiff.diff(topicA, topicE);
 
         // Both change the same config
-        Map<String, String> conflictingConfig = new HashMap(topicB.getConfig());
-        conflictingConfig.put("b", "deux");
-        Topic topicE = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
-        TopicDiff diffAE = TopicDiff.diff(topicA, topicE);
         assertThat(diffAD.conflicts(diffAE), is(true));
         assertThat(diffAE.conflicts(diffAD), is(true));
         assertThat(diffAE.conflict(diffAD), is("config:b, "));
 
-        // One changes and one removes
-        conflictingConfig = new HashMap(topicB.getConfig());
-        conflictingConfig.remove("b");
-        Topic topicF = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
+        Map<String, String> configWithoutB = new HashMap(topicB.getConfig());
+        configWithoutB.remove("b");
+        Topic topicF = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), configWithoutB).build();
         TopicDiff diffAF = TopicDiff.diff(topicA, topicF);
+
+        // One changes and one removes
         assertThat(diffAD.conflicts(diffAF), is(true));
         assertThat(diffAF.conflicts(diffAD), is(true));
         assertThat(diffAF.conflict(diffAD), is("config:b, "));
 
-        // Both add, different values
-        conflictingConfig = new HashMap(topicB.getConfig());
-        conflictingConfig.put("d", "5");
-        Topic topicG = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
+        configWithoutB = new HashMap(topicB.getConfig());
+        configWithoutB.put("d", "5");
+        Topic topicG = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), configWithoutB).build();
         TopicDiff diffAG = TopicDiff.diff(topicA, topicG);
+
+        // Both add, different values
         assertThat(diffAD.conflicts(diffAG), is(true));
         assertThat(diffAG.conflicts(diffAD), is(true));
         assertThat(diffAG.conflict(diffAD), is("config:d, "));
     }
 
     @Test
-    public void testMerge() {
-        final TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
+    public void testMergeOfEqualDiffReturnsSameDiff() {
+        TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
         TopicDiff diffABAgain = TopicDiff.diff(topicA, topicB);
         assertThat(diffAB.merge(diffABAgain), is(diffAB));
+    }
 
+    @Test
+    public void testMerge() {
+        TopicDiff diffAB = TopicDiff.diff(topicA, topicB);
         Topic topicD = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), topicB.getConfig()).build();
         TopicDiff diffAD = TopicDiff.diff(topicA, topicD);
+
         TopicDiff merged = diffAB.merge(diffAD);
         Topic end = merged.apply(topicA);
         assertThat(end, is(new Topic.Builder(topicA.getTopicName(), topicB.getNumPartitions(), topicB.getConfig()).build()));

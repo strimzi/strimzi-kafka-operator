@@ -51,9 +51,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     void testKafkaWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
-            });
+            () -> createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.zookeeper", "spec.kafka");
     }
