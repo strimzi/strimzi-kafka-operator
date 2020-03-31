@@ -31,7 +31,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -171,7 +170,6 @@ class ConnectST extends BaseST {
                 .done();
 
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
-        SecretUtils.waitForSecretReady(USER_NAME);
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
@@ -230,6 +228,7 @@ class ConnectST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndConnectorFileSinkPlugin() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -348,7 +347,6 @@ class ConnectST extends BaseST {
                 .done();
 
         KafkaUser kafkaUser = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        SecretUtils.waitForSecretReady(USER_NAME);
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
@@ -424,7 +422,6 @@ class ConnectST extends BaseST {
             .done();
 
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
-        SecretUtils.waitForSecretReady(USER_NAME);
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
