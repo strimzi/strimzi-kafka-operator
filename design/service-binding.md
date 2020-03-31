@@ -133,7 +133,437 @@ These pieces of information can be provided in a variety of ways:
 * ConfigMap
 * Secret
 
-## Strimzi enhancement - Concatenation of bootstrap server information
+## Binding to a Kafka cluster with no TLS or authentication
+
+Because Strimzi support multiple listeners and there is also a future plan to enhance the listener configuration capabilities, it seems prudent to design a scheme that works nicely with multiple listeners.
+
+There are two proposals here, with a preference for the first.
+
+### Option 1 - Augment Kafka CR status
+
+This introduces a list of bootstrap addresses into the `status` for a `Kafka` CR like this:
+
+``` yaml
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+ ...
+status:
+  listeners:
+  - type: plain
+    addresses:
+    - host: myhost1.example.com
+      port: 9092
+    - host: myhost2.example.com
+      port: 9092
+  - type: tls
+    addresses:
+    - host: myhost3.example.com
+      port: 9093
+  bootstrap:
+    plain: myhost1.example.com:9092,myhost2.example.com:9092
+    tls: myhost3.example.com
+```
+
+This has the advantage that the bootstrap servers information is at a known point in the `status` of the `Kafka` custom resource which makes is simple to annotate the CSV so the Service Binding Operator can find it.
+
+Because that structure is a little odd, perhaps this would be preferred.
+
+``` yaml
+bootstrap:
+- name: plain
+  value: myhost1.example.com:9092,myhost2.example.com:9092
+- name: tls
+  value: myhost3.example.com
+```
+
+This is trying of course to find a syntax that is sufficiently general that the Service Binding Operator can be extended to support it.
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Kafka cluster
+      displayName: Kafka
+      kind: Kafka
+      name: kafkas.kafka.strimzi.io
+      version: v1beta1
+      statusDescriptors:
+      - description: The addresses of the bootstrap servers for Kafka clients
+        displayName: Bootstrap servers
+        path: status.bootstrap
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:secret:endpoints'
+```
+
+### Option 2 - Generate a binding ConfigMap
+
+Rather than adding bootstrap server information to the `status`, Strimzi could create a ConfigMap and use the annotations to point the Service Binding Operator to that.
+
+Here's the content of the ConfigMap, with type and protocol added:
+
+``` yaml
+type=kafka
+protocol=kafka
+endpoints.plain=myhost1.example.com:9092,myhost2.example.com:9092
+endpoints.tls=myhost3.example.com
+```
+
+And the `status` changed to point to it:
+
+``` yaml
+apiVersion:kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+ ...
+status:
+  listeners:
+  - type: plain
+    addresses:
+    - host: myhost1.example.com
+      port: 9092
+    - host: myhost2.example.com
+      port: 9092
+  - type: tls
+    addresses:
+    - host: myhost3.example.com
+      port: 9093
+  bindingConfigMap: binding-cm
+```
+
+And the CSV annotations:
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Kafka cluster
+      displayName: Kafka
+      kind: Kafka
+      name: kafkas.kafka.strimzi.io
+      version: v1beta1
+      statusDescriptors:
+      - description: The binding information for Kafka clients
+        displayName: ConfigMap containing binding information
+        path: status.bindingConfigMap
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:configMap'
+```
+
+### Consuming client's ServiceBindingRequest
+
+All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR.
+
+``` yaml
+apiVersion: service.binding/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: my-binding
+spec:
+  services:
+  - group: kafka.strimzi.io
+    kind: Kafka
+    version: v1beta1
+    resourceRef: my-cluster
+```
+
+The consuming client needs to know the listener name.
+
+## Binding to a Kafka cluster with TLS but no authentication
+
+The addition with this scenario is that Kafka clients need access to the CA certificate that signed the broker's server certificate. The Service Binding Specification does not currently have support for a separate CA certificate, which seems like a simple enhancement, which it indicated using `caSecret` in the example below.
+
+The CA certificate is most easily obtained from the `<cluster>-cluster-ca-cert` secret using the `ca.p12` and `ca.password` fields in the secret. To enable the Service Binding Operator to obtain this information, the same pattern of enhancing the CR `status` and annotating the CSV can be used.
+
+``` yaml
+apiVersion:kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+ ...
+status:
+  listeners:
+  - type: plain
+    addresses:
+    - host: myhost1.example.com
+      port: 9092
+    - host: myhost2.example.com
+      port: 9092
+  - type: tls
+    addresses:
+    - host: myhost3.example.com
+      port: 9093
+  bindingConfigMap: binding-cm
+  caCertificateSecret:
+    secretName: my-cluster-cluster-ca-cert
+---
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Kafka cluster
+      displayName: Kafka
+      kind: Kafka
+      name: kafkas.kafka.strimzi.io
+      version: v1beta1
+      statusDescriptors:
+      - description: The secret containing the CA certificate
+        displayName: Secret containing the CA certificate
+        path: status.caCertificateSecret.secretName
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:caSecret'
+```
+
+### Consuming client's ServiceBindingRequest
+
+All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR, and the CA certificate secret can be obtained from there.
+
+``` yaml
+apiVersion: service.binding/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: my-binding
+spec:
+  services:
+  - group: kafka.strimzi.io
+    kind: Kafka
+    version: v1beta1
+    resourceRef: my-cluster
+```
+
+The consuming client needs to know the listener name and also the keys for the CA certificate secret fields for the certificate and password.
+
+## Binding to a Kafka cluster with username/password authentication
+
+Strimzi provides the `KafkaUser` custom resource as a way of managing users and credentials. Using the SASL SCRAM mechanism, the consuming client's credentials are made available in a combination of the CR's status and a secret.
+
+The `KafkaUser` CR should be sufficient to provide the information. For example:
+
+``` yaml
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+status:
+  username: my-user-name
+  secret: my-user
+```
+
+The secret looks like this:
+
+``` yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  password: Z2VuZXJhdGVkcGFzc3dvcmQ=
+```
+
+The CSV can be annotated like this:
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a user inside a Kafka cluster
+      displayName: Kafka User
+      kind: KafkaUser
+      name: kafkausers.kafka.strimzi.io
+      version: v1beta1
+      resources:
+      - kind: Secret
+        name: ''
+        version: v1
+      statusDescriptors:
+      - description: The username
+        displayName: Username
+        path: status.username
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:secret:username'
+      - description: The secret containing the credentials
+        displayName: Secret
+        path: status.secret
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:secret'
+```
+
+### Consuming client's ServiceBindingRequest
+
+The binding needs to refer to the `Kafka` CR for the endpoint information and the `KafkaUser` CR for the username and password.
+
+``` yaml
+apiVersion: service.binding/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: my-binding
+spec:
+  services:
+  - group: kafka.strimzi.io
+    kind: Kafka
+    version: v1beta1
+    resourceRef: my-cluster
+  - group: kafka.strimzi.io
+    kind: KafkaUser
+    version: v1beta1
+    resourceRef: my-user
+```
+
+There are of course two secrets now, the CA certificate secret accessed via the `Kafka` CR and the client's password secret accessed via the `KafkaUser` CR.
+
+The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the key for the password field in the `KafkaUser` secret.
+
+## Binding to a Kafka cluster with mutual TLS authentication
+
+The `KafkaUser` CR should be sufficient to provide the information. For example:
+
+``` yaml
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+status:
+  username: my-user-name
+  secret: my-user
+```
+
+The secret looks like this:
+
+``` yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  ca.crt: # Public key of the clients' CA
+  user.crt: # Public key of the user
+  user.key: # Private key of the user
+```
+
+The CSV can be annotated like this:
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a user inside a Kafka cluster
+      displayName: Kafka User
+      kind: KafkaUser
+      name: kafkausers.kafka.strimzi.io
+      version: v1beta1
+      resources:
+      - kind: Secret
+        name: ''
+        version: v1
+      statusDescriptors:
+      - description: The secret containing the credentials
+        displayName: Secret
+        path: status.secret
+        x-descriptors:
+        - 'urn:alm:descriptor:servicebinding:secret'
+```
+
+### Consuming client's ServiceBindingRequest
+
+The binding needs to refer to the `Kafka` CR for the endpoint information and the `KafkaUser` CR for the client certificate.
+
+``` yaml
+apiVersion: service.binding/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: my-binding
+spec:
+  services:
+  - group: kafka.strimzi.io
+    kind: Kafka
+    version: v1beta1
+    resourceRef: my-cluster
+  - group: kafka.strimzi.io
+    kind: KafkaUser
+    version: v1beta1
+    resourceRef: my-user
+```
+
+There are of course two secrets now, the CA certificate secret accessed via the `Kafka` CR and the client's certificate secret accessed via the `KafkaUser` CR.
+
+The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the keys for the client certificate `KafkaUser` secret for the certificate and password.
+
+# Rejected alternatives
+
+## Strimzi enhancement - Concatenation of bootstrap server information for listeners
 
 The main difficulty with using the Service Binding Operator with Strimzi is that there's no convenient way to get a consolidated list of bootstrap servers for the listener that you wish to use.
 
