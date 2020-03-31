@@ -147,7 +147,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, false, false));
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, true, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
