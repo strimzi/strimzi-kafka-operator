@@ -13,6 +13,17 @@ import io.strimzi.api.kafka.model.storage.Storage;
  */
 public class StorageUtils {
     /**
+     * Parse a K8S-style representation of a quantity of memory, such as {@code 512Mi},
+     * into the equivalent number factor of bytes represented as a long.
+     * @param memory The String representation of the quantity of memory.
+     * @param factor The factor which the bytes should be converted to
+     * @return The equivalent number factor of bytes.
+     */
+    public static long parseMemorybyFactor(String memory, String factor) {
+        return parseMemory(memory) / memoryFactor(factor);
+    }
+
+    /**
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
      * into the equivalent number of bytes represented as a long.
      *

@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 
 import java.util.List;
 
-import static io.strimzi.operator.cluster.model.StorageUtils.parseMemory;
+import static io.strimzi.operator.cluster.model.StorageUtils.parseMemorybyFactor;
 
 public class Capacity {
     public static final int DEFAULT_BROKER_DISK_CAPACITY   = 100000;  // in MB
@@ -78,11 +78,7 @@ public class Capacity {
      * @return The equivalent number of Megabytes.
      */
     public static Integer getSizeInMb(String size) {
-        long factor = 1_000L;
-        if (size.charAt(size.length() - 1) == 'i') {
-            factor = 1_024L;
-        }
-        return Math.toIntExact(parseMemory(size) / (factor * factor));
+        return Math.toIntExact(parseMemorybyFactor(size, size.charAt(size.length() - 1) == 'i' ? "Mi" : "M"));
     }
 
     public Integer getDisk() {
