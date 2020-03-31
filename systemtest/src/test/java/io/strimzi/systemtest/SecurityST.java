@@ -159,24 +159,6 @@ class SecurityST extends BaseST {
         });
     }
 
-    private String generateOpenSSLCommandWithCAfile(String podName, String hostname, String port, String caFilePath) {
-        return "openssl s_client -connect " + podName + "." + hostname + ":" + port +
-                " -showcerts -CAfile " + caFilePath +
-                " -verify_hostname " + podName + "." + hostname + "." + NAMESPACE + ".svc.cluster.local";
-    }
-
-    private String generateOpenSSLCommandWithKafkaCerts(String podName, String hostname, String port) {
-        return generateOpenSSLCommandWithCAfile(podName, hostname, port, "/opt/kafka/cluster-ca-certs/ca.crt") +
-                " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
-                " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
-    }
-
-    private String generateOpenSSLCommandWithZookeeperCerts(String podName, String hostname, String port) {
-        return generateOpenSSLCommandWithCAfile(podName, hostname, port, "/etc/tls-sidecar/cluster-ca-certs/ca.crt") +
-                " -cert /etc/tls-sidecar/zookeeper-nodes/my-cluster-zookeeper-0.crt" +
-                " -key /etc/tls-sidecar/zookeeper-nodes/my-cluster-zookeeper-0.key";
-    }
-
     private void checkKafkaCertificates(String... kafkaCertificates) {
         String kafkaCertificateChain = "s:/O=io.strimzi/CN=my-cluster-kafka\n" +
                 "   i:/O=io.strimzi/CN=cluster-ca";
