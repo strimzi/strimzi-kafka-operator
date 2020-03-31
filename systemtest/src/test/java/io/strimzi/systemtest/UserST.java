@@ -201,15 +201,7 @@ class UserST extends BaseST {
     }
 
     private void deployTestSpecificResources() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec().done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
     }
 
     @BeforeAll
