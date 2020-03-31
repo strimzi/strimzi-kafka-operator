@@ -115,7 +115,7 @@ spec:
     resourceRef: my-cluster
 ```
 
-Then the binding information is supplied in in a standard way, such as environment variables. Of course, in combination with developer tooling, this can remove the need for the developer to write the code to read credentials and so on. Instead, they're presented to the application as environment variables with well known names.
+Then the binding information is supplied in in a standard way, such as environment variables or secrets. For convenience, I have in general chosen to use secrets for binding information (this is controlled by the CSV annotations). Of course, in combination with developer tooling, this can remove the need for the developer to write the code to read credentials and so on. Instead, they're presented to the application as environment variables with well known names.
 
 ## Binding data
 
@@ -137,7 +137,7 @@ These pieces of information can be provided in a variety of ways:
 
 Because Strimzi support multiple listeners and there is also a future plan to enhance the listener configuration capabilities, it seems prudent to design a scheme that works nicely with multiple listeners.
 
-There are two proposals here, with a preference for the first.
+There are two proposals here, with a preference for the first. Consequently, this format is used for the later examples.
 
 ### Option 1 - Augment Kafka CR status
 
@@ -202,8 +202,32 @@ spec:
         displayName: Bootstrap servers
         path: status.bootstrap
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:secret:endpoints'
+        - binding:env:object:secret:endpoints
 ```
+
+#### Consuming client's ServiceBindingRequest
+
+All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR.
+
+``` yaml
+apiVersion: service.binding/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: my-binding
+spec:
+  services:
+  - group: kafka.strimzi.io
+    kind: Kafka
+    version: v1beta1
+    resourceRef: my-cluster
+```
+
+The consuming client needs to know the listener name.
+
+The Service Binding Operator creates a `Secret` which contains:
+
+* **endpoints.<listener_name>** - bootstrap server information for all listeners
+
 
 ### Option 2 - Generate a binding ConfigMap
 
@@ -265,10 +289,10 @@ spec:
         displayName: ConfigMap containing binding information
         path: status.bindingConfigMap
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:configMap'
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
 ```
 
-### Consuming client's ServiceBindingRequest
+#### Consuming client's ServiceBindingRequest
 
 All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR.
 
@@ -286,6 +310,8 @@ spec:
 ```
 
 The consuming client needs to know the listener name.
+
+The Service Binding Operator creates a `ConfigMap` with the same content as the Strimzi binding ConfigMap.
 
 ## Binding to a Kafka cluster with TLS but no authentication
 
@@ -312,9 +338,12 @@ status:
     addresses:
     - host: myhost3.example.com
       port: 9093
-  bindingConfigMap: binding-cm
-  caCertificateSecret:
-    secretName: my-cluster-cluster-ca-cert
+  bootstrap:
+  - name: plain
+    value: myhost1.example.com:9092,myhost2.example.com:9092
+  - name: tls
+    value: myhost3.example.com
+  caCertificateSecret: my-cluster-cluster-ca-cert
 ---
 apiVersion: operators.coreos/com:v1alpha1
 kind: ClusterServiceVersion
@@ -334,9 +363,11 @@ spec:
       statusDescriptors:
       - description: The secret containing the CA certificate
         displayName: Secret containing the CA certificate
-        path: status.caCertificateSecret.secretName
+        path: status.caCertificateSecret
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:caSecret'
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - binding:env:object:secret:ca.p12
+        - binding:env:object:secret:ca.password
 ```
 
 ### Consuming client's ServiceBindingRequest
@@ -357,6 +388,13 @@ spec:
 ```
 
 The consuming client needs to know the listener name and also the keys for the CA certificate secret fields for the certificate and password.
+
+The Service Binding Operator creates a `Secret` which contains:
+
+* **endpoints.<listener_name>** - bootstrap server information for all listeners
+* **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
+* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+
 
 ## Binding to a Kafka cluster with username/password authentication
 
@@ -429,12 +467,13 @@ spec:
         displayName: Username
         path: status.username
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:secret:username'
+        - binding:env:object:secret:username
       - description: The secret containing the credentials
         displayName: Secret
         path: status.secret
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:secret'
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - binding:env:object:secret:password
 ```
 
 ### Consuming client's ServiceBindingRequest
@@ -461,6 +500,15 @@ spec:
 There are of course two secrets now, the CA certificate secret accessed via the `Kafka` CR and the client's password secret accessed via the `KafkaUser` CR.
 
 The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the key for the password field in the `KafkaUser` secret.
+
+The Service Binding Operator creates a `Secret` which contains:
+
+* **endpoints.<listener_name>** - bootstrap server information for all listeners
+* **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
+* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **username** - username for the consuming client
+* **password** - password for the consuming client
+
 
 ## Binding to a Kafka cluster with mutual TLS authentication
 
@@ -529,11 +577,18 @@ spec:
         name: ''
         version: v1
       statusDescriptors:
+      - description: The username
+        displayName: Username
+        path: status.username
+        x-descriptors:
+        - binding:env:object:secret:username
       - description: The secret containing the credentials
         displayName: Secret
         path: status.secret
         x-descriptors:
-        - 'urn:alm:descriptor:servicebinding:secret'
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - binding:env:object:secret:user.p12
+        - binding:env:object:secret:user.password
 ```
 
 ### Consuming client's ServiceBindingRequest
@@ -560,6 +615,16 @@ spec:
 There are of course two secrets now, the CA certificate secret accessed via the `Kafka` CR and the client's certificate secret accessed via the `KafkaUser` CR.
 
 The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the keys for the client certificate `KafkaUser` secret for the certificate and password.
+
+The Service Binding Operator creates a `Secret` which contains:
+
+* **endpoints.<listener_name>** - bootstrap server information for all listeners
+* **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
+* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **username** - username for the consuming client
+* **user.p12** - user certificate for the consuming client PKCS #12 archive file for storing certificates and keys
+* **user.password** - password for protecting the user certficate PKCS #12 archive file
+
 
 # Rejected alternatives
 
