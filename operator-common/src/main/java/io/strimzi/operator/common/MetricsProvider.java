@@ -12,14 +12,43 @@ import io.micrometer.core.instrument.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Interface to be implemented for returning an instance of Kafka Admin interface
+ * Interface for providing metrics or their mocks
  */
 public interface MetricsProvider {
+    /**
+     * Returns the Mircometer MeterRegistry with all metrics
+     *
+     * @return  MeterRegistry
+     */
     MeterRegistry meterRegistry();
 
+    /**
+     * Creates new Counter type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Counter metric
+     */
     Counter counter(String name, String description, Tags tags);
 
+    /**
+     * Creates new Timer type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Timer metric
+     */
     Timer timer(String name, String description, Tags tags);
 
+    /**
+     * Creates new Gauge type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              AtomicInteger which represents the Gauge metric
+     */
     AtomicInteger gauge(String name, String description, Tags tags);
 }

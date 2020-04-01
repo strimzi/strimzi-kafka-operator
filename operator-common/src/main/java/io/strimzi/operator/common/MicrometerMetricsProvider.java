@@ -13,18 +13,37 @@ import io.vertx.micrometer.backends.BackendRegistries;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Wraps creation of Micrometer metrics.
+ */
 public class MicrometerMetricsProvider implements MetricsProvider {
     private final MeterRegistry metrics;
 
+    /**
+     * Constructor of the Micrometer metrics provider
+     */
     public MicrometerMetricsProvider() {
         this.metrics = BackendRegistries.getDefaultNow();
     }
 
+    /**
+     * Returns the Mircometer MeterRegistry with all metrics
+     *
+     * @return  MeterRegistry
+     */
     @Override
     public MeterRegistry meterRegistry() {
         return metrics;
     }
 
+    /**
+     * Creates new Counter type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Counter metric
+     */
     @Override
     public Counter counter(String name, String description, Tags tags) {
         return Counter.builder(name)
@@ -33,6 +52,14 @@ public class MicrometerMetricsProvider implements MetricsProvider {
                 .register(metrics);
     }
 
+    /**
+     * Creates new Timer type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Timer metric
+     */
     @Override
     public Timer timer(String name, String description, Tags tags) {
         return Timer.builder(name)
@@ -41,6 +68,14 @@ public class MicrometerMetricsProvider implements MetricsProvider {
                 .register(metrics);
     }
 
+    /**
+     * Creates new Gauge type metric
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              AtomicInteger which represents the Gauge metric
+     */
     @Override
     public AtomicInteger gauge(String name, String description, Tags tags) {
         AtomicInteger gauge = new AtomicInteger(0);
