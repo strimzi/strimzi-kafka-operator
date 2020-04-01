@@ -30,7 +30,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Iterator;
@@ -42,6 +45,14 @@ import static io.strimzi.kafka.oauth.common.OAuthAuthenticator.urlencode;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
+/**
+ * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
+ * all our external clients such as BasicExternalKafkaClient or OauthExternalKafkaClient.
+ *
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
+ */
 public class KafkaClientProperties  {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
@@ -52,6 +63,14 @@ public class KafkaClientProperties  {
     private String kafkaUsername;
     private Properties properties;
 
+    /**
+     * Description of SuppressWarnings:
+     *
+     * caSecretName field is not initialized first inside KafkaClientProperties constructor and he is de-referenced
+     * in sharedClientProperties() method. This practically means, always make sure that before invoking this method
+     * you need first execute withCaSecretName().
+     */
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     public static class KafkaClientPropertiesBuilder {
 
         private static final String TRUSTSTORE_TYPE_CONFIG = "PKCS12";
@@ -224,7 +243,7 @@ public class KafkaClientProperties  {
 
         /**
          * Create properties which are same pro producer and consumer
-         * @return shared client properties
+         *
          */
         private void sharedClientProperties() {
             // For turn off hostname verification
@@ -237,9 +256,9 @@ public class KafkaClientProperties  {
                     Secret clusterCaCertSecret = kubeClient(namespaceName).getSecret(caSecretName);
                     File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
                     String tsPassword = "foo";
+                    KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
                     if (caSecretName.contains("custom-certificate")) {
                         tsFile.deleteOnExit();
-                        KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
                         ts.load(null, tsPassword.toCharArray());
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
                         String clusterCaCert = kubeClient(namespaceName).getSecret(caSecretName).getData().get("ca.crt");
@@ -254,7 +273,6 @@ public class KafkaClientProperties  {
                         Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
                         tsFile.deleteOnExit();
                     }
-                    KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, ts.getType());
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
@@ -292,8 +310,9 @@ public class KafkaClientProperties  {
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, TRUSTSTORE_TYPE_CONFIG);
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (RuntimeException | IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | InterruptedException e) {
+                e.printStackTrace();
+                throw new RuntimeException();
             }
         }
     }
@@ -306,7 +325,6 @@ public class KafkaClientProperties  {
         this.namespaceName = builder.namespaceName;
         this.clusterName = builder.clusterName;
     }
-
 
     /**
      * Create keystore

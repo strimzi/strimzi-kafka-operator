@@ -489,13 +489,15 @@ class MirrorMaker2ST extends BaseST {
 
         internalKafkaClient.setTopicName(topicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
+        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            sent,
-            internalKafkaClient.receiveMessagesTls()
-        );
+        TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            () -> {
+                internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                return sent == internalKafkaClient.receiveMessagesTls();
+            });
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
         assertThat(mirroredTopic.getSpec().getPartitions(), is(3));

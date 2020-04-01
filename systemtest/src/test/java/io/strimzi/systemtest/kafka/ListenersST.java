@@ -669,8 +669,7 @@ public class ListenersST extends BaseST {
         internalKafkaClient.setMessageCount(MESSAGE_COUNT * 3);
 
         sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
+        assertThat(sent, is(3 * MESSAGE_COUNT));
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 

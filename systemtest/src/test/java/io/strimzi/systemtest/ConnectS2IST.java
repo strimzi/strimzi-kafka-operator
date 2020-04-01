@@ -180,7 +180,7 @@ class ConnectS2IST extends BaseST {
             .endSpec()
             .done();
 
-        final String userName = "user-example-one";
+        final String userName = "user-example-" + rng.nextInt(Integer.MAX_VALUE);
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();

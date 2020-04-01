@@ -14,8 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
@@ -41,7 +39,6 @@ public class VerifiableClient {
     private String kafkaUsername;
     private String consumerGroupName;
     private String consumerInstanceId;
-    // TODO: verbose ?? consumerArguments.put(ClientArgument.VERBOSE, "");
     private ClientArgumentMap clientArgumentMap;
 
     public static class VerifiableClientBuilder {
@@ -180,18 +177,6 @@ public class VerifiableClient {
                         this.getClass().getSimpleName()));
             }
         }
-    }
-
-    private boolean allowParameter(String minimalVersion, String clientVersion) {
-        Pattern pattern = Pattern.compile("(?<major>[0-9]).(?<minor>[0-9]).(?<micro>[0-9])");
-        Matcher current = pattern.matcher(clientVersion);
-        Matcher minimal = pattern.matcher(minimalVersion);
-        if (current.find() && minimal.find()) {
-            return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
-                    && Integer.parseInt(current.group("minor")) >= Integer.parseInt(minimal.group("minor"))
-                    && Integer.parseInt(current.group("micro")) >= Integer.parseInt(minimal.group("micro"));
-        }
-        return false;
     }
 
     /**

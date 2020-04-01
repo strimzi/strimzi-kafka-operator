@@ -81,7 +81,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -1226,7 +1225,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
@@ -1244,7 +1242,6 @@ class SecurityST extends BaseST {
         String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
         SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
-
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
                 .getZookeeper()
@@ -1257,8 +1254,6 @@ class SecurityST extends BaseST {
                 .build());
         });
 
-        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
-
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
@@ -1269,17 +1264,10 @@ class SecurityST extends BaseST {
             }
         );
 
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
-
-        List<String> podStatuses = kubeClient().listPods().stream()
-            .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
-                    && p.getMetadata().getLabels().containsKey("strimzi.io/kind")
-                    && p.getMetadata().getLabels().containsValue("Kafka"))
-            .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
-
-        LOGGER.info("Some of pod kafka is in pending phase because of selected cpu high resource");
-        assertThat(podStatuses, hasItem("Pending"));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()

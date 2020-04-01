@@ -420,12 +420,16 @@ public class MirrorMakerST extends BaseST {
         );
 
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
-            () -> sent == internalKafkaClient.receiveMessagesTls());
+            () -> {
+                internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                return sent == internalKafkaClient.receiveMessagesTls();
+            });
+
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,

@@ -4,14 +4,11 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 public interface IKafkaClientOperations<T> {
 
-    T sendMessagesPlain(long timeoutMs) throws InterruptedException, ExecutionException, TimeoutException, Exception;
-    T sendMessagesTls(long timeoutMs) throws InterruptedException, ExecutionException, TimeoutException, Exception;
+    T sendMessagesPlain(long timeoutMs) throws Exception;
+    T sendMessagesTls(long timeoutMs) throws Exception;
 
-    T receiveMessagesPlain(long timeoutMs) throws InterruptedException, ExecutionException, TimeoutException, Exception;
-    T receiveMessagesTls(long timeoutMs) throws InterruptedException, ExecutionException, TimeoutException, Exception;
+    T receiveMessagesPlain(long timeoutMs) throws Exception;
+    T receiveMessagesTls(long timeoutMs) throws Exception;
 }

@@ -136,6 +136,8 @@ class RollingUpdateST extends BaseST {
 
         PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -148,7 +150,7 @@ class RollingUpdateST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE));
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -158,7 +160,7 @@ class RollingUpdateST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE));
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
