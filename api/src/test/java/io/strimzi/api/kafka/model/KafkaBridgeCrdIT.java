@@ -109,6 +109,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkabridges.kafka.strimzi.io");
     }
 
     @AfterAll

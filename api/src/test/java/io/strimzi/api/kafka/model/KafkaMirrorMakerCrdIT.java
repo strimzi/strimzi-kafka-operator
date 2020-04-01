@@ -98,6 +98,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkamirrormakers.kafka.strimzi.io");
     }
 
     @AfterAll
