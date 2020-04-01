@@ -49,10 +49,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
  * all our external clients such as BasicExternalKafkaClient or OauthExternalKafkaClient.
  *
+ * Description of SuppressWarnings:
+ *
+ * caSecretName field is not initialized first inside KafkaClientProperties constructor and he is de-referenced
+ * in sharedClientProperties() method. This practically means, always make sure that before invoking this method
+ * you need first execute withCaSecretName().
+ *
  * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
  */
+@SuppressFBWarnings({"NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class KafkaClientProperties  {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
@@ -63,14 +70,6 @@ public class KafkaClientProperties  {
     private String kafkaUsername;
     private Properties properties;
 
-    /**
-     * Description of SuppressWarnings:
-     *
-     * caSecretName field is not initialized first inside KafkaClientProperties constructor and he is de-referenced
-     * in sharedClientProperties() method. This practically means, always make sure that before invoking this method
-     * you need first execute withCaSecretName().
-     */
-    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     public static class KafkaClientPropertiesBuilder {
 
         private static final String TRUSTSTORE_TYPE_CONFIG = "PKCS12";
