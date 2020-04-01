@@ -30,7 +30,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.security.SystemtestCertManager;
+import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -95,6 +95,7 @@ class SecurityST extends BaseST {
     private static final String TOPIC_NAME = "test-topic";
 
     private InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
+
     private int messagesCount = 200;
 
     @Test
@@ -108,17 +109,15 @@ class SecurityST extends BaseST {
                 .endSpec()
                 .done();
 
-        SystemtestCertManager stCertManager = new SystemtestCertManager();
-
         LOGGER.info("Check Kafka bootstrap certificate");
-        String outputCertificate = stCertManager.openSSLCommandByResource("my-cluster-kafka-bootstrap:9093", "my-cluster-kafka-bootstrap",
+        String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), KafkaResources.bootstrapServiceName(CLUSTER_NAME),
                 KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", false);
-        checkKafkaCertificates(outputCertificate);
+        verifyCerts(outputCertificate, "kafka");
 
         LOGGER.info("Check zookeeper client certificate");
-        outputCertificate = stCertManager.openSSLCommandByResource("my-cluster-zookeeper-client:2181", "my-cluster-zookeeper-client",
+        outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperServiceName(CLUSTER_NAME) + ":2181", KafkaResources.zookeeperServiceName(CLUSTER_NAME),
                 KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka");
-        checkZookeeperCertificates(outputCertificate);
+        verifyCerts(outputCertificate, "zookeeper");
 
         List<String> kafkaPorts = new ArrayList<>(asList("9091", "9093"));
         List<String> zkPorts = new ArrayList<>(asList("2181", "2888", "3888"));
@@ -129,17 +128,17 @@ class SecurityST extends BaseST {
             LOGGER.info("Checking certificates for podId {}", podId);
             for (String kafkaPort : kafkaPorts) {
                 LOGGER.info("Check kafka certificate for port {}", kafkaPort);
-                output = stCertManager.openSSLCommandByResource(KafkaResources.kafkaPodName(CLUSTER_NAME, podId),
-                        "my-cluster-kafka-brokers", kafkaPort, "kafka", NAMESPACE);
-                checkKafkaCertificates(output);
+                output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.kafkaPodName(CLUSTER_NAME, podId),
+                        KafkaResources.brokersServiceName(CLUSTER_NAME), kafkaPort, "kafka", NAMESPACE);
+                verifyCerts(output, "kafka");
             }
 
             for (String zkPort : zkPorts) {
                 try {
                     LOGGER.info("Check zookeeper certificate for port {}", zkPort);
-                    output = stCertManager.openSSLCommandByResource(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId),
-                            "my-cluster-zookeeper-nodes", zkPort, "zookeeper", NAMESPACE);
-                    checkZookeeperCertificates(output);
+                    output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId),
+                            KafkaResources.zookeeperHeadlessServiceName(CLUSTER_NAME), zkPort, "zookeeper", NAMESPACE);
+                    verifyCerts(output, "zookeeper");
                 } catch (KubeClusterException e) {
                     if (e.result != null && e.result.returnCode() == 104) {
                         LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
@@ -151,34 +150,14 @@ class SecurityST extends BaseST {
         });
     }
 
-    private void checkKafkaCertificates(String... kafkaCertificates) {
-        String kafkaCertificateChain = "s:/O=io.strimzi/CN=my-cluster-kafka\n" +
-                "   i:/O=io.strimzi/CN=cluster-ca";
-        String kafkaBrokerCertificate = "Server certificate\n" +
-                "subject=/O=io.strimzi/CN=my-cluster-kafka\n" +
-                "issuer=/O=io.strimzi/CN=cluster-ca";
-        for (String kafkaCertificate : kafkaCertificates) {
-            assertThat(kafkaCertificate, containsString(kafkaCertificateChain));
-            assertThat(kafkaCertificate, containsString(kafkaBrokerCertificate));
-            assertThat(kafkaCertificate, containsString(TLS_PROTOCOL));
-            assertThat(kafkaCertificate, containsString(SSL_TIMEOUT));
-            assertThat(kafkaCertificate, containsString(OPENSSL_RETURN_CODE));
-        }
-    }
+    private static void verifyCerts(String certificate, String component) {
+        List<String> certificateChains = SystemTestCertManager.getCertificateChain(CLUSTER_NAME + "-" + component);
 
-    private void checkZookeeperCertificates(String... zookeeperCertificates) {
-        String zookeeperCertificateChain = "s:/O=io.strimzi/CN=my-cluster-zookeeper\n" +
-                "   i:/O=io.strimzi/CN=cluster-ca";
-        String zookeeperNodeCertificate = "Server certificate\n" +
-                "subject=/O=io.strimzi/CN=my-cluster-zookeeper\n" +
-                "issuer=/O=io.strimzi/CN=cluster-ca";
-        for (String zookeeperCertificate : zookeeperCertificates) {
-            assertThat(zookeeperCertificate, containsString(zookeeperCertificateChain));
-            assertThat(zookeeperCertificate, containsString(zookeeperNodeCertificate));
-            assertThat(zookeeperCertificate, containsString(TLS_PROTOCOL));
-            assertThat(zookeeperCertificate, containsString(SSL_TIMEOUT));
-            assertThat(zookeeperCertificate, containsString(OPENSSL_RETURN_CODE));
-        }
+        assertThat(certificate, containsString(certificateChains.get(0)));
+        assertThat(certificate, containsString(certificateChains.get(1)));
+        assertThat(certificate, containsString(TLS_PROTOCOL));
+        assertThat(certificate, containsString(SSL_TIMEOUT));
+        assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
     }
 
     void autoRenewSomeCaCertsTriggeredByAnno(
