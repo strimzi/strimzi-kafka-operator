@@ -541,7 +541,8 @@ class ConnectST extends BaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarGeneral);
 
-        StUtils.checkCologForUsedVariable(usedVariable);
+        StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName(),
+                usedVariable, "test.value");
 
         LOGGER.info("Updating values in MirrorMaker container");
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {

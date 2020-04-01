@@ -489,6 +489,9 @@ public class MirrorMakerST extends BaseST {
         int updatedFailureThreshold = 1;
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
+            .editMetadata()
+                .addToLabels("type", "kafka-mirror-maker")
+            .endMetadata()
             .editSpec()
                 .editProducer()
                     .withConfig(producerConfig)
@@ -529,7 +532,8 @@ public class MirrorMakerST extends BaseST {
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
-        StUtils.checkCologForUsedVariable(usedVariable);
+        StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-mirror-maker").get(0).getMetadata().getName(),
+                usedVariable, "test.value");
 
         LOGGER.info("Updating values in MirrorMaker container");
         KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, kmm -> {

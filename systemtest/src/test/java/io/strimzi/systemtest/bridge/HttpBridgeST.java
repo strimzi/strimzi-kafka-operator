@@ -140,6 +140,9 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int updatedFailureThreshold = 1;
 
         KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-bridge")
+            .endMetadata()
             .editSpec()
                 .withNewTemplate()
                     .withNewBridgeContainer()
@@ -175,7 +178,8 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
-        StUtils.checkCologForUsedVariable(usedVariable);
+        StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getName(),
+                usedVariable, "test.value");
 
         LOGGER.info("Updating values in Bridge container");
         KafkaBridgeResource.replaceBridgeResource(bridgeName, kb -> {
