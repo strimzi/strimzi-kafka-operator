@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public interface MetricsProvider {
     /**
-     * Returns the Mircometer MeterRegistry with all metrics
+     * Returns the Micrometer MeterRegistry with all metrics
      *
      * @return  MeterRegistry
      */

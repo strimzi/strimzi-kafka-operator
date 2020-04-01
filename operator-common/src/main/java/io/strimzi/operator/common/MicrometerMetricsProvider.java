@@ -27,7 +27,7 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     }
 
     /**
-     * Returns the Mircometer MeterRegistry with all metrics
+     * Returns the Micrometer MeterRegistry with all metrics
      *
      * @return  MeterRegistry
      */
