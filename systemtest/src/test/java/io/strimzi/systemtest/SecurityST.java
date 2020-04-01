@@ -30,6 +30,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.security.SystemtestCertManager;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -71,7 +73,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
@@ -100,60 +101,51 @@ class SecurityST extends BaseST {
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2)
-                .editSpec().editZookeeper().withReplicas(2).endZookeeper().endSpec().done();
-        String commandForKafkaBootstrap = "echo -n | openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts" +
-                " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
-                " -verify_hostname my-cluster-kafka-bootstrap";
+                .editSpec()
+                    .editZookeeper()
+                        .withReplicas(2)
+                    .endZookeeper()
+                .endSpec()
+                .done();
 
-        String outputForKafkaBootstrap =
-                cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
-                        "/bin/bash", "-c", commandForKafkaBootstrap).out();
-        checkKafkaCertificates(outputForKafkaBootstrap);
+        SystemtestCertManager stCertManager = new SystemtestCertManager();
 
-        String commandForZookeeperClient = "echo -n | openssl s_client -connect my-cluster-zookeeper-client:2181 -showcerts" +
-                " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
-                " -verify_hostname my-cluster-zookeeper-client" +
-                " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
-                " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
-        String outputForZookeeperClient =
-                cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
-                        "/bin/bash", "-c", commandForZookeeperClient).out();
-        checkZookeeperCertificates(outputForZookeeperClient);
+        LOGGER.info("Check Kafka bootstrap certificate");
+        String outputCertificate = stCertManager.openSSLCommandByResource("my-cluster-kafka-bootstrap:9093", "my-cluster-kafka-bootstrap",
+                KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", false);
+        checkKafkaCertificates(outputCertificate);
+
+        LOGGER.info("Check zookeeper client certificate");
+        outputCertificate = stCertManager.openSSLCommandByResource("my-cluster-zookeeper-client:2181", "my-cluster-zookeeper-client",
+                KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka");
+        checkZookeeperCertificates(outputCertificate);
+
+        List<String> kafkaPorts = new ArrayList<>(asList("9091", "9093"));
+        List<String> zkPorts = new ArrayList<>(asList("2181", "2888", "3888"));
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
-            String commandForKafkaPort9091 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
-            String commandForKafkaPort9093 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
+            String output;
 
-            String outputForKafkaPort9091 =
-                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9091).out();
-            String outputForKafkaPort9093 =
-                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9093).out();
+            LOGGER.info("Checking certificates for podId {}", podId);
+            for (String kafkaPort : kafkaPorts) {
+                LOGGER.info("Check kafka certificate for port {}", kafkaPort);
+                output = stCertManager.openSSLCommandByResource(KafkaResources.kafkaPodName(CLUSTER_NAME, podId),
+                        "my-cluster-kafka-brokers", kafkaPort, "kafka", NAMESPACE);
+                checkKafkaCertificates(output);
+            }
 
-            checkKafkaCertificates(outputForKafkaPort9091, outputForKafkaPort9093);
-
-            String commandForZookeeperPort2181 = generateOpenSSLCommandWithKafkaCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
-            String commandForZookeeperPort2888 = generateOpenSSLCommandWithZookeeperCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
-            String commandForZookeeperPort3888 = generateOpenSSLCommandWithZookeeperCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
-
-            String outputForZookeeperPort2181 =
-                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
-                            commandForZookeeperPort2181).out();
-
-            String outputForZookeeperPort3888 =
-                    cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "tls-sidecar",  "/bin/bash", "-c",
-                            commandForZookeeperPort3888).out();
-            checkZookeeperCertificates(outputForZookeeperPort2181, outputForZookeeperPort3888);
-
-            try {
-                String outputForZookeeperPort2888 =
-                        cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "tls-sidecar", "/bin/bash", "-c",
-                                commandForZookeeperPort2888).out();
-                checkZookeeperCertificates(outputForZookeeperPort2888);
-            } catch (KubeClusterException e) {
-                if (e.result != null && e.result.returnCode() == 104) {
-                    LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
-                } else {
-                    throw new RuntimeException(e);
+            for (String zkPort : zkPorts) {
+                try {
+                    LOGGER.info("Check zookeeper certificate for port {}", zkPort);
+                    output = stCertManager.openSSLCommandByResource(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId),
+                            "my-cluster-zookeeper-nodes", zkPort, "zookeeper", NAMESPACE);
+                    checkZookeeperCertificates(output);
+                } catch (KubeClusterException e) {
+                    if (e.result != null && e.result.returnCode() == 104) {
+                        LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
+                    } else {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
