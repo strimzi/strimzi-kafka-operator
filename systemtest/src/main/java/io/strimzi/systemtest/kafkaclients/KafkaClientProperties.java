@@ -228,23 +228,10 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withSharedProperties() {
-
-            sharedClientProperties();
-
-            return this;
-        }
-
-        public KafkaClientProperties build() {
-
-            return new KafkaClientProperties(this);
-        }
-
         /**
          * Create properties which are same pro producer and consumer
-         *
          */
-        private void sharedClientProperties() {
+        public KafkaClientPropertiesBuilder withSharedProperties() {
             // For turn off hostname verification
             properties.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
 
@@ -313,6 +300,13 @@ public class KafkaClientProperties  {
                 e.printStackTrace();
                 throw new RuntimeException();
             }
+
+            return this;
+        }
+
+        public KafkaClientProperties build() {
+
+            return new KafkaClientProperties(this);
         }
     }
 
@@ -337,6 +331,7 @@ public class KafkaClientProperties  {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
+
         File caFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
         caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
@@ -366,6 +361,7 @@ public class KafkaClientProperties  {
     }
 
     private static void importKeycloakCertificateToTruststore(Properties clientProperties) throws IOException {
+
         String responseKeycloak = Exec.exec("openssl", "s_client", "-showcerts", "-connect",
             ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT).out();
         Matcher matcher = Pattern.compile("-----(?s)(.*)-----").matcher(responseKeycloak);
@@ -392,6 +388,7 @@ public class KafkaClientProperties  {
      * @throws IOException
      */
     static void fixBadlyImportedAuthzSettings() throws IOException {
+
         URI masterTokenEndpoint = URI.create("http://" + ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/realms/master/protocol/openid-connect/token");
 
         String token = loginWithUsernamePasswordToKeycloak(masterTokenEndpoint,
@@ -433,6 +430,7 @@ public class KafkaClientProperties  {
     }
 
     static String loginWithUsernamePasswordToKeycloak(URI tokenEndpointUri, String username, String password, String clientId) throws IOException {
+
         StringBuilder body = new StringBuilder("grant_type=password&username=" + urlencode(username) +
             "&password=" + urlencode(password) + "&client_id=" + urlencode(clientId));
 
