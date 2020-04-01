@@ -24,23 +24,16 @@ public class Capacity {
 
     private Integer disk;
     private Integer cpu;
-    private Integer nwIn;
-    private Integer nwOut;
+    private Integer networkIn;
+    private Integer networkOut;
 
     public Capacity(KafkaSpec spec) {
         CruiseControlBrokerCapacity bc = spec.getCruiseControl().getCapacity();
 
-        if (bc != null) {
-            this.disk = bc.getDisk() != null ? bc.getDisk() : generateDiskCapacity(spec.getKafka().getStorage());
-            this.cpu = bc.getCpu() != null ? bc.getCpu() : DEFAULT_BROKER_CPU_CAPACITY;
-            this.nwIn = bc.getNetworkIn() != null ? bc.getNetworkIn() : DEFAULT_BROKER_NW_IN_CAPACITY;
-            this.nwOut = bc.getNetworkOut() != null ? bc.getNetworkOut() : DEFAULT_BROKER_NW_OUT_CAPACITY;
-        } else {
-            this.disk = generateDiskCapacity(spec.getKafka().getStorage());
-            this.cpu = DEFAULT_BROKER_CPU_CAPACITY;
-            this.nwIn = DEFAULT_BROKER_NW_IN_CAPACITY;
-            this.nwOut = DEFAULT_BROKER_NW_OUT_CAPACITY;
-        }
+        this.disk = bc != null && bc.getDisk() != null ? bc.getDisk() : generateDiskCapacity(spec.getKafka().getStorage());
+        this.cpu = bc != null && bc.getCpu() != null ? bc.getCpu() : DEFAULT_BROKER_CPU_CAPACITY;
+        this.networkIn = bc != null && bc.getNetworkIn() != null ? bc.getNetworkIn() : DEFAULT_BROKER_NW_IN_CAPACITY;
+        this.networkOut = bc != null && bc.getNetworkOut() != null ? bc.getNetworkOut() : DEFAULT_BROKER_NW_OUT_CAPACITY;
     }
 
     /**
@@ -97,19 +90,19 @@ public class Capacity {
         this.cpu = cpu;
     }
 
-    public Integer getNwIn() {
-        return nwIn;
+    public Integer getNetworkIn() {
+        return networkIn;
     }
 
-    public void setNwIn(Integer nwIn) {
-        this.nwIn = nwIn;
+    public void setNetworkIn(Integer networkIn) {
+        this.networkIn = networkIn;
     }
 
-    public Integer getNwOut() {
-        return nwOut;
+    public Integer getNetworkOut() {
+        return networkOut;
     }
 
-    public void setNwOut(Integer nwOut) {
-        this.nwOut = nwOut;
+    public void setNetworkOut(Integer networkOut) {
+        this.networkOut = networkOut;
     }
 }

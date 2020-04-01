@@ -190,8 +190,8 @@ public class CruiseControl extends AbstractModel {
             Capacity capacity = new Capacity(kafkaAssembly.getSpec());
             cruiseControl.brokerDiskCapacity = capacity.getDisk();
             cruiseControl.brokerCpuCapacity = capacity.getCpu();
-            cruiseControl.brokerNetworkInCapacity = capacity.getNwIn();
-            cruiseControl.brokerNetworkOutCapacity = capacity.getNwOut();
+            cruiseControl.brokerNetworkInCapacity = capacity.getNetworkIn();
+            cruiseControl.brokerNetworkOutCapacity = capacity.getNetworkOut();
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
