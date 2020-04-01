@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
@@ -6,11 +6,11 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.IKafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
-import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +25,7 @@ import java.util.function.IntPredicate;
  * The OauthExternalKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthExternalKafkaClient extends AbstractKafkaClient implements IKafkaClientOperations<Future<Integer>> {
+public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Future<Integer>> {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
     private Vertx vertx = Vertx.vertx();
@@ -103,10 +103,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements IKa
         KafkaClientProperties kafkaClientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withSecurityProtocol("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
+            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
             .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeySerializerConfig(StringSerializer.class.getName())
-            .withValueSerializerConfig(StringSerializer.class.getName())
+            .withKeySerializerConfig(StringSerializer.class)
+            .withValueSerializerConfig(StringSerializer.class)
             .withClientIdConfig(kafkaUsername + "-producer")
             .withSaslMechanism("OAUTHBEARER")
             .withSaslLoginCallbackHandlerClass()
@@ -146,11 +146,11 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements IKa
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeySerializerConfig(StringSerializer.class.getName())
-            .withValueSerializerConfig(StringSerializer.class.getName())
+            .withKeySerializerConfig(StringSerializer.class)
+            .withValueSerializerConfig(StringSerializer.class)
             .withCaSecretName(caCertName)
             .withKafkaUsername(kafkaUsername)
-            .withSecurityProtocol("SASL_SSL")
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withClientIdConfig(kafkaUsername + "-producer")
             .withSaslMechanism("OAUTHBEARER")
             .withSaslLoginCallbackHandlerClass()
@@ -185,10 +185,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements IKa
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withGroupIdConfig(consumerGroup)
-            .withSecurityProtocol("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
+            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
             .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeyDeSerializerConfig(StringDeserializer.class.getName())
-            .withValueDeSerializerConfig(StringDeserializer.class.getName())
+            .withKeyDeserializerConfig(StringDeserializer.class)
+            .withValueDeserializerConfig(StringDeserializer.class)
             .withClientIdConfig(kafkaUsername + "-consumer")
             .withAutoOffsetResetConfig("earliest")
             .withSaslMechanism("OAUTHBEARER")
@@ -230,10 +230,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements IKa
             .withClusterName(clusterName)
             .withCaSecretName(caCertName)
             .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeyDeSerializerConfig(StringDeserializer.class.getName())
-            .withValueDeSerializerConfig(StringDeserializer.class.getName())
+            .withKeyDeserializerConfig(StringDeserializer.class)
+            .withValueDeserializerConfig(StringDeserializer.class)
             .withKafkaUsername(kafkaUsername)
-            .withSecurityProtocol("SASL_SSL")
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withGroupIdConfig(consumerGroup)
             .withAutoOffsetResetConfig("earliest")
             .withClientIdConfig(kafkaUsername + "-consumer")

@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -76,7 +77,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .withKafkaUsername(userName)
                 .withMessageCount(messageCount)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol("SASL_SSL")
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
                 .build();
 
         Future<Integer> consumer = kafkaClient.receiveMessagesTls();
@@ -96,7 +97,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .withKafkaUsername(userName)
                 .withMessageCount(MESSAGE_COUNT)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol("SASL_SSL")
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
                 .build();
 
         // Send messages to Kafka

@@ -40,6 +40,7 @@ import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import kafka.tools.MirrorMaker;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
@@ -1037,7 +1038,7 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
@@ -1143,7 +1144,7 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 

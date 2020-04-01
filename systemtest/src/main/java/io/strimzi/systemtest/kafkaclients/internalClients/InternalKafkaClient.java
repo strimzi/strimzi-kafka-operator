@@ -7,7 +7,7 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.IKafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * The InternalKafkaClient for sending and receiving messages using basic properties.
  * The client is using an internal listeners and communicate from the pod.
  */
-public class InternalKafkaClient extends AbstractKafkaClient implements IKafkaClientOperations<Integer> {
+public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Integer> {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 

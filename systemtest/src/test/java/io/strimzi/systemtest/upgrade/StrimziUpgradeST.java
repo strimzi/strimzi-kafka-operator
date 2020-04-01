@@ -273,7 +273,6 @@ public class StrimziUpgradeST extends BaseST {
             .withClusterName(kafkaClusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 

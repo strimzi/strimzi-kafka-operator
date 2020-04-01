@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 
 import java.security.InvalidParameterException;
 
@@ -22,7 +23,7 @@ public abstract class AbstractKafkaClient {
     protected int messageCount;
     protected String consumerGroup;
     protected String kafkaUsername;
-    protected String securityProtocol;
+    protected SecurityProtocol securityProtocol;
     protected String caCertName;
     protected KafkaClientProperties clientProperties;
 
@@ -34,7 +35,7 @@ public abstract class AbstractKafkaClient {
         private int messageCount;
         private String consumerGroup;
         private String kafkaUsername;
-        private String securityProtocol;
+        private SecurityProtocol securityProtocol;
         private String caCertName;
         private KafkaClientProperties clientProperties;
 
@@ -68,7 +69,7 @@ public abstract class AbstractKafkaClient {
             return self();
         }
 
-        public T withSecurityProtocol(String securityProtocol) {
+        public T withSecurityProtocol(SecurityProtocol securityProtocol) {
             this.securityProtocol = securityProtocol;
             return self();
         }
@@ -92,10 +93,10 @@ public abstract class AbstractKafkaClient {
 
     protected AbstractKafkaClient(Builder<?> builder) {
 
-        if (builder.topicName == null) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.namespaceName == null) throw new InvalidParameterException("Namespace name is not set.");
-        if (builder.clusterName == null) throw  new InvalidParameterException("Cluster name is not set.");
-        if (builder.messageCount == 0) throw  new InvalidParameterException("Message count is set to 0");
+        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
+        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
 
         topicName = builder.topicName;
         namespaceName = builder.namespaceName;
@@ -115,6 +116,7 @@ public abstract class AbstractKafkaClient {
     protected boolean verifyProducedAndConsumedMessages(int producedMessages, int consumedMessages) {
         return producedMessages == consumedMessages;
     }
+
     /**
      * Get external bootstrap connection
      * @param namespace kafka namespace
@@ -153,7 +155,7 @@ public abstract class AbstractKafkaClient {
             }
             return result + ":9094";
         } else {
-            throw new RuntimeException("Unexpected external bootstrap service for Kafka cluster " + clusterName);
+            throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapServiceType + " for Kafka cluster " + clusterName);
         }
     }
 

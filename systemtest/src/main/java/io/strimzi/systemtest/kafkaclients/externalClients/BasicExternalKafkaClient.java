@@ -6,11 +6,11 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.IKafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
-import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +24,7 @@ import java.util.function.IntPredicate;
 /**
  * The BasicExternalKafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
  */
-public class BasicExternalKafkaClient extends AbstractKafkaClient implements AutoCloseable, IKafkaClientOperations<Future<Integer>> {
+public class BasicExternalKafkaClient extends AbstractKafkaClient implements AutoCloseable, KafkaClientOperations<Future<Integer>> {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
     private Vertx vertx = Vertx.vertx();
@@ -67,10 +67,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-                .withKeySerializerConfig(StringSerializer.class.getName())
-                .withValueSerializerConfig(StringSerializer.class.getName())
+                .withKeySerializerConfig(StringSerializer.class)
+                .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig(kafkaUsername + "-producer")
-                .withSecurityProtocol(CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
+                .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                 .withSharedProperties()
                 .build(), resultPromise, msgCntPredicate, this.topicName, clientName));
 
@@ -109,8 +109,8 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-                .withKeySerializerConfig(StringSerializer.class.getName())
-                .withValueSerializerConfig(StringSerializer.class.getName())
+                .withKeySerializerConfig(StringSerializer.class)
+                .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig(kafkaUsername + "-producer")
                 .withCaSecretName(caCertName)
                 .withKafkaUsername(kafkaUsername)
@@ -151,12 +151,12 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-                .withKeyDeSerializerConfig(StringDeserializer.class.getName())
-                .withValueDeSerializerConfig(StringDeserializer.class.getName())
+                .withKeyDeserializerConfig(StringDeserializer.class)
+                .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig(kafkaUsername + "-consumer")
                 .withAutoOffsetResetConfig("earliest")
                 .withGroupIdConfig(consumerGroup)
-                .withSecurityProtocol(CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
+                .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                 .withSharedProperties()
                 .build(), resultPromise, msgCntPredicate, this.topicName, clientName));
 
@@ -194,8 +194,8 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-                .withKeyDeSerializerConfig(StringDeserializer.class.getName())
-                .withValueDeSerializerConfig(StringDeserializer.class.getName())
+                .withKeyDeserializerConfig(StringDeserializer.class)
+                .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig(kafkaUsername + "-consumer")
                 .withAutoOffsetResetConfig("earliest")
                 .withGroupIdConfig(consumerGroup)

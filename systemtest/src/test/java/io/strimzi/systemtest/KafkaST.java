@@ -64,6 +64,7 @@ import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.json.JsonArray;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -1272,7 +1273,7 @@ class KafkaST extends BaseST {
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(userName)
-                .withSecurityProtocol("SSL")
+                .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
@@ -1348,7 +1349,7 @@ class KafkaST extends BaseST {
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(userName)
-                .withSecurityProtocol("SSL")
+                .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 

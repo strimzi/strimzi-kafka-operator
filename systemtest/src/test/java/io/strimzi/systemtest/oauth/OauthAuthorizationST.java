@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.vertx.core.cli.annotations.Description;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
@@ -279,7 +280,7 @@ public class OauthAuthorizationST extends OauthBaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("SASL_SSL")
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withConsumerGroupName("a_consumer_group")
             .withOauthClientId(TEAM_A_CLIENT)
             .withClientSecretName(TEAM_A_CLIENT_SECRET)
@@ -292,7 +293,7 @@ public class OauthAuthorizationST extends OauthBaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("SASL_SSL")
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withConsumerGroupName("x_" + CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withOauthClientId(TEAM_B_CLIENT)
             .withClientSecretName(TEAM_B_CLIENT_SECRET)

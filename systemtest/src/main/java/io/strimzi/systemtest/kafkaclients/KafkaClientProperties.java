@@ -18,6 +18,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,16 +51,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
  * all our external clients such as BasicExternalKafkaClient or OauthExternalKafkaClient.
  *
- * Description of SuppressWarnings:
- *
- * caSecretName field is not initialized first inside KafkaClientProperties constructor and he is de-referenced
- * in sharedClientProperties() method. This practically means, always make sure that before invoking this method
- * you need first execute withCaSecretName().
- *
  * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
  */
+//  This practically means, always make sure that before invoking this withSharedProperties(), you need first execute withCaSecretName().
 @SuppressFBWarnings({"NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class KafkaClientProperties  {
 
@@ -86,27 +83,27 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withKeySerializerConfig(String keySerializer) {
+        public KafkaClientPropertiesBuilder withKeySerializerConfig(Class<StringSerializer> keySerializer) {
 
-            this.properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
+            this.properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withKeyDeSerializerConfig(String keyDeSerializer) {
+        public KafkaClientPropertiesBuilder withKeyDeserializerConfig(Class<StringDeserializer> keyDeSerializer) {
 
-            this.properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDeSerializer);
+            this.properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDeSerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withValueSerializerConfig(String valueSerializer) {
+        public KafkaClientPropertiesBuilder withValueSerializerConfig(Class<StringSerializer> valueSerializer) {
 
-            this.properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
+            this.properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withValueDeSerializerConfig(String valueDeSerializer) {
+        public KafkaClientPropertiesBuilder withValueDeserializerConfig(Class<StringDeserializer> valueDeSerializer) {
 
-            this.properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeSerializer);
+            this.properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeSerializer.getName());
             return this;
         }
 
@@ -128,7 +125,6 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        // TODO: do we need separate Producer and Consumer config ??
         public KafkaClientPropertiesBuilder withGroupIdConfig(String groupIdConfig) {
 
             this.properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupIdConfig);
@@ -165,9 +161,9 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withSecurityProtocol(String securityProtocol) {
+        public KafkaClientPropertiesBuilder withSecurityProtocol(SecurityProtocol securityProtocol) {
 
-            this.properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+            this.properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol.name);
             return this;
         }
 
@@ -241,10 +237,10 @@ public class KafkaClientProperties  {
                 ) {
                     Secret clusterCaCertSecret = kubeClient(namespaceName).getSecret(caSecretName);
                     File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
-                    String tsPassword = "foo";
+                    tsFile.deleteOnExit();
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
+                    String tsPassword = "foo";
                     if (caSecretName.contains("custom-certificate")) {
-                        tsFile.deleteOnExit();
                         ts.load(null, tsPassword.toCharArray());
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
                         String clusterCaCert = kubeClient(namespaceName).getSecret(caSecretName).getData().get("ca.crt");
@@ -257,7 +253,6 @@ public class KafkaClientProperties  {
                         tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("ca.password")), StandardCharsets.US_ASCII);
                         String truststore = clusterCaCertSecret.getData().get("ca.p12");
                         Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
-                        tsFile.deleteOnExit();
                     }
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, ts.getType());
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);

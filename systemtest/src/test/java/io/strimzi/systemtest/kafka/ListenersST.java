@@ -27,6 +27,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,7 +109,7 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -181,14 +182,14 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaClientProperties(
                 new KafkaClientProperties.KafkaClientPropertiesBuilder()
                     .withNamespaceName(NAMESPACE)
                     .withClusterName(CLUSTER_NAME)
                     .withBootstrapServerConfig(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                    .withKeySerializerConfig(StringSerializer.class.getName())
-                    .withValueSerializerConfig(StringSerializer.class.getName())
+                    .withKeySerializerConfig(StringSerializer.class)
+                    .withValueSerializerConfig(StringSerializer.class)
                     .withClientIdConfig("kafka-user-producer")
                     .build()
             ).build();
@@ -210,7 +211,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName("consumer-group-certs-2")
             .build();
 
@@ -264,7 +264,7 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -282,7 +282,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName("consumer-group-certs-3")
             .build();
 
@@ -340,7 +339,7 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -413,7 +412,7 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -431,7 +430,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName("consumer-group-certs-4")
             .build();
 
@@ -485,7 +483,7 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -503,7 +501,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("TLS")
             .withConsumerGroupName("consumer-group-certs-6")
             .build();
 
@@ -553,7 +550,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
 
@@ -606,7 +603,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
@@ -700,7 +697,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
 
@@ -752,7 +749,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
@@ -806,7 +803,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
@@ -901,7 +898,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
 
@@ -953,7 +950,7 @@ public class ListenersST extends BaseST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
 

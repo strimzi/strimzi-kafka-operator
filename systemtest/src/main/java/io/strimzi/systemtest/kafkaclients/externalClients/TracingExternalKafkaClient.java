@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.IKafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
  * The TracingKafkaClient for sending and receiving messages using tracing properties.
  * The client is using an external listeners.
  */
-public class TracingExternalKafkaClient extends AbstractKafkaClient implements IKafkaClientOperations<Future<Integer>> {
+public class TracingExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Future<Integer>> {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingExternalKafkaClient.class);
     private String serviceName;

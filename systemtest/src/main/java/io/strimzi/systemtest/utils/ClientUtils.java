@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.IKafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +24,7 @@ public class ClientUtils {
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
 
-    public static void waitUntilClientReceivedMessagesTls(IKafkaClientOperations<Integer> kafkaClient, int exceptedMessages) {
+    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations<Integer> kafkaClient, int exceptedMessages) {
         TestUtils.waitFor("Kafka " + kafkaClient.toString() + " client received messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 int receivedMessages = 0;

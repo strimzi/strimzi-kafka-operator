@@ -18,6 +18,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,7 +72,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
@@ -109,10 +110,11 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol("SSL")
+            .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
+
 
         Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
