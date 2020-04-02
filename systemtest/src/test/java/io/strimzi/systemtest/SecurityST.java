@@ -1070,7 +1070,7 @@ class SecurityST extends BaseST {
                         .withNewAclRuleTopicResource()
                             .withName(topicName)
                         .endAclRuleTopicResource()
-                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                        .withOperation(AclOperation.DESCRIBE)  //s describe is for that user can find out metadata
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -1209,8 +1209,7 @@ class SecurityST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatus(CLUSTER_NAME, "Ready");
 
-        String userName = "alice";
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -1224,7 +1223,7 @@ class SecurityST extends BaseST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(userName)
+            .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
