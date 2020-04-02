@@ -133,7 +133,7 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(String input, List<String> command) {
-        return exec(input, command, 0, true);
+        return exec(input, command, 0, false);
     }
 
     /**
