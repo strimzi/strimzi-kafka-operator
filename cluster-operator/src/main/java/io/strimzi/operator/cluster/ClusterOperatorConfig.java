@@ -194,14 +194,32 @@ public class ClusterOperatorConfig {
                 Util.parseMap(connectS2IImages),
                 Util.parseMap(mirrorMakerImages),
                 Util.parseMap(mirrorMaker2Images));
+
+        String image = "";
+        String envVar = "";
+
         try {
+            image = "Kafka";
+            envVar = STRIMZI_KAFKA_IMAGES;
             lookup.validateKafkaImages(lookup.supportedVersions());
+
+            image = "Kafka Connect";
+            envVar = STRIMZI_KAFKA_CONNECT_IMAGES;
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
+
+            image = "Kafka Connect S2I";
+            envVar = STRIMZI_KAFKA_CONNECT_S2I_IMAGES;
             lookup.validateKafkaConnectS2IImages(lookup.supportedVersions());
+
+            image = "Kafka Mirror Maker";
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES;
             lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
+
+            image = "Kafka Mirror Maker 2";
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES;
             lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersionsForFeature("kafkaMirrorMaker2"));
         } catch (NoImageException e) {
-            throw new InvalidConfigurationException(e);
+            throw new InvalidConfigurationException("Failed to parse default container image configuration for " + image + " from environment variable " + envVar, e);
         }
         return lookup;
     }
