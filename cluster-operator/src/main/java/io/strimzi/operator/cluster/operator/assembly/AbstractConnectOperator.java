@@ -127,23 +127,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         // Setup metrics for connectors
         Tags metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND));
 
-        connectorsReconciliationsCounter = metrics.counter("strimzi.reconciliations",
+        connectorsReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
                 "Number of reconciliations done by the operator for individual resources",
                 metricTags);
 
-        connectorsFailedReconciliationsCounter = metrics.counter("strimzi.reconciliations.failed",
+        connectorsFailedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
                 "Number of reconciliations done by the operator for individual resources which failed",
                 metricTags);
 
-        connectorsSuccessfulReconciliationsCounter = metrics.counter("strimzi.reconciliations.successful",
+        connectorsSuccessfulReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.successful",
                 "Number of reconciliations done by the operator for individual resources which were successful",
                 metricTags);
 
-        connectorsResourceCounter = metrics.gauge("strimzi.resources",
+        connectorsResourceCounter = metrics.gauge(METRICS_PREFIX + "resources",
                 "Number of custom resources the operator sees",
                 metricTags);
 
-        connectorsReconciliationsTimer = metrics.timer("strimzi.reconciliations.duration",
+        connectorsReconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
                 "The time the reconciliation takes to complete",
                 metricTags);
     }

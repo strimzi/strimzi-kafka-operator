@@ -59,6 +59,7 @@ public abstract class AbstractOperator<
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
+    public static final String METRICS_PREFIX = "strimzi.";
 
     protected final Vertx vertx;
     protected final S resourceOperator;
@@ -82,31 +83,31 @@ public abstract class AbstractOperator<
         // Setup metrics
         Tags metricTags = Tags.of(Tag.of("kind", kind()));
 
-        periodicReconciliationsCounter = metrics.counter("strimzi.reconciliations.periodical",
+        periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
                 "Number of periodical reconciliations done by the operator",
                 metricTags);
 
-        reconciliationsCounter = metrics.counter("strimzi.reconciliations",
+        reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
                 "Number of reconciliations done by the operator for individual resources",
                 metricTags);
 
-        failedReconciliationsCounter = metrics.counter("strimzi.reconciliations.failed",
+        failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
                 "Number of reconciliations done by the operator for individual resources which failed",
                 metricTags);
 
-        successfulReconciliationsCounter = metrics.counter("strimzi.reconciliations.successful",
+        successfulReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.successful",
                 "Number of reconciliations done by the operator for individual resources which were successful",
                 metricTags);
 
-        lockedReconciliationsCounter = metrics.counter("strimzi.reconciliations.locked",
+        lockedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.locked",
                 "Number of reconciliations skipped because another reconciliation for the same resource was still running",
                 metricTags);
 
-        resourceCounter = metrics.gauge("strimzi.resources",
+        resourceCounter = metrics.gauge(METRICS_PREFIX + "resources",
                 "Number of custom resources the operator sees",
                 metricTags);
 
-        reconciliationsTimer = metrics.timer("strimzi.reconciliations.duration",
+        reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
                 "The time the reconciliation takes to complete",
                 metricTags);
     }

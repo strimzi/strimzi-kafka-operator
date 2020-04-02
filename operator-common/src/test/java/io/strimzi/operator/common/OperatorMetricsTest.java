@@ -77,13 +77,13 @@ public class OperatorMetricsTest {
                 .setHandler(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get("strimzi.reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
-                    assertThat(registry.get("strimzi.reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
                     async.flag();
                 })));
@@ -116,13 +116,13 @@ public class OperatorMetricsTest {
                 .setHandler(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get("strimzi.reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
-                    assertThat(registry.get("strimzi.reconciliations.failed").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
                     async.flag();
                 })));
@@ -155,13 +155,13 @@ public class OperatorMetricsTest {
                 .setHandler(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get("strimzi.reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
-                    assertThat(registry.get("strimzi.reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
-                    assertThat(registry.get("strimzi.reconciliations.locked").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().count(), is(0L));
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(0L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
 
                     async.flag();
                 })));
@@ -204,13 +204,13 @@ public class OperatorMetricsTest {
                 .setHandler(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get("strimzi.reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get("strimzi.reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
-                    assertThat(registry.get("strimzi.reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
                     async.flag();
                 })));
@@ -254,14 +254,14 @@ public class OperatorMetricsTest {
         reconcileAllPromise.future().setHandler(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
-            assertThat(registry.get("strimzi.reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
-            assertThat(registry.get("strimzi.reconciliations").tag("kind", "TestResource").counter().count(), is(3.0));
-            assertThat(registry.get("strimzi.reconciliations.successful").tag("kind", "TestResource").counter().count(), is(3.0));
-            assertThat(registry.get("strimzi.reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
-            assertThat(registry.get("strimzi.reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(3.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(3.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
-            assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
-            assertThat(registry.get("strimzi.reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
             async.flag();
         })));
