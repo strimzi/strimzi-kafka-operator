@@ -41,6 +41,7 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(BRIDGE)
@@ -178,8 +179,11 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
-        StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getName(),
-                usedVariable, "test.value");
+        LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
+        assertThat(
+                StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getName(), usedVariable),
+                is(not("test.value"))
+        );
 
         LOGGER.info("Updating values in Bridge container");
         KafkaBridgeResource.replaceBridgeResource(bridgeName, kb -> {

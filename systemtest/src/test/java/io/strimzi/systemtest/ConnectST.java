@@ -35,6 +35,7 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -541,8 +542,11 @@ class ConnectST extends BaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarGeneral);
 
-        StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName(),
-                usedVariable, "test.value");
+        LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
+        assertThat(
+                StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName(), usedVariable),
+                CoreMatchers.is(CoreMatchers.not("test.value"))
+        );
 
         LOGGER.info("Updating values in MirrorMaker container");
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {

@@ -29,9 +29,6 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StUtils {
 
@@ -126,13 +123,9 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static void checkEnvVarInPod(String podName, String envVarName, String value) {
-        LOGGER.info("Check if actual env variable {} has different value than {}", envVarName, value);
-        String actualValue = kubeClient().getPod(podName).getSpec().getContainers().get(0).getEnv()
+    public static String checkEnvVarInPod(String podName, String envVarName) {
+        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getEnv()
                 .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().get().getValue();
-
-        assertThat(actualValue, is(not(value)));
-        LOGGER.info("Actual env variable has different value than {}", value);
     }
 
     /**
