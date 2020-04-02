@@ -14,12 +14,13 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -83,25 +84,25 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withKeySerializerConfig(Class<StringSerializer> keySerializer) {
+        public KafkaClientPropertiesBuilder withKeySerializerConfig(Class<? extends Serializer> keySerializer) {
 
             this.properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withKeyDeserializerConfig(Class<StringDeserializer> keyDeSerializer) {
+        public KafkaClientPropertiesBuilder withKeyDeserializerConfig(Class<? extends Deserializer> keyDeSerializer) {
 
             this.properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDeSerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withValueSerializerConfig(Class<StringSerializer> valueSerializer) {
+        public KafkaClientPropertiesBuilder withValueSerializerConfig(Class<? extends Serializer> valueSerializer) {
 
             this.properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer.getName());
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withValueDeserializerConfig(Class<StringDeserializer> valueDeSerializer) {
+        public KafkaClientPropertiesBuilder withValueDeserializerConfig(Class<? extends Deserializer> valueDeSerializer) {
 
             this.properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeSerializer.getName());
             return this;
@@ -131,9 +132,9 @@ public class KafkaClientProperties  {
             return this;
         }
 
-        public KafkaClientPropertiesBuilder withAutoOffsetResetConfig(String autoOffsetResetConfig) {
+        public KafkaClientPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
 
-            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetResetConfig);
+            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name());
             return this;
         }
 

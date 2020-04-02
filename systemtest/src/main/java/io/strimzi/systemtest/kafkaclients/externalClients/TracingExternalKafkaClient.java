@@ -48,6 +48,7 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
         serviceName = builder.serviceName;
     }
 
+    // TODO: these methods will be implemented in the following PR for the clients with support of tracing
     @Override
     public Future<Integer> sendMessagesPlain(long timeoutMs) {
         throw new UnsupportedOperationException();

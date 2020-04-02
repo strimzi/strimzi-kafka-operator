@@ -10,6 +10,7 @@ import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -154,7 +155,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig(kafkaUsername + "-consumer")
-                .withAutoOffsetResetConfig("earliest")
+                .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
                 .withGroupIdConfig(consumerGroup)
                 .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                 .withSharedProperties()
@@ -197,7 +198,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Aut
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig(kafkaUsername + "-consumer")
-                .withAutoOffsetResetConfig("earliest")
+                .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
                 .withGroupIdConfig(consumerGroup)
                 .withSecurityProtocol(securityProtocol)
                 .withCaSecretName(caCertName)

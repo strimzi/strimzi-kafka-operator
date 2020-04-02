@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
@@ -10,7 +10,9 @@ import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.vertx.core.Vertx;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
@@ -108,7 +110,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withKeySerializerConfig(StringSerializer.class)
             .withValueSerializerConfig(StringSerializer.class)
             .withClientIdConfig(kafkaUsername + "-producer")
-            .withSaslMechanism("OAUTHBEARER")
+            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
             .withSaslLoginCallbackHandlerClass()
             .withSharedProperties()
             .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
@@ -152,7 +154,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withKafkaUsername(kafkaUsername)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withClientIdConfig(kafkaUsername + "-producer")
-            .withSaslMechanism("OAUTHBEARER")
+            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
             .withSaslLoginCallbackHandlerClass()
             .withSharedProperties()
             .withSaslJassConfigAndTls(clientId, clientSecretName, oauthTokenEndpointUri)
@@ -190,8 +192,8 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withKeyDeserializerConfig(StringDeserializer.class)
             .withValueDeserializerConfig(StringDeserializer.class)
             .withClientIdConfig(kafkaUsername + "-consumer")
-            .withAutoOffsetResetConfig("earliest")
-            .withSaslMechanism("OAUTHBEARER")
+            .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
+            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
             .withSaslLoginCallbackHandlerClass()
             .withSharedProperties()
             .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
@@ -235,9 +237,9 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withKafkaUsername(kafkaUsername)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withGroupIdConfig(consumerGroup)
-            .withAutoOffsetResetConfig("earliest")
+            .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
             .withClientIdConfig(kafkaUsername + "-consumer")
-            .withSaslMechanism("OAUTHBEARER")
+            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
             .withSaslLoginCallbackHandlerClass()
             .withSharedProperties()
             .withSaslJassConfigAndTls(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
