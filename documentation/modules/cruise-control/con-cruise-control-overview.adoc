@@ -9,6 +9,7 @@
 [id='con-cruise-control-overview-{context}']
 = Cruise Control overview
 
+Brokers in a Kafka cluster can become unevenly loaded due to things like an uneven distribution of busy partitions.
 Cruise Control is a tool for simplifying the monitoring and rebalancing of partitions across a Kafka cluster.
 You deploy Cruise Control alongside a Kafka cluster to:
 

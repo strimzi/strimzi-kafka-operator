@@ -24,7 +24,7 @@ import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.balancing.CruiseControlBrokerCapacity;
+import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -56,7 +55,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 public class CruiseControlTest {
     private final String namespace = "test";
@@ -162,11 +164,11 @@ public class CruiseControlTest {
     @Test
     public void testBrokerCapacities() {
         // Test user defined capacities
-        CruiseControlBrokerCapacity userDefinedCapacity = new CruiseControlBrokerCapacity();
-        userDefinedCapacity.setDisk(20000);
-        userDefinedCapacity.setCpu(95);
-        userDefinedCapacity.setNetworkIn(50000);
-        userDefinedCapacity.setNetworkOut(50000);
+        BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
+        userDefinedBrokerCapacity.setDisk(20000);
+        userDefinedBrokerCapacity.setCpu(95);
+        userDefinedBrokerCapacity.setNetworkIn(50000);
+        userDefinedBrokerCapacity.setNetworkOut(50000);
 
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
@@ -175,15 +177,15 @@ public class CruiseControlTest {
                 .endKafka()
                 .withNewCruiseControl()
                     .withImage(ccImage)
-                    .withCapacity(userDefinedCapacity)
+                    .withBrokerCapacity(userDefinedBrokerCapacity)
                 .endCruiseControl()
             .endSpec()
             .build();
 
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(userDefinedCapacity.getDisk())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_CAPACITY), is(Integer.toString(userDefinedCapacity.getCpu())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_IN_CAPACITY), is(Integer.toString(userDefinedCapacity.getNetworkIn())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_OUT_CAPACITY), is(Integer.toString(userDefinedCapacity.getNetworkOut())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getDisk())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getCpu())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_IN_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getNetworkIn())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_NETWORK_OUT_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getNetworkOut())));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorage();
@@ -211,7 +213,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        Capacity generatedCapacity = new Capacity(resource.getSpec());
+        io.strimzi.operator.cluster.model.cruisecontrol.Capacity generatedCapacity = new io.strimzi.operator.cluster.model.cruisecontrol.Capacity(resource.getSpec());
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(generatedCapacity.getDisk())));
     }
 
@@ -327,9 +329,10 @@ public class CruiseControlTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
-        List<EnvVar> kafkaEnvVars = cc.getEnvVars();
-        assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
-        assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvTwoValue));
+        List<EnvVar> envVarList = cc.getEnvVars();
+
+        assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
+        assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
     }
 
     @Test
@@ -360,8 +363,10 @@ public class CruiseControlTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
-        List<EnvVar> kafkaEnvVars = cc.getEnvVars();
-        assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
+        List<EnvVar> envVarList = cc.getEnvVars();
+
+        assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
+        assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
     }
 
     @Test
@@ -402,11 +407,7 @@ public class CruiseControlTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, null);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
-        try {
-            assertThat(cc.generateService(), is(nullValue()));
-        } catch (Throwable expected) {
-            assertEquals(NullPointerException.class, expected.getClass());
-        }
+        assertThrows(NullPointerException.class, () -> cc.generateService());
     }
 
     @Test
@@ -454,19 +455,22 @@ public class CruiseControlTest {
 
         // Check Deployment
         Deployment dep = cc.generateDeployment(true, depAnots, null, null);
-        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
-        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
+        depLabels.putAll(expectedLabels());
+        assertThat(dep.getMetadata().getLabels(), is(depLabels));
+        assertThat(dep.getMetadata().getAnnotations(), is(depAnots));
 
         // Check Pods
-        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        podLabels.putAll(expectedLabels());
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(podLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations(), is(podAnots));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
 
         // Check Service
+        svcLabels.putAll(expectedLabels());
         Service svc = cc.generateService();
-        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getLabels(), is(svcLabels));
+        assertThat(svc.getMetadata().getAnnotations(),  is(svcAnots));
     }
 
     @Test

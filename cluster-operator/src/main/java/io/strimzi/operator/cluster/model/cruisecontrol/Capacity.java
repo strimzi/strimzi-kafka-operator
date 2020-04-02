@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.strimzi.api.kafka.model.balancing.CruiseControlBrokerCapacity;
 import io.strimzi.api.kafka.model.KafkaSpec;
+import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -28,7 +28,7 @@ public class Capacity {
     private Integer networkOut;
 
     public Capacity(KafkaSpec spec) {
-        CruiseControlBrokerCapacity bc = spec.getCruiseControl().getCapacity();
+        BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
 
         this.disk = bc != null && bc.getDisk() != null ? bc.getDisk() : generateDiskCapacity(spec.getKafka().getStorage());
         this.cpu = bc != null && bc.getCpu() != null ? bc.getCpu() : DEFAULT_BROKER_CPU_CAPACITY;

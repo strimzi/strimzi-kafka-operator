@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"disk", "cpu", "networkIn", "networkOut"})
 @EqualsAndHashCode
-public class CruiseControlBrokerCapacity implements UnknownPropertyPreserving, Serializable {
+public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 

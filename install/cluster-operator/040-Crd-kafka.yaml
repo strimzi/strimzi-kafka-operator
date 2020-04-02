@@ -4853,13 +4853,14 @@ spec:
                   description: The docker image for the pods.
                 config:
                   type: object
-                  description: 'The Cruise Control config. Properties with the following
-                    prefixes cannot be set: bootstrap.servers, zookeeper., ssl., security.,
-                    failed.brokers.zk.path,webserver.http.port, webserver.http.address,
-                    webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers,
+                  description: 'The Cruise Control configuration. For a full list
+                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations
+                    Note that properties with the following prefixes cannot be set:
+                    bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port,
+                    webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers,
                     metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic,
-                    broker.metric.sample.store.topic, capacity.config.file, skip.sample.store.topic.rack.awareness.check,
-                    cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers,
+                    broker.metric.sample.store.topic, brokerCapacity.config.file,
+                    skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers,
                     sasl. interceptor.classes.'
                 livenessProbe:
                   type: object
@@ -4946,7 +4947,7 @@ spec:
                             description: The system property value.
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
-                  description: JVM Options for pods.
+                  description: JVM Options for the pod.
                 resources:
                   type: object
                   properties:
@@ -5442,70 +5443,6 @@ spec:
                             voluntary evictions, so the pods must be evicted manually.
                             Defaults to 1.
                       description: Template for Cruise Control `PodDisruptionBudget`.
-                    tlsSidecarContainer:
-                      type: object
-                      properties:
-                        env:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                                description: The environment variable key.
-                              value:
-                                type: string
-                                description: The environment variable value.
-                          description: Environment variables which should be applied
-                            to the container.
-                        securityContext:
-                          type: object
-                          properties:
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            privileged:
-                              type: boolean
-                            procMount:
-                              type: string
-                            readOnlyRootFilesystem:
-                              type: boolean
-                            runAsGroup:
-                              type: integer
-                            runAsNonRoot:
-                              type: boolean
-                            runAsUser:
-                              type: integer
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                level:
-                                  type: string
-                                role:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                          description: Security context for the container.
-                      description: Template for the Cruise Control TLS sidecar container.
                     cruiseControlContainer:
                       type: object
                       properties:
@@ -5570,9 +5507,73 @@ spec:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Cruise Control container.
+                    tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The environment variable key.
+                              value:
+                                type: string
+                                description: The environment variable value.
+                          description: Environment variables which should be applied
+                            to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
+                      description: Template for the Cruise Control TLS sidecar container.
                   description: Template to specify how Cruise Control resources, `Deployments`
                     and `Pods`, are generated.
-                capacity:
+                brokerCapacity:
                   type: object
                   properties:
                     disk:
@@ -5592,7 +5593,7 @@ spec:
                       type: integer
                       description: Broker capacity for network outbound throughput
                         in kilobytes per second.
-                  description: The Cruise Control broker capacity config.
+                  description: The Cruise Control brokerCapacity configuration.
               required:
               - replicas
               description: Configuration of Cruise Control.

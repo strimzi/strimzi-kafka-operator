@@ -1354,13 +1354,13 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
-|config          1.2+<.<|The Cruise Control config. Properties with the following prefixes cannot be set: bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic, broker.metric.sample.store.topic, capacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes.
+|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations Note that properties with the following prefixes cannot be set: bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic, broker.metric.sample.store.topic, brokerCapacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes.
 |map
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|jvmOptions      1.2+<.<|JVM Options for pods.
+|jvmOptions      1.2+<.<|JVM Options for the pod.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources       1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
@@ -1370,8 +1370,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template to specify how Cruise Control resources, `Deployments` and `Pods`, are generated.
 |xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`]
-|capacity        1.2+<.<|The Cruise Control broker capacity config.
-|xref:type-CruiseControlBrokerCapacity-{context}[`CruiseControlBrokerCapacity`]
+|brokerCapacity  1.2+<.<|The Cruise Control brokerCapacity configuration.
+|xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1391,14 +1391,14 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget     1.2+<.<|Template for Cruise Control `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|tlsSidecarContainer     1.2+<.<|Template for the Cruise Control TLS sidecar container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |cruiseControlContainer  1.2+<.<|Template for the Cruise Control container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|tlsSidecarContainer     1.2+<.<|Template for the Cruise Control TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
-[id='type-CruiseControlBrokerCapacity-{context}']
-### `CruiseControlBrokerCapacity` schema reference
+[id='type-BrokerCapacity-{context}']
+### `BrokerCapacity` schema reference
 
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 

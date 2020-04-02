@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlcontainer", "tlsSidecarContainer"})
+        "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "tlsSidecarContainer"})
 @EqualsAndHashCode
 public class CruiseControlTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

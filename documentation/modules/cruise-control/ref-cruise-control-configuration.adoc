@@ -11,6 +11,8 @@ The `config` property in `Kafka.spec.cruiseControl` contains configuration optio
 * Number
 * Boolean
 
+NOTE: Strings that look like JSON or YAML will need to be explicitly quoted.
+
 You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by {ProductName}.
 Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the following strings:
 
@@ -58,6 +60,8 @@ spec:
 == Capacity configuration
 
 Cruise Control uses capacity limits to determine if goals related to broker resources are being violated.
+A violation of a goal can cause a optimization to fail, preventing that optimization from being used to generate a partition rebalance proposal.
+For example, an optimization that would cause a broker to exceed its CPU capacity would not be used for when the CpuCapacityGoal is set as a hard goal.
 
 Capacity limits for broker resources can be specified in the `capacity` property in `Kafka.spec.cruiseControl`.
 Capacity limits can be set for the following broker resources in the described units:
@@ -67,7 +71,7 @@ Capacity limits can be set for the following broker resources in the described u
 * `networkIn`  - Network inbound throughput in KB/s
 * `networkOut` - Newtork outbound throughput in KB/s
 
-Since {ProductName} brokers are homogenous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
+Since {ProductName} brokers are homogeneous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
 
 .An example Cruise Control capacity configuration
 [source,yaml,subs="attributes+"]

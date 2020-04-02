@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.kafka.model.balancing.CruiseControlBrokerCapacity;
+import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
@@ -29,14 +29,15 @@ import lombok.EqualsAndHashCode;
         "replicas", "image", "config",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "logging", "tlsSidecar", "template", "capacity"})
+        "logging", "tlsSidecar", "template", "brokerCapacity"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
+    // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
     public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,"
         + "webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,"
-        + "partition.metric.sample.store.topic, broker.metric.sample.store.topic, capacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topic"
+        + "partition.metric.sample.store.topic, broker.metric.sample.store.topic, brokerCapacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topic"
         + "cruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "";
 
@@ -49,7 +50,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private JvmOptions jvmOptions;
     private Logging logging;
     private CruiseControlTemplate template;
-    private CruiseControlBrokerCapacity capacity;
+    private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -85,17 +86,19 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.tlsSidecar = tlsSidecar;
     }
 
-    @Description("The Cruise Control broker capacity config.")
+    @Description("The Cruise Control brokerCapacity configuration.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public CruiseControlBrokerCapacity getCapacity() {
-        return capacity;
+    public BrokerCapacity getBrokerCapacity() {
+        return brokerCapacity;
     }
 
-    public void setCapacity(CruiseControlBrokerCapacity capacity) {
-        this.capacity = capacity;
+    public void setBrokerCapacity(BrokerCapacity brokerCapacity) {
+        this.brokerCapacity = brokerCapacity;
     }
 
-    @Description("The Cruise Control config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The Cruise Control configuration. For a full list of configuration options refer to" +
+            " https://github.com/linkedin/cruise-control/wiki/Configurations Note that properties " +
+            "with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
@@ -116,7 +119,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("JVM Options for pods")
+    @Description("JVM Options for the pod")
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
