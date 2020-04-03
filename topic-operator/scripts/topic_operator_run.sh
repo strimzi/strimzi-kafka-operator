@@ -8,6 +8,10 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
+if [ -n "$STRIMZI_JAVA_OPTS" ]; then
+    export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_OPTS}"
+fi
+
 if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
     if [ -z "$STRIMZI_TRUSTSTORE_LOCATION" ] && [ -z "$STRIMZI_KEYSTORE_LOCATION" ]; then
         # Generate temporary keystore password
