@@ -288,7 +288,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          */
         public void validateKafkaMirrorMakerImages(Iterable<String> versions) throws NoImageException {
             for (String version : versions) {
-                image(null, version, kafkaConnectImages, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
+                image(null, version, kafkaMirrorMakerImages, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
             }
         }
 
