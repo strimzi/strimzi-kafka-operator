@@ -133,6 +133,7 @@ public class KafkaClientProperties  {
         }
 
         @SuppressWarnings("Regexp") // for the `.toLowerCase()` because kafka needs this property as lower-case
+        @SuppressFBWarnings("DM_CONVERT_CASE")
         public KafkaClientPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
 
             this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name().toLowerCase());
