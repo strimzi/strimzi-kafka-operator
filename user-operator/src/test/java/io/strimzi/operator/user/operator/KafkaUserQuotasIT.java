@@ -39,15 +39,17 @@ public class KafkaUserQuotasIT {
 
 
     @BeforeAll
-    public static void startZk() throws IOException, InterruptedException {
+    public static void before() throws IOException, InterruptedException {
         vertx = Vertx.vertx();
+        // Start ZookKeeper Server
         zkServer = new EmbeddedZooKeeper();
         kuq = new KafkaUserQuotasOperator(vertx, zkServer.getZkConnectString(), 6_000);
     }
 
     @AfterAll
-    public static void stopZk() {
+    public static void after() {
         vertx.close();
+        // Teardown ZooKeeper Server
         zkServer.close();
     }
 

@@ -116,9 +116,7 @@ public class CertificateRenewalTest {
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
     }
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(VertxTestContext context, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {

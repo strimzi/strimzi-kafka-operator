@@ -59,11 +59,12 @@ public class KafkaUserOperatorTest {
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+        //Setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true)
-        ));
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
     }
 
     @AfterAll

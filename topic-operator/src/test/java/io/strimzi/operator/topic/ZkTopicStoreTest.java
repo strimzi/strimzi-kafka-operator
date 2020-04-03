@@ -11,7 +11,9 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -31,10 +33,20 @@ public class ZkTopicStoreTest {
 
     private EmbeddedZooKeeper zkServer;
 
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
 
     private ZkTopicStore store;
     private Zk zk;
+
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
 
     @BeforeEach
     public void setup() throws IOException, InterruptedException {
@@ -50,7 +62,6 @@ public class ZkTopicStoreTest {
         if (this.zkServer != null) {
             this.zkServer.close();
         }
-        vertx.close();
     }
 
     @Test
