@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
@@ -245,11 +246,19 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -316,16 +325,16 @@ public class TracingST extends BaseST {
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
 
         given()
-                .when()
-                    .relaxedHTTPSValidation()
-                    .contentType("application/json")
-                    .get("/jaeger/api/services")
-                .then()
-                    .statusCode(200)
-                    .contentType(ContentType.JSON)
-                    .body("data", hasItem(JAEGER_PRODUCER_SERVICE))
-                    .body("data", hasItem(JAEGER_KAFKA_STREAMS_SERVICE))
-                .log().all();
+            .when()
+                .relaxedHTTPSValidation()
+                .contentType("application/json")
+                .get("/jaeger/api/services")
+            .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("data", hasItem(JAEGER_PRODUCER_SERVICE))
+                .body("data", hasItem(JAEGER_KAFKA_STREAMS_SERVICE))
+            .log().all();
 
         HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
@@ -730,11 +739,19 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, kafkaClusterTargetName, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterTargetName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
@@ -829,11 +846,19 @@ public class TracingST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH,
                 KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
@@ -902,17 +927,24 @@ public class TracingST extends BaseST {
         int bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         String bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
 
-        int messageCount = 50;
         String topicName = "topic-simple-send";
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+        JsonObject records = HttpUtils.generateHttpMessages(MESSAGE_COUNT);
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        KafkaBridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
         verifyServiceIsPresent(JAEGER_KAFKA_BRIDGE_SERVICE);

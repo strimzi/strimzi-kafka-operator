@@ -40,6 +40,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -62,6 +64,7 @@ import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.json.JsonArray;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -537,12 +540,20 @@ class KafkaST extends BaseST {
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(messagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
+        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
-            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
@@ -582,12 +593,22 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUser)
+            .withMessageCount(messagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
@@ -639,11 +660,22 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50),
-            internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
@@ -683,11 +715,22 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(messagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS"),
-            internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
@@ -722,7 +765,8 @@ class KafkaST extends BaseST {
                     .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
-                    .withResources(new ResourceRequirementsBuilder()
+                    .withResources(
+                        new ResourceRequirementsBuilder()
                             .addToLimits("memory", new Quantity("1G"))
                             .addToLimits("cpu", new Quantity("0.5"))
                             .addToRequests("memory", new Quantity("0.5G"))
@@ -737,7 +781,8 @@ class KafkaST extends BaseST {
                 .endZookeeper()
                 .withNewEntityOperator()
                     .withNewTopicOperator()
-                        .withResources(new ResourceRequirementsBuilder()
+                        .withResources(
+                            new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("1024Mi"))
                                 .addToLimits("cpu", new Quantity("500m"))
                                 .addToRequests("memory", new Quantity("512Mi"))
@@ -748,7 +793,8 @@ class KafkaST extends BaseST {
                         .endJvmOptions()
                     .endTopicOperator()
                     .withNewUserOperator()
-                        .withResources(new ResourceRequirementsBuilder()
+                        .withResources(
+                            new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("512M"))
                                 .addToLimits("cpu", new Quantity("300m"))
                                 .addToRequests("memory", new Quantity("256M"))
@@ -1109,11 +1155,19 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MINUTES), is(MESSAGE_COUNT));
 
         // Check that Kafka status has correct addresses in NodePort external listener part
         for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
@@ -1175,11 +1229,19 @@ class KafkaST extends BaseST {
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1205,11 +1267,21 @@ class KafkaST extends BaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withKafkaUsername(userName)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1231,11 +1303,19 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessages(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -1263,8 +1343,18 @@ class KafkaST extends BaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        Future<Integer> producer = externalBasicKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
-        Future<Integer> consumer = externalBasicKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withKafkaUsername(userName)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
+
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
 
         assertThat(producer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
         assertThat(consumer.get(1, TimeUnit.MINUTES), is(MESSAGE_COUNT));
@@ -1432,17 +1522,26 @@ class KafkaST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        internalKafkaClient.setPodName(kafkaClientsPodName);
-
         List<PersistentVolumeClaim> volumes = kubeClient().listPersistentVolumeClaims();
 
         checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
 
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
     }
 
@@ -1510,7 +1609,14 @@ class KafkaST extends BaseST {
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -1539,7 +1645,6 @@ class KafkaST extends BaseST {
             resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
             resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
         });
-
 
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
@@ -1579,7 +1684,7 @@ class KafkaST extends BaseST {
         assertThat("Label exists in kafka pods", labelValues[2].equals(labels.get(labelKeys[2])));
 
         LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
-                labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
+            labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, resource -> {
             resource.getMetadata().getLabels().remove(labelKeys[0]);
             resource.getMetadata().getLabels().remove(labelKeys[1]);
@@ -1625,8 +1730,8 @@ class KafkaST extends BaseST {
         verifyNullLabels(labelKeys, labels);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME  + "-" + new Random().nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
     }
 
@@ -1661,7 +1766,14 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         Map<String, String> labels;
 
@@ -1722,8 +1834,8 @@ class KafkaST extends BaseST {
         }
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE))
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
     }
 
@@ -1783,7 +1895,14 @@ class KafkaST extends BaseST {
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         TestUtils.waitFor("Wait for kafka topic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> !cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
@@ -1803,10 +1922,9 @@ class KafkaST extends BaseST {
 
         LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         assertThat("Topic contains data", topicData, isEmptyOrNullString());
-
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1835,7 +1953,6 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles() {
-        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
@@ -1848,14 +1965,21 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
                 "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
@@ -1867,8 +1991,8 @@ class KafkaST extends BaseST {
         assertThat("Folder kafka-log0 has data in files", result.equals(""));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME)
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
 
         LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
@@ -1883,6 +2007,7 @@ class KafkaST extends BaseST {
 
         assertThat("Folder kafka-log0 doesn't contains 100 files", result, containsString(stringToMatch.toString()));
     }
+
 
     @Test
     void testLabelsAndAnnotationForPVC() {
