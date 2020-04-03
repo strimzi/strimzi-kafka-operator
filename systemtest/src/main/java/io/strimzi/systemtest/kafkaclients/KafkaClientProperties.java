@@ -134,7 +134,7 @@ public class KafkaClientProperties  {
 
         public KafkaClientPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
 
-            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name());
+            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name().toLowerCase());
             return this;
         }
 
