@@ -251,7 +251,7 @@ public abstract class BaseST implements TestSeparator {
 
     private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+        String output = cmdKubeClient().execInPodContainer(podName, containerName, "/bin/bash", "-c",
             "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
@@ -271,10 +271,14 @@ public abstract class BaseST implements TestSeparator {
             // We should do something similar if the class not -jar was given, but that's
             // hard to do properly.
         }
-        assertCmdOption(cmd, expectedXmx);
-        assertCmdOption(cmd, expectedXms);
-        assertCmdOption(cmd, expectedServer);
-        assertCmdOption(cmd, expectedXx);
+        if (expectedXmx != null)
+            assertCmdOption(cmd, expectedXmx);
+        if (expectedXms != null)
+            assertCmdOption(cmd, expectedXms);
+        if (expectedServer != null)
+            assertCmdOption(cmd, expectedServer);
+        if (expectedXx != null)
+            assertCmdOption(cmd, expectedXx);
     }
 
     public Map<String, String> getImagesFromConfig() {

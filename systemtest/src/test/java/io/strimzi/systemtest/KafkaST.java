@@ -789,6 +789,8 @@ class KafkaST extends BaseST {
                                 .addToRequests("cpu", new Quantity("0.25"))
                                 .build())
                         .withNewJvmOptions()
+                            .withXmx("2G")
+                            .withXms("1024M")
                             .withJavaSystemProperties(javaSystemProps)
                         .endJvmOptions()
                     .endTopicOperator()
@@ -801,6 +803,8 @@ class KafkaST extends BaseST {
                                 .addToRequests("cpu", new Quantity("300m"))
                                 .build())
                         .withNewJvmOptions()
+                            .withXmx("1G")
+                            .withXms("512M")
                             .withJavaSystemProperties(javaSystemProps)
                         .endJvmOptions()
                     .endUserOperator()
@@ -835,13 +839,22 @@ class KafkaST extends BaseST {
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "300m");
 
+        assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
+                "-Xmx2G", "-Xms1024M", null, null);
+
+        assertExpectedJavaOpts(pod.get().getMetadata().getName(), "user-operator",
+                "-Xmx1G", "-Xms512M", null, null);
+
         String eoPod = eoPods.keySet().toArray()[0].toString();
         kubeClient().getPod(eoPod).getSpec().getContainers().forEach(container -> {
             if (!container.getName().equals("tls-sidecar")) {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
                 String value = container.getEnv().stream().filter(envVar ->
                         envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
-                assertThat(value, is("-Djavax.net.debug=verbose"));
+                if (container.getName().equals("topic-operator"))
+                    assertThat(value, is("-Xms1024M -Xmx2G -Djavax.net.debug=verbose"));
+                if (container.getName().equals("user-operator"))
+                    assertThat(value, is("-Xms512M -Xmx1G -Djavax.net.debug=verbose"));
             }
         });
 
