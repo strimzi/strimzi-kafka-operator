@@ -33,7 +33,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -93,10 +94,13 @@ public class KafkaAssemblyOperatorCustomCertTest {
         }
     }
 
-    @BeforeEach
+    @BeforeAll
     public void before() {
         vertx = Vertx.vertx();
+    }
 
+    @BeforeEach
+    public void setup() {
         kafka = createKafka();
         kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
 
@@ -145,7 +149,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 .then(invocation -> Future.succeededFuture(ReconcileResult.created(invocation.getArgument(2))));
     }
 
-    @AfterEach
+    @AfterAll
     public void after() {
         vertx.close();
     }
@@ -250,124 +254,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 async.flag();
             })));
     }
-
-//<<<<<<<HEAD
-//            assertThat(isPodToRestartFunctionCaptor.getAllValues().size(), is(1));
-//
-//            Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
-//            assertThat(isPodToRestart.apply(getPod(reconcileSts)), is(nullValue()));
-//
-//            async.flag();
-//        });
-//    }
-//
-//    @Test
-//    public void testWithChangedTlsCertificate(VertxTestContext context) throws InterruptedException {
-//        Kafka kafka = getKafkaCrd();
-//        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-//        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
-//
-//        // Mock the Kafka Operator
-//        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-//        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
-//        when(mockKafkaOps.updateStatusAsync(any())).thenReturn(Future.succeededFuture());
-//
-//        // Mock the KafkaSetOperator
-//        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-//        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
-//
-//        ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-//        when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
-//            return Future.succeededFuture(ReconcileResult.patched(invocation.getArgument(2)));
-//        });
-//
-//        ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-//        ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
-//        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture())).thenReturn(Future.succeededFuture());
-//
-//        // Mock the ConfigMapOperator
-//        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-//        when(mockCmOps.get(eq(namespace), eq(clusterName))).thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
-//
-//        // Mock the SecretOperator
-//        SecretOperator mockSecretOps = supplier.secretOperations;
-//        when(mockSecretOps.getAsync(eq(namespace), eq("my-tls-secret"))).thenReturn(Future.succeededFuture(getTlsSecret()));
-//        when(mockSecretOps.getAsync(eq(namespace), eq("my-external-secret"))).thenReturn(Future.succeededFuture(getExternalSecret()));
-//        when(mockSecretOps.reconcile(any(), any(), any())).then(invocation -> {
-//            return Future.succeededFuture(ReconcileResult.created(invocation.getArgument(2)));
-//        });
-//
-//        MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-//                certManager,
-//                passwordGenerator,
-//                supplier,
-//                config);
-//
-//        Checkpoint async = context.checkpoint();
-//        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-//            assertThat(res.succeeded(), is(true));
-//
-//            assertThat(reconcileStsCaptor.getAllValues().size(), is(1));
-//
-//            StatefulSet reconcileSts = reconcileStsCaptor.getValue();
-//            assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, ""), is(getTlsThumbprint()));
-//            assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations().getOrDefault(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, ""), is(getExternalThumbprint()));
-//
-//            assertThat(isPodToRestartFunctionCaptor.getAllValues().size(), is(1));
-//
-//            Pod pod = getPod(reconcileSts);
-//            pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
-//
-//            Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
-//            assertThat(isPodToRestart.apply(pod), is("custom certificate on the TLS listener changes"));
-//
-//            async.flag();
-//        });
-//    }
-//
-//    @Test
-//    public void testWithChangedExternalCertificate(VertxTestContext context) throws InterruptedException {
-//        Kafka kafka = getKafkaCrd();
-//        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-//        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
-//
-//        // Mock the Kafka Operator
-//        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-//        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
-//        when(mockKafkaOps.updateStatusAsync(any())).thenReturn(Future.succeededFuture());
-//
-//        // Mock the KafkaSetOperator
-//        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-//        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
-//
-//        ArgumentCaptor<StatefulSet> reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-//        when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture())).then(invocation -> {
-//            return Future.succeededFuture(ReconcileResult.patched(invocation.getArgument(2)));
-//        });
-//
-//        ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-//        ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
-//        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture())).thenReturn(Future.succeededFuture());
-//
-//        // Mock the ConfigMapOperator
-//        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-//        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
-//
-//        // Mock the SecretOperator
-//        SecretOperator mockSecretOps = supplier.secretOperations;
-//        when(mockSecretOps.getAsync(eq(namespace), eq("my-tls-secret"))).thenReturn(Future.succeededFuture(getTlsSecret()));
-//        when(mockSecretOps.getAsync(eq(namespace), eq("my-external-secret"))).thenReturn(Future.succeededFuture(getExternalSecret()));
-//        when(mockSecretOps.reconcile(any(), any(), any())).then(invocation -> {
-//            return Future.succeededFuture(ReconcileResult.created(invocation.getArgument(2)));
-//        });
-//
-//        MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-//                certManager,
-//                passwordGenerator,
-//                supplier,
-//                config);
-//
-//=======
 
     @Test
     public void testPodToRestartTrueWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
