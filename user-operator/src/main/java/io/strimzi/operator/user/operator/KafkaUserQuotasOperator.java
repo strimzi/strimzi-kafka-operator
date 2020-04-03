@@ -19,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class KafkaUserQuotasOperator {
@@ -69,7 +71,9 @@ public class KafkaUserQuotasOperator {
      * @param quotas The desired user quotas
      */
     public void createOrUpdate(String username, KafkaUserQuotas quotas) {
-        byte[] data = zkClient.readData("/config/users/" + username, true);
+        String encodedUsername = encodeUsername(username);
+
+        byte[] data = zkClient.readData("/config/users/" + encodedUsername, true);
 
         if (data != null)   {
             log.debug("Checking quota updates for user {}", username);
@@ -84,17 +88,17 @@ public class KafkaUserQuotasOperator {
 
             if (diff != null && diff.size() > 0) {
                 log.debug("Updating quotas for user {}", username);
-                zkClient.writeData("/config/users/" + username, createOrUpdateUserJson(data, quotas));
+                zkClient.writeData("/config/users/" + encodedUsername, createOrUpdateUserJson(data, quotas));
+                notifyChanges(username);
             } else {
                 log.debug("Nothing to update in quotas for user {}", username);
             }
         } else {
             log.debug("Creating quotas for user {}", username);
             ensurePath("/config/users");
-            zkClient.createPersistent("/config/users/" + username, createUserJson(quotas));
+            zkClient.createPersistent("/config/users/" + encodedUsername, createUserJson(quotas));
+            notifyChanges(username);
         }
-
-        notifyChanges(username);
     }
 
     /**
@@ -156,7 +160,6 @@ public class KafkaUserQuotasOperator {
         json.put("config", config);
 
         return json.encode().getBytes(StandardCharsets.UTF_8);
-
     }
 
     /**
@@ -165,11 +168,13 @@ public class KafkaUserQuotasOperator {
      * @param username  Name of the user whose configuration changed
      */
     private void notifyChanges(String username) {
+        String encodedUsername = encodeUsername(username);
+
         log.debug("Notifying changes for user {}", username);
 
         ensurePath("/config/changes");
 
-        JsonObject json = new JsonObject().put("version", 2).put("entity_path", "users/" + username);
+        JsonObject json = new JsonObject().put("version", 2).put("entity_path", "users/" + encodedUsername);
         zkClient.createPersistentSequential("/config/changes/config_change_", json.encode().getBytes(StandardCharsets.UTF_8));
     }
 
@@ -198,7 +203,9 @@ public class KafkaUserQuotasOperator {
      * @return True if the user exists
      */
     boolean exists(String username) {
-        byte[] data = zkClient.readData("/config/users/" + username, true);
+        String encodedUsername = encodeUsername(username);
+
+        byte[] data = zkClient.readData("/config/users/" + encodedUsername, true);
 
         if (data != null)   {
             String jsonString = new String(data, StandardCharsets.UTF_8);
@@ -232,16 +239,18 @@ public class KafkaUserQuotasOperator {
      * @param username Name of the user
      */
     public void delete(String username) {
-        byte[] data = zkClient.readData("/config/users/" + username, true);
+        String encodedUsername = encodeUsername(username);
+
+        byte[] data = zkClient.readData("/config/users/" + encodedUsername, true);
 
         if (data != null)   {
             log.debug("Deleting quotas for user {}", username);
             JsonObject deleteJson = removeQuotasFromJsonUser(data);
             if (configJsonIsEmpty(deleteJson)) {
-                zkClient.deleteRecursive("/config/users/" + username);
+                zkClient.deleteRecursive("/config/users/" + encodedUsername);
                 log.debug("User {} deleted from ZK store", username);
             } else {
-                zkClient.writeData("/config/users/" + username, deleteJson.toBuffer().getBytes());
+                zkClient.writeData("/config/users/" + encodedUsername, deleteJson.toBuffer().getBytes());
             }
             notifyChanges(username);
         } else {
@@ -252,12 +261,12 @@ public class KafkaUserQuotasOperator {
     /**
      * Deletes the quotas from existing JSON
      *
-     * @param user JSON string with existing user configuration as byte[]
+     * @param userConfig JSON string with existing userConfig configuration as byte[]
      *
      * @return  Returns the updated JSON without the quotas
      */
-    protected JsonObject removeQuotasFromJsonUser(byte[] user)   {
-        JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
+    protected JsonObject removeQuotasFromJsonUser(byte[] userConfig)   {
+        JsonObject json = new JsonObject(new String(userConfig, StandardCharsets.UTF_8));
 
         validateJsonVersion(json);
         JsonObject config = json.getJsonObject("config");
@@ -284,11 +293,28 @@ public class KafkaUserQuotasOperator {
     }
 
     protected JsonObject getQuotas(String username) {
-        byte[] data = zkClient.readData("/config/users/" + username, true);
+        String encodedUsername = encodeUsername(username);
+
+        byte[] data = zkClient.readData("/config/users/" + encodedUsername, true);
+
         if (data != null) {
             String jsonString = new String(data, StandardCharsets.UTF_8);
             JsonObject json = new JsonObject(jsonString);
             return json;
         } else return null;
+    }
+
+    /**
+     * Encodes the username with URL Encoder
+     *
+     * @param username  Username which should be encoded
+     * @return          Encoded username
+     */
+    protected static String encodeUsername(String username) {
+        try {
+            return URLEncoder.encode(username, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to encode username", e);
+        }
     }
 }
