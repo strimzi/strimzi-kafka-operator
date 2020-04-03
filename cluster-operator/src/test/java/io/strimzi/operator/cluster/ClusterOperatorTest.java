@@ -21,10 +21,11 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,15 +37,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -85,42 +80,43 @@ public class ClusterOperatorTest {
     }
 
     @Test
-    public void startStopSingleNamespaceOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) {
         startStop(context, "namespace", true);
     }
 
     @Test
-    public void startStopMultiNamespaceOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) {
         startStop(context, "namespace1,namespace2", true);
     }
 
     @Test
-    public void startStopSingleNamespaceK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) {
         startStop(context, "namespace", false);
     }
 
     @Test
-    public void startStopMultiNamespaceK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) {
         startStop(context, "namespace1,namespace2", false);
     }
 
     @Test
-    public void startStopAllNamespacesOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) {
         startStopAllNamespaces(context, "*", true);
     }
 
     @Test
-    public void startStopAllNamespacesK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testStartStopAllNamespacesOnK8s(VertxTestContext context) {
         startStopAllNamespaces(context, "*", false);
     }
 
     /**
-     * Does the CO start and then stop a verticle per namespace?
-     * @param context
-     * @param namespaces
+     * Asserts that Cluster Operator starts and then stops a verticle in each namespace
+     * @param context test context passed in for assertions
+     * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift) {
         AtomicInteger numWatchers = new AtomicInteger(0);
+
         KubernetesClient client;
         if (openShift) {
             client = mock(OpenShiftClient.class);
@@ -131,6 +127,7 @@ public class ClusterOperatorTest {
             when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
         }
         when(client.isAdaptable(eq(OkHttpClient.class))).thenReturn(true);
+
         try {
             when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
         } catch (MalformedURLException e) {
@@ -166,42 +163,31 @@ public class ClusterOperatorTest {
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
         }
 
-        CountDownLatch async = new CountDownLatch(1);
-
         Map<String, String> env = buildEnv(namespaces);
 
+        Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .setHandler(context.succeeding(f -> async.countDown()));
-        if (!async.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size()));
 
-        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size())));
+                for (String deploymentId: vertx.deploymentIDs()) {
+                    vertx.undeploy(deploymentId, context.succeeding());
+                }
 
-        CountDownLatch async2 = new CountDownLatch(vertx.deploymentIDs().size());
-        for (String deploymentId: vertx.deploymentIDs()) {
-            vertx.undeploy(deploymentId, ar -> {
-                context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
-                async2.countDown();
-            });
-        }
-        if (!async2.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        int maximumExpectedNumberOfWatchers = (openShift ? 8 : 6) * namespaceList.size(); // we do not have connectS2I on k8s
-        assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
-
-        context.completeNow();
+                int maximumExpectedNumberOfWatchers = (openShift ? 8 : 6) * namespaceList.size(); // we do not have connectS2I on k8s
+                assertThat("Looks like there were more watchers than namespaces",
+                        numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+                async.flag();
+            })));
     }
 
     /**
-     * Does the CO start and then stop with the namespace wildcard (*)?
-     * @param context
-     * @param namespaces
+     * Asserts that Cluster Operator starts and then stops a verticle in every namespace using the namespace wildcard (*)
+     * @param context test context passed in for assertions
+     * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -213,11 +199,13 @@ public class ClusterOperatorTest {
             when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
         }
         when(client.isAdaptable(eq(OkHttpClient.class))).thenReturn(true);
+
         try {
             when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+
         MixedOperation mockCms = mock(MixedOperation.class);
         NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition,
                 Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
@@ -244,35 +232,20 @@ public class ClusterOperatorTest {
         });
         when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
 
-        CountDownLatch async = new CountDownLatch(1);
-
         Map<String, String> env = buildEnv(namespaces);
 
+        Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                 ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .setHandler(context.succeeding(f -> async.countDown()));
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1));
+                for (String deploymentId: vertx.deploymentIDs()) {
+                    vertx.undeploy(deploymentId, context.succeeding());
+                }
 
-        if (!async.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1)));
-
-        CountDownLatch async2 = new CountDownLatch(vertx.deploymentIDs().size());
-
-        for (String deploymentId: vertx.deploymentIDs()) {
-            vertx.undeploy(deploymentId, ar -> {
-                context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
-                async2.countDown();
-            });
-        }
-        if (!async2.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable(""));
-        }
-
-        int maximumExpectedNumberOfWatchers = openShift ? 8 : 6; // we do not have connectS2I on k8s
-        assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
-
-        context.completeNow();
+                int maximumExpectedNumberOfWatchers = openShift ? 8 : 6; // we do not have connectS2I on k8s
+                assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+                async.flag();
+            })));
     }
 }

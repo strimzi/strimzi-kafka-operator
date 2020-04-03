@@ -4,13 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import org.apache.kafka.connect.cli.ConnectDistributed;
 import io.debezium.kafka.KafkaCluster;
+import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,13 +33,7 @@ public class ConnectCluster {
         return this;
     }
 
-    ConnectCluster addToPluginPath(File file) {
-        this.pluginPath.add(file.getAbsolutePath());
-        return this;
-    }
-
-    public void startup() throws IOException, InterruptedException {
-        File tempDirectory = Files.createTempDirectory(getClass().getSimpleName()).toFile();
+    public void startup() throws InterruptedException {
         for (int i = 0; i < numNodes; i++) {
             Map<String, String> workerProps = new HashMap<>();
             workerProps.put("listeners", "http://localhost:" + (STARTING_PORT + i));
@@ -73,7 +64,6 @@ public class ConnectCluster {
             thread.setDaemon(false);
             thread.start();
             l.await();
-
         }
     }
 

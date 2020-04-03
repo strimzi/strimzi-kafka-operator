@@ -24,9 +24,9 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
@@ -83,15 +83,18 @@ public class KafkaConnectorIT {
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
         // Start a 3 node Kafka cluster
-        cluster = new KafkaCluster();
-        cluster.addBrokers(3);
-        cluster.deleteDataPriorToStartup(true);
-        cluster.deleteDataUponShutdown(true);
-        cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-        cluster.startup();
-        cluster.createTopics(getClass().getSimpleName() + "-offsets", getClass().getSimpleName() + "-config", getClass().getSimpleName() + "-status");
+        cluster = new KafkaCluster()
+            .addBrokers(3)
+            .deleteDataPriorToStartup(true)
+            .deleteDataUponShutdown(true)
+            .usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
 
-        // Start a N node connect cluster
+        cluster.startup();
+
+        String connectClusterName = getClass().getSimpleName();
+        cluster.createTopics(connectClusterName + "-offsets", connectClusterName + "-config", connectClusterName + "-status");
+
+        // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
                 .usingBrokers(cluster)
                 .addConnectNodes(3);
@@ -109,16 +112,18 @@ public class KafkaConnectorIT {
     }
 
     @Test
-    public void test(VertxTestContext context) throws InterruptedException {
+    public void test(VertxTestContext context) {
         KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
 
-        KubernetesClient kubeClient = new MockKube()
-                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class,
-                        KafkaConnectorList.class, DoneableKafkaConnector.class).end()
+        KubernetesClient client = new MockKube()
+                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class)
+                .end()
                 .build();
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_14);
+
         String namespace = "ns";
         String connectorName = "my-connector";
+
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
         config.put(TestingConnector.START_TIME_MS, 1_000);
         config.put(TestingConnector.STOP_TIME_MS, 0);
@@ -128,21 +133,29 @@ public class KafkaConnectorIT {
         config.put(TestingConnector.TASK_POLL_RECORDS, 100);
         config.put(TestingConnector.NUM_PARTITIONS, 1);
         config.put(TestingConnector.TOPIC_NAME, "my-topic");
-        KafkaConnector connector = makeConnectorWithConfig(namespace, connectorName, config);
-        Crds.kafkaConnectorOperation(kubeClient).inNamespace(namespace).create(connector);
-        // We have to bridge between CrdOperator and MockKube, because there's no Fabric8 API for status update
-        // So we intercept stuff CrdOperator level
+
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).create(connector);
+
+        // Intercept status updates at CrdOperator level
+        // This is to bridge limitations between MockKube and the CrdOperator, as there are currently no Fabric8 APIs for status update
         CrdOperator connectCrdOperator = mock(CrdOperator.class);
         when(connectCrdOperator.updateStatusAsync(any())).thenAnswer(invocation -> {
             try {
-                return Future.succeededFuture(Crds.kafkaConnectorOperation(kubeClient).inNamespace(namespace).withName(connectorName).patch(invocation.getArgument(0)));
+                return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
+                        .inNamespace(namespace)
+                        .withName(connectorName)
+                        .patch(invocation.getArgument(0)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
         });
         when(connectCrdOperator.getAsync(any(), any())).thenAnswer(invocationOnMock -> {
             try {
-                return Future.succeededFuture(Crds.kafkaConnectorOperation(kubeClient).inNamespace(namespace).withName(connectorName).get());
+                return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
+                        .inNamespace(namespace)
+                        .withName(connectorName)
+                        .get());
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
@@ -157,38 +170,42 @@ public class KafkaConnectorIT {
                         null, connectCrdOperator, null, null, null, null, metrics),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort() + 2) { };
+            connectCluster.getPort() + 2
+        ) { };
 
+        Checkpoint async = context.checkpoint();
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
-                connector
-        ).compose(r -> {
-            return connectorIsRunning(context, kubeClient, namespace, connectorName);
-        }).compose(ignored -> {
-            config.remove(TestingConnector.START_TIME_MS, 1_000);
-            config.put(TestingConnector.START_TIME_MS, 1_000);
-            Crds.kafkaConnectorOperation(kubeClient).inNamespace(namespace).withName(connectorName).patch(makeConnectorWithConfig(namespace, connectorName, config));
-            return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
-                    "localhost", connectClient, true, connectorName,
-                    connector);
-        }).compose(r -> {
-            return connectorIsRunning(context, kubeClient, namespace, connectorName);
-        }).setHandler(context.succeeding(v -> context.verify(() -> {
-            // Assert metrics from Connector Operator
-            MeterRegistry registry = metrics.meterRegistry();
+                connector)
+            .setHandler(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
+            .compose(v -> {
+                config.remove(TestingConnector.START_TIME_MS, 1_000);
+                config.put(TestingConnector.START_TIME_MS, 1_000);
+                Crds.kafkaConnectorOperation(client)
+                        .inNamespace(namespace)
+                        .withName(connectorName)
+                        .patch(createKafkaConnector(namespace, connectorName, config));
+                return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                        "localhost", connectClient, true, connectorName,
+                        connector);
+            })
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertConnectorIsRunning(context, client, namespace, connectorName);
+                // Assert metrics from Connector Operator
+                MeterRegistry registry = metrics.meterRegistry();
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(0.0));
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(0.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().count(), CoreMatchers.is(2L));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().count(), CoreMatchers.is(2L));
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-            context.completeNow();
-        })));
+                async.flag();
+            })));
     }
 
-    private KafkaConnector makeConnectorWithConfig(String namespace, String connectorName, LinkedHashMap<String, Object> config) {
+    private KafkaConnector createKafkaConnector(String namespace, String connectorName, LinkedHashMap<String, Object> config) {
         return new KafkaConnectorBuilder()
                     .withNewMetadata()
                         .withName(connectorName)
@@ -202,15 +219,14 @@ public class KafkaConnectorIT {
                     .build();
     }
 
-    private Future<Void> connectorIsRunning(VertxTestContext context, KubernetesClient kubeClient, String namespace, String connectorName) {
-        Promise<Void> p = Promise.promise();
-        KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(kubeClient).inNamespace(namespace).withName(connectorName).get();
-        assertThat(kafkaConnector, notNullValue());
-        assertThat(kafkaConnector.getStatus(), notNullValue());
-        assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
-        assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
-        assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
-        p.complete();
-        return p.future();
+    private void assertConnectorIsRunning(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
+        context.verify(() -> {
+            KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
+            assertThat(kafkaConnector, notNullValue());
+            assertThat(kafkaConnector.getStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
+            assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
+        });
     }
 }
