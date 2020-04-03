@@ -141,7 +141,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
             .endSpec().done();
 
-        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnectS2IName, "Ready");
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
@@ -183,8 +183,9 @@ class ConnectS2IST extends BaseST {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-
         SecretUtils.waitForSecretReady(userName);
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
@@ -213,8 +214,6 @@ class ConnectS2IST extends BaseST {
                 .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
 
         final String tlsKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
