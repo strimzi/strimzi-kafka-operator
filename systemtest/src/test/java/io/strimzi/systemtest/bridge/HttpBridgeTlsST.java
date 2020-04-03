@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -17,6 +18,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,7 +56,6 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
-    private String userName = "bob";
 
     @Test
     void testSendSimpleMessageTls() throws Exception {
@@ -66,8 +67,18 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
-        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .withKafkaUsername(USER_NAME)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -80,31 +91,42 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
-        config.put("name", userName);
+        config.put("name", USER_NAME);
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
         JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
-        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(userName));
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(USER_NAME));
         // Create topics json
         JsonArray topic = new JsonArray();
         topic.add(topicName);
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, userName, client), is(true));
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, USER_NAME, client), is(true));
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SSL");
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .withKafkaUsername(USER_NAME)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, userName, client);
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, USER_NAME, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, userName, client);
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, USER_NAME, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, userName), is(true));
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, USER_NAME), is(true));
     }
 
     @BeforeAll
@@ -125,8 +147,8 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
             .endSpec().done();
 
         // Create Kafka user
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        SecretUtils.waitForSecretReady(USER_NAME);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();

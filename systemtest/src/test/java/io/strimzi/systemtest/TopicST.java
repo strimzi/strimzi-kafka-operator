@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -231,9 +232,17 @@ public class TopicST extends BaseST {
         LOGGER.info("Topic {} was created", topicName);
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        internalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        int sent = internalKafkaClient.sendMessagesPlain();
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
@@ -246,7 +255,7 @@ public class TopicST extends BaseST {
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} recreated", topicName);
 
-        int received = internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME);
+        int received = internalKafkaClient.receiveMessagesPlain();
         assertThat(received, is(sent));
 
     }
@@ -262,7 +271,14 @@ public class TopicST extends BaseST {
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         LOGGER.info("Checking if {} is on topic list", topicName);
         boolean created = hasTopicInKafka(topicName);
@@ -271,8 +287,8 @@ public class TopicST extends BaseST {
 
         LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
         internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT),
-                internalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT, CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
 
         LOGGER.info("Checking if {} is on topic list", topicName);

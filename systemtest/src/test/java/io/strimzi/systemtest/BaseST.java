@@ -13,10 +13,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -73,9 +69,6 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    protected KafkaClient externalBasicKafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
-
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
 
