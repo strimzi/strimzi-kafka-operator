@@ -8,9 +8,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -43,8 +40,6 @@ public class HttpBridgeBaseST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
 
     protected WebClient client;
-    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
-
     protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
     @BeforeAll

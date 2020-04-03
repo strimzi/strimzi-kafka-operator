@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -20,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,8 +70,18 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
-        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(messageCount));
+        BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withKafkaUsername(userName)
+                .withMessageCount(messageCount)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+                .build();
+
+        Future<Integer> consumer = kafkaClient.receiveMessagesTls();
+        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
     }
 
     @Test
@@ -77,8 +89,19 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withKafkaUsername(userName)
+                .withMessageCount(MESSAGE_COUNT)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+                .build();
+
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
+        Future<Integer> producer = kafkaClient.sendMessagesTls();
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         String name = "kafka-consumer-simple-receive";

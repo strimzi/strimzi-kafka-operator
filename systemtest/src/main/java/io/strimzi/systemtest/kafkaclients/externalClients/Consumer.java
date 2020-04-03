@@ -4,11 +4,11 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
@@ -16,12 +16,12 @@ import java.util.function.IntPredicate;
 
 public class Consumer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
-    private Properties properties;
+    private KafkaClientProperties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
 
-    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Consumer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
@@ -30,7 +30,9 @@ public class Consumer extends ClientHandlerBase<Integer> {
 
     @Override
     protected void handleClient() {
-        KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties);
+        LOGGER.info("Consumer is starting with following properties: {}", properties.getProperties().toString());
+
+        KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties.getProperties());
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
