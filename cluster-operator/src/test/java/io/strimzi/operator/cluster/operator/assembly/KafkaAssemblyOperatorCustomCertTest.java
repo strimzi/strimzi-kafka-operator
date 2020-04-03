@@ -95,7 +95,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     }
 
     @BeforeAll
-    public void before() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
@@ -150,7 +150,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     }
 
     @AfterAll
-    public void after() {
+    public static void after() {
         vertx.close();
     }
 
