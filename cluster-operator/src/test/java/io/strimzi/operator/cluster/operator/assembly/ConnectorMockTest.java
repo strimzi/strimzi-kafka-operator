@@ -26,12 +26,18 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.AsyncResult;
@@ -41,7 +47,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,7 +99,7 @@ public class ConnectorMockTest {
         }
     }
 
-    private Vertx vertx;
+    private static Vertx vertx;
     private KubernetesClient client;
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
@@ -121,9 +128,20 @@ public class ConnectorMockTest {
         return connectorState != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
     }
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        if (vertx != null) {
+            vertx.close();
+        }
+    }
+
     @BeforeEach
     public void setup(VertxTestContext testContext) throws InterruptedException {
-        vertx = Vertx.vertx();
         client = new MockKube()
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class,
                         KafkaConnect::getStatus, KafkaConnect::setStatus).end()
@@ -231,7 +249,14 @@ public class ConnectorMockTest {
         });
 
 
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client, pfa, 10_000);
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+                new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
+                    // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                    () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                ResourceUtils.metricsProvider(),
+                pfa, 10_000);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
@@ -260,11 +285,6 @@ public class ConnectorMockTest {
         async.await(30, TimeUnit.SECONDS);
 
         testContext.completeNow();
-    }
-
-    @AfterEach
-    public void teardown() {
-        vertx.close();
     }
 
     public <T> Handler<AsyncResult<T>> asyncResultHandler(VertxTestContext testContext, CountDownLatch async) {

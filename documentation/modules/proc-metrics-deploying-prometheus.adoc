@@ -29,7 +29,11 @@ On MacOS, use:
 [source,shell,subs="+quotes,attributes"]
 sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 
-. Edit the `ServiceMonitor` resource in `strimzi-service-monitor.yaml` to define Prometheus jobs that will scrape the metrics data.
+. Edit the `ServiceMonitor` resource in `strimzi-service-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from services.
+`ServiceMonitor` is used to scrape metrics through services and is used for Apache Kafka, ZooKeeper.
+
+. Edit the `PodMonitor` resource in `strimzi-pod-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from pods.
+`PodMonitor` is used to scrape data directly from pods and is used for Operators.
 
 . To use another role:
 
@@ -44,5 +48,6 @@ kubectl create secret generic additional-scrape-configs --from-file=prometheus-a
 +
 [source,shell,subs="+quotes,attributes"]
 kubectl apply -f strimzi-service-monitor.yaml
+kubectl apply -f strimzi-pod-monitor.yaml
 kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml

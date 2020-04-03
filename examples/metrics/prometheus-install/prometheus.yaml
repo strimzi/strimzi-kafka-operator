@@ -58,6 +58,9 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       app: strimzi
+  podMonitorSelector:
+    matchLabels:
+      app: strimzi
   resources:
     requests:
       memory: 400Mi

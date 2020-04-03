@@ -15,6 +15,11 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
@@ -60,6 +65,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -107,6 +113,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -643,6 +650,36 @@ public class ResourceUtils {
         };
     }
 
+    public static MetricsProvider metricsProvider() {
+        return new MetricsProvider() {
+            @Override
+            public MeterRegistry meterRegistry() {
+                MeterRegistry mockRegistry = mock(MeterRegistry.class);
+                MeterRegistry.Config mockConfig = mock(MeterRegistry.Config.class);
+                Clock mockClock = mock(Clock.class);
+                when(mockConfig.clock()).thenReturn(mockClock);
+                when(mockRegistry.config()).thenReturn(mockConfig);
+
+                return mockRegistry;
+            }
+
+            @Override
+            public Counter counter(String name, String description, Tags tags) {
+                return mock(Counter.class);
+            }
+
+            @Override
+            public Timer timer(String name, String description, Tags tags) {
+                return mock(Timer.class);
+            }
+
+            @Override
+            public AtomicInteger gauge(String name, String description, Tags tags) {
+                return new AtomicInteger(0);
+            }
+        };
+    }
+
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
@@ -655,7 +692,7 @@ public class ResourceUtils {
                 mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
                 mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
                 mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider());
+                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider(), metricsProvider());
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
