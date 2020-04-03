@@ -14,15 +14,15 @@ import io.strimzi.api.kafka.model.storage.Storage;
 
 import java.util.List;
 
-import static io.strimzi.operator.cluster.model.StorageUtils.parseMemorybyFactor;
+import static io.strimzi.operator.cluster.model.StorageUtils.parseMemory;
 
 public class Capacity {
-    public static final int DEFAULT_BROKER_DISK_CAPACITY   = 100000;  // in MB
-    public static final int DEFAULT_BROKER_CPU_CAPACITY    = 100;     // as a percentage (0-100)
-    public static final int DEFAULT_BROKER_NW_IN_CAPACITY  = 10000;   // in KB/s
-    public static final int DEFAULT_BROKER_NW_OUT_CAPACITY = 10000;   // in KB/s
+    public static final long DEFAULT_BROKER_DISK_CAPACITY  = 100_000;  // in MB
+    public static final int DEFAULT_BROKER_CPU_CAPACITY    = 100;      // as a percentage (0-100)
+    public static final int DEFAULT_BROKER_NW_IN_CAPACITY  = 10_000;   // in KB/s
+    public static final int DEFAULT_BROKER_NW_OUT_CAPACITY = 10_000;   // in KB/s
 
-    private Integer disk;
+    private Long disk;
     private Integer cpu;
     private Integer networkIn;
     private Integer networkOut;
@@ -40,9 +40,9 @@ public class Capacity {
      * Generate disk capacity configuration from the supplied storage configuration
      *
      * @param storage Storage configuration for Kafka cluster
-     * @return Disk capacity configuration as a String
+     * @return Disk capacity configuration as a Long
      */
-    public static Integer generateDiskCapacity(Storage storage) {
+    public static Long generateDiskCapacity(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
             return getSizeInMb(((PersistentClaimStorage) storage).getSize());
         } else if (storage instanceof EphemeralStorage) {
@@ -53,7 +53,7 @@ public class Capacity {
             }
         } else if (storage instanceof JbodStorage) {
             List<SingleVolumeStorage> volumeList = ((JbodStorage) storage).getVolumes();
-            int size = 0;
+            long size = 0;
             for (SingleVolumeStorage volume : volumeList) {
                 size += generateDiskCapacity(volume);
             }
@@ -65,20 +65,20 @@ public class Capacity {
 
     /*
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
-     * into the equivalent number of megabytes represented as a Integer.
+     * into the equivalent number of megabytes represented as a Long.
      *
      * @param size The String representation of the volume size.
-     * @return The equivalent number of Megabytes.
+     * @return The equivalent number of megabytes.
      */
-    public static Integer getSizeInMb(String size) {
-        return Math.toIntExact(parseMemorybyFactor(size, size.charAt(size.length() - 1) == 'i' ? "Mi" : "M"));
+    public static Long getSizeInMb(String size) {
+        return parseMemory(size, size.charAt(size.length() - 1) == 'i' ?  "Mi" : "M");
     }
 
-    public Integer getDisk() {
+    public Long getDisk() {
         return disk;
     }
 
-    public void setDisk(Integer disk) {
+    public void setDisk(Long disk) {
         this.disk = disk;
     }
 

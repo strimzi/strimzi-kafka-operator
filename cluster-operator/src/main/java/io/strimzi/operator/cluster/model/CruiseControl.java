@@ -82,7 +82,7 @@ public class CruiseControl extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
-    private int brokerDiskCapacity;
+    private long brokerDiskCapacity;
     private int brokerCpuCapacity;
     private int brokerNetworkInCapacity;
     private int brokerNetworkOutCapacity;

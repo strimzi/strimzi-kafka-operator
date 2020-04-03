@@ -119,7 +119,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("JVM Options for the pod")
+    @Description("JVM Options for the Cruise Control container")
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
@@ -129,7 +129,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve.")
+    @Description("CPU and memory resources to reserve for the Cruise Control container")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -139,7 +139,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("Pod liveness checking.")
+    @Description("Pod liveness checking for the Cruise Control container")
     public Probe getLivenessProbe() {
         return livenessProbe;
     }
@@ -149,7 +149,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Pod readiness checking.")
+    @Description("Pod readiness checking for the Cruise Control container.")
     public Probe getReadinessProbe() {
         return readinessProbe;
     }

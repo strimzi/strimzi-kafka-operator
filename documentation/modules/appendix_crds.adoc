@@ -35,7 +35,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|cruiseControl           1.2+<.<|Configuration of Cruise Control.
+|cruiseControl           1.2+<.<|Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
 |xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |jmxTrans                1.2+<.<|Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
 |xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
@@ -86,7 +86,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions           1.2+<.<|JMX Options for Kafka brokers.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|resources            1.2+<.<|CPU and memory resources to reserve.
+|resources            1.2+<.<|CPU and memory resources to reserve for the Cruise Control container.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -1356,13 +1356,13 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations Note that properties with the following prefixes cannot be set: bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic, broker.metric.sample.store.topic, brokerCapacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes.
 |map
-|livenessProbe   1.2+<.<|Pod liveness checking.
+|livenessProbe   1.2+<.<|Pod liveness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
-|readinessProbe  1.2+<.<|Pod readiness checking.
+|readinessProbe  1.2+<.<|Pod readiness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
-|jvmOptions      1.2+<.<|JVM Options for the pod.
+|jvmOptions      1.2+<.<|JVM Options for the Cruise Control container.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources       1.2+<.<|CPU and memory resources to reserve.
+|resources       1.2+<.<|CPU and memory resources to reserve for the Cruise Control container.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging         1.2+<.<|Logging configuration for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]

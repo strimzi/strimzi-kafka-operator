@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -139,7 +140,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(CruiseControl.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_DISK_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_DISK_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_DISK_CAPACITY).withValue(Long.toString(DEFAULT_BROKER_DISK_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_CPU_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_CPU_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_NETWORK_IN_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_NW_IN_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_NETWORK_OUT_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_NW_OUT_CAPACITY)).build());
@@ -213,8 +214,8 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        io.strimzi.operator.cluster.model.cruisecontrol.Capacity generatedCapacity = new io.strimzi.operator.cluster.model.cruisecontrol.Capacity(resource.getSpec());
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Integer.toString(generatedCapacity.getDisk())));
+        Capacity generatedCapacity = new Capacity(resource.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_CAPACITY), is(Long.toString(generatedCapacity.getDisk())));
     }
 
     @Test

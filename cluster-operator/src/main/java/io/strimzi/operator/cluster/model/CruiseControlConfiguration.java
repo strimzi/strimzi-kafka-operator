@@ -48,11 +48,11 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
 
     static {
         CC_DEFAULT_PROPERTIES_MAP = new HashMap<>();
-        CC_DEFAULT_PROPERTIES_MAP.put("partition.metrics.window.ms", "300000");
+        CC_DEFAULT_PROPERTIES_MAP.put("partition.metrics.window.ms", Integer.toString(300_000));
         CC_DEFAULT_PROPERTIES_MAP.put("num.partition.metrics.windows", "1");
-        CC_DEFAULT_PROPERTIES_MAP.put("broker.metrics.window.ms", "300000");
+        CC_DEFAULT_PROPERTIES_MAP.put("broker.metrics.window.ms", Integer.toString(300_000));
         CC_DEFAULT_PROPERTIES_MAP.put("num.broker.metrics.windows", "20");
-        CC_DEFAULT_PROPERTIES_MAP.put("completed.user.task.retention.time.ms", "86400000");
+        CC_DEFAULT_PROPERTIES_MAP.put("completed.user.task.retention.time.ms", Integer.toString(86_400_000));
         CC_DEFAULT_PROPERTIES_MAP.put("default.goals", DEFAULT_GOALS);
         CC_DEFAULT_PROPERTIES_MAP.put("goals", DEFAULT_GOALS);
 

@@ -1273,7 +1273,8 @@ spec:
                       type: object
                     requests:
                       type: object
-                  description: CPU and memory resources to reserve.
+                  description: CPU and memory resources to reserve for the Cruise
+                    Control container.
                 metrics:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
@@ -4888,7 +4889,7 @@ spec:
                       type: integer
                       minimum: 0
                       description: The timeout for each attempted health check.
-                  description: Pod liveness checking.
+                  description: Pod liveness checking for the Cruise Control container.
                 readinessProbe:
                   type: object
                   properties:
@@ -4915,7 +4916,7 @@ spec:
                       type: integer
                       minimum: 0
                       description: The timeout for each attempted health check.
-                  description: Pod readiness checking.
+                  description: Pod readiness checking for the Cruise Control container.
                 jvmOptions:
                   type: object
                   properties:
@@ -4947,7 +4948,7 @@ spec:
                             description: The system property value.
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
-                  description: JVM Options for the pod.
+                  description: JVM Options for the Cruise Control container.
                 resources:
                   type: object
                   properties:
@@ -4955,7 +4956,8 @@ spec:
                       type: object
                     requests:
                       type: object
-                  description: CPU and memory resources to reserve.
+                  description: CPU and memory resources to reserve for the Cruise
+                    Control container.
                 logging:
                   type: object
                   properties:
@@ -5596,7 +5598,8 @@ spec:
                   description: The Cruise Control brokerCapacity configuration.
               required:
               - replicas
-              description: Configuration of Cruise Control.
+              description: Configuration for Cruise Control deployment. Deploys a
+                Cruise Control instance when specified.
             jmxTrans:
               type: object
               properties:
