@@ -30,6 +30,8 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -83,6 +85,7 @@ public class ResourceOperatorSupplier {
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
+    public final MetricsProvider metricsProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -91,12 +94,13 @@ public class ResourceOperatorSupplier {
                 () -> new BackOff(5_000, 2, 4)),
                     new DefaultAdminClientProvider(),
                     new DefaultZookeeperScalerProvider(),
+                    new MicrometerMetricsProvider(),
                     pfa, operationTimeoutMs);
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
+                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
@@ -124,7 +128,8 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class),
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
                 new NodeOperator(vertx, client, operationTimeoutMs),
-                zkScalerProvider);
+                zkScalerProvider,
+                metricsProvider);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -154,7 +159,8 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> mirrorMaker2Operator,
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
-                                    ZookeeperScalerProvider zkScalerProvider) {
+                                    ZookeeperScalerProvider zkScalerProvider,
+                                    MetricsProvider metricsProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -183,5 +189,6 @@ public class ResourceOperatorSupplier {
         this.mirrorMaker2Operator = mirrorMaker2Operator;
         this.nodeOperator = nodeOperator;
         this.zkScalerProvider = zkScalerProvider;
+        this.metricsProvider = metricsProvider;
     }
 }

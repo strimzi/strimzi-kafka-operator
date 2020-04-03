@@ -82,9 +82,7 @@ public class KafkaStatusTest {
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
     }
 
     public Kafka getKafkaCrd() throws ParseException {

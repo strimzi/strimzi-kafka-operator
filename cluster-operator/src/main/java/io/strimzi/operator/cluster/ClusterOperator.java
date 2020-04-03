@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
@@ -14,6 +15,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOper
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.common.MetricsProvider;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -21,7 +23,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
-import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,7 +55,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private final PrometheusMeterRegistry metrics;
+    private final MetricsProvider metricsProvider;
 
     private final KubernetesClient client;
     private final String namespace;
@@ -78,7 +79,8 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator,
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
                            KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator,
-                           KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator) {
+                           KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
+                           MetricsProvider metricsProvider) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.reconciliationInterval = reconciliationInterval;
@@ -90,7 +92,7 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaMirrorMaker2AssemblyOperator = kafkaMirrorMaker2AssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
 
-        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        this.metricsProvider = metricsProvider;
         setupMetrics();
     }
 
@@ -174,6 +176,7 @@ public class ClusterOperator extends AbstractVerticle {
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/metrics")) {
+                        PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) metricsProvider.meterRegistry();
                         request.response().setStatusCode(200)
                                 .end(metrics.scrape());
                     }
@@ -190,6 +193,8 @@ public class ClusterOperator extends AbstractVerticle {
     }
 
     private void setupMetrics() {
+        MeterRegistry metrics = metricsProvider.meterRegistry();
+
         new ClassLoaderMetrics().bindTo(metrics);
         new JvmMemoryMetrics().bindTo(metrics);
         new ProcessorMetrics().bindTo(metrics);

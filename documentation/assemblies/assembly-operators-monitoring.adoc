@@ -1,0 +1,9 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-operators.adoc
+
+[id='assembly-operators-monitoring-{context}']
+
+= Monitoring Operators
+
+include::../modules/con-operators-prometheus-metrics.adoc[leveloffset=+1]

@@ -71,7 +71,7 @@ public class ClusterOperatorTest {
     }
 
     @BeforeAll
-    public static void createClient() {
+    public static void before() {
         vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
@@ -80,7 +80,7 @@ public class ClusterOperatorTest {
     }
 
     @AfterAll
-    public static void closeClient() {
+    public static void after() {
         vertx.close();
     }
 

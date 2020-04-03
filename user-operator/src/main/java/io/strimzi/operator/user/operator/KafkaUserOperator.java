@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -82,7 +83,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              KafkaUserQuotasOperator kafkaUserQuotasOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
-        super(vertx, "User", crdOperator);
+        super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider());
         this.certManager = certManager;
         Map<String, String> matchLabels = labels.toMap();
         this.selector = matchLabels.isEmpty() ? Optional.empty() : Optional.of(new LabelSelector(null, matchLabels));

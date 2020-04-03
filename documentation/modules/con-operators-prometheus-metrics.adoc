@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// assembly-operators-monitoring.adoc
+
+[id='con-operators-prometheus-metrics-{context}']
+
+= Prometheus metrics
+
+{ProductName} operators expose Prometheus metrics.
+The metrics are automatically enabled and contain information about:
+
+* Number of reconciliations
+* Number of Custom Resources the operator is processing
+* Duration of reconciliations
+* JVM metrics from the operators
+
+Additionally, we provide an example Grafana dashboard.
+
+For more information about Prometheus, see the xref:assembly-metrics-setup-{context}[introduction to metrics].

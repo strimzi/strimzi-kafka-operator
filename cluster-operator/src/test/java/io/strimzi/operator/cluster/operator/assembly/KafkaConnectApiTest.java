@@ -19,6 +19,7 @@ import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,8 +53,7 @@ public class KafkaConnectApiTest {
     private static final int PORT = 18083;
 
     @BeforeEach
-    public void before() throws IOException, InterruptedException {
-        vertx = Vertx.vertx();
+    public void beforeEach() throws IOException, InterruptedException {
         // Start a 3 node Kafka cluster
         cluster = new KafkaCluster();
         cluster.addBrokers(3);
@@ -93,7 +93,7 @@ public class KafkaConnectApiTest {
     }
 
     @AfterEach
-    public void after() {
+    public void afterEach() {
         if (connect != null) {
             connect.stop();
             connect.awaitStop();
@@ -101,8 +101,13 @@ public class KafkaConnectApiTest {
         cluster.shutdown();
     }
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
 

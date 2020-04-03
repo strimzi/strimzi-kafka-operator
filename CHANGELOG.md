@@ -6,6 +6,8 @@
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.
 * Make it possible to configure PodManagementPolicy for StatefulSets
 * Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
+* Add more metrics to Cluster and User Operators
+* New Grafana dashboard for Operator monitoring 
 
 ## 0.17.0
 
