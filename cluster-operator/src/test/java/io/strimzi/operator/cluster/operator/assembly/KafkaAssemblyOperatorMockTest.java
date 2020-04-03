@@ -55,7 +55,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -198,7 +198,7 @@ public class KafkaAssemblyOperatorMockTest {
         this.before();
     }
 
-    private Vertx vertx;
+    private static Vertx vertx;
     private Kafka cluster;
 
     public void before() {
@@ -232,27 +232,28 @@ public class KafkaAssemblyOperatorMockTest {
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
-    @BeforeEach
-    public void createVertxInstance() {
+    @BeforeAll
+    public static void createVertx() {
         vertx = Vertx.vertx();
     }
 
     @AfterEach
-    public void closeVertxInstace(VertxTestContext context) throws InterruptedException {
+    public void completeContext(VertxTestContext context) throws InterruptedException {
         context.completeNow();
-        vertx.close();
     }
 
     @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
+        vertx.close();
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
         return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
+                2_000);
     }
 
     private KafkaAssemblyOperator createCluster(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {

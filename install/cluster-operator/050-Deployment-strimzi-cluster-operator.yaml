@@ -20,6 +20,9 @@ spec:
       containers:
       - name: strimzi-cluster-operator
         image: strimzi/operator:latest
+        ports:
+        - containerPort: 8080
+          name: http
         args:
         - /opt/strimzi/bin/cluster_operator_run.sh
         env:
@@ -73,13 +76,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthy
-            port: 8080
+            port: http
           initialDelaySeconds: 10
           periodSeconds: 30
         readinessProbe:
           httpGet:
             path: /ready
-            port: 8080
+            port: http
           initialDelaySeconds: 10
           periodSeconds: 30
         resources:

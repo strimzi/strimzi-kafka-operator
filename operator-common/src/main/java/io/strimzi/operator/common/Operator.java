@@ -5,6 +5,7 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.micrometer.core.instrument.Counter;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstraction of an operator which is driven by resources of a given {@link #kind()}.
@@ -51,6 +53,7 @@ public interface Operator {
         allResourceNames(namespace).setHandler(ar -> {
             if (ar.succeeded()) {
                 reconcileThese(trigger, ar.result(), handler);
+                getPeriodicReconciliationsCounter().increment();
             } else {
                 handler.handle(ar.map((Void) null));
             }
@@ -60,16 +63,18 @@ public interface Operator {
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, Handler<AsyncResult<Void>> handler) {
         if (desiredNames.size() > 0) {
             List<Future> futures = new ArrayList<>();
+            getResourceCounter().set(desiredNames.size());
+
             for (NamespaceAndName resourceRef : desiredNames) {
                 Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
                 futures.add(reconcile(reconciliation));
             }
             CompositeFuture.join(futures).map((Void) null).setHandler(handler);
         } else {
+            getResourceCounter().set(0);
             handler.handle(Future.succeededFuture());
         }
     }
-
 
     /**
      * Returns a future which completes with the names of all the resources to be reconciled by
@@ -87,4 +92,8 @@ public interface Operator {
     default Optional<LabelSelector> selector() {
         return Optional.empty();
     }
+
+    Counter getPeriodicReconciliationsCounter();
+
+    AtomicInteger getResourceCounter();
 }
