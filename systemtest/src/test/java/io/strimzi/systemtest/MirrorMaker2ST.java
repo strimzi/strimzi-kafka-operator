@@ -326,6 +326,9 @@ class MirrorMaker2ST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
+        // Deploy topic
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+
         // Create Kafka user for source cluster
         KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
         SecretUtils.waitForSecretReady(kafkaUserSource);
@@ -407,9 +410,6 @@ class MirrorMaker2ST extends BaseST {
                     .withTopicsBlacklistPattern("availability.*")
                 .endMirror()
             .endSpec().done();
-
-        // Deploy topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
 
         int sent = internalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
