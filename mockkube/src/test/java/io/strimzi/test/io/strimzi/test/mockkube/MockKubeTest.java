@@ -63,7 +63,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
                 },
                 new Object[]{KafkaTopic.class,
                     (Consumer<MockKube>) mockKube -> {
-                        mockKube.withCustomResourceDefinition(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+                        mockKube.withCustomResourceDefinition(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
                     },
                     (Supplier<HasMetadata>) () ->
                         new KafkaTopicBuilder()

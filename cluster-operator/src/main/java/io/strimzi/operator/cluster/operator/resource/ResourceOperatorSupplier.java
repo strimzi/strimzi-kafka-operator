@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
@@ -119,13 +120,13 @@ public class ResourceOperatorSupplier {
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class),
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class),
-                pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class) : null,
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class),
-                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class),
-                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class),
+                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class, Crds.kafka()),
+                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, Crds.kafkaConnect()),
+                pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, Crds.kafkaConnectS2I()) : null,
+                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, Crds.kafkaMirrorMaker()),
+                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, Crds.kafkaBridge()),
+                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class, Crds.kafkaConnector()),
+                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class, Crds.kafkaMirrorMaker2()),
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
                 new NodeOperator(vertx, client, operationTimeoutMs),
                 zkScalerProvider,

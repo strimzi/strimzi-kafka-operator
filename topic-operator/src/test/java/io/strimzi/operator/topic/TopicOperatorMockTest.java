@@ -95,7 +95,7 @@ public class TopicOperatorMockTest {
                         .setEnabled(true));
         vertx = Vertx.vertx(options);
         MockKube mockKube = new MockKube();
-        mockKube.withCustomResourceDefinition(Crds.topic(),
+        mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
         kubeClient = mockKube.build();
 

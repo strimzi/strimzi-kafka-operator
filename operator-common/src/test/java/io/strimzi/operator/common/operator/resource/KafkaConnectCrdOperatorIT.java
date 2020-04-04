@@ -32,7 +32,7 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
+        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, Crds.kafkaConnect());
     }
 
     @Override
