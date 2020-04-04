@@ -125,13 +125,6 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1062/</url>
-        </repository>
-    </repositories>
-    
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
