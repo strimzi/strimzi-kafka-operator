@@ -136,9 +136,7 @@ public class ConnectorMockTest {
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
     }
 
     @BeforeEach

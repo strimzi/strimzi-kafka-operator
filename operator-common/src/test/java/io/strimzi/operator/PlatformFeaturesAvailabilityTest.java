@@ -14,8 +14,8 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -31,15 +31,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
-    protected Vertx vertx;
+    protected static Vertx vertx;
 
-    @BeforeEach
-    public void before() {
+    @BeforeAll
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterEach
-    public void after() {
+    @AfterAll
+    public static void after() {
         vertx.close();
     }
 

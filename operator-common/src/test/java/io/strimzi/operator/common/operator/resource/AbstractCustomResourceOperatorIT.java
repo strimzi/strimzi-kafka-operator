@@ -101,9 +101,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
     @AfterAll
     public void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
 
         String namespace = getNamespace();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {

@@ -37,7 +37,8 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,15 +67,25 @@ public class JbodStorageTest {
             emptyMap(), 
             emptyMap()) { };
 
-    private Vertx vertx;
+    private static Vertx vertx;
     private Kafka kafka;
     private KubernetesClient mockClient;
     private KafkaAssemblyOperator operator;
 
     private List<SingleVolumeStorage> volumes;
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
+
     @BeforeEach
-    private void setup() {
+    private void init() {
         this.volumes = new ArrayList<>(2);
 
         volumes.add(new PersistentClaimStorageBuilder()
@@ -116,8 +127,6 @@ public class JbodStorageTest {
         // initialize a Kafka in MockKube
         Crds.kafkaOperation(this.mockClient).inNamespace(NAMESPACE).withName(NAME).create(this.kafka);
 
-        this.vertx = Vertx.vertx();
-
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
@@ -129,11 +138,6 @@ public class JbodStorageTest {
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
-    }
-
-    @AfterEach
-    public void teardown() {
-        vertx.close();
     }
 
     @Test

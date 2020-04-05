@@ -46,9 +46,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
     }
 
     abstract AbstractNonNamespacedResourceOperator<C, T, L, D, R> operator();
