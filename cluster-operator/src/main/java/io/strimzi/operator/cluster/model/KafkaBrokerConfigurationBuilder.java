@@ -353,8 +353,8 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.isEnableECDSA()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, true));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
-        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
+        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
+        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, false));
         if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
 
         return options;
