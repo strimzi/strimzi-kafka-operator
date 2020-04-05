@@ -12,7 +12,9 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,18 +29,26 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @ExtendWith(VertxExtension.class)
 public class MainIT {
-    private Vertx vertx;
+    private static Vertx vertx;
     private KubernetesClient client;
 
-    @BeforeEach
-    public void createClient() {
+    @BeforeAll
+    public static void before() {
         vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
+
+    @BeforeEach
+    private void createClient() {
         client = new DefaultKubernetesClient();
     }
 
     @AfterEach
-    public void closeClient() {
-        vertx.close();
+    private void closeClient() {
         client.close();
     }
 

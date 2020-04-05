@@ -68,9 +68,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);

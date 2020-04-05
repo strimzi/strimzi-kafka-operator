@@ -63,12 +63,12 @@ public class KafkaRollerTest {
     private List<String> restarted;
 
     @BeforeAll
-    public static void startVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void stopVertx() {
+    public static void after() {
         vertx.close();
     }
 

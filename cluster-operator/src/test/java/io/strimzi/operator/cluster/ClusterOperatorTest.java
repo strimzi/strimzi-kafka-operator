@@ -67,11 +67,11 @@ public class ClusterOperatorTest {
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+        VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true)
-        ));
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
     }
 
     @AfterAll

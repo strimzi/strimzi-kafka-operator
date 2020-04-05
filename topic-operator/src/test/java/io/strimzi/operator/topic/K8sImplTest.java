@@ -36,15 +36,14 @@ public class K8sImplTest {
     private static Vertx vertx;
 
     @BeforeAll
-    public static void initVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
-
 
     @Test
     public void testList(VertxTestContext context) {

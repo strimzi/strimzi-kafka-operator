@@ -22,7 +22,9 @@ import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,7 +57,7 @@ public class TopicOperatorTest {
 
     private final TopicName topicName = new TopicName("my-topic");
     private final ResourceName resourceName = topicName.asKubeName();
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
     private MockKafka mockKafka;
     private MockTopicStore mockTopicStore = new MockTopicStore();
     private MockK8s mockK8s = new MockK8s();
@@ -73,6 +75,16 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
     }
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
+
     @BeforeEach
     public void setup() {
         mockKafka = new MockKafka();
@@ -88,7 +100,6 @@ public class TopicOperatorTest {
 
     @AfterEach
     public void teardown() {
-        vertx.close();
         mockKafka = null;
         mockTopicStore = null;
         mockK8s = null;

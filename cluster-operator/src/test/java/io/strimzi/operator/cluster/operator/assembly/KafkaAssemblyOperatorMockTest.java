@@ -209,12 +209,12 @@ public class KafkaAssemblyOperatorMockTest {
     private Kafka cluster;
 
     @BeforeAll
-    static void before() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    static void after() {
+    public static void after() {
         vertx.close();
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
