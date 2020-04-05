@@ -20,9 +20,9 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.4.0
+:DefaultKafkaVersion: 2.4.1
 :KafkaVersionLower: 2.3.1
-:KafkaVersionHigher: 2.4.0
+:KafkaVersionHigher: 2.4.1
 
 //log message format version
 :LogMsgVersLower: 2.3
