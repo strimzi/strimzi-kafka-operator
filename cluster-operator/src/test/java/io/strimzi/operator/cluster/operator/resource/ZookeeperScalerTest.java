@@ -60,12 +60,12 @@ public class ZookeeperScalerTest {
             .build();
 
     @BeforeAll
-    public static void initVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
 

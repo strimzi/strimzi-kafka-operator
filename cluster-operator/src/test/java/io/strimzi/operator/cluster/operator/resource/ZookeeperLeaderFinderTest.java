@@ -73,12 +73,12 @@ public class ZookeeperLeaderFinderTest {
     private static final int MAX_ATTEMPTS = 4;
 
     @BeforeAll
-    public static void initVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
 
