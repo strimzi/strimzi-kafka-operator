@@ -114,9 +114,9 @@ public class ResourceUtils {
 
     public static KafkaUser createKafkaUserQuotas(Integer consumerByteRate, Integer producerByteRate, Integer requestPercentage) {
         KafkaUserQuotas kuq = new KafkaUserQuotasBuilder()
-                    .withConsumerByteRate(consumerByteRate)
-                    .withProducerByteRate(producerByteRate)
-                    .withRequestPercentage(requestPercentage)
+                .withConsumerByteRate(consumerByteRate)
+                .withProducerByteRate(producerByteRate)
+                .withRequestPercentage(requestPercentage)
                 .build();
 
         return createKafkaUser(kuq);
@@ -135,8 +135,8 @@ public class ResourceUtils {
     public static Secret createClientsCaKeySecret()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                .withName(ResourceUtils.CA_KEY_NAME)
-                .withNamespace(NAMESPACE)
+                    .withName(ResourceUtils.CA_KEY_NAME)
+                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .addToData("ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
                 .build();
@@ -147,11 +147,12 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(NAME)
                     .withNamespace(NAMESPACE)
-                    .withLabels(Labels.userLabels(LABELS)
-                        .withKubernetesName()
+                    .withLabels(Labels.fromMap(LABELS)
+                        .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .withKubernetesInstance(NAME)
+                        .withKubernetesPartOf(NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap())
                 .endMetadata()
                 .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
@@ -165,9 +166,9 @@ public class ResourceUtils {
     public static Secret createUserSecretScramSha()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                .withName(NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(Labels.fromMap(LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("password", Base64.getEncoder().encodeToString("my-password".getBytes()))
                 .build();

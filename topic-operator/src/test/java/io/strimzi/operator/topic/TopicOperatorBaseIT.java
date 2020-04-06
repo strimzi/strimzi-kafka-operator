@@ -21,6 +21,9 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -69,9 +72,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import io.vertx.core.VertxOptions;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT {
@@ -86,7 +86,7 @@ public abstract class TopicOperatorBaseIT {
 
     public static final String NAMESPACE = "topic-operator-it";
 
-    protected Vertx vertx;
+    protected static Vertx vertx;
     protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
@@ -106,6 +106,11 @@ public abstract class TopicOperatorBaseIT {
 
     @BeforeAll
     public static void setupKubeCluster() throws IOException {
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -135,15 +140,11 @@ public abstract class TopicOperatorBaseIT {
                     .deleteNamespace(NAMESPACE);
             cmdKubeClient().namespace(oldNamespace);
         }
+        vertx.close();
     }
 
     @BeforeEach
     public void setup() throws Exception {
-        VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true));
-        vertx = Vertx.vertx(options);
         LOGGER.info("Setting up test");
         cluster.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
@@ -236,7 +237,6 @@ public abstract class TopicOperatorBaseIT {
             }
             Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
-            vertx.close();
         }
     }
 

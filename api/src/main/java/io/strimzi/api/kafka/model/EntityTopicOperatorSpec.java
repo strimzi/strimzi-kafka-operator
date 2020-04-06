@@ -21,8 +21,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
@@ -52,7 +51,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     private Probe readinessProbe;
     protected ResourceRequirements resources;
     protected Logging logging;
-    private EntityOperatorJvmOptions jvmOptions;
+    private JvmOptions jvmOptions;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
@@ -155,11 +154,11 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("JVM Options for pods")
-    public EntityOperatorJvmOptions getJvmOptions() {
+    public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
 
-    public void setJvmOptions(EntityOperatorJvmOptions jvmOptions) {
+    public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
     }
 }

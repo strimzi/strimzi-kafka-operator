@@ -74,6 +74,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -171,73 +172,73 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCm.getMetadata().getNamespace(), clusterCm.getMetadata().getName()), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCm.getMetadata().getNamespace(), clusterCm.getMetadata().getName()), clusterCm)
+            .setHandler(context.succeeding(v -> {
 
-            // Verify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedServices.size(), is(1)));
-            Service service = capturedServices.get(0);
-            context.verify(() -> assertThat(service.getMetadata().getName(), is(connect.getServiceName())));
-            context.verify(() -> assertThat("Services are not equal", service, is(connect.generateService())));
+                // Verify service
+                List<Service> capturedServices = serviceCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedServices, hasSize(1)));
+                Service service = capturedServices.get(0);
+                context.verify(() -> assertThat(service.getMetadata().getName(), is(connect.getServiceName())));
+                context.verify(() -> assertThat("Services are not equal", service, is(connect.generateService())));
 
-            // Verify Deployment Config
-            List<DeploymentConfig> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
-            DeploymentConfig dc = capturedDc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
-            Map annotations = new HashMap();
-            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
-            context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(connect.generateDeploymentConfig(annotations, true, null, null))));
+                // Verify Deployment Config
+                List<DeploymentConfig> capturedDc = dcCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedDc, hasSize(1)));
+                DeploymentConfig dc = capturedDc.get(0);
+                context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
+                Map annotations = new HashMap();
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(connect.generateDeploymentConfig(annotations, true, null, null))));
 
-            // Verify Build Config
-            List<BuildConfig> capturedBc = bcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedBc.size(), is(1)));
-            BuildConfig bc = capturedBc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
-            context.verify(() -> assertThat("Build Configs are not equal", bc, is(connect.generateBuildConfig())));
+                // Verify Build Config
+                List<BuildConfig> capturedBc = bcCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedBc, hasSize(1)));
+                BuildConfig bc = capturedBc.get(0);
+                context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
+                context.verify(() -> assertThat("Build Configs are not equal", bc, is(connect.generateBuildConfig())));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(connect.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(connect.generatePodDisruptionBudget())));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedPdb, hasSize(1)));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                context.verify(() -> assertThat(pdb.getMetadata().getName(), is(connect.getName())));
+                context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(connect.generatePodDisruptionBudget())));
 
-            // Verify Image Streams
-            List<ImageStream> capturedIs = isCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedIs.size(), is(2)));
-            int sisIndex = (KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster())).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
-            int tisIndex = (connect.getName()).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
+                // Verify Image Streams
+                List<ImageStream> capturedIs = isCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedIs, hasSize(2)));
+                int sisIndex = (KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster())).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
+                int tisIndex = (connect.getName()).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
 
-            ImageStream sis = capturedIs.get(sisIndex);
-            context.verify(() -> assertThat(sis.getMetadata().getName(), is(KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))));
-            context.verify(() -> assertThat("Source Image Streams are not equal", sis, is(connect.generateSourceImageStream())));
+                ImageStream sis = capturedIs.get(sisIndex);
+                context.verify(() -> assertThat(sis.getMetadata().getName(), is(KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))));
+                context.verify(() -> assertThat("Source Image Streams are not equal", sis, is(connect.generateSourceImageStream())));
 
-            ImageStream tis = capturedIs.get(tisIndex);
-            context.verify(() -> assertThat(tis.getMetadata().getName(), is(connect.getName())));
-            context.verify(() -> assertThat("Target Image Streams are not equal", tis, is(connect.generateTargetImageStream())));
+                ImageStream tis = capturedIs.get(tisIndex);
+                context.verify(() -> assertThat(tis.getMetadata().getName(), is(connect.getName())));
+                context.verify(() -> assertThat("Target Image Streams are not equal", tis, is(connect.generateTargetImageStream())));
 
-            // Verify status
-            List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getUrl(), is("http://foo-connect-api.test.svc:8083")));
-            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
-            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("Ready")));
+                // Verify status
+                List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getUrl(), is("http://foo-connect-api.test.svc:8083")));
+                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
+                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("Ready")));
 
-            if (connectorOperator) {
-                context.verify(() -> assertThat(npCaptor.getValue(), is(notNullValue())));
+                if (connectorOperator) {
+                    context.verify(() -> assertThat(npCaptor.getValue(), is(notNullValue())));
 
-                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().size(), is(1)));
-                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getConnectorClass(), is("io.strimzi.MyClass")));
-                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getType(), is("sink")));
-                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getVersion(), is("1.0.0")));
-            } else {
-                context.verify(() -> assertThat(npCaptor.getValue(), is(nullValue())));
-                context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins(), nullValue()));
-            }
+                    context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins(), hasSize(1)));
+                    context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getConnectorClass(), is("io.strimzi.MyClass")));
+                    context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getType(), is("sink")));
+                    context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins().get(0).getVersion(), is("1.0.0")));
+                } else {
+                    context.verify(() -> assertThat(npCaptor.getValue(), is(nullValue())));
+                    context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConnectorPlugins(), nullValue()));
+                }
 
-            async.flag();
-        });
+                async.flag();
+            }));
     }
 
     @Test
@@ -791,12 +792,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectS2IOps.updateStatusAsync(any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Labels newLabels = Labels.forKind(KafkaConnectS2I.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true, null, null)));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true, null, null))
         );

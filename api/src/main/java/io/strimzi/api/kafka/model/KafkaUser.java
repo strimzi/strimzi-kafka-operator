@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.Crds.STRIMZI_CATEGORY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -38,7 +37,7 @@ import static java.util.Collections.unmodifiableList;
                         kind = KafkaUser.RESOURCE_KIND,
                         plural = KafkaUser.RESOURCE_PLURAL,
                         shortNames = {KafkaUser.SHORT_NAME},
-                        categories = {STRIMZI_CATEGORY}
+                        categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = KafkaUser.RESOURCE_GROUP,
                 scope = KafkaUser.SCOPE,
@@ -77,8 +76,7 @@ import static java.util.Collections.unmodifiableList;
 )
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder",
+        builderPackage = Constants.FABRIC8_KUBERNETES_API,
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)

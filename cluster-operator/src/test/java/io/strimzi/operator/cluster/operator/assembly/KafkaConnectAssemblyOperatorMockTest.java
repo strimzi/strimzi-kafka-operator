@@ -24,9 +24,13 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -35,8 +39,9 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -70,12 +75,17 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private KubernetesClient mockClient;
 
-    private Vertx vertx;
+    private static Vertx vertx;
     private MockKube mockKube;
 
-    @BeforeEach
-    public void before() {
-        this.vertx = Vertx.vertx();
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
     }
 
     private void setConnectResource(KafkaConnect connectResource) {
@@ -95,17 +105,23 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     @AfterEach
-    public void after() {
+    public void afterEach() {
         if (mockClient != null) {
             mockClient.close();
         }
-        this.vertx.close();
     }
 
 
     private KafkaConnectAssemblyOperator createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi)  throws InterruptedException, ExecutionException, TimeoutException {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
+                new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, this.mockClient),
+                    // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                    () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                ResourceUtils.metricsProvider(),
+                pfa, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, pfa,
             supplier,
@@ -116,15 +132,16 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         LOGGER.info("Reconciling initially -> create");
         CountDownLatch createAsync = new CountDownLatch(1);
-        kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
-            if (ar.failed()) ar.cause().printStackTrace();
-            context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            context.verify(() -> assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue())));
-            context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue())));
-            context.verify(() -> assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue())));
-            context.verify(() -> assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue())));
-            createAsync.countDown();
-        });
+        kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+            .setHandler(context.succeeding(v -> {
+                context.verify(() -> {
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                });
+                createAsync.countDown();
+            }));
         if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
@@ -137,7 +154,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
-                        .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
+                        .withLabels(TestUtils.map("foo", "bar"))
                         .build())
                 .withNewSpec()
                 .withReplicas(replicas)

@@ -46,9 +46,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     void testKafkaTopicWithMissingProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
-            });
+            () -> createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.partitions", "spec.replicas");
     }
@@ -57,6 +55,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_TOPIC);
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkatopics.kafka.strimzi.io");
     }
 
     @AfterAll

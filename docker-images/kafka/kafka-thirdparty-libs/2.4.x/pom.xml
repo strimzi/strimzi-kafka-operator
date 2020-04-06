@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.3.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.4.0</strimzi-oauth.version>
     </properties>
 
     <dependencies>

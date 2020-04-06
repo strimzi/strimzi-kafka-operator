@@ -202,7 +202,7 @@ public class SimpleAclOperator {
             throw e;
         }
 
-        Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
+        Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = resourceAclsIterator(rules);
         while (iter.hasNext())  {
             Tuple2<Resource, scala.collection.immutable.Set<Acl>> tuple = iter.next();
             SimpleAclRuleResource resource = SimpleAclRuleResource.fromKafkaResource(tuple._1());
@@ -215,6 +215,12 @@ public class SimpleAclOperator {
         }
 
         return result;
+    }
+
+    private Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> resourceAclsIterator(scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules) {
+        // this cast fixes an error with VSCode compiler (using the Eclipse JDT Language Server)
+        // error details: The method iterator() is ambiguous for the type Map<Resource,Set<Acl>>
+        return ((scala.collection.GenIterableLike<Tuple2<Resource, scala.collection.immutable.Set<Acl>>, ?>) rules).iterator();
     }
 
     /**
@@ -237,7 +243,7 @@ public class SimpleAclOperator {
             return result;
         }
 
-        Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
+        Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = resourceAclsIterator(rules);
         while (iter.hasNext())  {
             scala.collection.immutable.Set<Acl> acls = iter.next()._2();
 

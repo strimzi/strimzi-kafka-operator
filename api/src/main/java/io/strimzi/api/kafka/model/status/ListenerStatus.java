@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -23,8 +24,7 @@ import static java.util.Collections.emptyMap;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "type", "addresses", "certificates" })

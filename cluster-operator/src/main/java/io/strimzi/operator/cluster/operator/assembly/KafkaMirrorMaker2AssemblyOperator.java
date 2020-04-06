@@ -107,7 +107,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
-        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider);
+        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
         this.deploymentOperations = supplier.deploymentOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.versions = config.versions();
@@ -117,7 +117,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
@@ -128,10 +127,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));
-            return this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
+            this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
                 (mirrormaker2, status) -> {
                     return new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build();
                 });
+            return Future.failedFuture(e);
         }
 
         ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
@@ -141,9 +141,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Map<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 cluster {} in {}", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 generatePodDisruptionBudget {}", reconciliation, mirrorMaker2Cluster.generatePodDisruptionBudget());
+        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
                 .compose(i -> networkPolicyOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), true)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
@@ -281,15 +279,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     private static void addClusterToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
-        config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());     
-        
-        String securityProtocol = null;
-        if (cluster.getTls() != null) {
-            securityProtocol = "SSL";
-            config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
-            config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + TRUSTSTORE_SUFFIX);
-            config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG + "}");
-        }
+        config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
+
+        String securityProtocol = addTLSConfigToMirrorMaker2ConnectorConfig(config, cluster, configPrefix);
 
         if (cluster.getAuthentication() != null) {
             Map<String, String> authProperties = AuthenticationUtils.getClientAuthenticationProperties(cluster.getAuthentication());
@@ -366,8 +358,21 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         config.putAll(cluster.getAdditionalProperties());
     }
 
+    private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
+        String securityProtocol = null;
+        if (cluster.getTls() != null) {
+            securityProtocol = "SSL";
+            if (cluster.getTls().getTrustedCertificates() != null && !cluster.getTls().getTrustedCertificates().isEmpty()) {
+                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
+                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + TRUSTSTORE_SUFFIX);
+                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG + "}");
+            }
+        }
+        return securityProtocol;
+    }
+
     private Future<Map<String, Object>> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
-        return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
+        return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                 .setHandler(result -> {
                     if (result.succeeded()) {
                         mirrorMaker2Status.getConnectors().add(result.result());

@@ -45,9 +45,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void testKafkaBridgeWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
-            });
+            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
     }
@@ -66,9 +64,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void testKafkaBridgeWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
-            });
+            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate",
                 "spec.authentication.certificateAndKey.key");
@@ -93,9 +89,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void testKafkaBridgeWithWrongTracingType() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
-            });
+            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml"));
 
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger]"),
@@ -106,9 +100,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void testKafkaBridgeWithMissingTracingType() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
-            });
+            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.tracing.type");
     }
@@ -117,6 +109,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkabridges.kafka.strimzi.io");
     }
 
     @AfterAll

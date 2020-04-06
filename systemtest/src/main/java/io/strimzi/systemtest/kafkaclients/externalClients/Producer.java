@@ -4,25 +4,25 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
 public class Producer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
-    private Properties properties;
+    private KafkaClientProperties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
 
-    Producer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
@@ -31,7 +31,9 @@ public class Producer extends ClientHandlerBase<Integer> {
 
     @Override
     protected void handleClient() {
-        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties);
+        LOGGER.info("Producer is starting with following properties: {}", properties.getProperties().toString());
+
+        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties.getProperties());
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {

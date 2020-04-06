@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -39,7 +38,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
     @Test
     void testKafkaClusterUpgrade(TestInfo testinfo) throws IOException, InterruptedException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
@@ -49,7 +48,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
     @Test
     void testKafkaClusterDowngrade(TestInfo testInfo) throws IOException, InterruptedException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
         TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);
@@ -85,7 +84,7 @@ public class ZookeeperUpgradeST extends BaseST {
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
         LOGGER.info("Pre-change Zookeeper version query returned: " + zkResult);
 
-        String kafkaVersionCommand = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.jar)' | head -1";
+        String kafkaVersionCommand = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
         String kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
         LOGGER.info("Pre-change Kafka version query returned: " + kafkaResult);
@@ -99,17 +98,6 @@ public class ZookeeperUpgradeST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
         });
-
-        Kafka retrievedKafka = Crds.kafkaOperation(kubeClient(NAMESPACE).getClient())
-                .inNamespace(NAMESPACE)
-                .withName(CLUSTER_NAME)
-                .get();
-
-        // Change the Kafka version for the resource
-        retrievedKafka.getSpec().getKafka().setVersion(newVersion.version());
-
-        // Patch the existing resource with this new version
-        Crds.kafkaOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(retrievedKafka);
 
         LOGGER.info("Waiting for deployment of new Kafka version (" + newVersion.version() + ") to complete");
 

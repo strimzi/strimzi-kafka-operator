@@ -10,6 +10,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -20,8 +22,18 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiMockTest {
-    private Vertx vertx = Vertx.vertx();
+    private static Vertx vertx;
     private BackOff backOff = new BackOff(1L, 2, 3);
+
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
 
     @Test
     public void testStatusWithBackOffSuccedingImmediatelly(VertxTestContext context) {

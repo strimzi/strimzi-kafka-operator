@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -15,8 +16,7 @@ import java.util.List;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JbodStorage extends Storage {

@@ -1,4 +1,4 @@
-# oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml=alert-manager-config.yaml
+# kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml=alert-manager-config.yaml
 global:
   slack_api_url: https://hooks.slack.com/services/change/me/please
 route:

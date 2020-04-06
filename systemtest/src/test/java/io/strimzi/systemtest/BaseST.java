@@ -13,10 +13,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.externalClients.KafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -73,10 +69,8 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    protected KafkaClient externalBasicKafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC);
-    protected InternalKafkaClient internalKafkaClient = (InternalKafkaClient) ClientFactory.getClient(EClientType.INTERNAL);
-
     protected static final String CLUSTER_NAME = "my-cluster";
+    protected static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
 
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 
@@ -126,7 +120,7 @@ public abstract class BaseST implements TestSeparator {
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         cluster.applyClusterOperatorInstallFiles();
-        KubernetesResource.applyDefaultNetworkPolicySettings(clientNamespace, namespaces);
+        KubernetesResource.applyDefaultNetworkPolicySettings(namespaces);
 
         // This is needed in case you are using internal kubernetes registry and you want to pull images from there
         for (String namespace : namespaces) {
@@ -191,7 +185,7 @@ public abstract class BaseST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        KubernetesResource.clusterOperator(coNamespace).done();
+        KubernetesResource.clusterOperator(coNamespace, operationTimeout).done();
     }
 
     /**
@@ -257,7 +251,7 @@ public abstract class BaseST implements TestSeparator {
 
     private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+        String output = cmdKubeClient().execInPodContainer(podName, containerName, "/bin/bash", "-c",
             "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
@@ -277,10 +271,14 @@ public abstract class BaseST implements TestSeparator {
             // We should do something similar if the class not -jar was given, but that's
             // hard to do properly.
         }
-        assertCmdOption(cmd, expectedXmx);
-        assertCmdOption(cmd, expectedXms);
-        assertCmdOption(cmd, expectedServer);
-        assertCmdOption(cmd, expectedXx);
+        if (expectedXmx != null)
+            assertCmdOption(cmd, expectedXmx);
+        if (expectedXms != null)
+            assertCmdOption(cmd, expectedXms);
+        if (expectedServer != null)
+            assertCmdOption(cmd, expectedServer);
+        if (expectedXx != null)
+            assertCmdOption(cmd, expectedXx);
     }
 
     public Map<String, String> getImagesFromConfig() {
@@ -734,26 +732,25 @@ public abstract class BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
-        boolean logError = false;
-        AssertionError assertionError = new AssertionError();
+        AssertionError assertionError = null;
         try {
             assertNoCoErrorsLogged(0);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
-            logError = true;
-            assertionError = e;
+            assertionError = new AssertionError(e);
         }
 
         if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent() || logError) {
+            if (context.getExecutionException().isPresent() || assertionError != null) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
+                KubernetesResource.applyDefaultNetworkPolicySettings(cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();
         }
 
-        if (logError) {
+        if (assertionError != null) {
             throw assertionError;
         }
     }

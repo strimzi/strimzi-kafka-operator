@@ -10,7 +10,9 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -31,6 +33,10 @@ import java.util.List;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -80,11 +86,15 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
+    @Tag(CONNECT)
+    @Tag(CONNECTOR_OPERATOR)
+    @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1, false)
+        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
@@ -95,11 +105,16 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
+    @OpenShiftOnly
+    @Tag(CONNECT_S2I)
+    @Tag(CONNECTOR_OPERATOR)
+    @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1, false)
+        KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
@@ -149,13 +164,22 @@ class AllNamespaceST extends AbstractNamespaceST {
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(THIRD_NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME)
+            .build();
 
-        LOGGER.info("Checking produceed and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS"),
-                internalKafkaClient.receiveMessagesTls(TOPIC_NAME, THIRD_NAMESPACE, CLUSTER_NAME, USER_NAME, 50, "TLS", CONSUMER_GROUP_NAME)
-        );
+        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
+
+        int sent = internalKafkaClient.sendMessagesTls();
+        assertThat(sent, is(MESSAGE_COUNT));
+
+        int received = internalKafkaClient.receiveMessagesTls();
+        assertThat(received, is(MESSAGE_COUNT));
 
         cluster.setNamespace(startingNamespace);
     }

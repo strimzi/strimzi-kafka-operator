@@ -591,7 +591,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka Bridge clusters
-        Labels newLabels = Labels.forKind(KafkaBridge.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaBridge.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaBridgeCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
@@ -599,7 +599,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // providing the list Deployments for already "existing" Kafka Bridge clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaBridgeCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))

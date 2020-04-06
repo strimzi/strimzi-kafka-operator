@@ -15,6 +15,11 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
@@ -52,12 +57,15 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -105,11 +113,13 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -138,7 +148,7 @@ public class ResourceUtils {
         ObjectMetaBuilder meta = new ObjectMetaBuilder();
         meta.withNamespace(clusterCmNamespace);
         meta.withName(clusterCmName);
-        meta.withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
+        meta.withLabels(Labels.fromMap(singletonMap("my-user-label", "cromulent")).toMap());
         KafkaBuilder builder = new KafkaBuilder();
         return builder.withMetadata(meta.build())
                 .withNewSpec()
@@ -222,7 +232,7 @@ public class ResourceUtils {
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0")
-                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
                 .addToData("ca.p12", caStore)
@@ -236,7 +246,7 @@ public class ResourceUtils {
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0")
-                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.key", caKey)
                 .build();
@@ -255,7 +265,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCaKeySecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.key", MockCertManager.clientsCaKey())
                         .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
@@ -267,7 +277,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCaCertSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
                         .build()
@@ -278,7 +288,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.brokersSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).toMap())
+                        .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
 
@@ -292,7 +302,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(KafkaCluster.clusterCaCertSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).toMap())
+                            .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -306,7 +316,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(ZookeeperCluster.nodesSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).toMap())
+                            .withLabels(Labels.forStrimziCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -355,7 +365,7 @@ public class ResourceUtils {
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
         meta.setName(clusterCmName);
-        meta.setLabels(Labels.userLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap());
+        meta.setLabels(Labels.fromMap(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap());
         result.setMetadata(meta);
 
         KafkaSpec spec = new KafkaSpec();
@@ -629,6 +639,47 @@ public class ResourceUtils {
         };
     }
 
+    public static ZookeeperScalerProvider zookeeperScalerProvider() {
+        return new ZookeeperScalerProvider() {
+            @Override
+            public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+                ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
+                when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
+                return mockZooScaler;
+            }
+        };
+    }
+
+    public static MetricsProvider metricsProvider() {
+        return new MetricsProvider() {
+            @Override
+            public MeterRegistry meterRegistry() {
+                MeterRegistry mockRegistry = mock(MeterRegistry.class);
+                MeterRegistry.Config mockConfig = mock(MeterRegistry.Config.class);
+                Clock mockClock = mock(Clock.class);
+                when(mockConfig.clock()).thenReturn(mockClock);
+                when(mockRegistry.config()).thenReturn(mockConfig);
+
+                return mockRegistry;
+            }
+
+            @Override
+            public Counter counter(String name, String description, Tags tags) {
+                return mock(Counter.class);
+            }
+
+            @Override
+            public Timer timer(String name, String description, Tags tags) {
+                return mock(Timer.class);
+            }
+
+            @Override
+            public AtomicInteger gauge(String name, String description, Tags tags) {
+                return new AtomicInteger(0);
+            }
+        };
+    }
+
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
@@ -641,7 +692,7 @@ public class ResourceUtils {
                 mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
                 mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
                 mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(StorageClassOperator.class), mock(NodeOperator.class));
+                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider(), metricsProvider());
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());

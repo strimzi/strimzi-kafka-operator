@@ -4,10 +4,15 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -16,15 +21,19 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,6 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -48,10 +62,17 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@Tag(CONNECT)
+@Tag(MIRROR_MAKER)
+@Tag(MIRROR_MAKER2)
+@Tag(BRIDGE)
+@Tag(CONNECT_COMPONENTS)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends BaseST {
     static final String NAMESPACE = "log-setting-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
+
+    private static Kafka kafkaToDelete = new Kafka();
 
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
@@ -237,14 +258,12 @@ class LogSettingST extends BaseST {
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
 
-        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
             k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
-            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
-            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
+            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(jvmOptions);
+            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(jvmOptions);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(zkName, 1, zkPods);
@@ -290,6 +309,174 @@ class LogSettingST extends BaseST {
         assertThat(strimziCRs, containsString(CONNECT_NAME));
         assertThat(strimziCRs, containsString(userName));
         assertThat(strimziCRs, containsString(topicName));
+    }
+
+    @Test
+    @Order(13)
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    void testJSONFormatLogging() {
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(GC_LOGGING_SET_NAME).delete();
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+
+        String loggersConfigKafka = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
+                "kafka.root.logger.level=INFO\n" +
+                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
+                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                "log4j.logger.org.apache.zookeeper=INFO\n" +
+                "log4j.logger.kafka=INFO\n" +
+                "log4j.logger.org.apache.kafka=INFO\n" +
+                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+                "log4j.logger.kafka.network.Processor=OFF\n" +
+                "log4j.logger.kafka.server.KafkaApis=OFF\n" +
+                "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                "log4j.logger.kafka.controller=TRACE\n" +
+                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                "log4j.logger.state.change.logger=TRACE\n" +
+                "log4j.logger.kafka.authorizer.logger=INFO";
+
+        String loggersConfigOperators = "appender.console.type=Console\n" +
+                "appender.console.name=STDOUT\n" +
+                "appender.console.layout.type=JsonLayout\n" +
+                "rootLogger.level=INFO\n" +
+                "rootLogger.appenderRefs=stdout\n" +
+                "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                "rootLogger.additivity=false";
+
+        String loggersConfigZookeeper = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
+                "zookeeper.root.logger=INFO\n" +
+                "log4j.rootLogger=${zookeeper.root.logger}, CONSOLE";
+
+        String loggersConfigCO = "name = COConfig\n" +
+                "appender.console.type = Console\n" +
+                "appender.console.name = STDOUT\n" +
+                "appender.console.layout.type = JsonLayout\n" +
+                "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
+                "rootLogger.appenderRefs = stdout\n" +
+                "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                "rootLogger.additivity = false\n" +
+                "logger.kafka.name = org.apache.kafka\n" +
+                "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
+                "logger.kafka.additivity = false";
+
+        String configMapOpName = "json-layout-operators";
+        String configMapZookeeperName = "json-layout-zookeeper";
+        String configMapKafkaName = "json-layout-kafka";
+        String configMapCOName = "json-layout-cluster-operator";
+
+        ConfigMap configMapKafka = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapKafkaName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j.properties", loggersConfigKafka)
+                .build();
+
+        ConfigMap configMapOperators = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapOpName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j2.properties", loggersConfigOperators)
+                .build();
+
+        ConfigMap configMapZookeeper = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapZookeeperName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j.properties", loggersConfigZookeeper)
+                .build();
+
+        ConfigMap configMapCO = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapCOName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j2.properties", loggersConfigCO)
+                .build();
+
+        kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
+        ResourceManager.setClassResources();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT).done();
+        ResourceManager.setMethodResources();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapKafka);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapZookeeper);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
+
+        KubernetesResource.clusterOperator(NAMESPACE)
+                .editOrNewSpec()
+                    .editOrNewTemplate()
+                        .editOrNewSpec()
+                            .addNewVolume()
+                                .withName("logging-config-volume")
+                                .editOrNewConfigMap()
+                                    .withName(configMapCOName)
+                                .endConfigMap()
+                            .endVolume()
+                            .editFirstContainer()
+                                .withVolumeMounts(new VolumeMountBuilder().withName("logging-config-volume").withMountPath("/tmp/log-config-map-file").build())
+                                .addToEnv(new EnvVarBuilder().withName("JAVA_OPTS").withValue("-Dlog4j2.configurationFile=file:/tmp/log-config-map-file/log4j2.properties").build())
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .done();
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+
+            kafka.getSpec().getKafka().getJvmOptions().setGcLoggingEnabled(false);
+            kafka.getSpec().getZookeeper().getJvmOptions().setGcLoggingEnabled(false);
+            kafka.getSpec().getEntityOperator().getUserOperator().getJvmOptions().setGcLoggingEnabled(false);
+            kafka.getSpec().getEntityOperator().getTopicOperator().getJvmOptions().setGcLoggingEnabled(false);
+
+            kafka.getSpec().getKafka()
+                    .setLogging(new ExternalLoggingBuilder()
+                        .withName(configMapKafkaName).build());
+
+            kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
+                    .withName(configMapZookeeperName)
+                    .build());
+
+            kafka.getSpec().getEntityOperator().getTopicOperator().setLogging(new ExternalLoggingBuilder()
+                    .withName(configMapOpName)
+                    .build());
+
+            kafka.getSpec().getEntityOperator().getUserOperator().setLogging(new ExternalLoggingBuilder()
+                    .withName(configMapOpName)
+                    .build());
+
+        });
+
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1, zkPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
+
+        TestUtils.waitFor("Logs in CO", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            String clusterOperatorName = kubeClient().listPodsByPrefixInName("strimzi-cluster-operator").get(0).getMetadata().getName();
+            String logs = "{" + kubeClient().logs(clusterOperatorName).split("\\+(.*?)\\n\\{")[1];
+            try {
+                new JsonObject(logs);
+                LOGGER.info("JSON format logging successfully set for {}", clusterOperatorName);
+                return true;
+            } catch (Exception e) {
+                LOGGER.info("Failed to set JSON format logging for {}", clusterOperatorName);
+                return false;
+            }
+        });
+
+        assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
@@ -393,7 +580,7 @@ class LogSettingST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        kafkaToDelete = KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -416,7 +603,9 @@ class LogSettingST extends BaseST {
             .endSpec()
             .done();
 
-        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1, true)
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
+        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)

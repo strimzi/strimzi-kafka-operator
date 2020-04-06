@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -19,13 +20,14 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +38,8 @@ import java.util.Map;
  * Represents the Entity Operator deployment
  */
 public class EntityOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-operator";
+
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
@@ -56,12 +60,10 @@ public class EntityOperator extends AbstractModel {
     private String tlsSidecarImage;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param labels
+
      */
-    protected EntityOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = entityOperatorName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
@@ -127,11 +129,7 @@ public class EntityOperator extends AbstractModel {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
 
-            String namespace = kafkaAssembly.getMetadata().getNamespace();
-            result = new EntityOperator(
-                    namespace,
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+            result = new EntityOperator(kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
 
@@ -335,5 +333,51 @@ public class EntityOperator extends AbstractModel {
             return null;
         }
         return super.generateServiceAccount();
+    }
+
+    protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
+        StringBuilder strimziJavaOpts = new StringBuilder();
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+        if (xms != null) {
+            strimziJavaOpts.append("-Xms").append(xms);
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            strimziJavaOpts.append(" -Xmx").append(xmx);
+        }
+
+        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
+
+        if (server != null && server) {
+            strimziJavaOpts.append(' ').append(" -server");
+        }
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                strimziJavaOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    strimziJavaOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    strimziJavaOpts.append("-").append(k);
+                } else  {
+                    strimziJavaOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        String optsTrim = strimziJavaOpts.toString().trim();
+        if (!optsTrim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
+        }
+
+        if (javaSystemProperties != null) {
+            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
+            if (!propsTrim.isEmpty()) {
+                envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
+            }
+        }
     }
 }

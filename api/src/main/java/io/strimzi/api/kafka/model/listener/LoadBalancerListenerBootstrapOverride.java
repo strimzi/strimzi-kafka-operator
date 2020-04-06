@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -18,8 +19,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
-    generateBuilderPackage = false,
-    builderPackage = "io.fabric8.kubernetes.api.builder"
+    builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @EqualsAndHashCode(callSuper = true)
 public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBootstrapOverride {

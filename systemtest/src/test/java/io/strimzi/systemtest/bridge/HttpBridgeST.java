@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
@@ -36,15 +37,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
 class HttpBridgeST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
@@ -64,8 +68,17 @@ class HttpBridgeST extends HttpBridgeBaseST {
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
-        Future<Integer> consumer = kafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+        BasicExternalKafkaClient basicKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(messageCount)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
+
+        Future<Integer> consumer = basicKafkaClient.receiveMessagesPlain();
+
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(messageCount));
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
@@ -95,8 +108,19 @@ class HttpBridgeST extends HttpBridgeBaseST {
         topics.put("topics", topic);
         // Subscribe
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
+
+        BasicExternalKafkaClient basicKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .build();
+
         // Send messages to Kafka
-        kafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, MESSAGE_COUNT);
+        Future<Integer> producer = basicKafkaClient.sendMessagesPlain();
+
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
@@ -138,6 +162,9 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int updatedFailureThreshold = 1;
 
         KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-bridge")
+            .endMetadata()
             .editSpec()
                 .withNewTemplate()
                     .withNewBridgeContainer()
@@ -173,7 +200,11 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
-        StUtils.checkCologForUsedVariable(usedVariable);
+        LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
+        assertThat(
+                StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getName(), usedVariable),
+                is(not("test.value"))
+        );
 
         LOGGER.info("Updating values in Bridge container");
         KafkaBridgeResource.replaceBridgeResource(bridgeName, kb -> {

@@ -4,41 +4,21 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.operator.KubernetesVersion;
-import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -47,70 +27,31 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectCrdOperatorIT {
+public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> {
     protected static final Logger log = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
 
-    public static final String RESOURCE_NAME = "my-test-resource";
-    protected static Vertx vertx;
-    protected static KubernetesClient client;
-    protected static CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> kafkaConnectOperator;
-    protected static String namespace = "connect-crd-it-namespace";
-
-    private static KubeClusterResource cluster;
-
-    @BeforeAll
-    public static void before() {
-        cluster = KubeClusterResource.getInstance();
-        cluster.setTestNamespace(namespace);
-
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
-        vertx = Vertx.vertx();
-        client = new DefaultKubernetesClient();
-        kafkaConnectOperator = new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
-
-        log.info("Preparing namespace");
-        if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            log.warn("Namespace {} is already created, going to delete it", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
-        }
-
-        log.info("Creating namespace: {}", namespace);
-        kubeClient().createNamespace(namespace);
-        cmdKubeClient().waitForResourceCreation("Namespace", namespace);
-
-        log.info("Creating CRD");
-        client.customResourceDefinitions().create(Crds.kafkaConnect());
-        log.info("Created CRD");
+    @Override
+    protected CrdOperator operator() {
+        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
     }
 
-    @AfterAll
-    public static void after() {
-        if (client != null) {
-            log.info("Deleting CRD");
-            client.customResourceDefinitions().delete(Crds.kafkaConnect());
-        }
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
-            log.warn("Deleting namespace {} after tests run", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
-        }
-
-        if (vertx != null) {
-            vertx.close();
-        }
+    @Override
+    protected CustomResourceDefinition getCrd() {
+        return Crds.kafkaConnect();
     }
 
+    @Override
+    protected String getNamespace() {
+        return "kafka-connect-crd-it-namespace";
+    }
+
+    @Override
     protected KafkaConnect getResource() {
         return new KafkaConnectBuilder()
                 .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(namespace)
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -119,256 +60,30 @@ public class KafkaConnectCrdOperatorIT {
                 .build();
     }
 
-    private Future<Void> deleteResource()    {
-        // The resource has to be deleted this was and not using reconcile due to https://github.com/fabric8io/kubernetes-client/pull/1325
-        // Fix this override when project is using fabric8 version > 4.1.1
-        kafkaConnectOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).cascading(true).delete();
-
-        return kafkaConnectOperator.waitFor(namespace, RESOURCE_NAME, 1_000, 60_000, (ignore1, ignore2) -> {
-            KafkaConnect deletion = kafkaConnectOperator.get(namespace, RESOURCE_NAME);
-            return deletion == null;
-        });
-    }
-
-    @Test
-    public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
-        log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
-
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        KafkaConnect withStatus = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
-
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaConnectOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            if (res.succeeded())    {
-                kafkaConnectOperator.getAsync(namespace, RESOURCE_NAME).setHandler(res2 -> {
-                    if (res2.succeeded())    {
-                        KafkaConnect updated = res2.result();
-
-                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getType(), is("Ready")));
-                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getStatus(), is("True")));
-
-                        updateStatusAsync.countDown();
-                    } else {
-                        context.failNow(res.cause());
-                    }
-                });
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
-    }
-
-    /**
-     * Tests what happens when the resource is deleted while updating the status
-     *
-     * @param context
-     */
-    @Test
-    public void testUpdateStatusWhileResourceDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
-        log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
-
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        KafkaConnect withStatus = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaConnectOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.countDown();
-        });
-        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
-    }
-
-    /**
-     * Tests what happens when the resource is modifed while updating the status
-     *
-     * @param context
-     */
-    @Test
-    public void testUpdateStatusWhileResourceUpdated(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
-        log.info("Getting Kubernetes version");
-        CountDownLatch versionAsync = new CountDownLatch(1);
-        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
-            if (pfaRes.succeeded())    {
-                pfa.set(pfaRes.result());
-                versionAsync.countDown();
-            } else {
-                context.failNow(pfaRes.cause());
-            }
-        });
-        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
-            return;
-        }
-
-        log.info("Creating resource");
-        CountDownLatch createAsync = new CountDownLatch(1);
-        kafkaConnectOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
-            if (res.succeeded())    {
-                createAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!createAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        KafkaConnect withStatus = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
-                .withNewStatus()
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
-
-        log.info("Updating resource");
-        KafkaConnect updated = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
+    @Override
+    protected KafkaConnect getResourceWithModifications(KafkaConnect resourceInCluster) {
+        return new KafkaConnectBuilder(resourceInCluster)
                 .editSpec()
-                .withNewLivenessProbe().withInitialDelaySeconds(14).endLivenessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(14)
+                    .endLivenessProbe()
                 .endSpec()
                 .build();
+    }
 
-        //Async updateAsync = context.async();
-        kafkaConnectOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
+    @Override
+    protected KafkaConnect getResourceWithNewReadyStatus(KafkaConnect resourceInCluster) {
+        return new KafkaConnectBuilder(resourceInCluster)
+                .withNewStatus()
+                    .withConditions(READY_CONDITION)
+                .endStatus()
+                .build();
+    }
 
-        log.info("Updating resource status");
-        CountDownLatch updateStatusAsync = new CountDownLatch(1);
-        kafkaConnectOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.countDown();
-        });
-        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-
-        log.info("Deleting resource");
-        CountDownLatch deleteAsync = new CountDownLatch(1);
-        deleteResource().setHandler(res -> {
-            if (res.succeeded()) {
-                deleteAsync.countDown();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
-        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
+    @Override
+    protected void assertReady(VertxTestContext context, KafkaConnect resource) {
+        context.verify(() -> assertThat(resource.getStatus()
+                .getConditions()
+                .get(0), is(READY_CONDITION)));
     }
 }
-

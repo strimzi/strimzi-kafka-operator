@@ -12,14 +12,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonMap;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
@@ -64,7 +63,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
     @Override
     @Test
-    public void createWhenExistsIsAPatch(VertxTestContext context) {
+    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, true);
     }
     @Override
@@ -87,20 +86,16 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        Future<ReconcileResult<ServiceAccount>> fut = op.createOrUpdate(resource);
-        fut.setHandler(ar -> {
-            if (!ar.succeeded()) {
-                ar.cause().printStackTrace();
-            }
-            context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            context.verify(() -> assertThat(ar.result() instanceof ReconcileResult.Noop, is(true)));
-            verify(mockResource).get();
-            //verify(mockResource).patch(any());
-            verify(mockResource, never()).create(any());
-            verify(mockResource, never()).createNew();
-            verify(mockResource, never()).createOrReplace(any());
-            verify(mockCms, never()).createOrReplace(any());
-            async.flag();
-        });
+        op.createOrUpdate(resource)
+            .setHandler(context.succeeding(rr -> {
+                context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
+                verify(mockResource).get();
+                //verify(mockResource).patch(any());
+                verify(mockResource, never()).create(any());
+                verify(mockResource, never()).createNew();
+                verify(mockResource, never()).createOrReplace(any());
+                verify(mockCms, never()).createOrReplace(any());
+                async.flag();
+            }));
     }
 }

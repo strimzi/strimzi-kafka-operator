@@ -73,7 +73,7 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
-            JsonObject deletedJson = deleteUserJson(data);
+            JsonObject deletedJson = removeScramCredentialsFromUserJson(data);
             if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
             } else {
@@ -227,7 +227,7 @@ public class ScramShaCredentials {
      *
      * @return  Returns the updated JSON without the SCRAM credentials
      */
-    protected JsonObject deleteUserJson(byte[] user)   {
+    protected JsonObject removeScramCredentialsFromUserJson(byte[] user)   {
         JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
 
         validateJsonVersion(json);

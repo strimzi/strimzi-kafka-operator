@@ -5,15 +5,12 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.LogCollector;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -49,7 +46,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -122,6 +118,7 @@ public class StrimziUpgradeST extends BaseST {
             logCollector.collectEvents();
             logCollector.collectConfigMaps();
             logCollector.collectLogsFromPods();
+            logCollector.collectStrimzi();
 
             deleteInstalledYamls(coDir);
         }
@@ -214,7 +211,7 @@ public class StrimziUpgradeST extends BaseST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
     }
 
-    private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {
+    private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -237,7 +234,12 @@ public class StrimziUpgradeST extends BaseST {
             LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
             cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
-            waitForClusterReadiness();
+            LOGGER.info("Waiting for Zookeeper StatefulSet");
+            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-zookeeper", 3);
+            LOGGER.info("Waiting for Kafka StatefulSet");
+            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
+            LOGGER.info("Waiting for EO Deployment");
+            DeploymentUtils.waitForDeploymentReady(CLUSTER_NAME + "-entity-operator", 1);
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
@@ -264,12 +266,22 @@ public class StrimziUpgradeST extends BaseST {
         final String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
-        Integer sent = internalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterName, kafkaUser.getMetadata().getName(),
-            produceMessagesCount, "TLS");
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(kafkaClusterName)
+            .withKafkaUsername(userName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(produceMessagesCount));
-        int received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        internalKafkaClient.setMessageCount(produceMessagesCount);
+
+        int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
         makeSnapshots();
@@ -307,8 +319,9 @@ public class StrimziUpgradeST extends BaseST {
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        received = internalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterName,
-            kafkaUser.getMetadata().getName(), consumeMessagesCount, "TLS", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
         // Check errors in CO log
@@ -317,9 +330,16 @@ public class StrimziUpgradeST extends BaseST {
 
     private void upgradeClusterOperator(File coInstallDir, JsonObject images) {
         copyModifyApply(coInstallDir);
+
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
-        waitForRollingUpdate();
+        LOGGER.info("Waiting for ZK StatefulSet roll");
+        StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
+        LOGGER.info("Waiting for Kafka StatefulSet roll");
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+        LOGGER.info("Waiting for EO Deployment roll");
+        // Check the TO and UO also got upgraded
+        DeploymentUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
         checkAllImages(images);
     }
 
@@ -360,42 +380,10 @@ public class StrimziUpgradeST extends BaseST {
         }
     }
 
-    private void waitForClusterReadiness() {
-        // Wait for readiness
-        LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper", 3);
-        LOGGER.info("Waiting for Kafka StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
-        LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentReady("my-cluster-entity-operator", 1);
-    }
-
-    private void waitForRollingUpdate() {
-        LOGGER.info("Waiting for ZK StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
-        LOGGER.info("Waiting for Kafka StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-        LOGGER.info("Waiting for EO Deployment roll");
-        // Check the TO and UO also got upgraded
-        DeploymentUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
-    }
-
     private void makeSnapshots() {
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);
-    }
-
-    private Kafka getKafka(String resourceName) {
-        Resource<Kafka, DoneableKafka> namedResource = Crds.kafkaV1Alpha1Operation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(resourceName);
-        return namedResource.get();
-    }
-
-    private void replaceKafka(String resourceName, Consumer<Kafka> editor) {
-        Resource<Kafka, DoneableKafka> namedResource = Crds.kafkaV1Alpha1Operation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(resourceName);
-        Kafka kafka = getKafka(resourceName);
-        editor.accept(kafka);
-        namedResource.replace(kafka);
     }
 
     private void checkAllImages(JsonObject images) {
@@ -409,7 +397,7 @@ public class StrimziUpgradeST extends BaseST {
 
         checkContainerImages(kubeClient().getStatefulSet(zkStsName).getSpec().getSelector().getMatchLabels(), zkImage);
         checkContainerImages(kubeClient().getStatefulSet(kafkaStsName).getSpec().getSelector().getMatchLabels(), kafkaImage);
-        checkContainerImages(kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(), 0, tOImage);
+        checkContainerImages(kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(), tOImage);
         checkContainerImages(kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(), 1, uOImage);
     }
 
@@ -432,7 +420,7 @@ public class StrimziUpgradeST extends BaseST {
             String kafkaVersion = procedures.getString("kafkaVersion");
             if (!kafkaVersion.isEmpty()) {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersion);
-                replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 if (!kafkaVersion.equals("2.0.0")) {
                     StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
@@ -443,7 +431,7 @@ public class StrimziUpgradeST extends BaseST {
             String logMessageVersion = procedures.getString("logMessageVersion");
             if (!logMessageVersion.isEmpty()) {
                 LOGGER.info("Going to set log message format version to " + logMessageVersion);
-                replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 makeSnapshots();

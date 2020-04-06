@@ -51,9 +51,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     void testKafkaWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
-            });
+            () -> createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.zookeeper", "spec.kafka");
     }
@@ -176,6 +174,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA);
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkas.kafka.strimzi.io");
     }
 
     @AfterAll

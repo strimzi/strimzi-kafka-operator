@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -108,7 +109,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.set;
@@ -451,11 +452,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockZsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StatefulSet())));
         when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), any(Function.class))).thenReturn(Future.succeededFuture());
         when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockKsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StatefulSet())));
         when(mockKsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), any(Function.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
@@ -564,6 +565,12 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(anyString(), any())).thenReturn(
                 Future.succeededFuture(null)
+        );
+        when(mockSecretOps.getAsync(clusterCmNamespace, KafkaResources.clusterCaCertificateSecretName(clusterCmName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
+        when(mockSecretOps.getAsync(clusterCmNamespace, ClusterOperator.secretName(clusterCmName))).thenReturn(
+                Future.succeededFuture(new Secret())
         );
 
         Set<String> createdOrUpdatedSecrets = new HashSet<>();
@@ -1019,6 +1026,12 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ClusterOperator.secretName(clusterName))).thenReturn(
+                Future.succeededFuture(new Secret())
+        );
 
         // Mock NetworkPolicy get
         when(mockPolicyOps.get(clusterNamespace, KafkaCluster.policyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(true));
@@ -1109,8 +1122,8 @@ public class KafkaAssemblyOperatorTest {
             StatefulSet sts = invocation.getArgument(2);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
-        when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
-        when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), any(Function.class))).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), any(Function.class))).thenReturn(Future.succeededFuture());
 
         when(mockZsOps.getAsync(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
                 Future.succeededFuture(originalZookeeperCluster.generateStatefulSet(openShift, null, null))
@@ -1237,7 +1250,7 @@ public class KafkaAssemblyOperatorTest {
                 findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
@@ -1248,7 +1261,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         // providing the list StatefulSets for already "existing" Kafka clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift, null, null))
@@ -1341,13 +1354,13 @@ public class KafkaAssemblyOperatorTest {
                 findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift, null, null))

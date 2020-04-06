@@ -387,8 +387,12 @@ public abstract class Ca {
                 reasons.add("certificate is expiring");
             }
 
+            if (renewalType.equals(RenewalType.CREATE)) {
+                reasons.add("certificate added");
+            }
+
             if (!reasons.isEmpty())  {
-                log.debug("Certificate for pod {} need to be regenerated because:", podName, String.join(", ", reasons));
+                log.debug("Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
                 CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
@@ -552,7 +556,7 @@ public abstract class Ca {
         Map<String, String> certAnnotations = new HashMap<>(2);
         certAnnotations.put(ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
 
-        if (renewalType == RenewalType.POSTPONED
+        if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caCertSecret.getMetadata() != null
                 && Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW))   {
             certAnnotations.put(ANNO_STRIMZI_IO_FORCE_RENEW, Annotations.stringAnnotation(caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, "false"));
@@ -561,7 +565,7 @@ public abstract class Ca {
         Map<String, String> keyAnnotations = new HashMap<>(2);
         keyAnnotations.put(ANNO_STRIMZI_IO_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
-        if (renewalType == RenewalType.POSTPONED
+        if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caKeySecret.getMetadata() != null
                 && Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE))   {
             keyAnnotations.put(ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
@@ -650,13 +654,13 @@ public abstract class Ca {
                 break;
         }
         if (!generateCa) {
-            if (renewalType == RenewalType.RENEW_CERT) {
+            if (renewalType.equals(RenewalType.RENEW_CERT)) {
                 log.warn("The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
                         CA_CRT.replace(".", "\\."), this.caCertSecretName, namespace,
                         currentCert.getNotAfter());
-            } else if (renewalType == RenewalType.REPLACE_KEY) {
+            } else if (renewalType.equals(RenewalType.REPLACE_KEY)) {
                 log.warn("The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
@@ -725,7 +729,7 @@ public abstract class Ca {
      * @return Whether the certificate was renewed.
      */
     public boolean certRenewed() {
-        return renewalType == RenewalType.RENEW_CERT || renewalType == RenewalType.REPLACE_KEY;
+        return renewalType.equals(RenewalType.RENEW_CERT) || renewalType.equals(RenewalType.REPLACE_KEY);
     }
 
     /**
@@ -734,7 +738,11 @@ public abstract class Ca {
      * @return Whether the key was replaced.
      */
     public boolean keyReplaced() {
-        return renewalType == RenewalType.REPLACE_KEY;
+        return renewalType.equals(RenewalType.REPLACE_KEY);
+    }
+
+    public boolean keyCreated() {
+        return renewalType.equals(RenewalType.CREATE);
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {

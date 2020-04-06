@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -81,9 +82,7 @@ public class KafkaStatusTest {
 
     @AfterAll
     public static void after() {
-        if (vertx != null) {
-            vertx.close();
-        }
+        vertx.close();
     }
 
     public Kafka getKafkaCrd() throws ParseException {
@@ -112,7 +111,7 @@ public class KafkaStatusTest {
                 .withNewStatus()
                     .withObservedGeneration(1L)
                     .withConditions(new ConditionBuilder()
-                            .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                            .withNewLastTransitionTime(ModelUtils.formatTimestamp(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
                             .withNewType("NotReady")
                             .withNewStatus("True")
                             .build())

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -31,7 +32,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaMirrorMakerCluster extends AbstractModel {
+    protected static final String APPLICATION_NAME = "kafka-mirror-maker";
+
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
     protected static final String TLS_CERTS_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-certs/";
@@ -106,12 +108,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Mirror Maker cluster resources are going to be created
-     * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected KafkaMirrorMakerCluster(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected KafkaMirrorMakerCluster(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMakerResources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
@@ -128,9 +128,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
-        KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker.getMetadata().getNamespace(),
-                kafkaMirrorMaker.getMetadata().getName(),
-                Labels.fromResource(kafkaMirrorMaker).withKind(kafkaMirrorMaker.getKind()));
+        KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);

@@ -28,21 +28,116 @@ public class VerifiableClient {
     private List<String> messages = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
     private String executable;
-    private ClientType clientType;
     private Exec executor;
+
+    private ClientType clientType;
     private String podName;
     private String podNamespace;
+    private String bootstrapServer;
+    private String topicName;
+    private int maxMessages;
+    private String kafkaUsername;
+    private String consumerGroupName;
+    private String consumerInstanceId;
+    private ClientArgumentMap clientArgumentMap;
 
-    /**
-     * Constructor of verifiable kafka client
-     *
-     * @param clientType type of kafka client
-     */
-    public VerifiableClient(ClientType clientType, String podName, String podNamespace) {
-        this.setAllowedArguments(clientType);
-        this.clientType = clientType;
-        this.podName = podName;
-        this.podNamespace = podNamespace;
+    public static class VerifiableClientBuilder {
+
+        private ClientType clientType;
+        private String podName;
+        private String podNamespace;
+        private String bootstrapServer;
+        private String topicName;
+        private int maxMessages;
+        private String kafkaUsername;
+        private String consumerGroupName;
+        private String consumerInstanceId;
+
+        public VerifiableClientBuilder withClientType(ClientType clientType) {
+
+            this.clientType = clientType;
+            return this;
+        }
+
+        public VerifiableClientBuilder withUsingPodName(String podName) {
+
+            this.podName = podName;
+            return this;
+        }
+
+        public VerifiableClientBuilder withPodNamespace(String podNamespace) {
+
+            this.podNamespace = podNamespace;
+            return this;
+        }
+
+        public VerifiableClientBuilder withBootstrapServer(String bootstrapServer) {
+
+            this.bootstrapServer = bootstrapServer;
+            return this;
+        }
+
+        public VerifiableClientBuilder withTopicName(String topicName) {
+
+            this.topicName = topicName;
+            return this;
+        }
+
+        public VerifiableClientBuilder withMaxMessages(int maxMessages) {
+
+            this.maxMessages = maxMessages;
+            return this;
+        }
+
+        public VerifiableClientBuilder withKafkaUsername(String kafkaUsername) {
+
+            this.kafkaUsername = kafkaUsername;
+            return this;
+        }
+
+        public VerifiableClientBuilder withConsumerGroupName(String consumerGroupName) {
+
+            this.consumerGroupName = consumerGroupName;
+            return this;
+        }
+
+        public VerifiableClientBuilder withConsumerInstanceId(String consumerInstanceId) {
+
+            this.consumerInstanceId = consumerInstanceId;
+            return this;
+        }
+
+        protected VerifiableClient build() {
+            return new VerifiableClient(this);
+
+        }
+    }
+
+    public VerifiableClient(VerifiableClientBuilder verifiableClientBuilder) {
+
+        this.clientType = verifiableClientBuilder.clientType;
+        this.podName = verifiableClientBuilder.podName;
+        this.podNamespace = verifiableClientBuilder.podNamespace;
+        this.bootstrapServer = verifiableClientBuilder.bootstrapServer;
+        this.topicName = verifiableClientBuilder.topicName;
+        this.maxMessages = verifiableClientBuilder.maxMessages;
+        this.kafkaUsername = verifiableClientBuilder.kafkaUsername;
+
+        this.setAllowedArguments(this.clientType);
+        this.clientArgumentMap = new ClientArgumentMap();
+        this.clientArgumentMap.put(ClientArgument.BROKER_LIST, bootstrapServer);
+        this.clientArgumentMap.put(ClientArgument.TOPIC, topicName);
+        this.clientArgumentMap.put(ClientArgument.MAX_MESSAGES, Integer.toString(maxMessages));
+        if (kafkaUsername != null) this.clientArgumentMap.put(ClientArgument.USER,  kafkaUsername.replace("-", "_"));
+
+        if (clientType == ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER) {
+            this.consumerGroupName = verifiableClientBuilder.consumerGroupName;
+            this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
+            this.clientArgumentMap.put(ClientArgument.GROUP_ID, consumerGroupName);
+            this.clientArgumentMap.put(ClientArgument.GROUP_INSTANCE_ID, this.consumerInstanceId);
+        }
+
+        this.setArguments(this.clientArgumentMap);
         this.executable = ClientType.getCommand(clientType);
     }
 
@@ -98,7 +193,7 @@ public class VerifiableClient {
             synchronized (lock) {
                 LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.debug("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
+                    LOGGER.info("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
                     if (ret == 0) {
                         parseToList(executor.out());
                     } else if (!executor.err().isEmpty()) {
@@ -211,5 +306,31 @@ public class VerifiableClient {
             default:
                 throw new IllegalArgumentException("Unexpected client type!");
         }
+    }
+
+    public String getBootstrapServer() {
+        return bootstrapServer;
+    }
+
+    @Override
+    public String toString() {
+        return "VerifiableClient{" +
+            "allowedArguments=" + allowedArguments +
+            ", lock=" + lock +
+            ", messages=" + messages +
+            ", arguments=" + arguments +
+            ", executable='" + executable + '\'' +
+            ", executor=" + executor +
+            ", clientType=" + clientType +
+            ", podName='" + podName + '\'' +
+            ", podNamespace='" + podNamespace + '\'' +
+            ", bootstrapServer='" + bootstrapServer + '\'' +
+            ", topicName='" + topicName + '\'' +
+            ", maxMessages=" + maxMessages +
+            ", kafkaUsername='" + kafkaUsername + '\'' +
+            ", consumerGroupName='" + consumerGroupName + '\'' +
+            ", consumerInstanceId='" + consumerInstanceId + '\'' +
+            ", clientArgumentMap=" + clientArgumentMap +
+            '}';
     }
 }

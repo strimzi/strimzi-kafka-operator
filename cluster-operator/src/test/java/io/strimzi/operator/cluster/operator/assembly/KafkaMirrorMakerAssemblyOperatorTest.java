@@ -148,40 +148,40 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.succeeding(createResult -> {
 
-            // No metrics config  => no CMs created
-            Set<String> metricsNames = new HashSet<>();
-            if (mirror.isMetricsEnabled()) {
-                metricsNames.add(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName));
-            }
+                // No metrics config  => no CMs created
+                Set<String> metricsNames = new HashSet<>();
+                if (mirror.isMetricsEnabled()) {
+                    metricsNames.add(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName));
+                }
 
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
-            Deployment dc = capturedDc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(mirror.getName())));
-            Map annotations = new HashMap();
-            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
-            context.verify(() -> assertThat("Deployments are not equal", dc, is(mirror.generateDeployment(annotations, true, null, null))));
+                // Verify Deployment
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedDc.size(), is(1)));
+                Deployment dc = capturedDc.get(0);
+                context.verify(() -> assertThat(dc.getMetadata().getName(), is(mirror.getName())));
+                Map annotations = new HashMap();
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                context.verify(() -> assertThat("Deployments are not equal", dc, is(mirror.generateDeployment(annotations, true, null, null))));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(mirror.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget())));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedPdb.size(), is(1)));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                context.verify(() -> assertThat(pdb.getMetadata().getName(), is(mirror.getName())));
+                context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget())));
 
-            // Verify status
-            List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedMM.size(), is(1)));
-            KafkaMirrorMaker mm = capturedMM.get(0);
-            context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready")));
-            context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True")));
+                // Verify status
+                List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
+                context.verify(() -> assertThat(capturedMM.size(), is(1)));
+                KafkaMirrorMaker mm = capturedMM.get(0);
+                context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready")));
+                context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True")));
 
-            async.flag();
-        });
+                async.flag();
+            }));
     }
 
     @Test
@@ -599,13 +599,13 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
-        Labels newLabels = Labels.forKind(KafkaMirrorMaker.RESOURCE_KIND);
+        Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaMirrorMakerCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka Mirror Maker clusters
-        Labels barLabels = Labels.forCluster("bar");
+        Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaMirrorMakerCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))

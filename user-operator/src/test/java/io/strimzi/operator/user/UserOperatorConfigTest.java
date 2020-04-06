@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UserOperatorConfigTest {
-    private static Map<String, String> envVars = new HashMap<>(5);
+    private static Map<String, String> envVars = new HashMap<>(8);
     private static Labels expectedLabels;
 
     static {
@@ -37,7 +37,7 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testConfig()    {
+    public void testFromMap()    {
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
 
         assertThat(config.getNamespace(), is(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
@@ -50,27 +50,23 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testMissingNamespace()  {
-        assertThrows(InvalidConfigurationException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
+    public void testFromMapNamespaceEnvVarMissingThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        });
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.fromMap(envVars));
     }
 
     @Test
-    public void testMissingCaName()  {
-        assertThrows(InvalidConfigurationException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
+    public void testFromMapCaNameEnvVarMissingThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        });
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.fromMap(envVars));
     }
 
     @Test
-    public void testMissingReconciliationInterval()  {
+    public void testFromMapReconciliationIntervalEnvVarMissingSetsDefault()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
 
@@ -79,7 +75,7 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testMissingLabels()  {
+    public void testFromMapStrimziLabelsEnvVarMissingSetsEmptyLabels()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_LABELS);
 
@@ -88,7 +84,7 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testMissingCaNamespace()  {
+    public void testFromMapCaNamespaceMissingUsesNamespaceInstead()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
 
@@ -97,22 +93,18 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testInvalidReconciliationInterval()  {
-        assertThrows(NumberFormatException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
+    public void testFromMapInvalidReconciliationIntervalThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        });
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.fromMap(envVars));
     }
 
     @Test
-    public void testInvalidLabels()  {
-        assertThrows(InvalidConfigurationException.class, () -> {
-            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-            envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
+    public void testFromMapInvalidLabelsStringThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
 
-            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        });
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.fromMap(envVars));
     }
 }

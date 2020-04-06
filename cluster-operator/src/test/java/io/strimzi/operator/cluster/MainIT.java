@@ -8,12 +8,13 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,33 +25,37 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @ExtendWith(VertxExtension.class)
 public class MainIT {
-    private Vertx vertx;
+    private static Vertx vertx;
     private KubernetesClient client;
 
-    @BeforeEach
-    public void createClient() {
+    @BeforeAll
+    public static void before() {
         vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
+
+    @BeforeEach
+    private void createClient() {
         client = new DefaultKubernetesClient();
     }
 
     @AfterEach
-    public void closeClient() {
-        vertx.close();
+    private void closeClient() {
         client.close();
     }
 
     @Test
-    public void testCreateClusterRoles(VertxTestContext context) {
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
-        Map<String, String> envVars = new HashMap<>(1);
+    public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
+        assertDoesNotThrow(() -> KubeCluster.bootstrap());
+        Map<String, String> envVars = new HashMap<>(6);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
@@ -62,17 +67,15 @@ public class MainIT {
 
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
 
-        Checkpoint async = context.checkpoint();
-        Main.maybeCreateClusterRoles(vertx, config, client).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
-
-            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-entity-operator"), is(notNullValue())));
-            context.verify(() -> assertThat(cro.get("strimzi-topic-operator"), is(notNullValue())));
-
-            async.flag();
-        });
+        Checkpoint a = context.checkpoint();
+        Main.maybeCreateClusterRoles(vertx, config, client)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
+                assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));
+                assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue()));
+                assertThat(cro.get("strimzi-entity-operator"), is(notNullValue()));
+                assertThat(cro.get("strimzi-topic-operator"), is(notNullValue()));
+                a.flag();
+            })));
     }
 }

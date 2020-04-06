@@ -91,8 +91,9 @@ public class KafkaBridgeClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME,
+                Labels.KUBERNETES_NAME_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -104,11 +105,7 @@ public class KafkaBridgeClusterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
-    }
-
-    private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaBridgeResources.deploymentName(cluster));
+        return Labels.fromMap(expectedLabels(KafkaBridgeResources.deploymentName(cluster))).strimziSelectorLabels().toMap();
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -177,11 +174,11 @@ public class KafkaBridgeClusterTest {
 
         assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        Map<String, String> expectedLabels = expectedLabels();
-        assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
+        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaBridgeResources.deploymentName(cluster));
+        assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
         assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
-        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaBridgeResources.deploymentName(cluster)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(kbc.image));
@@ -878,7 +875,7 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
-                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_TOKENS_NOT_JWT, "true", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
     }
 
     @Test

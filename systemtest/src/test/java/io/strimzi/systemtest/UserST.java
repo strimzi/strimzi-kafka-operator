@@ -9,9 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
@@ -24,10 +22,11 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -53,7 +52,6 @@ class UserST extends BaseST {
 
         // Create user with correct name
         KafkaUserResource.tlsUser(CLUSTER_NAME, userWithCorrectName).done();
-        SecretUtils.waitForSecretReady(userWithCorrectName);
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
@@ -91,8 +89,6 @@ class UserST extends BaseST {
         String kafkaUser = "test-user";
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-        SecretUtils.waitForSecretReady(kafkaUser);
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -132,59 +128,72 @@ class UserST extends BaseST {
     }
 
     @Tag(SCALABILITY)
-    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testBigAmountOfScramShaUsers() {
         createBigAmountOfUsers("SCRAM_SHA");
     }
 
     @Tag(SCALABILITY)
-    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testBigAmountOfTlsUsers() {
         createBigAmountOfUsers("TLS");
     }
 
     @Test
-    void testUserWithQuotas() {
-        String userName = "arnost";
+    void testTlsUserWithQuotas() {
+        testUserWithQuotas(KafkaUserResource.tlsUser(CLUSTER_NAME, "encrypted-arnost").done());
+    }
+
+    @Test
+    void testScramUserWithQuotas() {
+        testUserWithQuotas(KafkaUserResource.scramShaUser(CLUSTER_NAME, "scramed-arnost").done());
+    }
+
+    void testUserWithQuotas(KafkaUser user) {
+        String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
+
         Integer prodRate = 1111;
         Integer consRate = 2222;
         Integer reqPerc = 42;
 
         // Create user with correct name
-        KafkaUserResource.userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
-        SecretUtils.waitForSecretReady(userName);
+        KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).done();
 
-        String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
-
-        // Checking UO logs
-        String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOlogs.contains(messageUserWasAdded), is(true));
-
-        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users";
+        String command = "sh bin/kafka-configs.sh --zookeeper localhost:2181 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
         ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
-        assertThat(result.out().contains("Configs for user-principal 'CN=" + userName + "' are"), is(true));
+        assertThat(result.out().contains("Configs for user-principal '" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
 
-        String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:21810 <<< 'ls /config/users'";
-        ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
-        assertThat(zkResult.out().contains(userName), is(true));
+        String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:2181 <<< 'ls /config/users'";
+
+        TestUtils.waitFor("user " + userName + " will be available in Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            try {
+                return zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Failed to encode username", e);
+            }
+        });
 
         // delete user
-        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(userName);
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
 
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), emptyString());
 
-        ExecResult zkDeleteResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
-        assertThat(zkDeleteResult.out().contains(userName), is(false));
+        TestUtils.waitFor("user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            try {
+                return !zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Failed to encode username", e);
+            }
+        });
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
@@ -201,7 +210,6 @@ class UserST extends BaseST {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
 
-            KafkaUserUtils.waitForKafkaUserCreation(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);
@@ -213,15 +221,7 @@ class UserST extends BaseST {
     }
 
     private void deployTestSpecificResources() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec().done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
     }
 
     @BeforeAll

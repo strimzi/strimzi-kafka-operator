@@ -21,12 +21,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,19 +36,24 @@ public class K8sImplTest {
     private static Vertx vertx;
 
     @BeforeAll
-    public static void initVertx() {
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
-
 
     @Test
     public void testList(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
+
+        List<KafkaTopic> mockKafkaTopicsList = Collections.singletonList(new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName("unrelated")
+                        .withLabels(Collections.singletonMap("foo", "bar")).build())
+                .build());
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockResources = mock(MixedOperation.class);
@@ -58,23 +62,15 @@ public class K8sImplTest {
         when(mockResources.inNamespace(any())).thenReturn(mockResources);
         when(mockResources.list()).thenAnswer(invocation -> {
             KafkaTopicList ktl = new KafkaTopicList();
-            ktl.setItems(Collections.singletonList(new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                    .withName("unrelated")
-                    .withLabels(Collections.singletonMap("foo", "bar")).build())
-                .build()));
+            ktl.setItems(mockKafkaTopicsList);
             return ktl;
         });
 
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new Labels("foo", "bar"), "default");
 
-        k8s.listResources().setHandler(ar -> {
-            if (ar.failed()) {
-                ar.cause().printStackTrace();
-            }
-            List<KafkaTopic> list = ar.result();
-            context.verify(() -> assertThat(list.isEmpty(), is(false)));
+        k8s.listResources().setHandler(context.succeeding(kafkaTopics -> context.verify(() -> {
+            assertThat(kafkaTopics, is(mockKafkaTopicsList));
             async.flag();
-        });
+        })));
     }
 }

@@ -77,8 +77,9 @@ public class KafkaUserModel {
     protected KafkaUserModel(String namespace, String name, Labels labels) {
         this.namespace = namespace;
         this.name = name;
-        this.labels = labels.withKubernetesName()
+        this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
             .withKubernetesInstance(name)
+            .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
     }
 
@@ -101,7 +102,7 @@ public class KafkaUserModel {
                                          Secret userSecret) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
-                Labels.fromResource(kafkaUser).withKind(kafkaUser.getKind()));
+                Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()));
         result.setOwnerReference(kafkaUser);
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 

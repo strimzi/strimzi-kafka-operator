@@ -11,9 +11,9 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.ClientFactory;
-import io.strimzi.systemtest.kafkaclients.EClientType;
-import io.strimzi.systemtest.kafkaclients.externalClients.OauthKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -33,19 +33,23 @@ import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
-import java.io.IOException;
-import java.security.KeyStoreException;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -57,40 +61,43 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
 @Tag(OAUTH)
+@Tag(ACCEPTANCE)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class OauthTlsST extends OauthBaseST {
 
-    private OauthKafkaClient oauthKafkaClient = (OauthKafkaClient) ClientFactory.getClient(EClientType.OAUTH);
+    private OauthExternalKafkaClient oauthExternalKafkaClientTls;
 
     @Description(
             "As an oauth producer, i am able to produce messages to the kafka broker\n" +
             "As an oauth consumer, i am able to consumer messages from the kafka broker using encrypted communication")
     @Test
-    void testProducerConsumer() throws IOException, KeyStoreException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL");
+    void testProducerConsumer() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClientTls.sendMessagesTls();
+        Future<Integer> consumer = oauthExternalKafkaClientTls.receiveMessagesTls();
 
-        Future<Integer> consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
-
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
     }
 
     @Description("As an oauth kafka connect, i am able to sink messages from kafka broker topic using encrypted communication.")
     @Test
-    void testProducerConsumerConnect() throws IOException, KeyStoreException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL");
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
+    void testProducerConsumerConnect() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClientTls.sendMessagesTls();
+        Future<Integer> consumer = oauthExternalKafkaClientTls.receiveMessagesTls();
 
-        Future<Integer> consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1, false)
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -127,22 +134,19 @@ public class OauthTlsST extends OauthBaseST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectUtils.createFileSinkConnector(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), TOPIC_NAME, Constants.DEFAULT_SINK_FILE_NAME, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectUtils.createFileSinkConnector(defaultKafkaClientsPodName, TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_NAME);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
     }
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")
     @Test
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, TimeoutException, ExecutionException, java.util.concurrent.TimeoutException, IOException, KeyStoreException {
-        Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL");
+    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, TimeoutException, ExecutionException, java.util.concurrent.TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClientTls.sendMessagesTls();
+        Future<Integer> consumer = oauthExternalKafkaClientTls.receiveMessagesTls();
 
-        Future<Integer> consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-                MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
-
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
@@ -212,12 +216,10 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As a oauth mirror maker, i am able to replicate topic data using using encrypted communication")
     @Test
-    void testMirrorMaker() throws IOException, InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        Future<Integer> producer = oauthKafkaClient.sendMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-            MESSAGE_COUNT, "SSL");
-
-        Future<Integer> consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, CLUSTER_NAME, OAUTH_CLIENT_NAME,
-            MESSAGE_COUNT, "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+    @Tag(MIRROR_MAKER)
+    void testMirrorMaker() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        Future<Integer> producer = oauthExternalKafkaClientTls.sendMessagesTls();
+        Future<Integer> consumer = oauthExternalKafkaClientTls.receiveMessagesTls();
 
         assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
@@ -329,10 +331,17 @@ public class OauthTlsST extends OauthBaseST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
-        consumer = oauthKafkaClient.receiveMessagesTls(TOPIC_NAME, NAMESPACE, targetKafkaCluster, USER_NAME, MESSAGE_COUNT,
-            "SSL", CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        oauthExternalKafkaClientTls.setClusterName(targetKafkaCluster);
+        oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+
+        consumer = oauthExternalKafkaClientTls.receiveMessagesTls();
 
         assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+    }
+
+    @BeforeEach
+    void setUpEach() {
+        oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
     }
 
     @BeforeAll
@@ -345,11 +354,19 @@ public class OauthTlsST extends OauthBaseST {
         jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";
         oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token";
 
-        oauthKafkaClient.setClientId(OAUTH_CLIENT_NAME);
-        oauthKafkaClient.setClientSecretName(OAUTH_CLIENT_SECRET);
-        oauthKafkaClient.setOauthTokenEndpointUri(oauthTokenEndpointUri);
+        oauthExternalKafkaClientTls = new OauthExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withOauthClientId(OAUTH_CLIENT_NAME)
+            .withKafkaUsername(OAUTH_CLIENT_NAME)
+            .withClientSecretName(OAUTH_CLIENT_SECRET)
+            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .build();
 
-        LOGGER.info("Oauth kafka client has following settings {}", oauthKafkaClient.toString());
+        LOGGER.info("Oauth kafka client has following settings {}", oauthExternalKafkaClientTls.toString());
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(

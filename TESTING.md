@@ -176,6 +176,14 @@ The following table shows currently used tags:
 | oauth           | Execute tests which use OAuth                                                      |
 | helm            | Execute tests which use Helm for deploy cluster operator                           |
 | olm             | Execute tests which use OLM for deploy cluster operator                            |
+| connectoroperator  | Execute tests which deploy KafkaConnector resource                              |
+| connect         | Execute tests which deploy KafkaConnect resource                                   |
+| connects2i      | Execute tests which deploy KafkaConnectS2I resource                                |
+| mirrormaker     | Execute tests which deploy KafkaMirrorMaker resource                               |
+| mirrormaker2    | Execute tests which deploy KafkaMirrorMaker2 resource                              |
+| conneccomponents   | Execute tests which deploy KafkaConnect, KafkaConnectS2I, KafkaMirrorMaker2, KafkaConnector resources |
+| internalclients | Execute tests which use internal (from pod) kafka clients in tests                 |
+| externalclients | Execute tests which use external (from code) kafka clients in tests                |
 
 If your Kubernetes cluster doesn't support, for example, Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 

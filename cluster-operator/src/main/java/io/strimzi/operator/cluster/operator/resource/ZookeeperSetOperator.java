@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 
 /**
@@ -47,11 +47,6 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
-        // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
-        if (diff.changesSpecReplicas()) {
-            log.debug("Changed #replicas => needs rolling update");
-            return true;
-        }
         if (diff.changesLabels()) {
             log.debug("Changed labels => needs rolling update");
             return true;
@@ -72,7 +67,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
@@ -83,7 +78,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
             Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
-            zkRoll |= podRestart.test(pod);
+            String zkPodRestart = podRestart.apply(pod);
+            zkRoll |= zkPodRestart != null && !zkPodRestart.isEmpty();
             pods.add(pod);
         }
 

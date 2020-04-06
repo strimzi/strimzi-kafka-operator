@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.debezium.kafka.KafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -17,6 +19,7 @@ import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,9 +37,12 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -47,17 +53,17 @@ public class KafkaConnectApiTest {
     private static final int PORT = 18083;
 
     @BeforeEach
-    public void before() throws IOException, InterruptedException {
-        vertx = Vertx.vertx();
+    public void beforeEach() throws IOException, InterruptedException {
+        // Start a 3 node Kafka cluster
         cluster = new KafkaCluster();
         cluster.addBrokers(3);
         cluster.deleteDataPriorToStartup(true);
         cluster.deleteDataUponShutdown(true);
         cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-        //cluster.withKafkaConfiguration(kafkaClusterConfig());
         cluster.startup();
         cluster.createTopics(getClass().getSimpleName() + "-offsets", getClass().getSimpleName() + "-config", getClass().getSimpleName() + "-status");
-        // Somehow start connect distributed. Or can I just fire up the webserver hooked into some mock stuff?
+
+        // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();
         workerProps.put("listeners", "http://localhost:" + PORT);
         File tempDirectory = Files.createTempDirectory(getClass().getSimpleName()).toFile();
@@ -87,7 +93,7 @@ public class KafkaConnectApiTest {
     }
 
     @AfterEach
-    public void after() {
+    public void afterEach() {
         if (connect != null) {
             connect.stop();
             connect.awaitStop();
@@ -95,19 +101,24 @@ public class KafkaConnectApiTest {
         cluster.shutdown();
     }
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         CountDownLatch async = new CountDownLatch(1);
         client.listConnectorPlugins("localhost", PORT)
             .compose(connectorPlugins -> {
-                assertEquals(connectorPlugins.size(), 2);
+                assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
                 ConnectorPlugin fileSink = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
                 assertNotNull(fileSink);
@@ -166,12 +177,32 @@ public class KafkaConnectApiTest {
                         assertEquals("RUNNING", an.get("state"));
                         assertEquals("localhost:18083", an.get("worker_id"));
                     }
-                    return Future.succeededFuture();
+                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test");
                 } catch (Throwable e) {
                     return Future.failedFuture(e);
                 }
             })
-            .compose(ignored -> {
+            .compose(config -> {
+                try {
+                    assertEquals(TestUtils.map("connector.class", "FileStreamSource",
+                            "file", "/dev/null",
+                            "tasks.max", "1",
+                            "name", "test",
+                            "topic", "my-topic"), config);
+                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist");
+                } catch (Throwable e) {
+                    return Future.failedFuture(e);
+                }
+            })
+            .recover(error -> {
+                try {
+                    assertTrue(error instanceof ConnectRestException);
+                    assertEquals(404, ((ConnectRestException) error).getStatusCode());
+                    return Future.succeededFuture();
+                } catch (Throwable e) {
+                    return Future.failedFuture(e);
+                }
+            }).compose(ignored -> {
                 return client.pause("localhost", PORT, "test");
             })
             .compose(ignored -> {

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.executor.Exec;
@@ -33,6 +34,7 @@ import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -124,16 +126,26 @@ public class MetricsST extends BaseST {
     }
 
     @Test
-    void testKafkaExporterDataAfterExchange() throws InterruptedException {
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testKafkaExporterDataAfterExchange() {
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
+            .withTopicName(TEST_TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(5000)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 5000),
-            internalKafkaClient.receiveMessages(TEST_TOPIC_NAME, NAMESPACE, CLUSTER_NAME, 5000, CONSUMER_GROUP_NAME)
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
@@ -200,6 +212,7 @@ public class MetricsST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1, false).done();
         KafkaTopicResource.topic(CLUSTER_NAME, "test-topic", 7, 2).done();
         // Wait for Metrics refresh/values change

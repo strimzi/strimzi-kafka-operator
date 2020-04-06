@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -21,8 +22,7 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

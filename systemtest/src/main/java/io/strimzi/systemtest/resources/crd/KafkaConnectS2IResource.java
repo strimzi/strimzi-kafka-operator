@@ -34,17 +34,10 @@ public class KafkaConnectS2IResource {
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
     }
-    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
-        return kafkaConnectS2I(name, kafkaConnectS2IReplicas, true);
-    }
 
-    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas, boolean allowNetworkPolicyAccess) {
-        return kafkaConnectS2I(name, name, kafkaConnectS2IReplicas, allowNetworkPolicyAccess);
-    }
-
-    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas, boolean allowNetworkPolicyAccess) {
+    public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
-        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build(), allowNetworkPolicyAccess, clusterName);
+        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build(), clusterName);
     }
 
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -75,15 +68,15 @@ public class KafkaConnectS2IResource {
             .endSpec();
     }
 
-    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, boolean allowNetworkPolicyAccess, String clusterName) {
+    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String clusterName) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
+            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()), clusterName);
+        }
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
             TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
-                        if (allowNetworkPolicyAccess) {
-                            KubernetesResource.allowNetworkPolicySettingsForResource(kC, KafkaConnectS2IResources.deploymentName(kC.getMetadata().getName()), clusterName);
-                        }
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {

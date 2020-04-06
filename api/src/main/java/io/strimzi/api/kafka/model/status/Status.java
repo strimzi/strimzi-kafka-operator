@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -25,8 +26,7 @@ import static java.util.Collections.emptyMap;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+        builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -45,10 +45,21 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
         this.conditions = conditions;
     }
 
-    public void addCondition(Condition condition) {
+    private List<Condition> prepareConditionsUpdate() {
         List<Condition> oldConditions = getConditions();
         List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>();
+        return newConditions;
+    }
+
+    public void addCondition(Condition condition) {
+        List<Condition> newConditions = prepareConditionsUpdate();
         newConditions.add(condition);
+        setConditions(Collections.unmodifiableList(newConditions));
+    }
+
+    public void addConditions(List<Condition> conditions) {
+        List<Condition> newConditions = prepareConditionsUpdate();
+        newConditions.addAll(conditions);
         setConditions(Collections.unmodifiableList(newConditions));
     }
 

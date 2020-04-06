@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.URL;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,24 +52,24 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         return new KafkaBuilder()
                 .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
-                .withNewKafka()
-                .withReplicas(1)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(1)
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(1)
+                        .withNewListeners()
+                            .withNewPlain()
+                            .endPlain()
+                        .endListeners()
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
                 .endSpec()
                 .withNewStatus()
                 .endStatus()
@@ -100,15 +101,14 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockCall.execute()).thenReturn(response);
 
         Checkpoint async = context.checkpoint();
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
-        op.updateStatusAsync(resource()).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
-            async.flag();
-        });
+
+        createResourceOperations(vertx, mockClient)
+            .updateStatusAsync(resource())
+            .setHandler(context.succeeding(kafka -> async.flag()));
     }
 
     @Test
-    public void testHttp422AfterUpgrade(VertxTestContext context) throws IOException {
+    public void testUpdateStatusWorksAfterUpgradeWithHttp422ResponseAboutApiVersionField(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -122,15 +122,14 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockCall.execute()).thenReturn(response);
 
         Checkpoint async = context.checkpoint();
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
-        op.updateStatusAsync(resource()).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(true)));
-            async.flag();
-        });
+        createResourceOperations(vertx, mockClient)
+            .updateStatusAsync(resource())
+            .setHandler(context.succeeding(kafka -> async.flag()));
+
     }
 
     @Test
-    public void testHttp422DifferentError(VertxTestContext context) throws IOException {
+    public void testUpdateStatusThrowsWhenHttp422ResponseWithOtherField(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -144,15 +143,17 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockCall.execute()).thenReturn(response);
 
         Checkpoint async = context.checkpoint();
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
-        op.updateStatusAsync(resource()).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            async.flag();
-        });
+        createResourceOperations(vertx, mockClient)
+            .updateStatusAsync(resource())
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(KubernetesClientException.class));
+                async.flag();
+            })));
+
     }
 
     @Test
-    public void testHttp422NoBody(VertxTestContext context) throws IOException {
+    public void testUpdateStatusThrowsWhenHttp422ResponseWithNoBody(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -166,15 +167,16 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockCall.execute()).thenReturn(response);
 
         Checkpoint async = context.checkpoint();
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
-        op.updateStatusAsync(resource()).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            async.flag();
-        });
+        createResourceOperations(vertx, mockClient)
+            .updateStatusAsync(resource())
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(KubernetesClientException.class));
+                async.flag();
+            })));
     }
 
     @Test
-    public void testHttp409(VertxTestContext context) throws IOException {
+    public void testUpdateStatusThrowsWhenHttp409Response(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -188,10 +190,11 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         when(mockCall.execute()).thenReturn(response);
 
         Checkpoint async = context.checkpoint();
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
-        op.updateStatusAsync(resource()).setHandler(res -> {
-            context.verify(() -> assertThat(res.succeeded(), is(false)));
-            async.flag();
-        });
+        createResourceOperations(vertx, mockClient)
+            .updateStatusAsync(resource())
+            .setHandler(context.failing(e -> context.verify(() -> {
+                assertThat(e, instanceOf(KubernetesClientException.class));
+                async.flag();
+            })));
     }
 }

@@ -88,4 +88,10 @@ public class LogCollector {
         LOGGER.info("Collecting ReplicaSet in namespaces {}", namespace);
         writeFile(logDir + "/replicasets.log", cmdKubeClient().list("replicaset").toString());
     }
+
+    public void collectStrimzi() {
+        LOGGER.info("Collecting CR in namespaces {}", namespace);
+        String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
+        writeFile(logDir + "/strimzi-custom-resources.log", crData);
+    }
 }

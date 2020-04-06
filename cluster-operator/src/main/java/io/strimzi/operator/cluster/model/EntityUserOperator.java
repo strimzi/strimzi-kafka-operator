@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -23,7 +24,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +35,7 @@ import static java.util.Collections.singletonList;
  * Represents the User Operator deployment
  */
 public class EntityUserOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-user-operator";
 
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
@@ -68,12 +69,10 @@ public class EntityUserOperator extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param labels
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
-    protected EntityUserOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityUserOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -188,10 +187,7 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+                result = new EntityUserOperator(kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();
@@ -204,6 +200,10 @@ public class EntityUserOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                if (userOperatorSpec.getJvmOptions() != null) {
+                    result.setJavaSystemProperties(userOperatorSpec.getJvmOptions().getJavaSystemProperties());
+                }
+                result.setJvmOptions(userOperatorSpec.getJvmOptions());
                 result.setResources(userOperatorSpec.getResources());
                 if (userOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
@@ -257,6 +257,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

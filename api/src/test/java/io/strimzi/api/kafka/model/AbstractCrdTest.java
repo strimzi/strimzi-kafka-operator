@@ -9,43 +9,36 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public abstract class AbstractCrdTest<R extends CustomResource> {
 
     private final Class<R> crdClass;
-    private final String kind;
+    private String kind;
 
     protected AbstractCrdTest(Class<R> crdClass) {
         this.crdClass = crdClass;
-        try {
-            this.kind = crdClass.newInstance().getKind();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        assertDoesNotThrow(() -> kind = crdClass.newInstance().getKind());
     }
 
-    protected void assertDesiredResource(R k, String resource) throws IOException {
+    protected void assertDesiredResource(R k, String resource) {
         //assertNotNull("The resource " + resourceName + " does not exist", model);
         String content = TestUtils.readResource(getClass(), resource);
-        if (content != null) {
-            String ssStr = TestUtils.toYamlString(k);
-            assertThat(ssStr.trim(), is(content.trim()));
-        } else {
-            fail("The resource " + resource + " does not exist");
-        }
+        assertThat("The resource " + resource + " does not exist", content, is(notNullValue()));
+
+        String ssStr = TestUtils.toYamlString(k);
+        assertThat(ssStr.trim(), is(content.trim()));
     }
 
     @Test
-    public void roundTrip() throws IOException, ReflectiveOperationException {
+    public void roundTrip() {
         String resourceName = crdClass.getSimpleName() + ".yaml";
         R model = TestUtils.fromYaml(resourceName, crdClass);
-        assertThat("The classpath resource \" + resourceName + \" does not exist", model, is(notNullValue()));
+        assertThat("The classpath resource " + resourceName + " does not exist", model, is(notNullValue()));
+
         ObjectMeta metadata = model.getMetadata();
         assertThat(metadata, is(notNullValue()));
         assertDesiredResource(model, crdClass.getSimpleName() + ".out.yaml");

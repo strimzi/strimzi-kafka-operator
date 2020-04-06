@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -32,10 +33,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,6 +87,10 @@ public class ModelUtils {
         return renewalDays;
     }
 
+    public static String formatTimestamp(Date date) {
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(date);
+    }
+
     /**
      * Generate labels used by entity-operators to find the resources related to given cluster
      *
@@ -113,6 +120,30 @@ public class ModelUtils {
             }
         }
         throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
+    }
+
+    /**
+     * @param pod The StatefulSet
+     * @param containerName The name of the container whoes environment variables are to be retrieved
+     * @param envVarName Name of the environment variable which we should get
+     * @return The environment of the Kafka container in the sts.
+     */
+    public static String getPodEnv(Pod pod, String containerName, String envVarName) {
+        if (pod != null) {
+            for (Container container : pod.getSpec().getContainers()) {
+                if (containerName.equals(container.getName())) {
+                    if (container.getEnv() != null) {
+                        for (EnvVar envVar : container.getEnv()) {
+                            if (envVarName.equals(envVar.getName()))    {
+                                return envVar.getValue();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public static List<EnvVar> envAsList(Map<String, String> env) {
@@ -203,14 +234,14 @@ public class ModelUtils {
             reasons.add("certificate doesn't exist yet");
             shouldBeRegenerated = true;
         } else {
-            if (clusterCa.certRenewed() || (clusterCa.isExpiring(secret, keyCertName + ".crt") && isMaintenanceTimeWindowsSatisfied)) {
+            if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt"))) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }
         }
 
         if (shouldBeRegenerated) {
-            log.debug("Certificate for pod {} need to be regenerated because:", keyCertName, String.join(", ", reasons));
+            log.debug("Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
                 certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);

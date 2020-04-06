@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -30,8 +29,6 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StUtils {
 
@@ -47,16 +44,6 @@ public class StUtils {
     private static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 
     private StUtils() { }
-
-    public static void waitForReconciliation(String testClass, String testName, String namespace) {
-        LOGGER.info("Waiting for reconciliation");
-        String reconciliation = timeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.RECONCILIATION_INTERVAL + 30000,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
-                timeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
-        timeMeasuringSystem.stopOperation(reconciliation);
-    }
 
     public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
         TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
@@ -136,11 +123,9 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static void checkCologForUsedVariable(String varName) {
-        LOGGER.info("Check if ClusterOperator logs already defined variable occurrence");
-        String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
-        assertThat(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"), is(true));
-        LOGGER.info("ClusterOperator logs contains proper warning");
+    public static String checkEnvVarInPod(String podName, String envVarName) {
+        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getEnv()
+                .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().get().getValue();
     }
 
     /**
@@ -225,5 +210,23 @@ public class StUtils {
         jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainAuth).getValue(0));
         jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth).getValue(0));
         return jsonArray;
+    }
+
+    public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
+        boolean isJSON = false;
+
+        for (String podName : pods.keySet()) {
+            String logs = kubeClient().logs(podName, containerName).replaceFirst("([^{]+)", "");
+            try {
+                new JsonObject(logs);
+                LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
+                isJSON = true;
+            } catch (Exception e) {
+                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
+                isJSON = false;
+                break;
+            }
+        }
+        return isJSON;
     }
 }
