@@ -56,6 +56,8 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
+# TRAVIS_REPO_SLUG change to REPO_SLUG for Azure
+# TRAVIS_REPO_SLUG should be removed when we will finish the migration
 elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ] || [ "${REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
     make docu_html
     make docu_htmlnoheader
