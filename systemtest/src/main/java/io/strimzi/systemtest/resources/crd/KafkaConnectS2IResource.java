@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -105,9 +106,14 @@ public class KafkaConnectS2IResource {
     }
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
-        LOGGER.info("Waiting for Kafka ConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2I.getMetadata().getName(), "Ready");
-        LOGGER.info("Kafka ConnectS2I {} is ready", kafkaConnectS2I.getMetadata().getName());
+        String namespace = ResourceManager.kubeClient().getNamespace();
+        String name = kafkaConnectS2I.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka ConnectS2I {}", name);
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(name, "Ready",
+            () -> StUtils.logCurrentStatus(kafkaConnectS2I, kafkaConnectS2IClient().inNamespace(namespace).withName(name).get().getStatus()));
+        LOGGER.info("Kafka ConnectS2I {} is ready", name);
+
         return kafkaConnectS2I;
     }
 

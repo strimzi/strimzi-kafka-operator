@@ -417,6 +417,9 @@ public class KubernetesResource {
     }
 
     private static Deployment waitFor(Deployment deployment) {
+        String namespace = ResourceManager.kubeClient().getNamespace();
+        String name = deployment.getMetadata().getName();
+
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
         DeploymentUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
         LOGGER.info("Deployment {} is ready", deployment.getMetadata().getName());

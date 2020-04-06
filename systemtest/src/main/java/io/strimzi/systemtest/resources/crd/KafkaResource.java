@@ -174,8 +174,7 @@ public class KafkaResource {
                             throw e;
                         }
                     }
-                }
-            );
+                });
             return waitFor(deleteLater(k));
         });
     }
@@ -211,22 +210,31 @@ public class KafkaResource {
         String name = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
         LOGGER.info("Waiting for Kafka {} in namespace {}", name, namespace);
+
         LOGGER.info("Waiting for Zookeeper pods");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name),
+                kafka.getSpec().getZookeeper().getReplicas(),
+            () -> StUtils.logCurrentStatus(kafka, kafkaClient().inNamespace(namespace).withName(name).get().getStatus()));
         LOGGER.info("Zookeeper pods are ready");
+
         LOGGER.info("Waiting for Kafka pods");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name),
+                kafka.getSpec().getKafka().getReplicas(),
+            () -> StUtils.logCurrentStatus(kafka, kafkaClient().inNamespace(namespace).withName(name).get().getStatus()));
         LOGGER.info("Kafka pods are ready");
+
         // EO should not be deployed if it does not contain UO and TO
         if (kafka.getSpec().getEntityOperator().getTopicOperator() != null || kafka.getSpec().getEntityOperator().getUserOperator() != null) {
             LOGGER.info("Waiting for Entity Operator pods");
-            DeploymentUtils.waitForDeploymentReady(io.strimzi.api.kafka.model.KafkaResources.entityOperatorDeploymentName(name));
+            DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name),
+                () -> StUtils.logCurrentStatus(kafka, kafkaClient().inNamespace(namespace).withName(name).get().getStatus()));
             LOGGER.info("Entity Operator pods are ready");
         }
         // Kafka Exporter is not setup everytime
         if (kafka.getSpec().getKafkaExporter() != null) {
             LOGGER.info("Waiting for Kafka Exporter pods");
-            DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(name));
+            DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(name),
+                () -> StUtils.logCurrentStatus(kafka, kafkaClient().inNamespace(namespace).withName(name).get().getStatus()));
             LOGGER.info("Kafka Exporter pods are ready");
         }
         return kafka;

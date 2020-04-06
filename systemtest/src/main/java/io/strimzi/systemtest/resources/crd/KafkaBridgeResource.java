@@ -12,7 +12,9 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -89,9 +91,14 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        DeploymentUtils.waitForDeploymentReady(kafkaBridge.getMetadata().getName() + "-bridge", kafkaBridge.getSpec().getReplicas());
-        LOGGER.info("Kafka Bridge {} is ready", kafkaBridge.getMetadata().getName());
+        String namespace = ResourceManager.kubeClient().getNamespace();
+        String name = kafkaBridge.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Bridge {}", name);
+        DeploymentUtils.waitForDeploymentReady(KafkaBridgeResources.deploymentName(name), kafkaBridge.getSpec().getReplicas(),
+            () -> StUtils.logCurrentStatus(kafkaBridge, kafkaBridgeClient().inNamespace(namespace).withName(name).get().getStatus()));
+        LOGGER.info("Kafka Bridge {} is ready", name);
+
         return kafkaBridge;
     }
 
