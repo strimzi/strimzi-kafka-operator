@@ -22,6 +22,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.cluster.Minishift;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -122,9 +124,12 @@ public abstract class BaseST implements TestSeparator {
         cluster.applyClusterOperatorInstallFiles();
         KubernetesResource.applyDefaultNetworkPolicySettings(namespaces);
 
-        // This is needed in case you are using internal kubernetes registry and you want to pull images from there
-        for (String namespace : namespaces) {
-            Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+        if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
+            // This is needed in case you are using internal kubernetes registry and you want to pull images from there
+            for (String namespace : namespaces) {
+                LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
+                Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+            }
         }
     }
 
