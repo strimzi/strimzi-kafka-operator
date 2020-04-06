@@ -27,6 +27,7 @@ import java.net.URLEncoder;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -85,6 +86,7 @@ class UserST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(AZURE)
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
@@ -140,11 +142,13 @@ class UserST extends BaseST {
     }
 
     @Test
+    @Tag(AZURE)
     void testTlsUserWithQuotas() {
         testUserWithQuotas(KafkaUserResource.tlsUser(CLUSTER_NAME, "encrypted-arnost").done());
     }
 
     @Test
+    @Tag(AZURE)
     void testScramUserWithQuotas() {
         testUserWithQuotas(KafkaUserResource.scramShaUser(CLUSTER_NAME, "scramed-arnost").done());
     }

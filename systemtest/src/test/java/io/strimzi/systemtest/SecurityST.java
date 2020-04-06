@@ -68,6 +68,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
@@ -623,6 +624,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(AZURE)
     void testCertRegeneratedAfterInternalCAisDeleted() {
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
@@ -1197,6 +1199,7 @@ class SecurityST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(AZURE)
     void testCaRenewalBreakInMiddle() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
