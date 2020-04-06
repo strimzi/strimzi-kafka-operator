@@ -383,8 +383,6 @@ public class TracingST extends BaseST {
 
         VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
         KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
@@ -824,6 +822,57 @@ public class TracingST extends BaseST {
     void deleteJaeger() {
         while (!jaegerConfigs.empty()) {
             cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).deleteContent(jaegerConfigs.pop());
+        }
+    }
+
+    private void deployJaeger() {
+        LOGGER.info("=== Applying jaeger operator install files ===");
+
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles())
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+
+        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
+            LOGGER.info("Applying configuration file: {}", entry.getKey());
+            jaegerConfigs.push(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
+        }
+
+        installJaegerInstance();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+            .withNewApiVersion("networking.k8s.io/v1")
+            .withNewKind("NetworkPolicy")
+            .withNewMetadata()
+            .withName("jaeger-allow")
+            .endMetadata()
+            .withNewSpec()
+            .addNewIngress()
+            .endIngress()
+            .withNewPodSelector()
+            .addToMatchLabels("app", "jaeger")
+            .endPodSelector()
+            .withPolicyTypes("Ingress")
+            .endSpec()
+            .build();
+
+        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        KubernetesResource.deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
+        LOGGER.info("Network policy for jaeger successfully applied");
+    }
+
+    /**
+     * Install of Jaeger instance
+     */
+    void installJaegerInstance() {
+        LOGGER.info("=== Applying jaeger instance install files ===");
+
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JI_INSTALL_DIR).listFiles())
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+
+        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
+            LOGGER.info("Applying configuration file: {}", entry.getKey());
+            jaegerConfigs.push(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
         }
     }
 
