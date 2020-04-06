@@ -33,12 +33,12 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
+        return new CrdOperator(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, Crds.kafkaMirrorMaker());
     }
 
     @Override
     protected CustomResourceDefinition getCrd() {
-        return Crds.mirrorMaker();
+        return Crds.kafkaMirrorMaker();
     }
 
     @Override

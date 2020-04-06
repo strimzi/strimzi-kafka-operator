@@ -38,7 +38,7 @@ public class K8sImpl implements K8s {
     public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, Crds.kafkaTopic());
         this.labels = labels;
         this.namespace = namespace;
     }
@@ -109,7 +109,7 @@ public class K8sImpl implements K8s {
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return client.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return client.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     @Override
