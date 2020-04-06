@@ -7,7 +7,6 @@ package io.strimzi.systemtest.tracing;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
-import io.restassured.RestAssured;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
@@ -19,7 +18,7 @@ import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.systemtest.futlifecycle.tracing.verify.VerifyTracing;
+import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -133,7 +132,7 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -222,7 +221,7 @@ public class TracingST extends BaseST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -270,11 +269,11 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -319,11 +318,11 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -373,15 +372,15 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -492,9 +491,9 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
-        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
-        VerifyTracing.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -631,11 +630,11 @@ public class TracingST extends BaseST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaConnectPodName);
-        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaConnectPodName);
-        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaConnectPodName);
-        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaConnectPodName);
-        VerifyTracing.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaConnectPodName);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -655,6 +654,8 @@ public class TracingST extends BaseST {
     @Tag(CONNECT_S2I)
     @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() throws Exception {
+
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
@@ -679,6 +680,7 @@ public class TracingST extends BaseST {
         configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
         configOfKafkaConnectS2I.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
@@ -734,9 +736,9 @@ public class TracingST extends BaseST {
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
-        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
-        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
-        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_S2I_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_CONNECT_S2I_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -813,7 +815,7 @@ public class TracingST extends BaseST {
 
         assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
 
-        VerifyTracing.verify(JAEGER_KAFKA_BRIDGE_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_BRIDGE_SERVICE, kafkaClientsPodName);
     }
 
     /**
