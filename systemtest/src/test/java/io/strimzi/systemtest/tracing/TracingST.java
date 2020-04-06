@@ -7,23 +7,19 @@ package io.strimzi.systemtest.tracing;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import io.restassured.path.json.JsonPath;
-import io.restassured.response.Response;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.systemtest.utils.specific.TracingUtils;
+import io.strimzi.systemtest.futlifecycle.tracing.verify.VerifyTracing;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -56,32 +52,25 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Stack;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.restassured.RestAssured.given;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
-@Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @Tag(TRACING)
-@Tag(EXTERNAL_CLIENTS_USED)
+@Tag(INTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
 public class TracingST extends BaseST {
 
@@ -100,8 +89,6 @@ public class TracingST extends BaseST {
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
 
-    private static int jaegerHostNodePort;
-
     private static final String JAEGER_AGENT_NAME = "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE = "const";
     private static final String JAEGER_SAMPLER_PARAM = "1";
@@ -110,6 +97,8 @@ public class TracingST extends BaseST {
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
 
     private Stack<String> jaegerConfigs = new Stack<>();
+
+    private String kafkaClientsPodName;
 
     @Test
     void testProducerService() {
@@ -121,12 +110,6 @@ public class TracingST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withTls(false)
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                        .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -150,15 +133,7 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -168,21 +143,10 @@ public class TracingST extends BaseST {
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testConnectService() throws Exception {
-        Map<String, Object> configOfKafka = new HashMap<>();
-        configOfKafka.put("offsets.topic.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.min.isr", "1");
-
+    void testConnectService() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withTls(false)
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                        .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -196,8 +160,6 @@ public class TracingST extends BaseST {
                     .endZookeeper()
                 .endSpec()
                 .done();
-
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
@@ -246,7 +208,8 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -254,19 +217,12 @@ public class TracingST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
 
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_KAFKA_CONNECT_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_KAFKA_CONNECT_SERVICE);
+        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -314,37 +270,11 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
-
-        given()
-            .when()
-                .relaxedHTTPSValidation()
-                .contentType("application/json")
-                .get("/jaeger/api/services")
-            .then()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .body("data", hasItem(JAEGER_PRODUCER_SERVICE))
-                .body("data", hasItem(JAEGER_KAFKA_STREAMS_SERVICE))
-            .log().all();
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
-
-        LOGGER.info("Verifying that {} create some trace with spans", JAEGER_KAFKA_STREAMS_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_KAFKA_STREAMS_SERVICE);
+        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -389,23 +319,11 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_CONSUMER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_CONSUMER_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE);
-
-        verifyServicesHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE);
+        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -455,29 +373,17 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
-
-        LOGGER.info("Verifying {} service", JAEGER_CONSUMER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_CONSUMER_SERVICE);
+        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
+        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
-        verifyServiceIsPresent(JAEGER_KAFKA_STREAMS_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -588,15 +494,9 @@ public class TracingST extends BaseST {
 
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
-                JAEGER_MIRROR_MAKER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
-                JAEGER_MIRROR_MAKER_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        VerifyTracing.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -621,25 +521,8 @@ public class TracingST extends BaseST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).editSpec().editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withTls(false)
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).editSpec().editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withTls(false)
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
@@ -690,8 +573,6 @@ public class TracingST extends BaseST {
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
         KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
         configOfKafkaConnect.put("offset.storage.replication.factor", "1");
@@ -739,7 +620,7 @@ public class TracingST extends BaseST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterTargetName)
@@ -747,23 +628,16 @@ public class TracingST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
 
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
-                JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_SERVICE,
-                JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
-                JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_SERVICE,
-                JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaConnectPodName);
+        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaConnectPodName);
+        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaConnectPodName);
+        VerifyTracing.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaConnectPodName);
+        VerifyTracing.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaConnectPodName);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -846,7 +720,8 @@ public class TracingST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH,
                 KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -854,22 +729,16 @@ public class TracingST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
-                JAEGER_KAFKA_CONNECT_S2I_SERVICE);
-
-        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
-
-        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
+        VerifyTracing.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        VerifyTracing.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        VerifyTracing.verify(JAEGER_KAFKA_CONNECT_S2I_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
@@ -935,7 +804,8 @@ public class TracingST extends BaseST {
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -943,105 +813,9 @@ public class TracingST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
 
-        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
-        verifyServiceIsPresent(JAEGER_KAFKA_BRIDGE_SERVICE);
-
-        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
-        verifyServicesHasSomeTraces(JAEGER_KAFKA_BRIDGE_SERVICE);
-    }
-
-    private void verifyServiceIsPresent(String serviceName) {
-        given()
-                .when()
-                    .relaxedHTTPSValidation()
-                    .contentType("application/json")
-                    .get("/jaeger/api/services")
-                .then()
-                    .statusCode(200)
-                    .contentType(ContentType.JSON)
-                    .body("data", hasItem(serviceName))
-                .log().all();
-    }
-
-    private void verifyServiceIsPresent(String... serviceNames) {
-        for (String serviceName : serviceNames) {
-            verifyServiceIsPresent(serviceName);
-        }
-    }
-
-    private void verifyServicesHasSomeTraces(String serviceName) {
-        LOGGER.info("Verifying that {} create some trace with spans", serviceName);
-
-        Response response = given()
-                .when()
-                    .relaxedHTTPSValidation()
-                    .contentType("application/json")
-                    .get("/jaeger/api/traces?service=" + serviceName);
-
-        JsonPath jsonPathValidator = response.jsonPath();
-        Map<Object, Object> data = jsonPathValidator.getMap("$");
-
-        assertThat(serviceName + " service doesn't produce traces", data.size(), greaterThan(0));
-    }
-
-    private void verifyServicesHasSomeTraces(String... serviceNames) {
-        for (String serviceName : serviceNames) {
-            verifyServicesHasSomeTraces(serviceName);
-        }
-    }
-
-    private void deployJaeger() {
-        LOGGER.info("=== Applying jaeger operator install files ===");
-
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles())
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
-        }
-
-        installJaegerInstance();
-
-        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind("NetworkPolicy")
-            .withNewMetadata()
-                .withName("jaeger-allow")
-            .endMetadata()
-            .withNewSpec()
-                .addNewIngress()
-                .endIngress()
-                .withNewPodSelector()
-                    .addToMatchLabels("app", "jaeger")
-                .endPodSelector()
-                .withPolicyTypes("Ingress")
-            .endSpec()
-            .build();
-
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
-        KubernetesResource.deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
-        LOGGER.info("Network policy for jaeger successfully applied");
-    }
-
-    /**
-     * Install of Jaeger instance
-     */
-    void installJaegerInstance() {
-        LOGGER.info("=== Applying jaeger instance install files ===");
-
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JI_INSTALL_DIR).listFiles())
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
-        }
+        VerifyTracing.verify(JAEGER_KAFKA_BRIDGE_SERVICE, kafkaClientsPodName);
     }
 
     /**
@@ -1059,25 +833,13 @@ public class TracingST extends BaseST {
     }
 
     @BeforeEach
-    void createTestResources() throws InterruptedException {
+    void createTestResources() {
         // deployment of the jaeger
         deployJaeger();
 
-        TestUtils.waitFor("Waiting till route {} is ready", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
-            () -> kubeClient(NAMESPACE).getClient().adapt(OpenShiftClient.class).routes().inNamespace(NAMESPACE).list().getItems().get(0).getSpec().getHost() != null);
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
-        String jaegerRouteUrl = kubeClient(NAMESPACE).getClient().adapt(OpenShiftClient.class).routes().inNamespace(NAMESPACE)
-                .list().getItems().get(0).getSpec().getHost();
-
-        RestAssured.baseURI = "https://" + jaegerRouteUrl;
-
-        LOGGER.info("Setting Jaeger URL to:" + RestAssured.baseURI);
-
-        Service jaegerHostNodePortService = TracingUtils.createJaegerHostNodePortService(CLUSTER_NAME, NAMESPACE, JAEGER_AGENT_NAME + "-external");
-        KubernetesResource.createServiceResource(jaegerHostNodePortService, NAMESPACE).done();
-        ServiceUtils.waitForNodePortService(jaegerHostNodePortService.getMetadata().getName());
-
-        jaegerHostNodePort = TracingUtils.getJaegerHostNodePort(NAMESPACE, JAEGER_AGENT_NAME + "-external");
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }
 
     @BeforeAll
