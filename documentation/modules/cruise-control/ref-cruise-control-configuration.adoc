@@ -63,17 +63,17 @@ Cruise Control uses capacity limits to determine if goals related to broker reso
 A violation of a goal can cause a optimization to fail, preventing that optimization from being used to generate a partition rebalance proposal.
 For example, an optimization that would cause a broker to exceed its CPU capacity would not be used for when the CpuCapacityGoal is set as a hard goal.
 
-Capacity limits for broker resources can be specified in the `capacity` property in `Kafka.spec.cruiseControl`.
+Capacity limits for broker resources can be specified in the `brokerCapacity` property in `Kafka.spec.cruiseControl`.
 Capacity limits can be set for the following broker resources in the described units:
 
-* `disk`  - Disk storage in MB
-* `cpu`   - CPU utilization as a percent (0-100)
-* `networkIn`  - Network inbound throughput in KB/s
-* `networkOut` - Newtork outbound throughput in KB/s
+* `diskMiB`  - Disk storage in MiB
+* `cpuUtilization`   - CPU utilization as a percent (0-100)
+* `inboundNetworkKiBPerSecond`  - Network inbound throughput in KiB/s
+* `outboundNetworkKiBPerSecond` - Newtork outbound throughput in KiB/s
 
 Since {ProductName} brokers are homogeneous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
 
-.An example Cruise Control capacity configuration
+.An example Cruise Control brokerCapacity configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -84,11 +84,11 @@ spec:
   # ...
   cruiseControl:
     # ...
-    capacity:
-      disk: 100000
-      cpu: 100
-      networkIn: 10000
-      networkOut: 10000
+    brokerCapacity:
+      diskMiB: 100000
+      cpuUtilization: 100
+      inboundNetworkKiBPerSecond: 10000
+      outboundNetworkKiBPerSecond: 10000
     # ...
 ----
 

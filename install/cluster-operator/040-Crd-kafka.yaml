@@ -5578,23 +5578,23 @@ spec:
                 brokerCapacity:
                   type: object
                   properties:
-                    disk:
+                    diskMiB:
                       type: integer
-                      description: Broker capacity for disk in megabytes.
-                    cpu:
+                      description: Broker capacity for disk in base 2 mebibytes.
+                    cpuUtilization:
                       type: integer
                       minimum: 0
                       maximum: 100
-                      description: Broker capacity for CPU utilization as a percentage
-                        (0 - 100).
-                    networkIn:
+                      description: Broker capacity for CPU resource utilization as
+                        a percentage (0 - 100).
+                    inboundNetworkKiBPerSecond:
                       type: integer
                       description: Broker capacity for network inbound throughput
-                        in kilobytes per second.
-                    networkOut:
+                        in base 2 kibibytes per second.
+                    outboundNetworkKiBPerSecond:
                       type: integer
                       description: Broker capacity for network outbound throughput
-                        in kilobytes per second.
+                        in base 2 kibibytes per second.
                   description: The Cruise Control brokerCapacity configuration.
               required:
               - replicas

@@ -1405,14 +1405,14 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 [options="header"]
 |====
-|Property           |Description
-|disk        1.2+<.<|Broker capacity for disk in megabytes.
+|Property                            |Description
+|diskMiB                      1.2+<.<|Broker capacity for disk in base 2 mebibytes.
 |integer
-|cpu         1.2+<.<|Broker capacity for CPU utilization as a percentage (0 - 100).
+|cpuUtilization               1.2+<.<|Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
-|networkIn   1.2+<.<|Broker capacity for network inbound throughput in kilobytes per second.
+|inboundNetworkKiBPerSecond   1.2+<.<|Broker capacity for network inbound throughput in base 2 kibibytes per second.
 |integer
-|networkOut  1.2+<.<|Broker capacity for network outbound throughput in kilobytes per second.
+|outboundNetworkKiBPerSecond  1.2+<.<|Broker capacity for network outbound throughput in base 2 kibibytes per second.
 |integer
 |====
 

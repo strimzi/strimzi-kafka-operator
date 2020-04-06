@@ -28,58 +28,58 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpu", "networkIn", "networkOut"})
+@JsonPropertyOrder({"diskMiB", "cpuUtilization", "inboundNetworkKiBPerSecond", "outboundNetworkKiBPerSecond"})
 @EqualsAndHashCode
 public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer disk;
-    private Integer cpu;
-    private Integer networkIn;
-    private Integer networkOut;
+    private Integer diskMiB;
+    private Integer cpuUtilization;
+    private Integer inboundNetworkKiBPerSecond;
+    private Integer outboundNetworkKiBPerSecond;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Broker capacity for disk in megabytes.")
-    public Integer getDisk() {
-        return disk;
+    @Description("Broker capacity for disk in base 2 mebibytes.")
+    public Integer getDiskMiB() {
+        return diskMiB;
     }
 
-    public void setDisk(Integer disk) {
-        this.disk = disk;
+    public void setDiskMiB(Integer diskMiB) {
+        this.diskMiB = diskMiB;
     }
 
     @Minimum(0)
     @Maximum(100)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for CPU utilization as a percentage (0 - 100).")
-    public Integer getCpu() {
-        return cpu;
+    @Description("Broker capacity for CPU resource utilization as a percentage (0 - 100).")
+    public Integer getCpuUtilization() {
+        return cpuUtilization;
     }
 
-    public void setCpu(Integer cpu) {
-        this.cpu = cpu;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for network inbound throughput in kilobytes per second.")
-    public Integer getNetworkIn() {
-        return networkIn;
-    }
-
-    public void setNetworkIn(Integer networkIn) {
-        this.networkIn = networkIn;
+    public void setCpuUtilization(Integer cpuUtilization) {
+        this.cpuUtilization = cpuUtilization;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for network outbound throughput in kilobytes per second.")
-    public Integer getNetworkOut() {
-        return networkOut;
+    @Description("Broker capacity for network inbound throughput in base 2 kibibytes per second.")
+    public Integer getInboundNetworkKiBPerSecond() {
+        return inboundNetworkKiBPerSecond;
     }
 
-    public void setNetworkOut(Integer networkOut) {
-        this.networkOut = networkOut;
+    public void setInboundNetworkKiBPerSecond(Integer inboundNetworkKiBPerSecond) {
+        this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("Broker capacity for network outbound throughput in base 2 kibibytes per second.")
+    public Integer getOutboundNetworkKiBPerSecond() {
+        return outboundNetworkKiBPerSecond;
+    }
+
+    public void setOutboundNetworkKiBPerSecond(Integer outboundNetworkKiBPerSecond) {
+        this.outboundNetworkKiBPerSecond = outboundNetworkKiBPerSecond;
     }
 
     @Override
