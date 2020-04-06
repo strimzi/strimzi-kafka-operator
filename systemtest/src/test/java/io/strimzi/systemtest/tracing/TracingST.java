@@ -509,7 +509,7 @@ public class TracingST extends BaseST {
     @Tag(MIRROR_MAKER)
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
+    void testProducerConsumerMirrorMakerConnectStreamsService() {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
         configOfKafka.put("transaction.state.log.replication.factor", "1");
@@ -618,6 +618,7 @@ public class TracingST extends BaseST {
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterTargetName)
@@ -630,11 +631,11 @@ public class TracingST extends BaseST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaConnectPodName);
-        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaConnectPodName);
-        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaConnectPodName);
-        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaConnectPodName);
-        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaConnectPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -653,8 +654,7 @@ public class TracingST extends BaseST {
     @OpenShiftOnly
     @Tag(CONNECT_S2I)
     @Tag(CONNECT_COMPONENTS)
-    void testConnectS2IService() throws Exception {
-
+    void testConnectS2IService() {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
