@@ -44,9 +44,14 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorStatus(String name, String state) {
+        waitForConnectorStatus(name, state, () -> { });
+    }
+
+    public static void waitForConnectorStatus(String name, String state, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka Connector {}", name);
         TestUtils.waitFor(" Kafka Connector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(state));
+            () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(state),
+                onTimeout);
         LOGGER.info("Kafka Connector {} is ready", name);
     }
 

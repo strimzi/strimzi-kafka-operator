@@ -56,6 +56,10 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
+        waitForPodsReady(selector, expectPods, containers, () -> { });
+    }
+
+    public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
         AtomicInteger count = new AtomicInteger();
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
@@ -88,7 +92,7 @@ public class PodUtils {
             int c = count.getAndIncrement();
             // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
             return c > 10;
-        });
+        }, onTimeout);
     }
 
     public static void waitForPodUpdate(String podName, Date startTime) {

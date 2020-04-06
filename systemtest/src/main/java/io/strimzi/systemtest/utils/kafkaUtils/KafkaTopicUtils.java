@@ -42,9 +42,13 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicCreation(String topicName) {
+        waitForKafkaTopicCreation(topicName, () -> { });
+    }
+    public static void waitForKafkaTopicCreation(String topicName, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka topic creation {}", topicName);
         TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-            Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
+            Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
+            onTimeout
         );
     }
 

@@ -24,9 +24,14 @@ public class KafkaConnectS2IUtils {
      * @param status desired status value
      */
     public static void waitForConnectS2IStatus(String name, String status) {
+        waitForConnectS2IStatus(name, status, () -> { });
+    }
+
+    public static void waitForConnectS2IStatus(String name, String status, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka Connect S2I {} state: {}", name, status);
         TestUtils.waitFor("Kafka Connect S2I " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
+            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status),
+                onTimeout);
         LOGGER.info("Kafka Connect S2I {} is in desired state: {}", name, status);
     }
 

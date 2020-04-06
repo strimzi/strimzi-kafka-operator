@@ -21,13 +21,18 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static void waitForKafkaUserCreation(String userName) {
+        waitForKafkaUserCreation(userName, () -> { });
+    }
+
+    public static void waitForKafkaUserCreation(String userName, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka user creation {}", userName);
         SecretUtils.waitForSecretReady(userName);
         TestUtils.waitFor("Waits for Kafka user creation " + userName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace())
-                .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready")
+                .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
+            onTimeout
         );
         LOGGER.info("Kafka user {} created", userName);
     }

@@ -146,9 +146,13 @@ public class DeploymentUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentReady(String name) {
+        waitForDeploymentReady(name, () -> { });
+    }
+
+    public static void waitForDeploymentReady(String name, Runnable onTimeout) {
         LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentStatus(name));
+            () -> kubeClient().getDeploymentStatus(name), onTimeout);
         LOGGER.debug("Deployment {} is ready", name);
     }
 
@@ -158,12 +162,16 @@ public class DeploymentUtils {
      * @param expectPods The expected number of pods.
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
+        waitForDeploymentReady(name, expectPods, () -> { });
+    }
+
+    public static void waitForDeploymentReady(String name, int expectPods, Runnable onTimeout) {
         LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentStatus(name));
+            () -> kubeClient().getDeploymentStatus(name), onTimeout);
         LOGGER.debug("Deployment {} is ready", name);
         LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true, onTimeout);
     }
 
     /**

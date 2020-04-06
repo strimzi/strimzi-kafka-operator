@@ -130,12 +130,16 @@ public class StatefulSetUtils {
      * @param expectPods The number of pods expected.
      */
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
+        waitForAllStatefulSetPodsReady(name, expectPods, () -> { });
+    }
+
+    public static void waitForAllStatefulSetPodsReady(String name, int expectPods, Runnable onTimeout) {
         LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getStatefulSetStatus(name));
+            () -> kubeClient().getStatefulSetStatus(name), onTimeout);
         LOGGER.debug("StatefulSet {} is ready", name);
         LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", name);
-        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true);
+        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true, onTimeout);
     }
 
     /**
