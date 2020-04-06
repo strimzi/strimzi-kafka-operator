@@ -35,7 +35,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class);
+        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, Crds.kafkaBridge());
     }
 
     @Override

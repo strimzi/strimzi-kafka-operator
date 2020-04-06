@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Status;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -15,16 +16,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUser;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -49,6 +40,8 @@ public class CrdOperator<C extends KubernetesClient,
     private final Class<L> listCls;
     private final Class<D> doneableCls;
     protected final String plural;
+    protected final CustomResourceDefinition crd;
+
 
     /**
      * Constructor
@@ -57,39 +50,20 @@ public class CrdOperator<C extends KubernetesClient,
      * @param cls The class of the CR
      * @param listCls The class of the list.
      * @param doneableCls The class of the CR's "doneable".
+     * @param crd The CustomResourceDefinition of the CR
      */
-    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls) {
-        super(vertx, client, Crds.kind(cls));
+    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls, CustomResourceDefinition crd) {
+        super(vertx, client, crd.getSpec().getNames().getKind());
         this.cls = cls;
         this.listCls = listCls;
         this.doneableCls = doneableCls;
-
-        if (cls.equals(Kafka.class)) {
-            this.plural = Kafka.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaUser.class)) {
-            this.plural = KafkaUser.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaConnect.class)) {
-            this.plural = KafkaConnect.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaConnectS2I.class)) {
-            this.plural = KafkaConnectS2I.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaBridge.class)) {
-            this.plural = KafkaBridge.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaMirrorMaker.class)) {
-            this.plural = KafkaMirrorMaker.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaTopic.class)) {
-            this.plural = KafkaTopic.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaConnector.class)) {
-            this.plural = KafkaConnector.RESOURCE_PLURAL;
-        } else if (cls.equals(KafkaMirrorMaker2.class)) {
-            this.plural = KafkaMirrorMaker2.RESOURCE_PLURAL;
-        } else {
-            this.plural = null;
-        }
+        this.plural = crd.getSpec().getNames().getPlural();
+        this.crd = crd;
     }
 
     @Override
     protected MixedOperation<T, L, D, Resource<T, D>> operation() {
-        return Crds.operation(client, cls, listCls, doneableCls);
+        return client.customResources(crd, cls, listCls, doneableCls);
     }
 
     public Future<T> updateStatusAsync(T resource) {

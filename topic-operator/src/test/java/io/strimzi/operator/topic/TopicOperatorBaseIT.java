@@ -558,7 +558,7 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     protected void waitForTopicInKafka(String topicName) throws InterruptedException, ExecutionException, TimeoutException {
