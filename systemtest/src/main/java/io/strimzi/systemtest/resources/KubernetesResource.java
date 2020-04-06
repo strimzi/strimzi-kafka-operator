@@ -417,12 +417,12 @@ public class KubernetesResource {
     }
 
     private static Deployment waitFor(Deployment deployment) {
-        String namespace = ResourceManager.kubeClient().getNamespace();
         String name = deployment.getMetadata().getName();
 
-        LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
-        DeploymentUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
-        LOGGER.info("Deployment {} is ready", deployment.getMetadata().getName());
+        LOGGER.info("Waiting for deployment {}", name);
+        DeploymentUtils.waitForDeploymentReady(name, deployment.getSpec().getReplicas(),
+            () -> DeploymentUtils.logCurrentDeploymentStatus(deployment, kubeClient().getDeployment(name).getStatus()));
+        LOGGER.info("Deployment {} is ready", name);
         return deployment;
     }
 

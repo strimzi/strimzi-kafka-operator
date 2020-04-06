@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -77,12 +76,11 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        String namespace = ResourceManager.kubeClient().getNamespace();
         String name = kafkaUser.getMetadata().getName();
 
         LOGGER.info("Waiting for Kafka User {}", name);
         KafkaUserUtils.waitForKafkaUserCreation(name,
-            () -> StUtils.logCurrentStatus(kafkaUser, kafkaUserClient().inNamespace(namespace).withName(name).get().getStatus()));
+            () -> LOGGER.info(kafkaUser));
         LOGGER.info("Kafka User {} is ready", name);
 
         return kafkaUser;

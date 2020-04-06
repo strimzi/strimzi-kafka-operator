@@ -7,6 +7,8 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -15,12 +17,15 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 
 public class DeploymentUtils {
 
@@ -247,5 +252,21 @@ public class DeploymentUtils {
         PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);
 
         return depConfigSnapshot(name);
+    }
+
+    public static <T extends Deployment, L extends DeploymentStatus> void logCurrentDeploymentStatus(T deployment, L status) {
+        String kind = deployment.getKind();
+        String name = deployment.getMetadata().getName();
+
+        List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+
+        for (DeploymentCondition deploymentCondition : status.getConditions()) {
+            log.add("\tType: " + deploymentCondition.getType() + "\n");
+            log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
+        }
+
+        PodUtils.logCurrentPodStatus(kind, name, log);
+
+        LOGGER.info("{}", String.join("", log));
     }
 }

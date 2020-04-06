@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -79,12 +78,11 @@ public class KafkaTopicResource {
     }
 
     private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
-        String namespace = ResourceManager.kubeClient().getNamespace();
         String name = kafkaTopic.getMetadata().getName();
 
         LOGGER.info("Waiting for Kafka Topic {}", name);
         KafkaTopicUtils.waitForKafkaTopicCreation(name,
-            () -> StUtils.logCurrentStatus(kafkaTopic, kafkaTopicClient().inNamespace(namespace).withName(name).get().getStatus()));
+            () -> LOGGER.info(kafkaTopic));
         LOGGER.info("Kafka Topic {} is ready", name);
 
         return kafkaTopic;
