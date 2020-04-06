@@ -32,7 +32,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+        return new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, Crds.kafkaUser());
     }
 
     @Override

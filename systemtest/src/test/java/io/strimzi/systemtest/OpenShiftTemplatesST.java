@@ -190,7 +190,7 @@ public class OpenShiftTemplatesST extends BaseST {
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KafkaTopic topic = kubeClient().getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
+        KafkaTopic topic = kubeClient().getClient().customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
         assertThat(topic, is(notNullValue()));
         assertThat(topic.getSpec(), is(notNullValue()));
         assertThat(topic.getSpec().getTopicName(), is(nullValue()));

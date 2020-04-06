@@ -275,12 +275,12 @@ public class Crds {
         return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
     }
 
-    public static CustomResourceDefinition topic() {
+    public static CustomResourceDefinition kafkaTopic() {
         return crd(KafkaTopic.class);
     }
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> topicOperation(KubernetesClient client) {
-        return client.customResources(topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return client.customResources(kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     public static CustomResourceDefinition kafkaUser() {
@@ -291,12 +291,12 @@ public class Crds {
         return client.customResources(kafkaUser(), KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }
 
-    public static CustomResourceDefinition mirrorMaker() {
+    public static CustomResourceDefinition kafkaMirrorMaker() {
         return crd(KafkaMirrorMaker.class);
     }
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
-        return client.customResources(mirrorMaker(), KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
+        return client.customResources(kafkaMirrorMaker(), KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
     }
 
     public static CustomResourceDefinition kafkaBridge() {
