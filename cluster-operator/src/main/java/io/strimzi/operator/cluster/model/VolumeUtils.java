@@ -348,7 +348,7 @@ public class VolumeUtils {
      * Gets the first 8 characters from a SHA-1 hash of a volume name
      *
      * @param name  Volume name
-     * @return      First 8 characters of the sHA-1 hash
+     * @return      First 8 characters of the SHA-1 hash
      */
     private static String getVolumeNameHashStub(String name)   {
         try {
