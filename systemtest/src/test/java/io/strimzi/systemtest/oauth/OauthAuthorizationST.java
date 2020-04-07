@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.test.TimeoutException;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,7 +30,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;

@@ -45,7 +45,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         super(builder);
     }
 
-    public Integer sendMessagesPlain() {
+    public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
