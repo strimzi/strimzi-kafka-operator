@@ -62,7 +62,7 @@ public class VolumeUtils {
                 .withName(getValidVolumeName(name))
                 .withConfigMap(configMapVolumeSource)
                 .build();
-        AbstractModel.log.trace("Created configMap Volume named '{}' with source configMap '{}'", name, configMapName);
+        log.trace("Created configMap Volume named '{}' with source configMap '{}'", name, configMapName);
         return volume;
     }
 
@@ -327,7 +327,7 @@ public class VolumeUtils {
                 .replace(".", "-")
                 .replace("_", "-");
 
-        // The name with the hash should be only up to63 characters long
+        // The name with the hash should be only up to 63 characters long
         int i = Math.min(newName.length(), 54);
 
         while (i > 0) {
