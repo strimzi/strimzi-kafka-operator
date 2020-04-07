@@ -107,6 +107,14 @@ public class Config {
     public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
     public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
 
+    /* config for SASL_SSL authentication */
+    public static final String TC_TLS_SASL_ENABLED = "STRIMZI_TLS_SASL_ENABLED";
+    public static final String TC_TLS_SECURITY_PROTOCOL = "TLS_SECURITY_PROTOCOL";
+    public static final String TC_TLS_KEY_PASSWORD = "STRIMZI_KEY_PASSWORD";
+    public static final String TC_TLS_SASL_MECHANISM = "TLS_SASL_MECHANISM";
+    public static final String TC_TLS_SASL_JAAS_USERNAME = "SASL_JAAS_USERNAME";
+    public static final String TC_TLS_SASL_JAAS_PASSWORD = "SASL_JAAS_PASSWORD";
+
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
     /** A comma-separated list of key=value pairs for selecting Resources that describe topics. */
@@ -155,6 +163,15 @@ public class Config {
     public static final Value<String> TLS_KEYSTORE_LOCATION = new Value<>(TC_TLS_KEYSTORE_LOCATION, STRING, "");
     /** The password for keystore with private key and certificate for client authentication against Kafka broker */
     public static final Value<String> TLS_KEYSTORE_PASSWORD = new Value<>(TC_TLS_KEYSTORE_PASSWORD, STRING, "");
+    /** The password for TLS key if it is different than the TLS_TRUSTKEY_PASSWORD */
+    public static final Value<String> TLS_KEY_PASSWORD = new Value<>(TC_TLS_KEY_PASSWORD, STRING, "");
+
+    /** SASL_SSL config */
+    public static final Value<String> TLS_SASL_ENABLED = new Value<>(TC_TLS_SASL_ENABLED, STRING, "false");
+    public static final Value<String> TLS_SECURITY_PROTOCOL = new Value<>(TC_TLS_SECURITY_PROTOCOL, STRING, "SSL");
+    public static final Value<String> TLS_SASL_MECHANISM = new Value<>(TC_TLS_SASL_MECHANISM, STRING, "");
+    public static final Value<String> TLS_SASL_JAAS_USERNAME = new Value<>(TC_TLS_SASL_JAAS_USERNAME, STRING, "");
+    public static final Value<String> TLS_SASL_JAAS_PASSWORD = new Value<>(TC_TLS_SASL_JAAS_PASSWORD, STRING, "");
 
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
@@ -170,10 +187,16 @@ public class Config {
         addConfigValue(configValues, TOPIC_METADATA_MAX_ATTEMPTS);
         addConfigValue(configValues, TOPICS_PATH);
         addConfigValue(configValues, TLS_ENABLED);
+        addConfigValue(configValues, TLS_SASL_ENABLED);
         addConfigValue(configValues, TLS_TRUSTSTORE_LOCATION);
         addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);
         addConfigValue(configValues, TLS_KEYSTORE_LOCATION);
         addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
+        addConfigValue(configValues, TLS_SECURITY_PROTOCOL);
+        addConfigValue(configValues, TLS_KEY_PASSWORD);
+        addConfigValue(configValues, TLS_SASL_MECHANISM);
+        addConfigValue(configValues, TLS_SASL_JAAS_USERNAME);
+        addConfigValue(configValues, TLS_SASL_JAAS_PASSWORD);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

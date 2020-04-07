@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -154,6 +155,35 @@ public class Session extends AbstractVerticle {
             adminClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "HTTPS");
         }
 
+        if (Boolean.valueOf(config.get(Config.TLS_SASL_ENABLED))) {
+            adminClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.get(Config.TLS_SECURITY_PROTOCOL));
+            adminClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
+
+            adminClientProps.setProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, config.get(Config.TLS_KEY_PASSWORD));
+            adminClientProps.setProperty(SaslConfigs.SASL_MECHANISM, config.get(Config.TLS_SASL_MECHANISM));
+
+            switch (config.get(Config.TLS_SASL_MECHANISM)) {
+                case "PLAIN": {
+                    String jaasTemplate = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";";
+                    String jaasCfg = String.format(jaasTemplate, config.get(Config.TLS_SASL_JAAS_USERNAME), config.get(Config.TLS_SASL_JAAS_PASSWORD));
+
+                    adminClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasCfg);
+                }
+                break;
+                case "SCRAM-SHA-512": {
+                    String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
+                    String jaasCfg = String.format(jaasTemplate, config.get(Config.TLS_SASL_JAAS_USERNAME), config.get(Config.TLS_SASL_JAAS_PASSWORD));
+
+                    adminClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasCfg);
+                }
+                break;
+                default:
+                    String jaasCfg = "";
+                    throw new IllegalArgumentException(
+                            "Undefined frame number: " + config.get(Config.TLS_SASL_MECHANISM));
+            }
+        }
+
         this.adminClient = AdminClient.create(adminClientProps);
         LOGGER.debug("Using AdminClient {}", adminClient);
         this.kafka = new KafkaImpl(adminClient, vertx);
@@ -199,7 +229,7 @@ public class Session extends AbstractVerticle {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
 
-                        Session.this.topicWatch = kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                        Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
                                 .inNamespace(namespace).withLabels(labels.labels()).watch(watcher);
                         LOGGER.debug("Watching setup");
 
