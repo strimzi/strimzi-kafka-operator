@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -126,12 +125,10 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        String namespace = ResourceManager.kubeClient().getNamespace();
         String name = kafkaConnect.getMetadata().getName();
 
         LOGGER.info("Waiting for Kafka Connect {}", name);
-        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(name), kafkaConnect.getSpec().getReplicas(),
-            () -> StUtils.logCurrentStatus(kafkaConnect, kafkaConnectClient().inNamespace(namespace).withName(name).get().getStatus()));
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(name), kafkaConnect.getSpec().getReplicas());
         LOGGER.info("Kafka Connect {} is ready", name);
 
         return kafkaConnect;

@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -235,13 +235,13 @@ public class StUtils {
         return isJSON;
     }
 
-    public static <T extends CustomResource, L extends Status> void logCurrentStatus(T customResource, L status) {
+    public static <T extends CustomResource & HasStatus> void logCurrentStatus(T customResource) {
         String kind = customResource.getKind();
         String name = customResource.getMetadata().getName();
 
         List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-        for (Condition condition : status.getConditions()) {
+        for (Condition condition : customResource.getStatus().getConditions()) {
             log.add("\tType: " + condition.getType() + "\n");
             log.add("\tMessage: " + condition.getMessage() + "\n");
         }

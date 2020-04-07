@@ -81,8 +81,7 @@ public class KafkaTopicResource {
         String name = kafkaTopic.getMetadata().getName();
 
         LOGGER.info("Waiting for Kafka Topic {}", name);
-        KafkaTopicUtils.waitForKafkaTopicCreation(name,
-            () -> LOGGER.info(kafkaTopic));
+        KafkaTopicUtils.waitForKafkaTopicCreation(name);
         LOGGER.info("Kafka Topic {} is ready", name);
 
         return kafkaTopic;

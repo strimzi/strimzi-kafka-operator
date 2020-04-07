@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -130,16 +132,14 @@ public class StatefulSetUtils {
      * @param expectPods The number of pods expected.
      */
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
-        waitForAllStatefulSetPodsReady(name, expectPods, () -> { });
-    }
-
-    public static void waitForAllStatefulSetPodsReady(String name, int expectPods, Runnable onTimeout) {
         LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getStatefulSetStatus(name), onTimeout);
+            () -> kubeClient().getStatefulSetStatus(name),
+            () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
         LOGGER.debug("StatefulSet {} is ready", name);
         LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", name);
-        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true, onTimeout);
+        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true,
+            () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
     }
 
     /**

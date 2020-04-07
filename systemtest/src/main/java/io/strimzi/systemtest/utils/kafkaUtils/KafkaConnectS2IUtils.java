@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,14 +26,11 @@ public class KafkaConnectS2IUtils {
      * @param status desired status value
      */
     public static void waitForConnectS2IStatus(String name, String status) {
-        waitForConnectS2IStatus(name, status, () -> { });
-    }
-
-    public static void waitForConnectS2IStatus(String name, String status, Runnable onTimeout) {
+        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
         LOGGER.info("Waiting for Kafka Connect S2I {} state: {}", name, status);
         TestUtils.waitFor("Kafka Connect S2I " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status),
-                onTimeout);
+            () -> kafkaConnectS2I.getStatus().getConditions().get(0).getType().equals(status),
+            () -> StUtils.logCurrentStatus(kafkaConnectS2I));
         LOGGER.info("Kafka Connect S2I {} is in desired state: {}", name, status);
     }
 

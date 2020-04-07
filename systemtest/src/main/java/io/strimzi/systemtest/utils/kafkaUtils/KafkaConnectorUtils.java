@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,19 +41,17 @@ public class KafkaConnectorUtils {
                 } else {
                     throw new RuntimeException("Connector" + connectorName + " is not stable!");
                 }
-            }
+            }, () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get())
         );
     }
 
     public static void waitForConnectorStatus(String name, String state) {
-        waitForConnectorStatus(name, state, () -> { });
-    }
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
 
-    public static void waitForConnectorStatus(String name, String state, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka Connector {}", name);
         TestUtils.waitFor(" Kafka Connector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(state),
-                onTimeout);
+            () -> kafkaConnector.getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(kafkaConnector));
         LOGGER.info("Kafka Connector {} is ready", name);
     }
 
@@ -66,6 +66,6 @@ public class KafkaConnectorUtils {
         TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
-        });
+        }, () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
     }
 }

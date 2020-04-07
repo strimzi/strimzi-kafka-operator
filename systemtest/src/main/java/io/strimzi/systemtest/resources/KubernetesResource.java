@@ -420,8 +420,7 @@ public class KubernetesResource {
         String name = deployment.getMetadata().getName();
 
         LOGGER.info("Waiting for deployment {}", name);
-        DeploymentUtils.waitForDeploymentReady(name, deployment.getSpec().getReplicas(),
-            () -> DeploymentUtils.logCurrentDeploymentStatus(deployment, kubeClient().getDeployment(name).getStatus()));
+        DeploymentUtils.waitForDeploymentReady(name, deployment.getSpec().getReplicas());
         LOGGER.info("Deployment {} is ready", name);
         return deployment;
     }

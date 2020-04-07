@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -139,12 +138,10 @@ public class KafkaMirrorMaker2Resource {
     }
 
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        String namespace = ResourceManager.kubeClient().getNamespace();
         String name = kafkaMirrorMaker2.getMetadata().getName();
 
         LOGGER.info("Waiting for Kafka MirrorMaker2 {}", name);
-        DeploymentUtils.waitForDeploymentReady(KafkaMirrorMaker2Resources.deploymentName(name), kafkaMirrorMaker2.getSpec().getReplicas(),
-            () -> StUtils.logCurrentStatus(kafkaMirrorMaker2, kafkaMirrorMaker2Client().inNamespace(namespace).withName(name).get().getStatus()));
+        DeploymentUtils.waitForDeploymentReady(KafkaMirrorMaker2Resources.deploymentName(name), kafkaMirrorMaker2.getSpec().getReplicas());
         LOGGER.info("Kafka MirrorMaker2 {} is ready", name);
 
         return kafkaMirrorMaker2;

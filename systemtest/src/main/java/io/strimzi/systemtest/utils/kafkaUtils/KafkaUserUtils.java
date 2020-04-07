@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -21,19 +22,17 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static void waitForKafkaUserCreation(String userName) {
-        waitForKafkaUserCreation(userName, () -> { });
-    }
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
 
-    public static void waitForKafkaUserCreation(String userName, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka user creation {}", userName);
-        SecretUtils.waitForSecretReady(userName, onTimeout);
+        SecretUtils.waitForSecretReady(userName, () -> LOGGER.info(kafkaUser));
+
         TestUtils.waitFor("Waits for Kafka user creation " + userName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaUserResource.kafkaUserClient()
-                .inNamespace(kubeClient().getNamespace())
-                .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
-            onTimeout
+            () -> kafkaUser.getStatus().getConditions().get(0).getType().equals("Ready"),
+            () -> LOGGER.info(kafkaUser)
         );
+
         LOGGER.info("Kafka user {} created", userName);
     }
 
