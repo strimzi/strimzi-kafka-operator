@@ -54,15 +54,19 @@ public class VolumeUtils {
      * @return                  The newly created Volume
      */
     public static Volume createConfigMapVolume(String name, String configMapName) {
+        String validName = getValidVolumeName(name);
+
         ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
                 .withName(configMapName)
                 .build();
 
         Volume volume = new VolumeBuilder()
-                .withName(getValidVolumeName(name))
+                .withName(validName)
                 .withConfigMap(configMapVolumeSource)
                 .build();
-        log.trace("Created configMap Volume named '{}' with source configMap '{}'", name, configMapName);
+
+        log.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+
         return volume;
     }
 
@@ -76,6 +80,8 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+        String validName = getValidVolumeName(name);
+
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -99,10 +105,10 @@ public class VolumeUtils {
                 .build();
 
         Volume volume = new VolumeBuilder()
-                .withName(getValidVolumeName(name))
+                .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -115,6 +121,8 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+        String validName = getValidVolumeName(name);
+
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -126,10 +134,10 @@ public class VolumeUtils {
                 .build();
 
         Volume volume = new VolumeBuilder()
-                .withName(getValidVolumeName(name))
+                .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -141,16 +149,18 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createEmptyDirVolume(String name, String sizeLimit) {
+        String validName = getValidVolumeName(name);
+
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
         if (sizeLimit != null && !sizeLimit.isEmpty()) {
             emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
         }
 
         Volume volume = new VolumeBuilder()
-                .withName(getValidVolumeName(name))
+                .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
+        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -193,11 +203,13 @@ public class VolumeUtils {
      * @return The Volume mount created
      */
     public static VolumeMount createVolumeMount(String name, String path) {
+        String validName = getValidVolumeName(name);
+
         VolumeMount volumeMount = new VolumeMountBuilder()
-                .withName(getValidVolumeName(name))
+                .withName(validName)
                 .withMountPath(path)
                 .build();
-        log.trace("Created volume mount {}", volumeMount);
+        log.trace("Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 
