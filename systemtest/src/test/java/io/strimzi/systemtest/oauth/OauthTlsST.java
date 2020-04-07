@@ -23,7 +23,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.test.TimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.json.JsonArray;
@@ -82,7 +81,7 @@ public class OauthTlsST extends OauthBaseST {
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testProducerConsumerConnect() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumerConnect() {
         oauthExternalKafkaClientTls.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClientTls.sendMessagesTls(),
             oauthExternalKafkaClientTls.receiveMessagesTls()

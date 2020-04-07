@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -120,9 +121,11 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                TimeoutException exception = new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
-                exception.printStackTrace();
-                throw exception;
+                try {
+                    throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                }
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
