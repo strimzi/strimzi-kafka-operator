@@ -90,7 +90,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -624,7 +623,6 @@ class KafkaST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(AZURE)
     void testSendMessagesPlainScramSha() throws InterruptedException {
         String kafkaUsername = "my-user";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -1263,7 +1261,6 @@ class KafkaST extends BaseST {
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(AZURE)
     void testNodePortTls() throws Exception {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()

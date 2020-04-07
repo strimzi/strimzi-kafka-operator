@@ -34,7 +34,6 @@ import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -45,7 +44,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-@Tag(AZURE)
 public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);

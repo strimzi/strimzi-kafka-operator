@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
@@ -124,7 +123,6 @@ class ConnectST extends BaseST {
     @Test
     @Tag(TRAVIS)
     @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(AZURE)
     void testKafkaConnectWithFileSinkPlugin() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -245,7 +243,6 @@ class ConnectST extends BaseST {
     }
 
     @Test
-    @Tag(AZURE)
     @Tag(ACCEPTANCE)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -357,7 +354,6 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(AZURE)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -694,7 +690,6 @@ class ConnectST extends BaseST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ACCEPTANCE)
-    @Tag(AZURE)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";

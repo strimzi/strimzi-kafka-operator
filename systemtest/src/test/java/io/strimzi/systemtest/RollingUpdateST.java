@@ -53,7 +53,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -264,7 +263,6 @@ class RollingUpdateST extends BaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(AZURE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -544,7 +542,6 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    @Tag(AZURE)
     void testManualTriggeringRollingUpdate() {
         // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
         kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
@@ -788,7 +785,6 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    @Tag(AZURE)
     void testClusterOperatorFinishAllRollingUpdates() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 

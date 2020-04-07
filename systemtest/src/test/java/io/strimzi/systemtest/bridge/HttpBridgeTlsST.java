@@ -36,7 +36,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.AZURE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -51,7 +50,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-@Tag(AZURE)
 @ExtendWith(VertxExtension.class)
 class HttpBridgeTlsST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);

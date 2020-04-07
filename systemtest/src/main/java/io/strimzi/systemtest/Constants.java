@@ -227,9 +227,4 @@ public interface Constants {
      * Tag for tests which use external Kafka clients (called from test code)
      */
     String EXTERNAL_CLIENTS_USED = "externalclients";
-
-    /**
-     * Tag for tests running on Azure Pipelines
-     */
-    String AZURE = "azure";
 }
