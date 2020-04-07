@@ -2,8 +2,6 @@
 set -x
 shift
 
-. ${STRIMZI_HOME}/bin/dynamic_resources.sh
-
 # expand gc options based upon java version
 function get_gc_opts {
   if [ "${STRIMZI_GC_LOG_ENABLED}" == "true" ]; then
