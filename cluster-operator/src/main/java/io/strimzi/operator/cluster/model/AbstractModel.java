@@ -7,8 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
-import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
@@ -37,7 +35,6 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -624,20 +621,6 @@ public abstract class AbstractModel {
         }
 
         return pvc;
-    }
-
-    protected Volume createConfigMapVolume(String name, String configMapName) {
-
-        ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
-                .withName(configMapName)
-                .build();
-
-        Volume volume = new VolumeBuilder()
-                .withName(name)
-                .withConfigMap(configMapVolumeSource)
-                .build();
-        log.trace("Created configMap Volume named '{}' with source configMap '{}'", name, configMapName);
-        return volume;
     }
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
