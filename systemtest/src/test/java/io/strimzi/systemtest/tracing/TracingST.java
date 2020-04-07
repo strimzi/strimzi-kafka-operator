@@ -734,7 +734,7 @@ public class TracingST extends BaseST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
@@ -845,15 +845,15 @@ public class TracingST extends BaseST {
             .withNewApiVersion("networking.k8s.io/v1")
             .withNewKind("NetworkPolicy")
             .withNewMetadata()
-            .withName("jaeger-allow")
+                .withName("jaeger-allow")
             .endMetadata()
             .withNewSpec()
-            .addNewIngress()
-            .endIngress()
-            .withNewPodSelector()
-            .addToMatchLabels("app", "jaeger")
-            .endPodSelector()
-            .withPolicyTypes("Ingress")
+                .addNewIngress()
+                .endIngress()
+                .withNewPodSelector()
+                    .addToMatchLabels("app", "jaeger")
+                .endPodSelector()
+                .withPolicyTypes("Ingress")
             .endSpec()
             .build();
 
