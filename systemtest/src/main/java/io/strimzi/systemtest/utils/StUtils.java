@@ -31,7 +31,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 
@@ -46,14 +45,7 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
-    private static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
-
     private StUtils() { }
-
-    public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
-        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", timeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
-    }
 
     /**
      * Method for check if test is allowed on current Kubernetes version

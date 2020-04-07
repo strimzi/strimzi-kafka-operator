@@ -4,13 +4,9 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -22,16 +18,11 @@ import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Base for test classes where HTTP Bridge is used.
@@ -88,33 +79,6 @@ public class HttpBridgeBaseST extends BaseST {
                     }
                 });
         return future.get(1, TimeUnit.MINUTES);
-    }
-
-    protected void deployBridgeNodePortService() throws InterruptedException {
-        Map<String, String> map = new HashMap<>();
-        map.put(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
-        map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
-        map.put(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-bridge");
-
-        // Create node port service for expose bridge outside openshift
-        Service service = KubernetesResource.getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace(), "TCP")
-                .editSpec()
-                .withType("NodePort")
-                .withSelector(map)
-                .endSpec().build();
-        KubernetesResource.createServiceResource(service, getBridgeNamespace()).done();
-        ServiceUtils.waitForNodePortService(bridgeExternalService);
-    }
-
-    protected void checkSendResponse(JsonObject response, int messageCount) {
-        JsonArray offsets = response.getJsonArray("offsets");
-        assertThat(offsets.size(), is(messageCount));
-        for (int i = 0; i < messageCount; i++) {
-            JsonObject metadata = offsets.getJsonObject(i);
-            assertThat(metadata.getInteger("partition"), is(0));
-            assertThat(metadata.getInteger("offset"), is(i));
-            LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
-        }
     }
 
     @Override

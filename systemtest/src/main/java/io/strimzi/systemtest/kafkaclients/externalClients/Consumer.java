@@ -16,7 +16,7 @@ import java.util.function.IntPredicate;
 
 public class Consumer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
-    private KafkaClientProperties properties;
+    private final KafkaClientProperties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
