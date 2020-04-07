@@ -35,8 +35,6 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Random;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -80,8 +78,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .withSecurityProtocol(SecurityProtocol.SASL_SSL)
                 .build();
 
-        Future<Integer> consumer = kafkaClient.receiveMessagesTls();
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+        assertThat(kafkaClient.receiveMessagesTls(), is(messageCount));
     }
 
     @Test
@@ -101,8 +98,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .build();
 
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls();
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(kafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         String name = "kafka-consumer-simple-receive";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);

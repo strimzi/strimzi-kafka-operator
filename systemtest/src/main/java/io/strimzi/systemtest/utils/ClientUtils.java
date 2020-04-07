@@ -24,7 +24,7 @@ public class ClientUtils {
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
 
-    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations<Integer> kafkaClient, int exceptedMessages) {
+    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations kafkaClient, int exceptedMessages) {
         TestUtils.waitFor("Kafka " + kafkaClient.toString() + " client received messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 int receivedMessages = 0;

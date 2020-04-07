@@ -9,13 +9,11 @@ import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.Future;
-
 /**
  * The TracingKafkaClient for sending and receiving messages using tracing properties.
  * The client is using an external listeners.
  */
-public class TracingExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Future<Integer>> {
+public class TracingExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingExternalKafkaClient.class);
     private String serviceName;
@@ -50,22 +48,22 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
 
     // TODO: these methods will be implemented in the following PR for the clients with support of tracing
     @Override
-    public Future<Integer> sendMessagesPlain(long timeoutMs) {
+    public int sendMessagesPlain(long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> sendMessagesTls(long timeoutMs) {
+    public int sendMessagesTls(long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> receiveMessagesPlain(long timeoutMs) {
+    public int receiveMessagesPlain(long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<Integer> receiveMessagesTls(long timeoutMs) {
+    public int receiveMessagesTls(long timeoutMs) {
         throw new UnsupportedOperationException();
     }
 
