@@ -76,11 +76,11 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        String name = kafkaUser.getMetadata().getName();
+        String kafkaUserCrName = kafkaUser.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka User {}", name);
-        KafkaUserUtils.waitForKafkaUserCreation(name);
-        LOGGER.info("Kafka User {} is ready", name);
+        LOGGER.info("Waiting for Kafka User {}", kafkaUserCrName);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUserCrName);
+        LOGGER.info("Kafka User {} is ready", kafkaUserCrName);
 
         return kafkaUser;
     }

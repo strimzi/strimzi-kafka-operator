@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -43,11 +42,11 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicCreation(String topicName) {
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
         LOGGER.info("Waiting for Kafka topic creation {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-            kafkaTopic.getStatus().getConditions().get(0).getType().equals("Ready"),
-            () -> LOGGER.info(kafkaTopic)
+        TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
+                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
+            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );
     }
 

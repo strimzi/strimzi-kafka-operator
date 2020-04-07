@@ -254,6 +254,12 @@ public class PodUtils {
             });
     }
 
+    /**
+     * Log actual pod statuses list by prefix name
+     * @param kind - custom resource / deployment kind - Kafka, KafkaBridge etc.
+     * @param name - custom resource / deployment name - used for prefix
+     * @param log - ArrayList - add statuses, pods and conditions for future display
+     */
     public static void logCurrentPodStatus(String kind, String name, List<String> log) {
         if (!(kind.equals("KafkaConnector"))) {
             log.add("\nPods with conditions and messages:\n\n");

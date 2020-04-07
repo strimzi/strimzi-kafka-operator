@@ -234,7 +234,10 @@ public class StUtils {
         }
         return isJSON;
     }
-
+    /**
+     * Log actual status of custom resource with pods.
+     * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
+     */
     public static <T extends CustomResource & HasStatus> void logCurrentStatus(T customResource) {
         String kind = customResource.getKind();
         String name = customResource.getMetadata().getName();

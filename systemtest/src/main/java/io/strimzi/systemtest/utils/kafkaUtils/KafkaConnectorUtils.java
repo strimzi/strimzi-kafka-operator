@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.StUtils;
@@ -46,12 +45,11 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorStatus(String name, String state) {
-        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
-
         LOGGER.info("Waiting for Kafka Connector {}", name);
         TestUtils.waitFor(" Kafka Connector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kafkaConnector.getStatus().getConditions().get(0).getType().equals(state),
-            () -> StUtils.logCurrentStatus(kafkaConnector));
+            () -> KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
+                    .withName(name).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
         LOGGER.info("Kafka Connector {} is ready", name);
     }
 

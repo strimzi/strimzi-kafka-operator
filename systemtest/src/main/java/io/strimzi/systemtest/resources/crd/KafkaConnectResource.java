@@ -125,11 +125,11 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        String name = kafkaConnect.getMetadata().getName();
+        String kafkaConnectCrName = kafkaConnect.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka Connect {}", name);
-        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(name), kafkaConnect.getSpec().getReplicas());
-        LOGGER.info("Kafka Connect {} is ready", name);
+        LOGGER.info("Waiting for Kafka Connect {}", kafkaConnectCrName);
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(kafkaConnectCrName), kafkaConnect.getSpec().getReplicas());
+        LOGGER.info("Kafka Connect {} is ready", kafkaConnectCrName);
 
         return kafkaConnect;
     }
