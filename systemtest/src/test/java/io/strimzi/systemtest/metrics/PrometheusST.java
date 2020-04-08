@@ -36,12 +36,6 @@ public class PrometheusST extends BaseST {
     private static final String ALERTMANAGER_POD = "alertmanager-alertmanager-0";
 
     @Test
-    public void testPrometheusService() {
-        assertThat("Prometheus service not found", kubeClient().getService(PROMETHEUS) != null);
-        assertThat("Prometheus service port is not 9090", kubeClient().getService(PROMETHEUS).getSpec().getPorts().get(0).getPort() == 9090);
-    }
-
-    @Test
     public void testAlertManagerService() {
         assertThat("AlertManager service not found", kubeClient().getService(ALERTMANAGER) != null);
         assertThat("AlertManager service port is not 9090", kubeClient().getService(ALERTMANAGER).getSpec().getPorts().get(0).getPort() == 9093);
