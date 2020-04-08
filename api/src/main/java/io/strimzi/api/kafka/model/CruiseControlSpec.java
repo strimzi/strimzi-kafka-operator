@@ -35,10 +35,10 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private static final long serialVersionUID = 1L;
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
-    public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,"
-        + "webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,"
-        + "partition.metric.sample.store.topic, broker.metric.sample.store.topic, brokerCapacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topic"
-        + "cruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes";
+    public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., ssl., security., failed.brokers.zk.path,"
+        + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
+        + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
+        + "capacity.config.file, self.healing.";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "";
 
     private int replicas;
@@ -86,7 +86,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.tlsSidecar = tlsSidecar;
     }
 
-    @Description("The Cruise Control brokerCapacity configuration.")
+    @Description("The Cruise Control `brokerCapacity` configuration.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public BrokerCapacity getBrokerCapacity() {
         return brokerCapacity;
@@ -97,7 +97,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("The Cruise Control configuration. For a full list of configuration options refer to" +
-            " https://github.com/linkedin/cruise-control/wiki/Configurations Note that properties " +
+            " https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties " +
             "with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
@@ -108,7 +108,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.config = config;
     }
 
-    @Description("Logging configuration for Cruise Control.")
+    @Description("Logging configuration (log4j1) for Cruise Control.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;

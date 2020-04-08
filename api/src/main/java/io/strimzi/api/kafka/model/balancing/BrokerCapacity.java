@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,26 +29,27 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"diskMiB", "cpuUtilization", "inboundNetworkKiBPerSecond", "outboundNetworkKiBPerSecond"})
+@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork"})
 @EqualsAndHashCode
 public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer diskMiB;
+    private String disk;
     private Integer cpuUtilization;
-    private Integer inboundNetworkKiBPerSecond;
-    private Integer outboundNetworkKiBPerSecond;
+    private String inboundNetwork;
+    private String outboundNetwork;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Broker capacity for disk in base 2 mebibytes.")
-    public Integer getDiskMiB() {
-        return diskMiB;
+    @Pattern("^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$")
+    @Description("Broker capacity for disk (i.e 100Gi).")
+    public String getDisk() {
+        return disk;
     }
 
-    public void setDiskMiB(Integer diskMiB) {
-        this.diskMiB = diskMiB;
+    public void setDisk(String disk) {
+        this.disk = disk;
     }
 
     @Minimum(0)
@@ -63,23 +65,25 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for network inbound throughput in base 2 kibibytes per second.")
-    public Integer getInboundNetworkKiBPerSecond() {
-        return inboundNetworkKiBPerSecond;
+    @Pattern("[0-9]+([KMG]i?)?B/s")
+    @Description("Broker capacity for network inbound throughput (i.e 10000KB/s)")
+    public String getInboundNetwork() {
+        return inboundNetwork;
     }
 
-    public void setInboundNetworkKiBPerSecond(Integer inboundNetworkKiBPerSecond) {
-        this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
+    public void setInboundNetwork(String inboundNetwork) {
+        this.inboundNetwork = inboundNetwork;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for network outbound throughput in base 2 kibibytes per second.")
-    public Integer getOutboundNetworkKiBPerSecond() {
-        return outboundNetworkKiBPerSecond;
+    @Pattern("[0-9]+([KMG]i?)?B/s")
+    @Description("Broker capacity for network outbound throughput (i.e 10000KB/s)")
+    public String getOutboundNetwork() {
+        return outboundNetwork;
     }
 
-    public void setOutboundNetworkKiBPerSecond(Integer outboundNetworkKiBPerSecond) {
-        this.outboundNetworkKiBPerSecond = outboundNetworkKiBPerSecond;
+    public void setOutboundNetwork(String outboundNetwork) {
+        this.outboundNetwork = outboundNetwork;
     }
 
     @Override

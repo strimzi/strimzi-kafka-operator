@@ -133,10 +133,10 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(CruiseControl.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_DISK_MIB_CAPACITY).withValue(Long.toString(DEFAULT_BROKER_DISK_MIB_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_DISK_MIB_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_DISK_MIB_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY)).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(configuration.getConfiguration()).build());
 
@@ -159,10 +159,10 @@ public class CruiseControlTest {
     public void testBrokerCapacities() {
         // Test user defined capacities
         BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
-        userDefinedBrokerCapacity.setDiskMiB(20000);
+        userDefinedBrokerCapacity.setDisk("20000M");
         userDefinedBrokerCapacity.setCpuUtilization(95);
-        userDefinedBrokerCapacity.setInboundNetworkKiBPerSecond(50000);
-        userDefinedBrokerCapacity.setOutboundNetworkKiBPerSecond(50000);
+        userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
+        userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
@@ -176,10 +176,11 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getDiskMiB())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getCpuUtilization())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getInboundNetworkKiBPerSecond())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Integer.toString(userDefinedBrokerCapacity.getOutboundNetworkKiBPerSecond())));
+        Capacity generatedCapacity = new Capacity(resource.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Double.toString(generatedCapacity.getDiskMiB())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Double.toString(generatedCapacity.getInboundNetworkKiBPerSecond())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Double.toString(generatedCapacity.getOutboundNetworkKibPerSecond())));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorage();
@@ -207,8 +208,8 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        Capacity generatedCapacity = new Capacity(resource.getSpec());
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Long.toString(generatedCapacity.getDiskMiB())));
+        generatedCapacity = new Capacity(resource.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Double.toString(generatedCapacity.getDiskMiB())));
     }
 
     @Test

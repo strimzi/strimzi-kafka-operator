@@ -923,7 +923,8 @@ spec:
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
-                    zookeeper.set.acl, authorizer., super.user (with the exception
+                    zookeeper.set.acl, authorizer., super.usercruise.control.metrics.topic,
+                    cruise.control.metrics.reporter.bootstrap.servers (with the exception
                     of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
                     ssl.enabled.protocols).'
                 rack:
@@ -4860,14 +4861,13 @@ spec:
                 config:
                   type: object
                   description: 'The Cruise Control configuration. For a full list
-                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations
+                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
                     Note that properties with the following prefixes cannot be set:
-                    bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port,
-                    webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers,
-                    metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic,
-                    broker.metric.sample.store.topic, brokerCapacity.config.file,
-                    skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers,
-                    sasl. interceptor.classes.'
+                    bootstrap.servers, client.id, zookeeper., network., ssl., security.,
+                    failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
+                    webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
+                    metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
+                    self.healing.'
                 livenessProbe:
                   type: object
                   properties:
@@ -4981,7 +4981,7 @@ spec:
                       description: Logging type, must be either 'inline' or 'external'.
                   required:
                   - type
-                  description: Logging configuration for Cruise Control.
+                  description: Logging configuration (log4j1) for Cruise Control.
                 tlsSidecar:
                   type: object
                   properties:
@@ -5583,24 +5583,27 @@ spec:
                 brokerCapacity:
                   type: object
                   properties:
-                    diskMiB:
-                      type: integer
-                      description: Broker capacity for disk in base 2 mebibytes.
+                    disk:
+                      type: string
+                      pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                      description: Broker capacity for disk (i.e 100Gi).
                     cpuUtilization:
                       type: integer
                       minimum: 0
                       maximum: 100
                       description: Broker capacity for CPU resource utilization as
                         a percentage (0 - 100).
-                    inboundNetworkKiBPerSecond:
-                      type: integer
+                    inboundNetwork:
+                      type: string
+                      pattern: '[0-9]+([KMG]i?)?B/s'
                       description: Broker capacity for network inbound throughput
-                        in base 2 kibibytes per second.
-                    outboundNetworkKiBPerSecond:
-                      type: integer
+                        (i.e 10000KB/s).
+                    outboundNetwork:
+                      type: string
+                      pattern: '[0-9]+([KMG]i?)?B/s'
                       description: Broker capacity for network outbound throughput
-                        in base 2 kibibytes per second.
-                  description: The Cruise Control brokerCapacity configuration.
+                        (i.e 10000KB/s).
+                  description: The Cruise Control `brokerCapacity` configuration.
               required:
               - replicas
               description: Configuration for Cruise Control deployment. Deploys a

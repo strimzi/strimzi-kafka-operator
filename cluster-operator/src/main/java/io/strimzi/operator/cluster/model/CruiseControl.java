@@ -53,6 +53,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String APPLICATION_NAME = "cruise-control";
 
     public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
+    public static final String CRUISE_CONTROL_METRICS_TOPIC = "cruise.control.metrics.topic";
+    public static final String CRUISE_CONTROL_METRICS_TOPIC_VALUE = "strimzi.cruisecontrol.metrics";
 
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
@@ -82,10 +84,10 @@ public class CruiseControl extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
-    private long brokerDiskMiBCapacity;
+    private Double brokerDiskMiBCapacity;
     private int brokerCpuUtilizationCapacity;
-    private int brokerInboundNetworkKiBPerSecondCapacity;
-    private int brokerOuboundNetworkKiBPerSecondCapacity;
+    private Double brokerInboundNetworkKiBPerSecondCapacity;
+    private Double brokerOuboundNetworkKiBPerSecondCapacity;
 
 
     public static final String REST_API_PORT_NAME = "rest-api";
@@ -191,7 +193,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.brokerDiskMiBCapacity = capacity.getDiskMiB();
             cruiseControl.brokerCpuUtilizationCapacity = capacity.getCpuUtilization();
             cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
-            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboutNetworkKibPerSecond();
+            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKibPerSecond();
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
@@ -404,7 +406,7 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_BROKER_DISK_MIB_CAPACITY, String.valueOf(brokerDiskMiBCapacity)));
         varList.add(buildEnvVar(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY, String.valueOf(brokerCpuUtilizationCapacity)));
         varList.add(buildEnvVar(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY, String.valueOf(brokerInboundNetworkKiBPerSecondCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY, String.valueOf(brokerOuboundNetworkKiBPerSecondCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY,  String.valueOf(brokerOuboundNetworkKiBPerSecondCapacity)));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);

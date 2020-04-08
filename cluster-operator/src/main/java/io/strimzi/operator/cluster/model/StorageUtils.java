@@ -23,8 +23,8 @@ public class StorageUtils {
      *
      * @return The equivalent number of bytes in the specified units.
      */
-    public static long parseMemory(String memory, String units) {
-        return parseMemory(memory) / memoryFactor(units);
+    public static double parseMemory(String memory, String units) {
+        return parseMemory(memory) / (float) memoryFactor(units);
     }
 
     /**

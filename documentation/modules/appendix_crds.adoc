@@ -64,7 +64,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, keycloak].
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.usercruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -1354,7 +1354,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
-|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations Note that properties with the following prefixes cannot be set: bootstrap.servers, zookeeper., ssl., security., failed.brokers.zk.path,webserver.http.port, webserver.http.address, webserver.api.urlprefix, metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, metric.reporter.topic.pattern,partition.metric.sample.store.topic, broker.metric.sample.store.topic, brokerCapacity.config.file, skip.sample.store.topic.rack.awareness.check, cruise.control.metrics.topiccruise.control.metrics.reporter.bootstrap.servers, sasl. interceptor.classes.
+|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., ssl., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing.
 |map
 |livenessProbe   1.2+<.<|Pod liveness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
@@ -1364,13 +1364,13 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources       1.2+<.<|CPU and memory resources to reserve for the Cruise Control container.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|logging         1.2+<.<|Logging configuration for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging         1.2+<.<|Logging configuration (log4j1) for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template to specify how Cruise Control resources, `Deployments` and `Pods`, are generated.
 |xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`]
-|brokerCapacity  1.2+<.<|The Cruise Control brokerCapacity configuration.
+|brokerCapacity  1.2+<.<|The Cruise Control `brokerCapacity` configuration.
 |xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |====
 
@@ -1405,15 +1405,15 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 [options="header"]
 |====
-|Property                            |Description
-|diskMiB                      1.2+<.<|Broker capacity for disk in base 2 mebibytes.
+|Property                |Description
+|disk             1.2+<.<|Broker capacity for disk (i.e 100Gi).
+|string
+|cpuUtilization   1.2+<.<|Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
-|cpuUtilization               1.2+<.<|Broker capacity for CPU resource utilization as a percentage (0 - 100).
-|integer
-|inboundNetworkKiBPerSecond   1.2+<.<|Broker capacity for network inbound throughput in base 2 kibibytes per second.
-|integer
-|outboundNetworkKiBPerSecond  1.2+<.<|Broker capacity for network outbound throughput in base 2 kibibytes per second.
-|integer
+|inboundNetwork   1.2+<.<|Broker capacity for network inbound throughput (i.e 10000KB/s).
+|string
+|outboundNetwork  1.2+<.<|Broker capacity for network outbound throughput (i.e 10000KB/s).
+|string
 |====
 
 [id='type-JmxTransSpec-{context}']

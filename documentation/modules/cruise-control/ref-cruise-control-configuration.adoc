@@ -66,10 +66,10 @@ For example, an optimization that would cause a broker to exceed its CPU capacit
 Capacity limits for broker resources can be specified in the `brokerCapacity` property in `Kafka.spec.cruiseControl`.
 Capacity limits can be set for the following broker resources in the described units:
 
-* `diskMiB`  - Disk storage in MiB
+* `disk`  - Disk storage in MiB
 * `cpuUtilization`   - CPU utilization as a percent (0-100)
-* `inboundNetworkKiBPerSecond`  - Network inbound throughput in KiB/s
-* `outboundNetworkKiBPerSecond` - Newtork outbound throughput in KiB/s
+* `inboundNetwork`  - Network inbound throughput in KiB/s
+* `outboundNetwork` - Newtork outbound throughput in KiB/s
 
 Since {ProductName} brokers are homogeneous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
 
@@ -85,10 +85,10 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      diskMiB: 100000
+      disk: 100000
       cpuUtilization: 100
-      inboundNetworkKiBPerSecond: 10000
-      outboundNetworkKiBPerSecond: 10000
+      inboundNetwork: 10000
+      outboundNetwork: 10000
     # ...
 ----
 

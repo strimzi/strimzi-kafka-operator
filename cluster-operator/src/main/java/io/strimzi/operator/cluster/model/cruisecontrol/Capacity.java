@@ -17,32 +17,32 @@ import java.util.List;
 import static io.strimzi.operator.cluster.model.StorageUtils.parseMemory;
 
 public class Capacity {
-    public static final long DEFAULT_BROKER_DISK_MIB_CAPACITY = 100_000;  // in MiB
+    public static final double DEFAULT_BROKER_DISK_MIB_CAPACITY = 100_000;  // in MiB
     public static final int DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY = 100;  // as a percentage (0-100)
-    public static final int DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
-    public static final int DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
+    public static final double DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
+    public static final double DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
 
-    private Long diskMiB;
+    private Double diskMiB;
     private Integer cpuUtilization;
-    private Integer inboundNetworkKiBPerSecond;
-    private Integer outboutNetworkKibPerSecond;
+    private Double inboundNetworkKiBPerSecond;
+    private Double outboundNetworkKibPerSecond;
 
     public Capacity(KafkaSpec spec) {
         BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
 
-        this.diskMiB = bc != null && bc.getDiskMiB() != null ? bc.getDiskMiB() : generateDiskCapacity(spec.getKafka().getStorage());
+        this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(spec.getKafka().getStorage());
         this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
-        this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetworkKiBPerSecond() != null ? bc.getInboundNetworkKiBPerSecond() : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
-        this.outboutNetworkKibPerSecond = bc != null && bc.getOutboundNetworkKiBPerSecond() != null ? bc.getOutboundNetworkKiBPerSecond() : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
+        this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
+        this.outboundNetworkKibPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
     }
 
     /**
-     * Generate diskMiB capacity configuration from the supplied storage configuration
+     * Generate disk capacity configuration from the supplied storage configuration
      *
      * @param storage Storage configuration for Kafka cluster
-     * @return Disk capacity configuration as a Long
+     * @return Disk capacity configuration value as a Double
      */
-    public static Long generateDiskCapacity(Storage storage) {
+    public static Double generateDiskCapacity(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
             return getSizeInMiB(((PersistentClaimStorage) storage).getSize());
         } else if (storage instanceof EphemeralStorage) {
@@ -53,7 +53,7 @@ public class Capacity {
             }
         } else if (storage instanceof JbodStorage) {
             List<SingleVolumeStorage> volumeList = ((JbodStorage) storage).getVolumes();
-            long size = 0;
+            double size = 0;
             for (SingleVolumeStorage volume : volumeList) {
                 size += generateDiskCapacity(volume);
             }
@@ -65,20 +65,32 @@ public class Capacity {
 
     /*
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
-     * into the equivalent number of mebibytes represented as a Long.
+     * into the equivalent number of mebibytes represented as a Double.
      *
      * @param size The String representation of the volume size.
      * @return The equivalent number of mebibytes.
      */
-    public static Long getSizeInMiB(String size) {
+    public static Double getSizeInMiB(String size) {
         return parseMemory(size, "Mi");
     }
 
-    public Long getDiskMiB() {
+    /*
+     * Parse Strimzi representation of throughput, such as {@code 10000KB/s},
+     * into the equivalent number of kibibytes represented as a Double.
+     *
+     * @param throughput The String representation of the throughput.
+     * @return The equivalent number of kibibytes.
+     */
+    public static Double getThroughputInKiB(String throughput) {
+        String size = throughput.substring(0, throughput.indexOf("B"));
+        return parseMemory(size, "Ki");
+    }
+
+    public Double getDiskMiB() {
         return diskMiB;
     }
 
-    public void setDiskMiB(Long diskMiB) {
+    public void setDiskMiB(Double diskMiB) {
         this.diskMiB = diskMiB;
     }
 
@@ -90,19 +102,19 @@ public class Capacity {
         this.cpuUtilization = cpuUtilization;
     }
 
-    public Integer getInboundNetworkKiBPerSecond() {
+    public Double getInboundNetworkKiBPerSecond() {
         return inboundNetworkKiBPerSecond;
     }
 
-    public void setInboundNetworkKiBPerSecond(Integer inboundNetworkKiBPerSecond) {
+    public void setInboundNetworkKiBPerSecond(Double inboundNetworkKiBPerSecond) {
         this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
     }
 
-    public Integer getOutboutNetworkKibPerSecond() {
-        return outboutNetworkKibPerSecond;
+    public Double getOutboundNetworkKibPerSecond() {
+        return outboundNetworkKibPerSecond;
     }
 
-    public void setOutboutNetworkKibPerSecond(Integer outboutNetworkKibPerSecond) {
-        this.outboutNetworkKibPerSecond = outboutNetworkKibPerSecond;
+    public void setOutboundNetworkKibPerSecond(Double outboundNetworkKibPerSecond) {
+        this.outboundNetworkKibPerSecond = outboundNetworkKibPerSecond;
     }
 }
