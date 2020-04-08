@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -126,16 +128,21 @@ public class StatefulSetUtils {
     /**
      *
      * Wait until the STS is ready and all of its Pods are also ready.
-     * @param name The name of the StatefulSet
+     * @param statefulSetName The name of the StatefulSet
      * @param expectPods The number of pods expected.
      */
-    public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
-        LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
-        TestUtils.waitFor("statefulset " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getStatefulSetStatus(name));
-        LOGGER.debug("StatefulSet {} is ready", name);
-        LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", name);
-        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true);
+    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
+        String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
+
+        LOGGER.debug("Waiting for StatefulSet {} to be ready", statefulSetName);
+        TestUtils.waitFor("statefulset " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getStatefulSetStatus(statefulSetName),
+            () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+        LOGGER.debug("StatefulSet {} is ready", statefulSetName);
+        LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", statefulSetName);
+
+        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
+            () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
     }
 
     /**

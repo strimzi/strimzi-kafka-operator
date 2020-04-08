@@ -92,9 +92,12 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        LOGGER.info("Waiting for Kafka Connector {}", kafkaConnector.getMetadata().getName());
-        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnector.getMetadata().getName(), "Ready");
-        LOGGER.info("Kafka Connector {} is ready", kafkaConnector.getMetadata().getName());
+        String kafkaConnectorCrName = kafkaConnector.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Connector {}", kafkaConnectorCrName);
+        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnectorCrName, "Ready");
+        LOGGER.info("Kafka Connector {} is ready", kafkaConnectorCrName);
+
         return kafkaConnector;
     }
 
