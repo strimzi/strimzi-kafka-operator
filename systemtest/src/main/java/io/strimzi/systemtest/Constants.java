@@ -231,4 +231,9 @@ public interface Constants {
      * Tag for tests which use external Kafka clients (called from test code)
      */
     String EXTERNAL_CLIENTS_USED = "externalclients";
+
+    /**
+     * Tag for tests where metrics are used
+     */
+    String METRICS = "metrics";
 }
