@@ -295,7 +295,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(1);
-        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -337,7 +337,7 @@ public class KafkaConnectCluster extends AbstractModel {
                         source.setDefaultMode(mode);
 
                         Volume newVol = new VolumeBuilder()
-                                .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                                .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
                                 .withConfigMap(source)
                                 .build();
 
@@ -347,7 +347,7 @@ public class KafkaConnectCluster extends AbstractModel {
                         source.setDefaultMode(mode);
 
                         Volume newVol = new VolumeBuilder()
-                                .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                                .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
                                 .withSecret(source)
                                 .build();
 

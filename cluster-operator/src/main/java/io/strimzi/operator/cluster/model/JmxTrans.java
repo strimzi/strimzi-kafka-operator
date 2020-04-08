@@ -194,8 +194,8 @@ public class JmxTrans extends AbstractModel {
 
     public List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>();
-        volumes.add(createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
-        volumes.add(createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
+        volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
+        volumes.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
         return volumes;
     }
 

@@ -4,13 +4,20 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
@@ -36,8 +43,32 @@ import io.strimzi.api.kafka.model.storage.Storage;
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
-
     protected static final Logger log = LogManager.getLogger(VolumeUtils.class.getName());
+    private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
+
+    /**
+     * Creates a Kubernetes volume which will map to ConfigMap
+     *
+     * @param name              Name of the Volume
+     * @param configMapName     Name of the ConfigMap
+     * @return                  The newly created Volume
+     */
+    public static Volume createConfigMapVolume(String name, String configMapName) {
+        String validName = getValidVolumeName(name);
+
+        ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
+                .withName(configMapName)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(validName)
+                .withConfigMap(configMapVolumeSource)
+                .build();
+
+        log.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+
+        return volume;
+    }
 
     /**
      * Creates a secret volume with given items
@@ -49,6 +80,8 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+        String validName = getValidVolumeName(name);
+
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -72,10 +105,10 @@ public class VolumeUtils {
                 .build();
 
         Volume volume = new VolumeBuilder()
-                .withName(name)
+                .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -88,6 +121,8 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+        String validName = getValidVolumeName(name);
+
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -99,10 +134,10 @@ public class VolumeUtils {
                 .build();
 
         Volume volume = new VolumeBuilder()
-                .withName(name)
+                .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -114,16 +149,18 @@ public class VolumeUtils {
      * @return The Volume created
      */
     public static Volume createEmptyDirVolume(String name, String sizeLimit) {
+        String validName = getValidVolumeName(name);
+
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
         if (sizeLimit != null && !sizeLimit.isEmpty()) {
             emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
         }
 
         Volume volume = new VolumeBuilder()
-                .withName(name)
+                .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
+        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -145,15 +182,15 @@ public class VolumeUtils {
 
         return new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
-                .withName(name)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
-                .withAccessModes("ReadWriteOnce")
-                .withNewResources()
-                .withRequests(requests)
-                .endResources()
-                .withStorageClassName(storage.getStorageClass())
-                .withSelector(selector)
+                    .withAccessModes("ReadWriteOnce")
+                    .withNewResources()
+                        .withRequests(requests)
+                    .endResources()
+                    .withStorageClassName(storage.getStorageClass())
+                    .withSelector(selector)
                 .endSpec()
                 .build();
     }
@@ -166,11 +203,13 @@ public class VolumeUtils {
      * @return The Volume mount created
      */
     public static VolumeMount createVolumeMount(String name, String path) {
+        String validName = getValidVolumeName(name);
+
         VolumeMount volumeMount = new VolumeMountBuilder()
-                .withName(name)
+                .withName(validName)
                 .withMountPath(path)
                 .build();
-        log.trace("Created volume mount {}", volumeMount);
+        log.trace("Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 
@@ -256,5 +295,81 @@ public class VolumeUtils {
      */
     public static String getVolumePrefix(Integer id) {
         return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
+    }
+
+    /**
+     * Volume names have to follow DNS label standard form RFC1123:
+     *     - contain at most 63 characters
+     *     - contain only lowercase alphanumeric characters or ‘-’
+     *     - start with an alphanumeric character
+     *     - end with an alphanumeric character
+     *
+     *  This method checkes if the volume name is a valid name and if not it will modify it to make it valid.
+     *
+     * @param originalName  The original name of the volume
+     * @return              Either the original volume name or a modified version to match volume name criteria
+     */
+    public static String getValidVolumeName(String originalName) {
+        if (originalName == null) {
+            throw new RuntimeException("Volume name cannot be null");
+        }
+
+        if (volumeNamePattern.matcher(originalName).matches()) {
+            return originalName;
+        } else {
+            return makeValidVolumeName(originalName);
+        }
+    }
+
+    /**
+     * Makes a valid volume name out of an invalid name. To do so it:
+     *     - Replaces . and _ characters with -
+     *     - Shortens the name if needed
+     *     - Uses SHA1 hash for uniqueness of the new name
+     *
+     * @param originalName  Original invalid volume name
+     * @return              New valid volume name
+     */
+    /*test*/ static String makeValidVolumeName(String originalName) {
+        // SHA-1 hash is used for uniqueness
+        String digestStub = getVolumeNameHashStub(originalName);
+
+        // Special characters need to be replaced
+        String newName = originalName
+                .replace(".", "-")
+                .replace("_", "-");
+
+        // The name with the hash should be only up to 63 characters long
+        int i = Math.min(newName.length(), 54);
+
+        while (i > 0) {
+            char lastChar = newName.charAt(i - 1);
+
+            if (lastChar == '-') {
+                i--;
+            } else {
+                break;
+            }
+        }
+
+        // Returned new fixed name with the hash at the end
+        return newName.substring(0, i) + "-" + digestStub;
+    }
+
+    /**
+     * Gets the first 8 characters from a SHA-1 hash of a volume name
+     *
+     * @param name  Volume name
+     * @return      First 8 characters of the SHA-1 hash
+     */
+    private static String getVolumeNameHashStub(String name)   {
+        try {
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] digest = sha1.digest(name.getBytes(StandardCharsets.US_ASCII));
+
+            return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to get volume name SHA-1 hash", e);
+        }
     }
 }
