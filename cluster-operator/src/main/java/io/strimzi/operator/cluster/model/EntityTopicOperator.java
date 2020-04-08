@@ -266,7 +266,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     private List<VolumeMount> getVolumeMounts() {

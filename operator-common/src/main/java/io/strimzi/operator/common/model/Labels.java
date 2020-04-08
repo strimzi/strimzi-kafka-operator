@@ -250,7 +250,7 @@ public class Labels {
         while (i > 0)   {
             char lastChar = instance.charAt(i - 1);
 
-            if (lastChar == '.' || lastChar == '-') {
+            if (lastChar == '.' || lastChar == '-' || lastChar == '_') {
                 i--;
             } else {
                 break;
