@@ -120,7 +120,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_connect_connect_worker_metrics_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -202,7 +202,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_connect_connect_worker_metrics_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -260,7 +260,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_connect_connect_metrics_connect_1_incoming_byte_rate{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_incoming_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -348,7 +348,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_connect_connect_metrics_connect_1_outgoing_byte_rate{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_outgoing_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -686,7 +686,7 @@
         "multi": false,
         "name": "kubernetes_namespace",
         "options": [],
-        "query": "query_result(kafka_connect_connect_worker_metrics_connector_count)",
+        "query": "query_result(kafka_connect_worker_connector_count)",
         "refresh": 1,
         "regex": "/.*namespace=\"([^\"]*).*/",
         "sort": 0,
@@ -709,7 +709,7 @@
         "multi": false,
         "name": "strimzi_connect_cluster_name",
         "options": [],
-        "query": "query_result(kafka_connect_connect_worker_metrics_connector_count{namespace=\"$kubernetes_namespace\"})",
+        "query": "query_result(kafka_connect_worker_connector_count{namespace=\"$kubernetes_namespace\"})",
         "refresh": 1,
         "regex": "/.*strimzi_io_cluster=\"([^\"]*).*/",
         "sort": 0,
