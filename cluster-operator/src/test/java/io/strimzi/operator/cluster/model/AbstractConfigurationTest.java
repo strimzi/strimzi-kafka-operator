@@ -239,6 +239,16 @@ public class AbstractConfigurationTest {
     }
 
     @Test
+    public void testKafkaCipherSuiteOverride() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("ssl.cipher.suites", "cipher1,cipher2,cipher3"); // valid
+
+        KafkaConfiguration kc = new KafkaConfiguration(conf.entrySet());
+
+        assertThat(kc.asOrderedProperties().asMap().get("ssl.cipher.suites"), is("cipher1,cipher2,cipher3"));
+    }
+
+    @Test
     public void testKafkaConnectHostnameVerification() {
         Map<String, Object> conf = new HashMap<>();
         conf.put("key.converter", "my.package.Converter"); // valid
