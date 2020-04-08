@@ -33,9 +33,14 @@ public class SecretUtils {
     private SecretUtils() { }
 
     public static void waitForSecretReady(String secretName) {
+        waitForSecretReady(secretName, () -> { });
+    }
+
+    public static void waitForSecretReady(String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Kafka user secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
-            () -> kubeClient().getSecret(secretName) != null);
+            () -> kubeClient().getSecret(secretName) != null,
+            onTimeout);
         LOGGER.info("Kafka user secret {} created", secretName);
     }
 

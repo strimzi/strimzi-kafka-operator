@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -15,12 +16,15 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 
 public class DeploymentUtils {
 
@@ -148,7 +152,8 @@ public class DeploymentUtils {
     public static void waitForDeploymentReady(String name) {
         LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentStatus(name));
+            () -> kubeClient().getDeploymentStatus(name),
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
         LOGGER.debug("Deployment {} is ready", name);
     }
 
@@ -160,10 +165,12 @@ public class DeploymentUtils {
     public static void waitForDeploymentReady(String name, int expectPods) {
         LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentStatus(name));
+            () -> kubeClient().getDeploymentStatus(name),
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
         LOGGER.debug("Deployment {} is ready", name);
         LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true,
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
     }
 
     /**
@@ -239,5 +246,25 @@ public class DeploymentUtils {
         PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);
 
         return depConfigSnapshot(name);
+    }
+
+    /**
+     * Log actual status of deployment with pods
+     * @param deployment - every DoneableDeployment, that HasMetadata and has status (fabric8 status)
+     **/
+    public static void logCurrentDeploymentStatus(Deployment deployment) {
+        String kind = deployment.getKind();
+        String name = deployment.getMetadata().getName();
+
+        List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+
+        for (DeploymentCondition deploymentCondition : deployment.getStatus().getConditions()) {
+            log.add("\tType: " + deploymentCondition.getType() + "\n");
+            log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
+        }
+
+        PodUtils.logCurrentPodStatus(kind, name, log);
+
+        LOGGER.info("{}", String.join("", log));
     }
 }
