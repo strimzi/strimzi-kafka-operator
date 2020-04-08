@@ -628,7 +628,7 @@ public class ZookeeperCluster extends AbstractModel {
             String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
             volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit));
         }
-        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
