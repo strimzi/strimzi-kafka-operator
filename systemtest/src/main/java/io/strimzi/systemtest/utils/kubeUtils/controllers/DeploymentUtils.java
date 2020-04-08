@@ -252,7 +252,7 @@ public class DeploymentUtils {
      * Log actual status of deployment with pods
      * @param deployment - every DoneableDeployment, that HasMetadata and has status (fabric8 status)
      **/
-    public static <T extends Deployment> void logCurrentDeploymentStatus(T deployment) {
+    public static void logCurrentDeploymentStatus(Deployment deployment) {
         String kind = deployment.getKind();
         String name = deployment.getMetadata().getName();
 
