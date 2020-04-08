@@ -57,37 +57,37 @@ public class MetricsUtils {
 
     public static HashMap<String, String> collectKafkaPodsMetrics(String clusterName) {
         LabelSelector kafkaSelector = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName));
-        return collectMetricsFromPods(kafkaSelector, 9404);
+        return collectMetricsFromPods(kafkaSelector, Constants.COMPONENTS_METRICS_PORT);
     }
 
     public static HashMap<String, String> collectZookeeperPodsMetrics(String clusterName) {
         LabelSelector zookeeperSelector = kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName));
-        return collectMetricsFromPods(zookeeperSelector, 9404);
+        return collectMetricsFromPods(zookeeperSelector, Constants.COMPONENTS_METRICS_PORT);
     }
 
     public static HashMap<String, String> collectKafkaConnectPodsMetrics(String clusterName) {
         LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaConnectResources.deploymentName(clusterName));
-        return collectMetricsFromPods(connectSelector, 9404);
+        return collectMetricsFromPods(connectSelector, Constants.COMPONENTS_METRICS_PORT);
     }
 
     public static HashMap<String, String> collectKafkaExporterPodsMetrics(String clusterName) {
         LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(clusterName));
-        return collectMetricsFromPods(connectSelector, 9404, "/metrics");
+        return collectMetricsFromPods(connectSelector, Constants.COMPONENTS_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectKafkaMirrorMaker2PodsMetrics(String clusterName) {
         LabelSelector mm2Selector = kubeClient().getDeploymentSelectors(KafkaMirrorMaker2Resources.deploymentName(clusterName));
-        return collectMetricsFromPods(mm2Selector, 9404);
+        return collectMetricsFromPods(mm2Selector, Constants.COMPONENTS_METRICS_PORT);
     }
 
     public static HashMap<String, String> collectUserOperatorPodMetrics(String clusterName) {
         LabelSelector uoSelector = kubeClient().getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(clusterName));
-        return collectMetricsFromPods(uoSelector, 8081, "/metrics");
+        return collectMetricsFromPods(uoSelector, Constants.USER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectClusterOperatorPodMetrics() {
         LabelSelector coSelector = kubeClient().getDeploymentSelectors(Constants.STRIMZI_DEPLOYMENT_NAME);
-        return collectMetricsFromPods(coSelector, 8080, "/metrics");
+        return collectMetricsFromPods(coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
 

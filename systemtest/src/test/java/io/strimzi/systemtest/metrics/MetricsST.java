@@ -249,11 +249,11 @@ public class MetricsST extends BaseST {
 
     @Test
     void testMirrorMaker2Metrics() {
-        Pattern connectResponse = Pattern.compile("kafka_connect_connect_worker_metrics_connector_count ([\\d.][^\\n]+)");
+        Pattern connectResponse = Pattern.compile("kafka_connect_worker_connector_count ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 3));
 
-        connectResponse = Pattern.compile("kafka_connect_connect_worker_metrics_task_count ([\\d.][^\\n]+)");
+        connectResponse = Pattern.compile("kafka_connect_worker_task_count ([\\d.][^\\n]+)");
         values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
