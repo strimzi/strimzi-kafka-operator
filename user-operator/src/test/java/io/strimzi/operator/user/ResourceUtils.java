@@ -150,6 +150,7 @@ public class ResourceUtils {
                     .withLabels(Labels.userLabels(LABELS)
                         .withKubernetesName()
                         .withKubernetesInstance(NAME)
+                        .withKubernetesPartOf(NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .toMap())

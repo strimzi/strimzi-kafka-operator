@@ -119,6 +119,7 @@ public class KafkaMirrorMakerClusterTest {
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.KUBERNETES_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 

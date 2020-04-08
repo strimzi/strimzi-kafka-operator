@@ -65,6 +65,7 @@ public class Labels {
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
+    public static final String KUBERNETES_PART_OF_LABEL = KUBERNETES_DOMAIN + "part-of";
 
     public static final String KUBERNETES_NAME = "strimzi";
 
@@ -116,10 +117,12 @@ public class Labels {
         }
 
         // Remove Kubernetes Domain specific labels
+        // Exceptions app.kubernetes.io/part-of
         Map<String, String> filteredLabels = userLabels
                 .entrySet()
                 .stream()
-                .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+                .filter(entryset ->
+                        !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN) || entryset.getKey().equals(KUBERNETES_PART_OF_LABEL))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new Labels(filteredLabels);
@@ -227,6 +230,15 @@ public class Labels {
      */
     public Labels withKubernetesInstance(String instance) {
         return with(Labels.KUBERNETES_INSTANCE_LABEL, getOrValidInstanceLabelValue(instance));
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code part-of} for the {@code app.kubernetes.io/part-of} key.
+     * @param instance The instance to add.
+     * @return A new instance with the given kubernetes application part-of added.
+     */
+    public Labels withKubernetesPartOf(String instance) {
+        return with(Labels.KUBERNETES_PART_OF_LABEL, getOrValidInstanceLabelValue(KUBERNETES_NAME + "-" + instance));
     }
 
     /**

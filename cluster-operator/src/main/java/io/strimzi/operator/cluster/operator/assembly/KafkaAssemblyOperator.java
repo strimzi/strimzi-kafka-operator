@@ -542,6 +542,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withCluster(reconciliation.name())
                     .withKubernetesName()
                     .withKubernetesInstance(reconciliation.name())
+                    .withKubernetesPartOf(reconciliation.name())
                     .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
             Promise<ReconciliationState> resultPromise = Promise.promise();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -3173,6 +3174,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withCluster(reconciliation.name())
                     .withKubernetesName()
                     .withKubernetesInstance(reconciliation.name())
+                    .withKubernetesPartOf(reconciliation.name())
                     .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
 
             OwnerReference ownerRef = new OwnerReferenceBuilder()
