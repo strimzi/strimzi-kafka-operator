@@ -70,6 +70,7 @@ import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -753,7 +754,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                                 if (pod == null) {
                                     log.debug("Pod not found, no need to roll");
-                                    return "";
+                                    throw new ConcurrentDeletionException("Pod not found, no need to roll");
                                 }
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
