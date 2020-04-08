@@ -1446,7 +1446,7 @@ public class KafkaCluster extends AbstractModel {
 
             volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
-        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         if (listeners != null) {
