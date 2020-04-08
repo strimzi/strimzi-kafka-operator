@@ -14,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
-// TODO: autocloseable to close vertx always...
 public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
     private KafkaClientProperties properties;

@@ -9,7 +9,6 @@ import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -21,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 
 /**
@@ -118,11 +119,8 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> plainProducer.getResultPromise().isDone());
-
-            return plainProducer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return plainProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -158,15 +156,12 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withSaslJassConfigAndTls(clientId, clientSecretName, oauthTokenEndpointUri)
             .build();
 
-        try (Producer plainProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
-            plainProducer.getVertx().deployVerticle(plainProducer);
+            tlsProducer.getVertx().deployVerticle(tlsProducer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> plainProducer.getResultPromise().isDone());
-
-            return plainProducer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return tlsProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -202,11 +197,8 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             plainConsumer.getVertx().deployVerticle(plainConsumer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> plainConsumer.getResultPromise().isDone());
-
-            return plainConsumer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return plainConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -249,11 +241,8 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             tlsConsumer.getVertx().deployVerticle(tlsConsumer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> tlsConsumer.getResultPromise().isDone());
-
-            return tlsConsumer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return tlsConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }

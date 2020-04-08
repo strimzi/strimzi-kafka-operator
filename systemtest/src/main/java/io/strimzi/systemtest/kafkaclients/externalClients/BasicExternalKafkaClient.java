@@ -9,7 +9,6 @@ import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -19,6 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 
 /**
@@ -74,11 +75,8 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> plainProducer.getResultPromise().isDone());
-
-            return plainProducer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return plainProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -120,17 +118,14 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 
-            TestUtils.waitFor("Waiting until producer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> tlsProducer.getResultPromise().isDone());
-
-            return tlsProducer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return tlsProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    public int receiveMessagesPlain() throws InterruptedException, ExecutionException {
+    public int receiveMessagesPlain() {
         return receiveMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
@@ -138,7 +133,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
      * Receive messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
      * @return
      */
-    public int receiveMessagesPlain(long timeoutMs) throws InterruptedException, ExecutionException {
+    public int receiveMessagesPlain(long timeoutMs) {
 
         String clientName = "receiver-plain-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
@@ -161,10 +156,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             plainConsumer.getVertx().deployVerticle(plainConsumer);
 
-            TestUtils.waitFor("Waiting until consumer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> plainConsumer.getResultPromise().isDone());
-
-            return plainConsumer.getResultPromise().get();
+            return plainConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -206,11 +201,8 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
             tlsConsumer.getVertx().deployVerticle(tlsConsumer);
 
-            TestUtils.waitFor("Waiting until consumer async call is done {}", Constants.GLOBAL_POLL_INTERVAL, timeoutMs,
-                () -> tlsConsumer.getResultPromise().isDone());
-
-            return tlsConsumer.getResultPromise().get();
-        } catch (InterruptedException | ExecutionException e) {
+            return tlsConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }

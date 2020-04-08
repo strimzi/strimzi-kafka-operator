@@ -527,7 +527,6 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous() {
-        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -543,7 +542,7 @@ class KafkaST extends BaseST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withMessageCount(messagesCount)
+            .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
@@ -621,7 +620,7 @@ class KafkaST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainScramSha() throws InterruptedException {
+    void testSendMessagesPlainScramSha() {
         String kafkaUsername = "my-user";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -1152,12 +1151,13 @@ class KafkaST extends BaseST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePort() throws Exception {
+    void testNodePort() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
                         .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
@@ -1200,7 +1200,7 @@ class KafkaST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testOverrideNodePortConfiguration() throws Exception {
+    void testOverrideNodePortConfiguration() {
         int brokerNodePort = 32000;
         int brokerId = 0;
 
@@ -1246,18 +1246,17 @@ class KafkaST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-//        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-//        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-//
-//        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-//        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     @Test
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePortTls() throws Exception {
+    void testNodePortTls() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -1286,17 +1285,16 @@ class KafkaST extends BaseST {
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
-//        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-//        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-//
-//        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-//        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
     }
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancer() throws Exception {
+    void testLoadBalancer() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
@@ -1320,18 +1318,17 @@ class KafkaST extends BaseST {
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
-//        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-//        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-//
-//        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-//        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     @Test
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerTls() throws Exception {
+    void testLoadBalancerTls() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
@@ -1595,7 +1592,7 @@ class KafkaST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
-    void testLabelModificationDoesNotBreakCluster() throws Exception {
+    void testLabelModificationDoesNotBreakCluster() {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
         String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
