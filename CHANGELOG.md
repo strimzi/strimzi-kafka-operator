@@ -8,6 +8,7 @@
 * Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
 * Add more metrics to Cluster and User Operators
 * New Grafana dashboard for Operator monitoring 
+* Allow ssl.cipher.suites to be configured for Kafka
 
 ## 0.17.0
 
