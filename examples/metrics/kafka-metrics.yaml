@@ -144,25 +144,37 @@ spec:
       # replicated Zookeeper
       - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
         name: "zookeeper_$2"
+        type: GAUGE
       - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
         name: "zookeeper_$3"
+        type: GAUGE
         labels:
           replicaId: "$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(Packets.*)"
+        name: "zookeeper_$4"
+        type: COUNTER
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
       - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
         name: "zookeeper_$4"
+        type: GAUGE
         labels:
           replicaId: "$2"
           memberType: "$3"
       - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
         name: "zookeeper_$4_$5"
+        type: GAUGE
         labels:
           replicaId: "$2"
           memberType: "$3"
       # standalone Zookeeper
       - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+        type: GAUGE
         name: "zookeeper_$2"
-      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
-        name: "zookeeper_$2_$3"
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=InMemoryDataTree><>(\\w+)"
+        type: GAUGE
+        name: "zookeeper_$2"
   entityOperator:
     topicOperator: {}
     userOperator: {}
