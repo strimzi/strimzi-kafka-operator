@@ -31,7 +31,6 @@ import java.util.function.IntPredicate;
 public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
-    private Vertx vertx = Vertx.vertx();
 
     private String clientId;
     private String clientSecretName;
