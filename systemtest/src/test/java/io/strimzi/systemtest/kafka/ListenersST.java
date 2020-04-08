@@ -198,7 +198,7 @@ public class ListenersST extends BaseST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-// Deploy client pod with custom certificates and collect messages from internal TLS listener
+        // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -416,7 +416,7 @@ public class ListenersST extends BaseST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-// Deploy client pod with custom certificates and collect messages from internal TLS listener
+        // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -487,7 +487,7 @@ public class ListenersST extends BaseST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-// Deploy client pod with custom certificates and collect messages from internal TLS listener
+        // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

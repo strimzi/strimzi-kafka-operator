@@ -73,7 +73,7 @@ public class OlmBaseST extends BaseST {
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaBridgeResource.toString());
-        KafkaBridgeUtils.waitUntilKafkaBridgeStatus(kafkaBridgeResource.getJsonObject("metadata").getString("name"), "Ready");
+        KafkaBridgeUtils.waitForKafkaBridgeIsReady(kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker() {
@@ -81,7 +81,7 @@ public class OlmBaseST extends BaseST {
         cmdKubeClient().applyContent(kafkaMirroMakerResource.toString()
                 .replace("my-source-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-target-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMakerUtils.waitUntilKafkaMirrorMakerStatus(kafkaMirroMakerResource.getJsonObject("metadata").getString("name"), "Ready");
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerIsReady(kafkaMirroMakerResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker2() {
@@ -89,7 +89,7 @@ public class OlmBaseST extends BaseST {
         cmdKubeClient().applyContent(kafkaMirrorMaker2Resource.toString()
                 .replace("my-cluster-source-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-cluster-target-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMaker2Utils.waitUntilKafkaMirrorMaker2Status(kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"), "Ready");
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2IsReady(kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
     @AfterAll

@@ -12,7 +12,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +66,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        DeploymentUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerIsReady(CLUSTER_NAME, 1);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -101,7 +101,7 @@ public abstract class AbstractNamespaceST extends BaseST {
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
             .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorStatus(clusterName, "Ready");
+        KafkaConnectorUtils.waitForConnectorIsReady(clusterName);
 
         String kafkaConnectPodName = kubeClient().listPods("type", connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);

@@ -5,17 +5,19 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource.kafkaConnectS2IClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectS2IUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IUtils.class);
+    private static String namespace = kubeClient().getNamespace();
 
     private KafkaConnectS2IUtils() {}
 
@@ -24,24 +26,33 @@ public class KafkaConnectS2IUtils {
      * @param name The name of the Kafka ConnectS2I cluster.
      * @param status desired status value
      */
-    public static void waitForConnectS2IStatus(String name, String status) {
-        LOGGER.info("Wait until KafkaConnectS2I {} will be in state: {}", name, status);
-        TestUtils.waitFor("KafkaConnectS2I " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace())
-                    .withName(name).get().getStatus().getConditions().get(0).getType().equals(status),
-            () -> StUtils.logCurrentStatus(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
-        LOGGER.info("KafkaConnectS2I {} is in desired state: {}", name, status);
+    public static void waitForConnectS2IStatus(String clusterName, String status) {
+        LOGGER.info("Wait until KafkaConnectS2I {} will be in state: {}", clusterName, status);
+        TestUtils.waitFor("KafkaConnectS2I " + clusterName + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kafkaConnectS2IClient().inNamespace(namespace)
+                    .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(status),
+            () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(namespace).withName(clusterName).get()));
+        LOGGER.info("KafkaConnectS2I {} is in desired state: {}", clusterName, status);
     }
 
-    public static void waitForRebalancingDone(String name) {
-        LOGGER.info("Waiting for KafkaConnectS2I {} to rebalance", name);
-        TestUtils.waitFor("KafkaConnectS2I rebalancing", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> {
-                String connect = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnectS2I").get(0);
-                String log = kubeClient().logs(connect);
-                // wait for second occurrence of message about finished rebalancing
-                return (log.length() - log.replace("Finished starting connectors and tasks", "").length()) / "Finished starting connectors and tasks".length() == 2;
-            });
-        LOGGER.info("KafkaConnectS2I {} rebalanced", name);
+    public static void waitForConnectS2IIsReady(String clusterName) {
+        waitForConnectS2IStatus(clusterName, "Ready");
+    }
+
+    public static void waitForConnectS2IIsNotReady(String clusterName) {
+        waitForConnectS2IStatus(clusterName, "NotReady");
+    }
+
+    /**
+     * Wait until KafkaConnectS2I and its pods to be in Ready state
+     * @param clusterName name of KafkaConnectS2I cluster
+     * @param expectPods expected number of pods to be ready
+     */
+    public static void waitForConnectS2IIsReady(String clusterName, int expectPods) {
+        waitForConnectS2IIsReady(clusterName);
+        LOGGER.info("Waiting for KafkaConnectS2I pods to be ready");
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(clusterName), expectPods, true,
+            () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(namespace).withName(clusterName).get()));
+        LOGGER.info("Expected pods are ready");
     }
 }

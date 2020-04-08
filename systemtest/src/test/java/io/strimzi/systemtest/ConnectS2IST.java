@@ -108,7 +108,7 @@ class ConnectS2IST extends BaseST {
                 "   \"database.history.kafka.bootstrap.servers\" : \"localhost:9092\"}" +
                 "}";
 
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
 
         TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
             String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
@@ -133,7 +133,7 @@ class ConnectS2IST extends BaseST {
         deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
 
         // Make sure that Connenct API is ready
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
 
         KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
@@ -146,7 +146,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
             .endSpec().done();
 
-        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnectS2IName, "Ready");
+        KafkaConnectorUtils.waitForConnectorIsReady(kafkaConnectS2IName);
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
@@ -240,7 +240,7 @@ class ConnectS2IST extends BaseST {
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME);
-        KafkaConnectUtils.createFileSinkConnector(tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(kafkaConnectS2IName, NAMESPACE, 8083));
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
@@ -338,7 +338,7 @@ class ConnectS2IST extends BaseST {
                 .endJvmOptions()
             .endSpec().build());
 
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
+        KafkaConnectS2IUtils.waitForConnectS2IIsNotReady(kafkaConnectS2IName);
 
         TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
@@ -359,7 +359,7 @@ class ConnectS2IST extends BaseST {
 
         cmdKubeClient().exec("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
 
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
 
         String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
@@ -414,7 +414,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("status.storage.topic", connectClusterName + "-status")
             .endSpec().build());
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
@@ -424,13 +424,13 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         // Check that KafkaConnectS2I contains created connector
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
 
         String newTopic = "new-topic";
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
@@ -451,11 +451,11 @@ class ConnectS2IST extends BaseST {
             kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
-        KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         final String connectorName = "sink-test";
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
@@ -488,7 +488,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -549,7 +549,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(scaleReplicasTo));
         DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, scaleReplicasTo);
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IIsReady(CONNECT_S2I_CLUSTER_NAME);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), Matchers.is(scaleReplicasTo));
@@ -560,7 +560,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(initialReplicas));
         Map<String, String> depConfSnapshot = DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(CONNECT_S2I_CLUSTER_NAME, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IIsReady(CONNECT_S2I_CLUSTER_NAME);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), is(initialReplicas));

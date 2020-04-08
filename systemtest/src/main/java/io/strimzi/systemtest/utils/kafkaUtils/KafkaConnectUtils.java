@@ -5,35 +5,57 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.resources.crd.KafkaConnectResource.kafkaConnectClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectUtils.class);
+    private static String namespace = kubeClient().getNamespace();
 
     private KafkaConnectUtils() {}
 
-    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
-        cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
-            "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
-                "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
-                "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
-                    apiUrl + "/connectors"
-        );
+    /**
+     * Wait until the given Kafka Connect is in desired state.
+     * @param clusterName name of KafkaConnect cluster
+     * @param status desired state
+     */
+    public static void waitForConnectStatus(String clusterName, String status) {
+        LOGGER.info("Waiting for Kafka Connect {} state: {}", clusterName, status);
+        TestUtils.waitFor("Kafka Connect " + clusterName + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(status),
+            () -> StUtils.logCurrentStatus(kafkaConnectClient().inNamespace(namespace).withName(clusterName).get()));
+        LOGGER.info("Kafka Connect {} is in desired state: {}", clusterName, status);
     }
 
-    public static void waitForConnectStatus(String name, String status) {
-        LOGGER.info("Waiting for KafkaConnect {} state: {}", name, status);
-        TestUtils.waitFor("KafkaConnect " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
-        LOGGER.info("KafkaConnect {} is in desired state: {}", name, status);
+    public static void waitForConnectIsReady(String clusterName) {
+        waitForConnectStatus(clusterName, "Ready");
     }
+
+    public static void waitForConnectIsNotReady(String clusterName) {
+        waitForConnectStatus(clusterName, "NotReady");
+    }
+
+    /**
+     * Wait until KafkaConnect and its pods to be in Ready state
+     * @param clusterName name of KafkaConnect cluster
+     * @param expectPods expected pods to be ready
+     */
+    public static void waitForConnectIsReady(String clusterName, int expectPods) {
+        waitForConnectIsReady(clusterName);
+        LOGGER.info("Wait for KafkaConnect pods to be ready");
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(clusterName), expectPods, true,
+            () -> StUtils.logCurrentStatus(kafkaConnectClient().inNamespace(namespace).withName(clusterName).get()));
+        LOGGER.info("Expected pods are ready");
+    }
+
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
         LOGGER.info("Waiting until KafkaConnect API is available");

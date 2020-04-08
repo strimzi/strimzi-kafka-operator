@@ -4,12 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -26,6 +24,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.resources.crd.KafkaResource.kafkaClient;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -34,6 +33,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
+    private static String namespace = kubeClient().getNamespace();
 
     private KafkaUtils() {}
 
@@ -49,7 +49,7 @@ public class KafkaUtils {
         LOGGER.info("Wait until Kafka CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             List<Condition> conditions =
-                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName)
+                   kafkaClient().inNamespace(namespace).withName(clusterName)
                             .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
                             .collect(Collectors.toList());
 
@@ -66,7 +66,7 @@ public class KafkaUtils {
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
         TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-                List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                List<Condition> conditions = kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
                         return true;
@@ -106,7 +106,7 @@ public class KafkaUtils {
 
     public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {
         String certs = "";
-        List<ListenerStatus> kafkaListeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
+        List<ListenerStatus> kafkaListeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
 
         for (ListenerStatus listener : kafkaListeners) {
             if (listener.getType().equals(listenerType))
