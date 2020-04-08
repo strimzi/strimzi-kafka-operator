@@ -410,7 +410,11 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
@@ -458,7 +462,7 @@ public class KafkaConnectClusterTest {
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
-        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 

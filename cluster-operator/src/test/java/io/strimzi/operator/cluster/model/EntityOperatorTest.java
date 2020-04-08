@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -152,7 +154,11 @@ public class EntityOperatorTest {
 
     @Test
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
@@ -187,7 +193,7 @@ public class EntityOperatorTest {
 
         // Check Deployment
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
