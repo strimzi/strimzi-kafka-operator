@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
@@ -89,9 +90,12 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        DeploymentUtils.waitForDeploymentReady(kafkaBridge.getMetadata().getName() + "-bridge", kafkaBridge.getSpec().getReplicas());
-        LOGGER.info("Kafka Bridge {} is ready", kafkaBridge.getMetadata().getName());
+        String kafkaBridgeCrName = kafkaBridge.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridgeCrName);
+        DeploymentUtils.waitForDeploymentReady(KafkaBridgeResources.deploymentName(kafkaBridgeCrName), kafkaBridge.getSpec().getReplicas());
+        LOGGER.info("Kafka Bridge {} is ready", kafkaBridgeCrName);
+
         return kafkaBridge;
     }
 

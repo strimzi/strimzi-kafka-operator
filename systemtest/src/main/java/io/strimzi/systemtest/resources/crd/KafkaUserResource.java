@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,10 +76,12 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        LOGGER.info("Waiting for Kafka User {}", kafkaUser.getMetadata().getName());
-        SecretUtils.waitForSecretReady(kafkaUser.getMetadata().getName());
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser.getMetadata().getName());
-        LOGGER.info("Kafka User {} is ready", kafkaUser.getMetadata().getName());
+        String kafkaUserCrName = kafkaUser.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka User {}", kafkaUserCrName);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUserCrName);
+        LOGGER.info("Kafka User {} is ready", kafkaUserCrName);
+
         return kafkaUser;
     }
 
