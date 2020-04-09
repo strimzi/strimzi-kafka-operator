@@ -31,7 +31,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private Map<String, Object> config = new HashMap<>(0);
 
@@ -39,7 +39,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private KafkaConnectTls tls;
     private KafkaClientAuthentication authentication;
 
-    @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
         return config;
     }
