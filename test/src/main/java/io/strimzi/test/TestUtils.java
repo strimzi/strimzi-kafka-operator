@@ -46,7 +46,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -121,7 +120,7 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                RuntimeException runtimeException = new RuntimeException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                WaitException runtimeException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
                 runtimeException.printStackTrace();
                 throw runtimeException;
             }
