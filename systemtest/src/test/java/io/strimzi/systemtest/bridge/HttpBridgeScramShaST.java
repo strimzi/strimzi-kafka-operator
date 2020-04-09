@@ -170,8 +170,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, weirdUserName, client);
         if (bridgeResponse.size() == 0) {

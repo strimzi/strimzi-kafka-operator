@@ -883,8 +883,7 @@ class ConnectST extends BaseST {
                 .withTopicName(topicName)
                 .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), CoreMatchers.is(MESSAGE_COUNT));
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), CoreMatchers.is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH);
     }
