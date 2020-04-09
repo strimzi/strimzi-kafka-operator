@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -31,8 +30,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -107,12 +104,10 @@ public class SpecificST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
     }
 
 
@@ -158,11 +153,10 @@ public class SpecificST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     @Test
@@ -230,11 +224,10 @@ public class SpecificST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
 
         String invalidNetworkAddress = "255.255.255.111/30";
 
@@ -249,10 +242,11 @@ public class SpecificST extends BaseST {
         basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         basicExternalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
 
-        assertThrows(ExecutionException.class, () -> {
-            Future<Integer> invalidProducer = basicExternalKafkaClient.sendMessagesPlain();
-            Future<Integer> invalidConsumer = basicExternalKafkaClient.receiveMessagesPlain();
-        });
+        assertThrows(TimeoutException.class, () ->
+            basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+                basicExternalKafkaClient.sendMessagesPlain(),
+                basicExternalKafkaClient.receiveMessagesPlain()
+            ));
     }
 
     @BeforeAll

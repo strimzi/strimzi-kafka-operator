@@ -29,4 +29,7 @@ public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     protected abstract void handleClient();
 
+    public CompletableFuture<T> getResultPromise() {
+        return resultPromise;
+    }
 }

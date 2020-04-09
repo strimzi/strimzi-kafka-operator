@@ -60,8 +60,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
@@ -104,11 +102,10 @@ class CustomResourceStatusST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesPlain();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
 
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
