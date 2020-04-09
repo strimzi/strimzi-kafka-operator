@@ -323,7 +323,7 @@ public class OauthTlsST extends OauthBaseST {
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME); 
 
         oauthExternalKafkaClientTls.setClusterName(targetKafkaCluster);
         oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
