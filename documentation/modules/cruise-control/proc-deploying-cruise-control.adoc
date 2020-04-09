@@ -53,7 +53,10 @@ spec:
       limits:
         cpu: 500m
         memory: 128Mi
-    logging: debug <5>
+    logging: <5>
+        type: inline
+        loggers:
+          cruisecontrol.root.logger: "INFO"
     template: <6>
       pod:
         metadata:
