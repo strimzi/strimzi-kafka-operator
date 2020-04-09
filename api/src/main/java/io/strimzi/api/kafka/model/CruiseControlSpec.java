@@ -35,7 +35,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private static final long serialVersionUID = 1L;
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
-    public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., ssl., security., failed.brokers.zk.path,"
+    public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,"
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
         + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
         + "capacity.config.file, self.healing.";

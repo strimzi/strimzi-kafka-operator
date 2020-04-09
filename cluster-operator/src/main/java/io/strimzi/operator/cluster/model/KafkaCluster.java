@@ -458,13 +458,13 @@ public class KafkaCluster extends AbstractModel {
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
-        CruiseControlSpec cruiseControlSpec  = kafkaSpec.getCruiseControl();
-
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
         if (metricReporters != null) {
             addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
         }
+
+        CruiseControlSpec cruiseControlSpec  = kafkaSpec.getCruiseControl();
         if (cruiseControlSpec != null) {
             metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
             configuration.setConfigOption(CRUISE_CONTROL_METRICS_TOPIC, CRUISE_CONTROL_METRICS_TOPIC_VALUE);

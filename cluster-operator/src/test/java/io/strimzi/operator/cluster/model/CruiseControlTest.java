@@ -180,7 +180,7 @@ public class CruiseControlTest {
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Double.toString(generatedCapacity.getDiskMiB())));
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Double.toString(generatedCapacity.getInboundNetworkKiBPerSecond())));
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Double.toString(generatedCapacity.getOutboundNetworkKibPerSecond())));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY), is(Double.toString(generatedCapacity.getOutboundNetworkKiBPerSecond())));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorage();

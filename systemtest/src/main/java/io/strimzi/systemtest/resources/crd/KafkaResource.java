@@ -242,7 +242,7 @@ public class KafkaResource {
         // Cruise Control is not setup every time
         if (kafka.getSpec().getCruiseControl() != null) {
             LOGGER.info("Waiting for Cruise Control pods");
-            DeploymentUtils.waitForDeploymentReady(CruiseControlResources.deploymentName(name));
+            DeploymentUtils.waitForDeploymentReady(CruiseControlResources.deploymentName(kafkaCrName));
             LOGGER.info("Cruise Control pods are ready");
         }
         return kafka;

@@ -59,19 +59,19 @@ spec:
 ----
 == Capacity configuration
 
-Cruise Control uses capacity limits to determine if goals related to broker resources are being violated.
-A violation of a goal can cause a optimization to fail, preventing that optimization from being used to generate a partition rebalance proposal.
-For example, an optimization that would cause a broker to exceed its CPU capacity would not be used for when the CpuCapacityGoal is set as a hard goal.
+Cruise Control uses _capacity limits_ to determine if optimization goals for broker resources are being broken.
+An optimization will fail if a goal is broken, preventing the optimization from being used to generate an optimization proposal for balanced partition assignments.
+For example, an optimization that would cause a broker to exceed its CPU capacity would not be used if the `CpuCapacityGoal` is set as a hard goal.
 
-Capacity limits for broker resources can be specified in the `brokerCapacity` property in `Kafka.spec.cruiseControl`.
+You specify capacity limits for broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 Capacity limits can be set for the following broker resources in the described units:
 
-* `disk`  - Disk storage in MiB
-* `cpuUtilization`   - CPU utilization as a percent (0-100)
-* `inboundNetwork`  - Network inbound throughput in KiB/s
-* `outboundNetwork` - Newtork outbound throughput in KiB/s
+* `disk`            - Disk storage in bytes
+* `cpuUtilization`  - CPU utilization as a percent (0-100)
+* `inboundNetwork`  - Network inbound throughput in bytes per second
+* `outboundNetwork` - Network outbound throughput in bytes per second
 
-Since {ProductName} brokers are homogeneous, Cruise Control will apply the same capacity limits to every broker it is monitoring.
+Because {ProductName} Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
 .An example Cruise Control brokerCapacity configuration
 [source,yaml,subs="attributes+"]
@@ -85,12 +85,57 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      disk: 100000
+      disk: 100G
       cpuUtilization: 100
-      inboundNetwork: 10000
-      outboundNetwork: 10000
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
     # ...
 ----
 
+
 .Additional resources
-For information, refer to the xref:type-CruiseControlBrokerCapacity-reference[Capacity schema reference].
+For more information, refer to the xref:type-BrokerCapacity-reference[].
+
+== Logging configuration
+
+Cruise Control has its own configurable logger:
+
+* `cruisecontrol.root.logger`
+
+Cruise Control uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        cruisecontrol.root.logger: "INFO"
+    # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: external
+      name: customConfigMap
+    # ...
+----

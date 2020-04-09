@@ -25,7 +25,7 @@ public class Capacity {
     private Double diskMiB;
     private Integer cpuUtilization;
     private Double inboundNetworkKiBPerSecond;
-    private Double outboundNetworkKibPerSecond;
+    private Double outboundNetworkKiBPerSecond;
 
     public Capacity(KafkaSpec spec) {
         BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
@@ -33,7 +33,7 @@ public class Capacity {
         this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(spec.getKafka().getStorage());
         this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
         this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
-        this.outboundNetworkKibPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
+        this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
     }
 
     /**
@@ -110,11 +110,11 @@ public class Capacity {
         this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
     }
 
-    public Double getOutboundNetworkKibPerSecond() {
-        return outboundNetworkKibPerSecond;
+    public Double getOutboundNetworkKiBPerSecond() {
+        return outboundNetworkKiBPerSecond;
     }
 
-    public void setOutboundNetworkKibPerSecond(Double outboundNetworkKibPerSecond) {
-        this.outboundNetworkKibPerSecond = outboundNetworkKibPerSecond;
+    public void setOutboundNetworkKiBPerSecond(Double outboundNetworkKiBPerSecond) {
+        this.outboundNetworkKiBPerSecond = outboundNetworkKiBPerSecond;
     }
 }

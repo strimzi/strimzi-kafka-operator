@@ -1354,7 +1354,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
-|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., ssl., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing.
+|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing.
 |map
 |livenessProbe   1.2+<.<|Pod liveness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
@@ -1406,13 +1406,13 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [options="header"]
 |====
 |Property                |Description
-|disk             1.2+<.<|Broker capacity for disk (i.e 100Gi).
+|disk             1.2+<.<|Broker capacity for disk, for example, 100Gi.
 |string
 |cpuUtilization   1.2+<.<|Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
-|inboundNetwork   1.2+<.<|Broker capacity for network inbound throughput (i.e 10000KB/s).
+|inboundNetwork   1.2+<.<|Broker capacity for network inbound throughput, for example, 10000KB/s.
 |string
-|outboundNetwork  1.2+<.<|Broker capacity for network outbound throughput (i.e 10000KB/s).
+|outboundNetwork  1.2+<.<|Broker capacity for network outbound throughput, for example 10000KB/s.
 |string
 |====
 

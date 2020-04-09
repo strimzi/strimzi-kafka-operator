@@ -4858,7 +4858,7 @@ spec:
                   description: 'The Cruise Control configuration. For a full list
                     of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
                     Note that properties with the following prefixes cannot be set:
-                    bootstrap.servers, client.id, zookeeper., network., ssl., security.,
+                    bootstrap.servers, client.id, zookeeper., network., security.,
                     failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
                     webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
                     metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
@@ -5580,8 +5580,8 @@ spec:
                   properties:
                     disk:
                       type: string
-                      pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                      description: Broker capacity for disk (i.e 100Gi).
+                      pattern: ^[0-9]+([KMGTPE]i?)?$
+                      description: Broker capacity for disk, for example, 100Gi.
                     cpuUtilization:
                       type: integer
                       minimum: 0
@@ -5591,13 +5591,13 @@ spec:
                     inboundNetwork:
                       type: string
                       pattern: '[0-9]+([KMG]i?)?B/s'
-                      description: Broker capacity for network inbound throughput
-                        (i.e 10000KB/s).
+                      description: Broker capacity for network inbound throughput,
+                        for example, 10000KB/s.
                     outboundNetwork:
                       type: string
                       pattern: '[0-9]+([KMG]i?)?B/s'
-                      description: Broker capacity for network outbound throughput
-                        (i.e 10000KB/s).
+                      description: Broker capacity for network outbound throughput,
+                        for example 10000KB/s.
                   description: The Cruise Control `brokerCapacity` configuration.
               required:
               - replicas

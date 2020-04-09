@@ -9,12 +9,14 @@
 [id='con-cruise-control-overview-{context}']
 = Cruise Control overview
 
-Brokers in a Kafka cluster can become unevenly loaded due to things like an uneven distribution of busy partitions.
-Cruise Control is a tool for simplifying the monitoring and rebalancing of partitions across a Kafka cluster.
-You deploy Cruise Control alongside a Kafka cluster to:
+Brokers in a Kafka cluster can become unevenly loaded for many reasons.
+For example, partitions that handle large amounts of message traffic can be unevenly distributed across the available brokers.
+Monitoring broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to the overhead of managing a Kafka cluster.
+Cruise Control is a tool for automating the monitoring and rebalancing of partitions across a Kafka cluster.
+When deployed alongside a Kafka cluster, Cruise Control can perform the following cluster balancing tasks:
 
-* Monitor the CPU, disk, and network load of Kafka brokers.
-* Propose balanced partition assignments, known as partition rebalance proposals.
-* Trigger partition reassignments based on those proposals.
+* Monitoring the CPU, disk, and network load of Kafka brokers.
+* Making optimization proposals: balanced partition assignments based on configurable optimization goals.
+* Executing partition reassignments based on optimization proposals.
 
 The following sections explain how to xref:proc-deploying-cruise-control-{context}[deploy Cruise Control], xref:ref-cruise-control-configuration-{context}[set configuration options], xref:proc-interacting-with-cruise-control-api-{context}[use the Cruise Control API], and xref:proc-executing-cruise-control-rebalance-operations-{context}[execute a cluster rebalance operation].

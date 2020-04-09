@@ -5,11 +5,13 @@
 [id='proc-deploying-cruise-control-{context}']
 = Deploying Cruise Control
 
-Deploy Cruise Control to your {ProductName} cluster through the `cruiseControl` property in the `Kafka` resource.
+Cruise Control is configured using the `cruiseControl` property in the `Kafka` resource.
+Once configured, you can deploy a Cruise Control instance to your {ProductName} cluster by creating or updating the `Kafka` resource.
 
-Refer to the xref:ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration] for an overview of the `Kafka` resource and its properties.
+For an overview of the `Kafka` resource, see the xref:ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration].
 
 You can configure `cruiseControl` properties as part of a deployment or redeployment of a Kafka cluster.
+Deploy one instance of Cruise Control per Kafka cluster.
 
 .Prerequisites
 
@@ -69,11 +71,11 @@ spec:
       timeoutSeconds: 5
 # ...
 ----
-<1> Number of Cruise Control application instances; set to `1` to run or `0` to pause the application.
-<2> Specifies the Cruise Control capacity configuration. For more information, see xref:capacity_configuration[capacity configuration].
-<3> Specifies the Cruise Control configuration. You can provide any xref:ref-cruise-control-configuration-{context}[standard configuration option] apart from those managed directly by {ProductName}.
+<1> Number of Cruise Control instances to create. Set to `1` to run the application or `0` to pause it.
+<2> Specifies capacity limits for broker resources. For more information, see xref:capacity_configuration[Capacity configuration].
+<3> Defines the Cruise Control configuration, including default and enabled optimization goals. You can provide any xref:ref-cruise-control-configuration-{context}[standard configuration option] apart from those managed directly by {ProductName}.
 <4> CPU and memory resources reserved for Cruise Control. For more information, see xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[].
-<5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<5> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger called cruisecontrol.root.logger. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:logging_configuration[Logging configuration].
 <6> xref:assembly-customizing-deployments-str[Customization of deployment templates and pods].
 <7> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
 <8> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
@@ -85,7 +87,7 @@ spec:
 kubectl apply -f _kafka.yaml_
 ----
 
-. Verify the Cruise Control deployment:
+. Verify that Cruise Control was successfully deployed:
 +
 [source,shell,subs="+quotes"]
 ----

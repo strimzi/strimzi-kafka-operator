@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -52,7 +53,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         CC_DEFAULT_PROPERTIES_MAP.put("num.partition.metrics.windows", "1");
         CC_DEFAULT_PROPERTIES_MAP.put("broker.metrics.window.ms", Integer.toString(300_000));
         CC_DEFAULT_PROPERTIES_MAP.put("num.broker.metrics.windows", "20");
-        CC_DEFAULT_PROPERTIES_MAP.put("completed.user.task.retention.time.ms", Integer.toString(86_400_000));
+        CC_DEFAULT_PROPERTIES_MAP.put("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
         CC_DEFAULT_PROPERTIES_MAP.put("default.goals", DEFAULT_GOALS);
         CC_DEFAULT_PROPERTIES_MAP.put("goals", DEFAULT_GOALS);
 

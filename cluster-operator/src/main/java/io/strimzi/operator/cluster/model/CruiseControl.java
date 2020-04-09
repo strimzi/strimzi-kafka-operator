@@ -193,7 +193,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.brokerDiskMiBCapacity = capacity.getDiskMiB();
             cruiseControl.brokerCpuUtilizationCapacity = capacity.getCpuUtilization();
             cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
-            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKibPerSecond();
+            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
