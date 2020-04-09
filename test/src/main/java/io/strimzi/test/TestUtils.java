@@ -96,7 +96,7 @@ public final class TestUtils {
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
-     * or throw a TimeoutException if it doesn't returns true within {@code timeoutMs} milliseconds.
+     * or throw a WaitException if it doesn't returns true within {@code timeoutMs} milliseconds.
      * @return The remaining time left until timeout occurs
      * (helpful if you have several calls which need to share a common timeout),
      * */
@@ -120,9 +120,9 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                TimeoutException exception = new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
-                exception.printStackTrace();
-                throw exception;
+                WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                waitException.printStackTrace();
+                throw waitException;
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
