@@ -753,8 +753,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
                             return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                                 if (pod == null) {
-                                    log.debug("Pod not found, no need to roll");
-                                    throw new ConcurrentDeletionException("Pod not found, no need to roll");
+                                    throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StatefulSet.");
                                 }
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
