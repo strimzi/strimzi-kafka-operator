@@ -37,6 +37,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import kafka.tools.MirrorMaker;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -55,9 +56,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -1041,14 +1039,9 @@ class SecurityST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
 
-        assertThat(producer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
-
-        assertThrows(ExecutionException.class, () -> {
-            Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-            consumer.get(2, TimeUnit.MINUTES);
-        });
+        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.receiveMessagesTls());
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
             .editSpec()
@@ -1081,14 +1074,10 @@ class SecurityST extends BaseST {
         basicExternalKafkaClient.setConsumerGroup(consumerGroupName);
         basicExternalKafkaClient.setKafkaUsername(kafkaUserRead);
 
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-        assertThat(consumer.get(2, TimeUnit.MINUTES), is(numberOfMessages));
+        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
-        assertThrows(ExecutionException.class, () -> {
-            Future<Integer> invalidProducer = basicExternalKafkaClient.sendMessagesTls();
-            invalidProducer.get(2, TimeUnit.MINUTES);
-        });
+        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.sendMessagesTls());
     }
 
     @Test
@@ -1147,14 +1136,12 @@ class SecurityST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
                 "we configured Acls with only write operation", USER_NAME, TOPIC_NAME);
 
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
 
         String nonSuperuserName = USER_NAME + "-non-super-user";
 
@@ -1181,18 +1168,14 @@ class SecurityST extends BaseST {
 
         basicExternalKafkaClient.setKafkaUsername(nonSuperuserName);
 
-        basicExternalKafkaClient.sendMessagesTls();
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
                 " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
 
         basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThrows(ExecutionException.class, () -> {
-            Future<Integer> invalidConsumer = basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            invalidConsumer.get(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT, TimeUnit.MILLISECONDS);
-        });
+        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
 
     @Test

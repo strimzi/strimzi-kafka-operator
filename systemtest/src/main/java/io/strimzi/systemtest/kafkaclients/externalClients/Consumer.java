@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,8 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
-
-public class Consumer extends ClientHandlerBase<Integer> {
+public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
     private final KafkaClientProperties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
@@ -26,6 +26,7 @@ public class Consumer extends ClientHandlerBase<Integer> {
         this.properties = properties;
         this.topic = topic;
         this.clientName = clientName;
+        this.vertx = Vertx.vertx();
     }
 
     @Override
@@ -60,6 +61,13 @@ public class Consumer extends ClientHandlerBase<Integer> {
                 resultPromise.completeExceptionally(ar.cause());
             }
         });
+    }
 
+    @Override
+    public void close() {
+        LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 }

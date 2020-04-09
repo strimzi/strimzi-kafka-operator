@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
@@ -15,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
-public class Producer extends ClientHandlerBase<Integer> {
+public class Producer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
     private KafkaClientProperties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
@@ -27,10 +28,13 @@ public class Producer extends ClientHandlerBase<Integer> {
         this.properties = properties;
         this.topic = topic;
         this.clientName = clientName;
+        this.vertx = Vertx.vertx();
     }
 
     @Override
     protected void handleClient() {
+        LOGGER.info("Creating instance of Vert.x for the client {}", this.getClass().getName());
+
         LOGGER.info("Producer is starting with following properties: {}", properties.getProperties().toString());
 
         KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties.getProperties());
@@ -48,11 +52,19 @@ public class Producer extends ClientHandlerBase<Integer> {
         }
     }
 
+    @Override
+    public void close() {
+        LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
+        if (vertx != null) {
+            vertx.close();
+        }
+    }
+
     private void sendNext(KafkaProducer<String, String> producer, String topic) {
         if (msgCntPredicate.negate().test(numSent.get())) {
 
             KafkaProducerRecord<String, String> record =
-                    KafkaProducerRecord.create(topic, String.valueOf("\"Sending messages\": \"Hello-world - " + numSent.get() + "\""));
+                    KafkaProducerRecord.create(topic, "\"Sending messages\": \"Hello-world - " + numSent.get() + "\"");
 
             producer.send(record, done -> {
                 if (done.succeeded()) {

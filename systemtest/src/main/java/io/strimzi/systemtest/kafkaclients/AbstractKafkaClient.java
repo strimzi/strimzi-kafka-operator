@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
 
@@ -16,6 +18,8 @@ import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapService
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public abstract class AbstractKafkaClient {
+
+    private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
     protected String topicName;
     protected String namespaceName;
@@ -113,8 +117,12 @@ public abstract class AbstractKafkaClient {
         this.messageCount = messageCount;
     }
 
-    protected boolean verifyProducedAndConsumedMessages(int producedMessages, int consumedMessages) {
-        return producedMessages == consumedMessages;
+    public void verifyProducedAndConsumedMessages(int producedMessages, int consumedMessages) {
+        if (producedMessages != consumedMessages) {
+            LOGGER.info("Producer produced {} messages", producedMessages);
+            LOGGER.info("Consumer consumed {} messages", consumedMessages);
+            throw new RuntimeException("Producer or consumer does not produce or consume required message");
+        }
     }
 
     /**

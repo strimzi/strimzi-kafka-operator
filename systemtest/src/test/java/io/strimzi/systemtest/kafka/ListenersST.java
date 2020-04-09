@@ -38,8 +38,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -112,11 +110,10 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -196,11 +193,11 @@ public class ListenersST extends BaseST {
 
         LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
@@ -267,11 +264,11 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
@@ -342,11 +339,10 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -415,11 +411,11 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
@@ -486,11 +482,11 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
 // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
@@ -554,11 +550,11 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(null)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
@@ -607,11 +603,10 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -656,11 +651,10 @@ public class ListenersST extends BaseST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-71");
         internalKafkaClient.setMessageCount(MESSAGE_COUNT * 3);
@@ -701,11 +695,10 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(null)
             .build();
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-83");
 
@@ -752,11 +745,10 @@ public class ListenersST extends BaseST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -807,11 +799,10 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -856,12 +847,10 @@ public class ListenersST extends BaseST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        // TODO: make sure that passing...need to change in `IntPredicate msgCntPredicate = x -> x == messageCount;` to x >= messageCount probably...
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-72");
         internalKafkaClient.setMessageCount(MESSAGE_COUNT * 5);
@@ -902,11 +891,10 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(null)
             .build();
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-73");
 
@@ -954,11 +942,10 @@ public class ListenersST extends BaseST {
             .withCertificateAuthorityCertificateName(null)
             .build();
 
-        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
-        Future<Integer> consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -1000,11 +987,10 @@ public class ListenersST extends BaseST {
         basicExternalKafkaClient.setCaCertName(null);
         basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
@@ -1049,11 +1035,10 @@ public class ListenersST extends BaseST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-92");
         internalKafkaClient.setMessageCount(MESSAGE_COUNT * 5);
@@ -1084,11 +1069,10 @@ public class ListenersST extends BaseST {
         basicExternalKafkaClient.setCaCertName(null);
         basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        producer = basicExternalKafkaClient.sendMessagesTls();
-        consumer = basicExternalKafkaClient.receiveMessagesTls();
-
-        assertThat("Producer didn't produce all messages", producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
-        assertThat("Consumer didn't consume all messages", consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
 
         internalKafkaClient.setMessageCount(5 * MESSAGE_COUNT);
         internalKafkaClient.setConsumerGroup("consumer-group-certs-93");

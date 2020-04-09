@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * The InternalKafkaClient for sending and receiving messages using basic properties.
  * The client is using an internal listeners and communicate from the pod.
  */
-public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Integer> {
+public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
@@ -55,7 +55,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         podName = builder.podName;
     }
 
-    public Integer sendMessagesPlain() {
+    public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
@@ -64,7 +64,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
      * @return count of send and acknowledged messages
      */
     @Override
-    public Integer sendMessagesPlain(long timeout) {
+    public int sendMessagesPlain(long timeout) {
 
         VerifiableClient producer = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_PRODUCER)
@@ -93,12 +93,12 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         return sent;
     }
 
-    public Integer sendMessagesTls() {
+    public int sendMessagesTls() {
         return sendMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Integer sendMessagesTls(long timeout) {
+    public int sendMessagesTls(long timeout) {
 
         VerifiableClient producerTls = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_PRODUCER)
@@ -123,12 +123,12 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         return sent;
     }
 
-    public Integer receiveMessagesPlain() {
+    public int receiveMessagesPlain() {
         return receiveMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Integer receiveMessagesPlain(long timeout) {
+    public int receiveMessagesPlain(long timeout) {
 
         VerifiableClient consumer = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_CONSUMER)
@@ -155,7 +155,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         return received;
     }
 
-    public Integer receiveMessagesTls() {
+    public int receiveMessagesTls() {
         return receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
@@ -164,7 +164,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
        * @return count of received messages
      */
     @Override
-    public Integer receiveMessagesTls(long timeoutMs) {
+    public int receiveMessagesTls(long timeoutMs) {
 
         VerifiableClient consumerTls = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_CONSUMER)
