@@ -124,6 +124,60 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, USER_NAME), is(true));
     }
 
+    @Test
+    void testTlsAuthWithWeirdNamedUser() throws Exception {
+        String topicName = "topic" + rng.nextInt(Integer.MAX_VALUE);
+        String groupId = "my-group-" + rng.nextInt(Integer.MAX_VALUE);
+
+        // Create weird named user with . and maximum of 64 chars -> TLS
+        String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
+
+        // Create topic
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        // Create user
+        KafkaUserResource.tlsUser(CLUSTER_NAME, weirdUserName).done();
+
+        JsonObject config = new JsonObject();
+        config.put("name", weirdUserName);
+        config.put("format", "json");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // Create consumer
+        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(weirdUserName));
+
+        // Create topics json
+        JsonArray topic = new JsonArray();
+        topic.add(topicName);
+        JsonObject topics = new JsonObject();
+        topics.put("topics", topic);
+
+        // Subscribe
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, weirdUserName, client), is(true));
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .withKafkaUsername(weirdUserName)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
+
+        Future<Integer> producer = basicExternalKafkaClient.sendMessagesTls();
+        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        // Try to consume messages
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, weirdUserName, client);
+        if (bridgeResponse.size() == 0) {
+            // Real consuming
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, weirdUserName, client);
+        }
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
+        // Delete consumer
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, weirdUserName), is(true));
+    }
+
     @BeforeAll
     void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
