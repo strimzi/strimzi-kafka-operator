@@ -33,8 +33,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -76,9 +74,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
-        Future<Integer> consumer = basicKafkaClient.receiveMessagesPlain();
-
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(messageCount));
+        assertThat(basicKafkaClient.receiveMessagesPlain(), is(messageCount));
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
@@ -117,9 +113,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 .build();
 
         // Send messages to Kafka
-        Future<Integer> producer = basicKafkaClient.sendMessagesPlain();
-
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MINUTES), is(MESSAGE_COUNT));
+        assertThat(basicKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
 
         // Try to consume messages
         JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);

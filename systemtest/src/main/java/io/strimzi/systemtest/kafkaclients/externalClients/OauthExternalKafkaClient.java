@@ -9,7 +9,6 @@ import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule;
@@ -19,18 +18,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 
 /**
  * The OauthExternalKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations<Future<Integer>> {
+public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
-    private Vertx vertx = Vertx.vertx();
 
     private String clientId;
     private String clientSecretName;
@@ -90,19 +89,17 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         introspectionEndpointUri = builder.introspectionEndpointUri;
     }
 
-    public Future<Integer> sendMessagesPlain() {
+    public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Future<Integer> sendMessagesPlain(long timeoutMs) {
+    public int sendMessagesPlain(long timeoutMs) {
         String clientName = "sender-plain-" + clusterName;
-        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties kafkaClientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
@@ -116,35 +113,32 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
             .build();
 
-        vertx.deployVerticle(new Producer(kafkaClientProperties, resultPromise, msgCntPredicate, topicName, clientName));
+        try (Producer plainProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
-        try {
-            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
+            plainProducer.getVertx().deployVerticle(plainProducer);
+
+            return plainProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        vertx.close();
-        return resultPromise;
     }
 
-    public Future<Integer> sendMessagesTls() {
+    public int sendMessagesTls() {
         return sendMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Future<Integer> sendMessagesTls(long timeoutMs) {
+    public int sendMessagesTls(long timeoutMs) {
         String clientName = "sender-ssl" + clusterName;
-        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-
-        KafkaClientProperties kafkaClientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -160,30 +154,28 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withSaslJassConfigAndTls(clientId, clientSecretName, oauthTokenEndpointUri)
             .build();
 
-        vertx.deployVerticle(new Producer(kafkaClientProperties, resultPromise, msgCntPredicate, topicName, clientName));
+        try (Producer tlsProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
-        try {
-            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
+            tlsProducer.getVertx().deployVerticle(tlsProducer);
+
+            return tlsProducer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        vertx.close();
-        return resultPromise;
     }
 
-    public Future<Integer> receiveMessagesPlain() {
+    public int receiveMessagesPlain() {
         return receiveMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Future<Integer> receiveMessagesPlain(long timeoutMs) {
+    public int receiveMessagesPlain(long timeoutMs) {
         String clientName = "receiver-plain-" + clusterName;
-        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties kafkaClientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withGroupIdConfig(consumerGroup)
@@ -199,35 +191,33 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
             .build();
 
-        vertx.deployVerticle(new Consumer(kafkaClientProperties, resultPromise, msgCntPredicate, topicName, clientName));
+        try (Consumer plainConsumer = new Consumer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
-        try {
-            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
+            plainConsumer.getVertx().deployVerticle(plainConsumer);
+
+            return plainConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        vertx.close();
-        return resultPromise;
     }
 
-    public Future<Integer> receiveMessagesTls() {
+    public int receiveMessagesTls() {
         return sendMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
-    public Future<Integer> receiveMessagesTls(long timeoutMs) {
+    public int receiveMessagesTls(long timeoutMs) {
 
         String clientName = "receiver-ssl-" + clusterName;
-        vertx = Vertx.vertx();
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties kafkaClientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withCaSecretName(caCertName)
@@ -245,15 +235,15 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
             .withSaslJassConfigAndTls(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
             .build();
 
-        vertx.deployVerticle(new Consumer(kafkaClientProperties, resultPromise, msgCntPredicate, topicName, clientName));
+        try (Consumer tlsConsumer = new Consumer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
-        try {
-            resultPromise.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
+            tlsConsumer.getVertx().deployVerticle(tlsConsumer);
+
+            return tlsConsumer.getResultPromise().get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        vertx.close();
-        return resultPromise;
     }
 
     @Override
