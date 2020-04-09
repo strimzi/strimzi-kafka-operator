@@ -41,6 +41,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -136,7 +137,7 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")
     @Test
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, TimeoutException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
         oauthExternalKafkaClientTls.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClientTls.sendMessagesTls(),
             oauthExternalKafkaClientTls.receiveMessagesTls()
