@@ -26,17 +26,6 @@ public class ConfigMapUtils {
     private ConfigMapUtils() { }
 
     /**
-     * Wait until the config map has been deleted.
-     * @param name The name of the ConfigMap.
-     */
-    public static void waitForConfigMapDeletion(String name) {
-        LOGGER.info("Waiting for config map deletion {}", name);
-        TestUtils.waitFor("Config map " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getConfigMapStatus(name));
-        LOGGER.info("Config map {} was deleted", name);
-    }
-
-    /**
      * Wait until the config map has been recovered.
      * @param name The name of the ConfigMap.
      */
