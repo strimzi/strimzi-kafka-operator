@@ -23,7 +23,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.test.TimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.json.JsonArray;
@@ -42,6 +41,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -82,7 +82,7 @@ public class OauthTlsST extends OauthBaseST {
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testProducerConsumerConnect() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumerConnect() {
         oauthExternalKafkaClientTls.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClientTls.sendMessagesTls(),
             oauthExternalKafkaClientTls.receiveMessagesTls()
@@ -137,7 +137,7 @@ public class OauthTlsST extends OauthBaseST {
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")
     @Test
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, TimeoutException, ExecutionException, java.util.concurrent.TimeoutException {
+    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
         oauthExternalKafkaClientTls.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClientTls.sendMessagesTls(),
             oauthExternalKafkaClientTls.receiveMessagesTls()
@@ -323,7 +323,7 @@ public class OauthTlsST extends OauthBaseST {
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME); 
 
         oauthExternalKafkaClientTls.setClusterName(targetKafkaCluster);
         oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));

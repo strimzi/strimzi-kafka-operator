@@ -4,8 +4,8 @@
  */
 package io.strimzi.test;
 
-public class TimeoutException extends RuntimeException {
-    public TimeoutException(String message) {
+public class WaitException extends RuntimeException {
+    public WaitException(String message) {
         super(message);
     }
 }
