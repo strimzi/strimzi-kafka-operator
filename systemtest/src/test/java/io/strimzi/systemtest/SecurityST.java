@@ -37,7 +37,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.TimeoutException;
+import io.strimzi.test.WaitException;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import kafka.tools.MirrorMaker;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -1041,7 +1041,7 @@ class SecurityST extends BaseST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
 
-        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.receiveMessagesTls());
+        assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls());
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
             .editSpec()
@@ -1077,7 +1077,7 @@ class SecurityST extends BaseST {
         assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
-        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.sendMessagesTls());
+        assertThrows(WaitException.class, () -> basicExternalKafkaClient.sendMessagesTls());
     }
 
     @Test
@@ -1175,7 +1175,7 @@ class SecurityST extends BaseST {
 
         basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        assertThrows(TimeoutException.class, () -> basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
 
     @Test
