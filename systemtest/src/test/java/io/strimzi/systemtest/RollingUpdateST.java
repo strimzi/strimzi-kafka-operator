@@ -30,6 +30,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
@@ -45,6 +46,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -652,42 +655,6 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testMetricsChanges() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-
-        // Metrics enabling should trigger rolling update
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
-            kafka.getSpec().getZookeeper().setMetrics(singletonMap("something", "changed"));
-        });
-
-        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-
-        // Metrics config change should not trigger rolling update
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(singletonMap("somethingelse", "changed"));
-            kafka.getSpec().getZookeeper().setMetrics(singletonMap("somethingelse", "changed"));
-        });
-
-        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
-
-        // Metrics disabling should trigger rolling update
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(null);
-            kafka.getSpec().getZookeeper().setMetrics(null);
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-    }
-
-    @Test
     void testBrokerConfigurationChangeTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -910,6 +877,108 @@ class RollingUpdateST extends BaseST {
 
         int sentAfter = internalKafkaClient.sendMessagesTls();
         assertThat(sentAfter, is(MESSAGE_COUNT));
+    }
+
+    @Test
+    void testMetricsChange() {
+        //Kafka
+        Map<String, Object> kafkaRule = new HashMap<>();
+        kafkaRule.put("pattern", "kafka.(\\w+)<type=(.+), name=(.+)><>Count");
+        kafkaRule.put("name", "kafka_$1_$2_$3_count");
+        kafkaRule.put("type", "COUNTER");
+
+        Map<String, Object> kafkaMetrics = new HashMap<>();
+        kafkaMetrics.put("lowercaseOutputName", true);
+        kafkaMetrics.put("rules", Collections.singletonList(kafkaRule));
+
+        //Zookeeper
+        Map<String, Object> zookeeperLabels = new HashMap<>();
+        zookeeperLabels.put("replicaId", "$2");
+
+        Map<String, Object> zookeeperRule = new HashMap<>();
+        zookeeperRule.put("labels", zookeeperLabels);
+        zookeeperRule.put("name", "zookeeper_$3");
+        zookeeperRule.put("pattern", "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)");
+
+        Map<String, Object> zookeeperMetrics = new HashMap<>();
+        zookeeperMetrics.put("lowercaseOutputName", true);
+        zookeeperMetrics.put("rules", Collections.singletonList(zookeeperRule));
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withMetrics(kafkaMetrics)
+                    .endKafka()
+                    .editOrNewZookeeper()
+                        .withMetrics(zookeeperMetrics)
+                    .endZookeeper()
+                    .withNewKafkaExporter()
+                    .endKafkaExporter()
+                .endSpec()
+                .done();
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
+        HashMap<String, String> kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);
+        HashMap<String, String> zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
+
+        assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
+        assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
+
+        LOGGER.info("Changing metrics to something else");
+
+        kafkaRule.replace("pattern", "kafka.(\\w+)<type=(.+), name=(.+)><>Count",
+                "kafka.(\\w+)<type=(.+), name=(.+)Percent\\w*><>MeanRate");
+        kafkaRule.replace("name", "kafka_$1_$2_$3_count", "kafka_$1_$2_$3_percent");
+        kafkaRule.replace("type", "COUNTER", "GAUGE");
+
+        zookeeperRule.replace("pattern",
+                "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)",
+                "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)");
+        zookeeperRule.replace("name", "zookeeper_$3", "zookeeper_$2");
+        zookeeperRule.replace("labels", zookeeperLabels, null);
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setMetrics(kafkaMetrics);
+            kafka.getSpec().getZookeeper().setMetrics(zookeeperMetrics);
+        });
+
+        LOGGER.info("Check if Kafka and Zookeeper pods doesn't rolled");
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
+
+        LOGGER.info("Check if Kafka and Zookeeper metrics are changed");
+        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetrics(), is(kafkaMetrics));
+        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getZookeeper().getMetrics(), is(zookeeperMetrics));
+
+        LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
+
+        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);
+        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
+
+        assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
+        assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
+
+        LOGGER.info("Removing metrics from Kafka and Zookeeper and setting them to null");
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setMetrics(null);
+            kafka.getSpec().getZookeeper().setMetrics(null);
+        });
+
+        LOGGER.info("Wait if Kafka and Zookeeper pods will roll");
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        LOGGER.info("Check if metrics are not existing in pods");
+
+        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);
+        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
+
+        kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
+        zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
     }
 
     @Override
