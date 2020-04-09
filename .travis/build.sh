@@ -56,9 +56,7 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
-# TRAVIS_REPO_SLUG change to REPO_SLUG for Azure
-# TRAVIS_REPO_SLUG should be removed when we will finish the migration
-elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ] || [ "${REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
+elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
     make docu_html
     make docu_htmlnoheader
     echo "Building in a fork and not in a Strimzi repository. Will not attempt to push anything."
@@ -67,18 +65,17 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    echo "Build of the images and push docu and artifacts to nexus is curently disabled until migration to Azure will be finished"
-#    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
-#        echo "Login into Docker Hub ..."
-#        docker login -u $DOCKER_USER -p $DOCKER_PASS
-#
-#        export DOCKER_ORG=strimzi
-#        export DOCKER_TAG=$TAG
-#        echo "Pushing to docker org $DOCKER_ORG"
-#        make docker_push
-#        if [ "$BRANCH" = "master" ]; then
-#            make docu_pushtowebsite
-#        fi
-#        make pushtonexus
-#    fi
+    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
+        echo "Login into Docker Hub ..."
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
+
+        export DOCKER_ORG=strimzi
+        export DOCKER_TAG=$TAG
+        echo "Pushing to docker org $DOCKER_ORG"
+        make docker_push
+        if [ "$BRANCH" = "master" ]; then
+            make docu_pushtowebsite
+        fi
+        make pushtonexus
+    fi
 fi
