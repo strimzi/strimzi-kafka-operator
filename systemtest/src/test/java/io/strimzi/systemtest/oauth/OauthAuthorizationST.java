@@ -16,7 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.test.TimeoutException;
+import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.junit.jupiter.api.BeforeAll;
@@ -81,7 +81,7 @@ public class OauthAuthorizationST extends OauthBaseST {
 
         teamAOauthKafkaClient.setTopicName(TOPIC_NAME);
 
-        assertThrows(TimeoutException.class, () -> teamAOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> teamAOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         String topicXName = TOPIC_X + "-example-1";
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicXName);
@@ -110,7 +110,7 @@ public class OauthAuthorizationST extends OauthBaseST {
 
         teamAOauthKafkaClient.setConsumerGroup("bad_consumer_group");
 
-        assertThrows(TimeoutException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         teamAOauthKafkaClient.setConsumerGroup("a_correct_consumer_group");
 
@@ -124,7 +124,7 @@ public class OauthAuthorizationST extends OauthBaseST {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
 
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
-        assertThrows(TimeoutException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_B);
         teamBOauthKafkaClient.setTopicName(TOPIC_B);
@@ -166,7 +166,7 @@ public class OauthAuthorizationST extends OauthBaseST {
         teamBOauthKafkaClient.setTopicName(TOPIC_X);
         teamBOauthKafkaClient.setKafkaUsername(USER_NAME);
 
-        assertThrows(TimeoutException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         LOGGER.info("Verifying that team A is not able read to topic starting with 'x-' because in kafka cluster" +
                 "does not have super-users to break authorization rules");
