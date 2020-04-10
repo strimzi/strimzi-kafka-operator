@@ -19,12 +19,12 @@ import static java.util.Arrays.asList;
 public class KafkaBridgeConsumerConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_OPTIONS;
-
+    private static final List<String> EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
-
+        EXCEPTIONS = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
         DEFAULTS = new HashMap<>();
     }
 
@@ -35,6 +35,6 @@ public class KafkaBridgeConsumerConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaBridgeConsumerConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
     }
 }

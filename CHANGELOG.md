@@ -8,7 +8,7 @@
 * Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
 * Add more metrics to Cluster and User Operators
 * New Grafana dashboard for Operator monitoring 
-* Allow ssl.cipher.suites to be configured for Kafka
+* Allow `ssl.cipher.suites`, `ssl.protocol` and `ssl.enabled.protocols` to be configurable for Kafka and the different components supported by Strimzi
 
 ## 0.17.0
 

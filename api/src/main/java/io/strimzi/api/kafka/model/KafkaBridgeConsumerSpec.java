@@ -21,9 +21,10 @@ public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, group.id, sasl., security.";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     @Override
-    @Description("The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
         return config;
     }

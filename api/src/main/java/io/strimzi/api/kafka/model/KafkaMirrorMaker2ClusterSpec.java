@@ -30,7 +30,7 @@ import static java.util.Collections.emptyMap;
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, Serializable {
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private static final long serialVersionUID = 1L;
 
