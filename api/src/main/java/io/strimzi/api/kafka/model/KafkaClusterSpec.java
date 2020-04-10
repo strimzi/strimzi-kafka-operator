@@ -49,7 +49,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     protected Storage storage;
 
@@ -89,7 +89,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.version = version;
     }
 
-    @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
