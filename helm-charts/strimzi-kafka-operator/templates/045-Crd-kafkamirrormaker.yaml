@@ -235,7 +235,9 @@ spec:
                   type: object
                   description: 'The MirrorMaker consumer config. Properties with the
                     following prefixes cannot be set: ssl., bootstrap.servers, group.id,
-                    sasl., security., interceptor.classes.'
+                    sasl., security., interceptor.classes (with the exception of:
+                    ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol,
+                    ssl.enabled.protocols).'
                 tls:
                   type: object
                   properties:
@@ -418,7 +420,8 @@ spec:
                   type: object
                   description: 'The MirrorMaker producer config. Properties with the
                     following prefixes cannot be set: ssl., bootstrap.servers, sasl.,
-                    security., interceptor.classes.'
+                    security., interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                    ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 tls:
                   type: object
                   properties:
