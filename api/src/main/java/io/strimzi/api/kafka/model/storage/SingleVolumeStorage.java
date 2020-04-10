@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
         @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public abstract class SingleVolumeStorage extends Storage {
 

@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.GenericSecretSource;
@@ -24,6 +25,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;

@@ -10,9 +10,9 @@
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
 |arrayOfBoundTypeVar     1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |arrayOfBoundTypeVar2    1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |arrayOfList             1.2+<.<|
 |string array of dimension 2
 |arrayOfRawList          1.2+<.<|
@@ -34,9 +34,9 @@
 |listOfArray             1.2+<.<|
 |string array of dimension 2
 |listOfBoundTypeVar      1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |listOfBoundTypeVar2     1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |listOfInts              1.2+<.<|
 |integer array
 |listOfInts2             1.2+<.<|
@@ -54,11 +54,11 @@
 |listOfWildcardTypeVar1  1.2+<.<|
 |string array
 |listOfWildcardTypeVar2  1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |listOfWildcardTypeVar3  1.2+<.<|
-|xref:type-Number-{context}[`Number`] array
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array
 |listOfWildcardTypeVar4  1.2+<.<|
-|xref:type-Number-{context}[`Number`] array of dimension 2
+|xref:type-ValidCrdNumber-{context}[`ValidCrdNumber`] array of dimension 2
 |longProperty            1.2+<.<|An example long property.
 |integer
 |mapProperty             1.2+<.<|
@@ -75,8 +75,8 @@
 |string
 |====
 
-[id='type-Number-{context}']
-# `Number` schema reference
+[id='type-ValidCrdNumber-{context}']
+# `ValidCrdNumber` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 

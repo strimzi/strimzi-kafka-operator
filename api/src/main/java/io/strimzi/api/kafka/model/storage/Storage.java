@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
@@ -29,6 +30,7 @@ import java.util.Map;
         @JsonSubTypes.Type(value = JbodStorage.class, name = Storage.TYPE_JBOD)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public abstract class Storage implements UnknownPropertyPreserving, Serializable {
 

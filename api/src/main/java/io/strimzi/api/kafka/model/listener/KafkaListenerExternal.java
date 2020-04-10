@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
@@ -32,6 +33,7 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaListenerExternalIngress.TYPE_INGRESS, value = KafkaListenerExternalIngress.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public abstract class KafkaListenerExternal implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

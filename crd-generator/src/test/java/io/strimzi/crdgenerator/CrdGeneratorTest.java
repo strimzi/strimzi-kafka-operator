@@ -10,24 +10,26 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CrdGeneratorTest {
     @Test
-    public void simpleTest() throws IOException, URISyntaxException {
+    public void testGeneratorCrdGoldenPath() throws IOException {
         CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
         StringWriter w = new StringWriter();
-        crdGenerator.generate(ExampleCrd.class, w);
+        crdGenerator.generate(TestCrds.ExampleCrd.class, w);
         String s = w.toString();
-        assertEquals(CrdTestUtils.readResource("simpleTest.yaml"), s);
+        assertThat(s, is(CrdTestUtils.readResource("simpleTest.yaml")));
     }
 
     @Test
-    public void generateHelmMetadataLabels() throws IOException {
+    public void testGeneratorCrdWithHelmMetadataLabels() throws IOException {
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("app", "{{ template \"strimzi.name\" . }}");
         labels.put("chart", "{{ template \"strimzi.chart\" . }}");
@@ -36,8 +38,20 @@ public class CrdGeneratorTest {
         labels.put("heritage", "{{ .Release.Service }}");
         CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false), labels);
         StringWriter w = new StringWriter();
-        crdGenerator.generate(ExampleCrd.class, w);
+        crdGenerator.generate(TestCrds.ExampleCrd.class, w);
         String s = w.toString();
-        assertEquals(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), s);
+        assertThat(s, is(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml")));
+    }
+
+    @Test
+    public void testGeneratorCrdMissingJsonPropertyAnnotationThrowsInvalidCrdException() {
+        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        StringWriter w = new StringWriter();
+        InvalidCrdException invalidCrd = assertThrows(InvalidCrdException.class, () ->
+                crdGenerator.generate(TestCrds.ExampleWithMissingJsonPropertyOrderAnnotationCrd.class, w));
+
+        assertThat(invalidCrd.getMessage(),
+                containsString("ExampleWithMissingJsonPropertyOrderAnnotationCrd missing @JsonPropertyOrder annotation"));
+
     }
 }

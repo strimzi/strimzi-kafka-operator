@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public class KafkaClientAuthenticationPlain extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;

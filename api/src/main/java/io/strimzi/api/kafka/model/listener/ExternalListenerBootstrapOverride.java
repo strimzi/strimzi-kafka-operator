@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -23,6 +24,7 @@ import java.util.Map;
     editableEnabled = false,
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public class ExternalListenerBootstrapOverride implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

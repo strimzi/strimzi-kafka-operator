@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.tracing;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
@@ -25,6 +26,7 @@ import java.util.Map;
         @JsonSubTypes.Type(name = JaegerTracing.TYPE_JAEGER, value = JaegerTracing.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 public abstract class Tracing implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

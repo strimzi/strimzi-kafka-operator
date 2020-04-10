@@ -427,7 +427,14 @@ public class CrdGenerator {
         }
         result.putAll(properties(crdClass));
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
+        if (order == null && !isExemptClass(crdClass)) {
+            throw new InvalidCrdException(crdClass.getName() + " missing @JsonPropertyOrder annotation");
+        }
         return sortedProperties(order != null ? order.value() : null, result).values();
+    }
+
+    private boolean isExemptClass(Class<?> crdClass) {
+        return crdClass == Object.class;
     }
 
     private ArrayNode buildSchemaRequired(Class<?> crdClass) {

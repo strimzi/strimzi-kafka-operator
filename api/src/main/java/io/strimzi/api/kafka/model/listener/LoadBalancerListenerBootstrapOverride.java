@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -21,6 +22,7 @@ import java.util.Map;
     editableEnabled = false,
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
+@JsonPropertyOrder({})
 @EqualsAndHashCode(callSuper = true)
 public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBootstrapOverride {
     private static final long serialVersionUID = 1L;
