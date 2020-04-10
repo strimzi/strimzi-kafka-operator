@@ -26,7 +26,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private Integer numStreams;
 
@@ -35,7 +35,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private Integer offsetCommitInterval;
 
     @Override
-    @Description("The MirrorMaker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The MirrorMaker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
         return config;
     }

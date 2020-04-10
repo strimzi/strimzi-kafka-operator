@@ -923,7 +923,9 @@ spec:
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
-                    zookeeper.set.acl, authorizer., super.user.'
+                    zookeeper.set.acl, authorizer., super.user (with the exception
+                    of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
+                    ssl.enabled.protocols).'
                 rack:
                   type: object
                   properties:
