@@ -6,7 +6,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +24,7 @@ public class KafkaBridgeConsumerConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        EXCEPTIONS = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
         DEFAULTS = new HashMap<>();
     }
 
