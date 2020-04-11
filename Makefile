@@ -38,6 +38,7 @@ release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
+	rm -f ./strimzi-$(RELEASE_VERSION).zip
 	mkdir ./strimzi-$(RELEASE_VERSION)
 
 release_version:
