@@ -8,19 +8,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
+/**
+ * Class for diffing storage configuration
+ */
 public class StorageDiff extends AbstractResourceDiff {
     private static final Logger log = LogManager.getLogger(StorageDiff.class.getName());
 
@@ -31,11 +37,31 @@ public class StorageDiff extends AbstractResourceDiff {
     private final boolean changesType;
     private final boolean shrinkSize;
 
-    public StorageDiff(Storage current, Storage desired) {
-        this(current, desired, "");
+    /**
+     * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
+     * adding overrides for nodes before scale-up / removing them after scale-down.
+     *
+     * @param current           Current Storage configuration
+     * @param desired           Desired Storage configuration
+     * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
+     * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
+     */
+    public StorageDiff(Storage current, Storage desired, int currentReplicas, int desiredReplicas) {
+        this(current, desired, currentReplicas, desiredReplicas, "");
     }
 
-    public StorageDiff(Storage current, Storage desired, String volumeDesc) {
+    /**
+     * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
+     * adding overrides for nodes before scale-up / removing them after scale-down. This constructor is used internally
+     * only.
+     *
+     * @param current           Current Storage configuration
+     * @param desired           Desired Storage configuration
+     * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
+     * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
+     * @param volumeDesc        Description of the volume which is being used
+     */
+    private StorageDiff(Storage current, Storage desired, int currentReplicas, int desiredReplicas, String volumeDesc) {
         boolean changesType = false;
         boolean shrinkSize = false;
         boolean isEmpty = true;
@@ -54,7 +80,7 @@ public class StorageDiff extends AbstractResourceDiff {
                         .filter(volume -> volume != null && volumeId.equals(volume.getId()))
                         .findAny().orElse(null);
 
-                StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, "(volume ID: " + volumeId + ") ");
+                StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, currentReplicas, desiredReplicas, "(volume ID: " + volumeId + ") ");
 
                 changesType |= diff.changesType();
                 shrinkSize |= diff.shrinkSize();
@@ -87,6 +113,15 @@ public class StorageDiff extends AbstractResourceDiff {
                     if (currentSize > desiredSize) {
                         shrinkSize = true;
                     } else {
+                        continue;
+                    }
+                }
+
+                // Some changes to overrides are allowed:
+                // * When scaling up or down, you can set the overrides for new nodes
+                // * You can set overrides for nodes which do nto exist (yet)
+                if (pathValue.startsWith("/overrides")) {
+                    if (isOverrideChangeAllowed(current, desired, currentReplicas, desiredReplicas))    {
                         continue;
                     }
                 }
@@ -135,5 +170,56 @@ public class StorageDiff extends AbstractResourceDiff {
      */
     public boolean shrinkSize() {
         return shrinkSize;
+    }
+
+    /**
+     * Validates the changes to the storage overrides and decides whether they are allowed or not. Allowed changes are
+     * those to nodes which will be added, removed or which do nto exist yet.
+     *
+     * @param current           Current Storage configuration
+     * @param desired           New storage configuration
+     * @param currentReplicas   Current number of replicas
+     * @param desiredReplicas   Desired number of replicas
+     * @return                  True if only allowed override changes were done, false othewise
+     */
+    private boolean isOverrideChangeAllowed(Storage current, Storage desired,  int currentReplicas, int desiredReplicas)   {
+        List<PersistentClaimStorageOverride> currentOverrides = ((PersistentClaimStorage) current).getOverrides();
+        if (currentOverrides == null)   {
+            currentOverrides = Collections.emptyList();
+        }
+
+        List<PersistentClaimStorageOverride> desiredOverrides = ((PersistentClaimStorage) desired).getOverrides();
+        if (desiredOverrides == null)   {
+            desiredOverrides = Collections.emptyList();
+        }
+
+        // We care only about the nodes which existed before this reconciliation and will still exist after it
+        int existedAndWillExist = Math.min(currentReplicas, desiredReplicas);
+
+        for (int i = 0; i < existedAndWillExist; i++)    {
+            int nodeId = i;
+
+            PersistentClaimStorageOverride currentOverride = currentOverrides.stream()
+                    .filter(override -> override.getBroker() == nodeId)
+                    .findFirst()
+                    .orElse(null);
+
+            PersistentClaimStorageOverride desiredOverride = desiredOverrides.stream()
+                    .filter(override -> override.getBroker() == nodeId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (currentOverride != null && desiredOverride != null) {
+                // Both overrides exist but are not equal
+                if (!currentOverride.equals(desiredOverride)) {
+                    return false;
+                }
+            } else if (currentOverride != null || desiredOverride != null) {
+                // One of them is null while the other is not null => they differ
+                return false;
+            }
+        }
+
+        return true;
     }
 }

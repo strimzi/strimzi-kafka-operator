@@ -1278,13 +1278,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
-                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage);
-                        this.zkService = zkCluster.generateService();
-                        this.zkHeadlessService = zkCluster.generateHeadlessService();
-
                         if (sts != null && sts.getSpec() != null)   {
                             this.zkCurrentReplicas = sts.getSpec().getReplicas();
                         }
+
+                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
+                        this.zkService = zkCluster.generateService();
+                        this.zkHeadlessService = zkCluster.generateHeadlessService();
 
                         if (zkCluster.getLogging() instanceof  ExternalLogging) {
                             return configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName());
@@ -1617,7 +1617,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
-                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage);
+                        int oldReplicas = 0;
+                        if (sts != null && sts.getSpec() != null)   {
+                            oldReplicas = sts.getSpec().getReplicas();
+                        }
+
+                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, oldReplicas);
                         this.kafkaService = kafkaCluster.generateService();
                         this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
 

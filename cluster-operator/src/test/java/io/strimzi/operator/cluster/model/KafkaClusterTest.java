@@ -2292,7 +2292,7 @@ public class KafkaClusterTest {
                     .endKafka()
                     .endSpec()
                     .build();
-            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage);
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage, replicas);
         });
     }
 
@@ -2339,7 +2339,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, ephemeral);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, ephemeral, replicas);
         assertThat(kc.getStorage(), is(ephemeral));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -2350,7 +2350,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, persistent);
+        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, persistent, replicas);
         assertThat(kc.getStorage(), is(persistent));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -2361,7 +2361,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod);
+        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
         assertThat(kc.getStorage(), is(jbod));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -2372,7 +2372,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod);
+        kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
         assertThat(kc.getStorage(), is(jbod));
     }
 

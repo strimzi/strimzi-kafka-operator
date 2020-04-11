@@ -389,11 +389,11 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(kafkaAssembly, versions, null);
+        return fromCrd(kafkaAssembly, versions, null, 0);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
-    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
+    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly);
 
         result.setOwnerReference(kafkaAssembly);
@@ -465,11 +465,17 @@ public class KafkaCluster extends AbstractModel {
             Storage newStorage = kafkaClusterSpec.getStorage();
             AbstractModel.validatePersistentStorage(newStorage);
 
-            StorageDiff diff = new StorageDiff(oldStorage, newStorage);
+            StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Kafka storage are allowed: changing the deleteClaim flag, adding volumes to Jbod storage or removing volumes from Jbod storage and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
+                log.warn("Only the following changes to Kafka storage are allowed: " +
+                        "changing the deleteClaim flag, " +
+                        "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
+                        "changing overrides to nodes which do not exist yet" +
+                        "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
+                log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a " +
+                        "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
+                        "about the detected changes.");
                 result.setStorage(oldStorage);
             } else {
                 result.setStorage(newStorage);
