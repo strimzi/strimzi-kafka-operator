@@ -197,11 +197,11 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(kafkaAssembly, versions, null);
+        return fromCrd(kafkaAssembly, versions, null, 0);
     }
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
+    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
@@ -251,11 +251,16 @@ public class ZookeeperCluster extends AbstractModel {
             Storage newStorage = zookeeperClusterSpec.getStorage();
             AbstractModel.validatePersistentStorage(newStorage);
 
-            StorageDiff diff = new StorageDiff(oldStorage, newStorage);
+            StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Zookeeper storage are allowed: changing the deleteClaim flag and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("Your desired Zookeeper storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
+                log.warn("Only the following changes to Zookeeper storage are allowed: " +
+                        "changing the deleteClaim flag, " +
+                        "changing overrides to nodes which do not exist yet " +
+                        "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
+                log.warn("Your desired Zookeeper storage configuration contains changes which are not allowed. As " +
+                        "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
+                        "about the detected changes.");
                 zk.setStorage(oldStorage);
             } else {
                 zk.setStorage(newStorage);

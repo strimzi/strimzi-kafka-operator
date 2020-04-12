@@ -102,7 +102,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     @BeforeEach
     public void setup() {
         kafka = createKafka();
-        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
+        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
 
         supplier = ResourceUtils.supplierWithMocks(false);
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
@@ -329,7 +329,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
+        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
 
         // Mock the SecretOperator
         SecretOperator mockSecretOps = supplier.secretOperations;
