@@ -1042,7 +1042,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS, persistent);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS, persistent, replicas);
         assertThat(zc.getStorage(), is(persistent));
 
         ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
@@ -1052,7 +1052,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral);
+        zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral, replicas);
         assertThat(zc.getStorage(), is(ephemeral));
     }
 
@@ -1071,7 +1071,7 @@ public class ZookeeperClusterTest {
                         .endZookeeper()
                     .endSpec()
                     .build();
-            ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage);
+            ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage, replicas);
         });
     }
 
