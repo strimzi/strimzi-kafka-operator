@@ -1,0 +1,9 @@
+<productname>{ProductLongName}</productname>
+<productnumber>{ProductVersion}</productnumber>
+<subtitle>For Use with {ProductName}</subtitle>
+<abstract>
+    <para>Instructions for deploying and upgrading {ProductName}</para>
+</abstract>
+<authorgroup>
+</authorgroup>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

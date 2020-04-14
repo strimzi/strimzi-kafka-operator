@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-cluster.adoc
+
+[id='deploying-the-user-operator-using-the-cluster-operator-{context}']
+= Deploying the User Operator using the Cluster Operator
+
+This procedure describes how to deploy the User Operator using the Cluster Operator.
+
+You configure the `entityOperator` property of the `Kafka` resource to include the `userOperator`.
+
+If you want to use the User Operator with a Kafka cluster that is not managed by {ProductName},
+you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
+
+For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLUsing}#assembly-kafka-entity-operator-deployment-configuration-kafka[Entity Operator^].
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Edit the `entityOperator` properties of the `Kafka` resource to include `userOperator`:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  #...
+  entityOperator:
+    topicOperator: {}
+    *userOperator: {}*
+----
+. Configure the User Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
+. Create or update the resource:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_

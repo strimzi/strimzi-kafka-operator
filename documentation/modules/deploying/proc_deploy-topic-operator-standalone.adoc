@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-standalone-operators.adoc
+
+[id='deploying-the-topic-operator-standalone-{context}']
+= Deploying the standalone Topic Operator
+
+This procedure shows how to deploy the Topic Operator as a standalone component.
+
+A standalone deployment requires configuration of environment variables, and is more complicated than xref:deploying-the-topic-operator-using-the-cluster-operator-str[deploying the Topic Operator using the Cluster Operator].
+However, a standalone deployment is more flexible as the Topic Operator can operate with _any_ Kafka cluster, not necessarily one deployed by the Cluster Operator.
+
+For more information about the environment variables used to configure the Topic Operator, see link:{BookURLUsing}#topic-operator-environment-deploying[Topic Operator environment].
+
+.Prerequisites
+
+* You need an existing Kafka cluster for the Topic Operator to connect to.
+
+.Procedure
+
+. Edit the `Deployment.spec.template.spec.containers[0].env` properties in the `install/topic-operator/05-Deployment-strimzi-topic-operator.yaml` file by setting:
++
+.. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_hostname_:‍_port_` pairs.
+.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same ZooKeeper cluster that your Kafka cluster is using.
+.. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for  `KafkaTopic` resources.
+.. `STRIMZI_JAVA_OPTS` to the Java options used for the JVM running Topic Operator. An example is `-Xmx=512M -Xms=256M`.
+.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` to list the `-D` options which are set to the Topic Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+
+. Deploy the Topic Operator:
++
+[source,shell,subs=+quotes]
+kubectl apply -f install/topic-operator
+
+. Verify that the Topic Operator has been deployed successfully:
++
+[source,shell,subs=+quotes]
+kubectl describe deployment strimzi-topic-operator
++
+The Topic Operator is deployed when the `Replicas:` entry shows `1 available`.
++
+NOTE: You may experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the images have not been downloaded before.

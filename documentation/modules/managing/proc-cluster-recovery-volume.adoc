@@ -3,7 +3,7 @@
 // assembly-cluster-recovery-volume.adoc
 
 [id="cluster-recovery-volume_{context}"]
-= Recovering a cluster from persistent volumes
+= Recovering a deleted cluster from persistent volumes
 
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs).
 

@@ -1,0 +1,17 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-options.adoc
+
+[id='deploy-options-order-{context}']
+= Order of deployment
+
+The required order of deployment to a Kubernetes cluster is as follows:
+
+. Deploy the Cluster operator to manage your Kafka cluster
+. Deploy the Kafka cluster with the ZooKeeper cluster, and include the Topic Operator and User Operator in the deployment
+. Optionally deploy:
+** The Topic Operator and User Operator standalone if you did not deploy them with the Kafka cluster
+** Kafka Connect
+** Kafka MirrorMaker
+** Kafka Bridge
+** Components for the monitoring of metrics

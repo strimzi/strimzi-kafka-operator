@@ -98,6 +98,7 @@
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 
+
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
@@ -160,4 +161,4 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.14.x
+:ProductVersion: 0.17.x

@@ -1,0 +1,1 @@
+../../shared/snip-cluster-operator-namespace-sed.adoc

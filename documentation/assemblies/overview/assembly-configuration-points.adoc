@@ -5,12 +5,7 @@
 [id="configuration-points_{context}"]
 = Kafka configuration
 
-A deployment of Kafka components to a Kubernetes cluster using {ProductName} is highly configurable through the application of custom resources.
-Custom resources are created as instances of the APIs added by CRDs to extend Kubernetes resources.
-
-CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster, and are provided with {ProductName} for each Kafka component used in a deployment.
-CRDs and custom resources are defined as YAML files.
-Example YAML files are provided with the {ProductName} distribution.
+include::../../shared/snip-intro-custom-resources.adoc[leveloffset=+1]
 
 In this chapter we look at how Kafka components are configured through custom resources, starting with common configuration points and then important configuration considerations specific to components.
 

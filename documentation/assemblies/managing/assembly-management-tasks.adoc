@@ -8,7 +8,7 @@
 This chapter covers tasks to maintain a deployment of {ProductName}.
 
 //Check the status of a resource
-include::modules/proc-accessing-resource-status.adoc[leveloffset=+1]
+include::assembly-resource-status-access.adoc[leveloffset=+1]
 
 //Recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]

@@ -45,7 +45,7 @@ include::assembly-scheduling.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-external-configuration.adoc[leveloffset=+1]
 
-include::../modules/kafkaconnectors/proc-enabling-kafkaconnectors.adoc[leveloffset=+1]
+include::../modules/deploying/kafkaconnectors/proc-enabling-kafkaconnectors.adoc[leveloffset=+1]
 
 include::../modules/ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 

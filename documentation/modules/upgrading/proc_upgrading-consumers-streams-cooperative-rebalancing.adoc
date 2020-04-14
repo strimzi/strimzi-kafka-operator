@@ -1,0 +1,47 @@
+// Module included in the following assemblies:
+//
+// upgrading/assembly_upgrade-kafka-versions.adoc
+
+[id="proc-upgrading-consumers-streams-cooperative-rebalancing_{context}"]
+
+= Upgrading consumers and Kafka Streams applications to cooperative rebalancing
+
+You can upgrade Kafka consumers and Kafka Streams applications to use the _incremental cooperative rebalance_ protocol for partition rebalances instead of the default _eager rebalance_ protocol. The new protocol was added in Kafka 2.4.0.
+
+Consumers keep their partition assignments in a cooperative rebalance and only revoke them at the end of the process, if needed to achieve a balanced cluster. This reduces the unavailability of the consumer group or Kafka Streams application.
+
+NOTE: Upgrading to the incremental cooperative rebalance protocol is optional. The eager rebalance protocol is still supported.
+
+.Prerequisites
+
+* You have xref:proc-upgrading-brokers-newer-kafka-{context}[upgraded Kafka brokers and client applications] to Kafka {DefaultKafkaVersion}.
+
+.Procedure
+
+*To upgrade a Kafka consumer to use the incremental cooperative rebalance protocol:*
+
+. Replace the Kafka clients `.jar` file with the new version.
+
+. In the consumer configuration, append `cooperative-sticky` to the `partition.assignment.strategy`. For example, if the `range` strategy is set, change the configuration to `range, cooperative-sticky`.
+
+. Restart each consumer in the group in turn, waiting for the consumer to rejoin the group after each restart.
+
+. Reconfigure each consumer in the group by removing the earlier `partition.assignment.strategy` from the consumer configuration, leaving only the `cooperative-sticky` strategy.
+
+. Restart each consumer in the group in turn, waiting for the consumer to rejoin the group after each restart.
+
+*To upgrade a Kafka Streams application to use the incremental cooperative rebalance protocol:*
+
+. Replace the Kafka Streams `.jar` file with the new version.
+
+. In the Kafka Streams configuration, set the `upgrade.from` configuration parameter to the Kafka version you are upgrading from (for example, 2.3).
+
+. Restart each of the stream processors (nodes) in turn.
+
+. Remove the `upgrade.from` configuration parameter from the Kafka Streams configuration.
+
+. Restart each consumer in the group in turn.
+
+.Additional resources
+
+* link:https://kafka.apache.org/documentation/#upgrade_240_notable[Notable changes in 2.4.0^] in the Apache Kafka documentation.

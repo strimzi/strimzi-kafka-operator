@@ -1,0 +1,1 @@
+../snip-images.adoc
