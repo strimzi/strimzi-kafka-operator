@@ -10,7 +10,7 @@ spec:
   authorization:
     type: simple
     acls:
-      # Example consumer Acls for topic my-topic suing consumer group my-group
+      # Example consumer Acls for topic my-topic using consumer group my-group
       - resource:
           type: topic
           name: my-topic
