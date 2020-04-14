@@ -79,6 +79,7 @@ public class KafkaUserModel {
         this.name = name;
         this.labels = labels.withKubernetesName()
             .withKubernetesInstance(name)
+            .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
     }
 

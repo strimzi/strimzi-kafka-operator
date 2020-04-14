@@ -189,6 +189,7 @@ public abstract class AbstractModel {
         this.labels = labels.withCluster(cluster)
                             .withKubernetesName()
                             .withKubernetesInstance(cluster)
+                            .withKubernetesPartOf(cluster)
                             .withKubernetesManagedBy(STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
