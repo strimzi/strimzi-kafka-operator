@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -233,6 +234,22 @@ public class PodUtils {
     }
 
     /**
+     * Method waitUntilPodsByNameStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
+     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
+     * pod is considered as a stable. Otherwise this procedure will be repeat.
+     * @param podNamePrefix all pods that matched the prefix will be verified
+     */
+    public static void waitUntilPodsByNameStability(String podNamePrefix) {
+        int[] stabilityCounter = {0};
+
+        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> pods = ResourceManager.kubeClient().listPodsByPrefixInName(podNamePrefix);
+                return verifyThatPodsAreStable(pods, stabilityCounter);
+            });
+    }
+
+    /**
      * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
      * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
      * pod is considered as a stable. Otherwise this procedure will be repeat.
@@ -264,6 +281,26 @@ public class PodUtils {
                 }
                 return false;
             });
+    }
+
+    private static boolean verifyThatPodsAreStable(List<Pod> pods, int[] stabilityCounter) {
+        for (Pod pod : pods) {
+            if (pod.getStatus().getPhase().equals("Running")) {
+                LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
+                    pod.getMetadata().getName(), pod.getStatus().getPhase(),
+                    Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
+            } else {
+                LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                return false;
+            }
+        }
+        stabilityCounter[0]++;
+
+        if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
+            LOGGER.info("All pods are stable {}", pods.toString());
+            return true;
+        }
+        return false;
     }
 
     /**
