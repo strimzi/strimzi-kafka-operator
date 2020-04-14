@@ -50,6 +50,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
@@ -64,6 +65,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -150,6 +152,7 @@ public abstract class AbstractModel {
     protected List<SystemProperty> javaSystemProperties = null;
 
     protected Labels labels;
+
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
     protected Map<String, String> templateStatefulSetAnnotations;
@@ -180,6 +183,8 @@ public abstract class AbstractModel {
 
     protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
     protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
+
+    protected List<Condition> warningConditions = new ArrayList<>(0);
 
     /**
      * Constructor
@@ -1165,5 +1170,23 @@ public abstract class AbstractModel {
                 }
             }
         }
+    }
+
+    /**
+     * Adds warning condition to the list
+     *
+     * @param warning   Condition which will be added to the warning
+     */
+    public void addWarningCondition(Condition warning)  {
+        warningConditions.add(warning);
+    }
+
+    /**
+     * Returns a list of warning conditions set by the model. Returns empty list if no warning conditions were set.
+     *
+     * @return  List of warning conditions.
+     */
+    public List<Condition> getWarningConditions()   {
+        return warningConditions;
     }
 }

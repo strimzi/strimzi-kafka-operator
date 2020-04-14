@@ -6,17 +6,14 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,12 +29,10 @@ public class KafkaSpecChecker {
     private KafkaSpec spec;
     private KafkaCluster kafkaCluster;
     private ZookeeperCluster zkCluster;
-    private String timestamp;
 
     private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
 
     /**
-     * @param dateSupplier Function to use for timestamps used in the warnings produced.
      * @param spec The spec requested by the user in the CR
      * @param kafkaCluster The model generated based on the spec. This is requested so that default
      *                     values not included in the spec can be taken into account, without needing
@@ -46,11 +41,10 @@ public class KafkaSpecChecker {
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
      */
-    public KafkaSpecChecker(Supplier<Date> dateSupplier, KafkaSpec spec, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
+    public KafkaSpecChecker(KafkaSpec spec, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
         this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
-        this.timestamp = ModelUtils.formatTimestamp(dateSupplier.get());
     }
 
     public List<Condition> run() {
@@ -77,8 +71,8 @@ public class KafkaSpecChecker {
         if (logMsgFormatVersion != null && kafkaBrokerVersion != null) {
             Matcher m = VERSION_REGEX.matcher(logMsgFormatVersion);
             if (m.find() && !kafkaBrokerVersion.startsWith(m.group(0))) {
-                warnings.add(buildCondition("KafkaLogMessageFormatVersion",
-                                            "log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
+                warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersion",
+                        "log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
             }
         }
     }
@@ -92,7 +86,7 @@ public class KafkaSpecChecker {
      */
     private void checkKafkaStorage(List<Condition> warnings) {
         if (kafkaCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(kafkaCluster.getStorage())) {
-            warnings.add(buildCondition("KafkaStorage",
+            warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
                     "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
         }
     }
@@ -105,7 +99,7 @@ public class KafkaSpecChecker {
      */
     private void checkZooKeeperStorage(List<Condition> warnings) {
         if (zkCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(zkCluster.getStorage())) {
-            warnings.add(buildCondition("ZooKeeperStorage",
+            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperStorage",
                     "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
         }
     }
@@ -118,21 +112,12 @@ public class KafkaSpecChecker {
      */
     private void checkZooKeeperReplicas(List<Condition> warnings) {
         if (zkCluster.getReplicas() == 2) {
-            warnings.add(buildCondition("ZooKeeperReplicas",
+            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
                     "Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
         } else if (zkCluster.getReplicas() % 2 == 0) {
-            warnings.add(buildCondition("ZooKeeperReplicas",
+            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
                     "Running ZooKeeper with an odd number of replicas is recommended."));
         }
     }
 
-    private Condition buildCondition(String reason, String message) {
-        return new ConditionBuilder()
-                .withLastTransitionTime(timestamp)
-                .withType("Warning")
-                .withStatus("True")
-                .withReason(reason)
-                .withMessage(message)
-                .build();
-    }
 }

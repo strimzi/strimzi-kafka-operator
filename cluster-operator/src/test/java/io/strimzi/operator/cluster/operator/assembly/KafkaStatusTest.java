@@ -99,8 +99,8 @@ public class KafkaStatusTest {
                             .withNewPlain()
                             .endPlain()
                         .endListeners()
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
@@ -957,6 +957,101 @@ public class KafkaStatusTest {
         });
     }
 
+    @Test
+    public void testModelWarnings(VertxTestContext context) throws ParseException {
+        Kafka kafka = getKafkaCrd();
+        Kafka oldKafka = new KafkaBuilder(getKafkaCrd())
+                .editOrNewSpec()
+                    .editOrNewKafka()
+                        .withNewPersistentClaimStorage()
+                            .withNewSize("100Gi")
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(oldKafka, VERSIONS);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the CRD Operator for Kafka resources
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock the KafkaSetOperator
+        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+
+        // Mock the ConfigMapOperator
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
+
+        // Mock Pods Operator
+        /*Pod pod0 = new PodBuilder()
+                .withNewMetadata()
+                .withNewName(clusterName + "-kafka-" + 0)
+                .endMetadata()
+                .withNewStatus()
+                .withNewHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        Pod pod1 = new PodBuilder()
+                .withNewMetadata()
+                .withNewName(clusterName + "-kafka-" + 1)
+                .endMetadata()
+                .withNewStatus()
+                .withNewHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        Pod pod2 = new PodBuilder()
+                .withNewMetadata()
+                .withNewName(clusterName + "-kafka-" + 2)
+                .endMetadata()
+                .withNewStatus()
+                .withNewHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        List<Pod> pods = new ArrayList<>();
+        pods.add(pod0);
+        pods.add(pod1);
+        pods.add(pod2);
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+
+        // Mock Node operator
+        NodeOperator mockNodeOps = supplier.nodeOperator;
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));*/
+
+        MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+            System.out.println(status.getConditions().get(0));
+            assertThat(status.getConditions().size(), is(2));
+            assertThat(status.getConditions().get(0).getType(), is("Warning"));
+            assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
+            assertThat(status.getConditions().get(1).getType(), is("Ready"));
+
+            async.flag();
+        });
+    }
+
     // This allows to test the status handling when reconciliation succeeds
     class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
@@ -1040,6 +1135,19 @@ public class KafkaStatusTest {
 
             return reconcileState.getKafkaClusterDescription()
                     .compose(state -> state.kafkaNodePortExternalListenerStatus())
+                    .map((Void) null);
+        }
+    }
+
+    class MockModelWarningsStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+        public MockModelWarningsStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        Future<Void> reconcile(ReconciliationState reconcileState)  {
+            return reconcileState.getKafkaClusterDescription()
+                    .compose(state -> state.kafkaModelWarnings())
                     .map((Void) null);
         }
 
