@@ -196,7 +196,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .editKafka()
                     .withNewListeners()
                         .withNewKafkaListenerExternalNodePort()
-                            .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationScramSha512())
                         .endKafkaListenerExternalNodePort()
                         .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()

@@ -8,10 +8,10 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -50,8 +50,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -765,9 +763,8 @@ class ConnectST extends BaseST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
+                                .withAuth(new KafkaListenerAuthenticationTls())
                             .endKafkaListenerExternalNodePort()
-                            .withNewTls()
-                            .endTls()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -803,22 +800,20 @@ class ConnectST extends BaseST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
     @Test
-    void testConnectScramShaAuthWithWeirdUserName() throws Exception {
+    void testConnectScramShaAuthWithWeirdUserName() {
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasdsadasdasdasdasdgasgadfasdad";
-        String connectClusterName = "connect-cluster";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .endKafkaListenerExternalNodePort()
+                        .withNewListeners()
                             .withNewTls()
                                 .withAuth(new KafkaListenerAuthenticationScramSha512())
                             .endTls()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -826,40 +821,39 @@ class ConnectST extends BaseST {
 
         KafkaUserResource.scramShaUser(CLUSTER_NAME, weirdUserName).done();
 
-        PasswordSecretSource passwordSecret = new PasswordSecretSource();
-        passwordSecret.setSecretName(weirdUserName);
-        passwordSecret.setPassword("password");
-
-        // Initialize CertSecretSource with certificate and secret names for consumer
-        CertSecretSource certSecret = new CertSecretSource();
-        certSecret.setCertificate("ca.crt");
-        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
-
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
-                .editSpec()
-                    .addToConfig("group.id", connectClusterName)
-                    .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
-                    .addToConfig("config.storage.topic", connectClusterName + "-config")
-                    .addToConfig("status.storage.topic", connectClusterName + "-status")
+                .withNewSpec()
+                    .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                     .withNewKafkaClientAuthenticationScramSha512()
                         .withNewUsername(weirdUserName)
-                        .withPasswordSecret(passwordSecret)
+                        .withPasswordSecret(new PasswordSecretSourceBuilder()
+                            .withSecretName(weirdUserName)
+                            .withPassword("password")
+                            .build())
                     .endKafkaClientAuthenticationScramSha512()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withVersion(Environment.ST_KAFKA_VERSION)
+                    .withReplicas(1)
                     .withNewTls()
-                        .withTrustedCertificates(certSecret)
+                        .withTrustedCertificates(new CertSecretSourceBuilder()
+                                .withCertificate("ca.crt")
+                                .withNewSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
+                                .build())
                     .endTls()
-                    .withBootstrapServers(CLUSTER_NAME + "-kafka-bootstrap:9093")
                 .endSpec()
                 .done();
 
         testConnectAuthorizationWithWeirdUserName(weirdUserName, SecurityProtocol.SASL_SSL);
     }
 
-    void testConnectAuthorizationWithWeirdUserName(String userName, SecurityProtocol securityProtocol) throws Exception {
+    void testConnectAuthorizationWithWeirdUserName(String userName, SecurityProtocol securityProtocol) {
         String topicName = TOPIC_NAME + rng.nextInt(Integer.MAX_VALUE);
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         String connectorPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-connect").get(0).getMetadata().getName();
@@ -869,8 +863,6 @@ class ConnectST extends BaseST {
                     .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                     .addToConfig("topics", topicName)
                     .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
-                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()

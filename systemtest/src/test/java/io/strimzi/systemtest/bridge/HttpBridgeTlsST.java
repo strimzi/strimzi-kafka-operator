@@ -7,6 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -187,9 +188,8 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
                 .editKafka()
                     .editListeners()
                         .withNewKafkaListenerExternalNodePort()
+                            .withAuth(new KafkaListenerAuthenticationTls())
                         .endKafkaListenerExternalNodePort()
-                        .withNewTls()
-                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
