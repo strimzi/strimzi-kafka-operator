@@ -37,7 +37,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         "com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuUsageDistributionGoal," +
         "com.linkedin.kafka.cruisecontrol.analyzer.goals.TopicReplicaDistributionGoal," +
         "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderReplicaDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal";
+        "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal" +
+        "com.linkedin.kafka.cruisecontrol.analyzer.goals.PreferredLeaderElectionGoal";
 
    /*
     * Map containing default values for required configuration properties
