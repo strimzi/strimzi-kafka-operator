@@ -6,6 +6,11 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
@@ -13,6 +18,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -23,12 +29,18 @@ import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 
 public class JmxTransTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -157,5 +169,117 @@ public class JmxTransTest {
         assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() >
                         scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
                 is(true));
+    }
+
+    @Test
+    public void testJmxTransContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
+        kafkaConnectContainer.setEnv(testEnvs);
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewJmxTransContainer()
+                                .withEnv(testEnvs)
+                            .endJmxTransContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        List<EnvVar> envVars = JmxTrans.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
+                envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                envVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
+    }
+
+    @Test
+    public void testJmxTransContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
+        kafkaConnectContainer.setEnv(testEnvs);
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewJmxTransContainer()
+                                .withEnv(testEnvs)
+                            .endJmxTransContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        List<EnvVar> envVars = JmxTrans.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+    }
+
+    @Test
+    public void testJmxTransConnectContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewJmxTransContainer()
+                                .withSecurityContext(securityContext)
+                            .endJmxTransContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        JmxTrans jmxTrans = JmxTrans.fromCrd(resource, VERSIONS);
+        assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
+
+        Deployment deployment = jmxTrans.generateDeployment(null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(cluster + "-kafka-jmx-trans")),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 }

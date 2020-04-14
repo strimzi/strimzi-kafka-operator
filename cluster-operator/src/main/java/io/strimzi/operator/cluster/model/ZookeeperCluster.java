@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -98,7 +99,9 @@ public class ZookeeperCluster extends AbstractModel {
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
+    protected SecurityContext templateZookeeperContainerSecurityContext;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
+    protected SecurityContext templateTlsSidecarContainerSecurityContext;
 
     public static String zookeeperClusterName(String cluster) {
         return KafkaResources.zookeeperStatefulSetName(cluster);
@@ -328,8 +331,16 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateZookeeperContainerEnvVars = template.getZookeeperContainer().getEnv();
             }
 
+            if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getSecurityContext() != null) {
+                zk.templateZookeeperContainerSecurityContext = template.getZookeeperContainer().getSecurityContext();
+            }
+
             if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
                 zk.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
+            }
+
+            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
+                zk.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
@@ -547,6 +558,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessProbeOptions))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateZookeeperContainerSecurityContext)
                 .build();
 
         String tlsSidecarImage = getImage();
@@ -571,6 +583,7 @@ public class ZookeeperCluster extends AbstractModel {
                         .withNewExec().withCommand("/opt/stunnel/zookeeper_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
 
         containers.add(container);

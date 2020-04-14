@@ -1992,6 +1992,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Kafka broker container.
                     tlsSidecarContainer:
                       type: object
@@ -2009,6 +2056,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Kafka broker TLS sidecar container.
                     initContainer:
                       type: object
@@ -2026,6 +2120,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Kafka init container.
                   description: Template for Kafka cluster resources. The template
                     allows users to specify how are the `StatefulSet`, `Pods` and
@@ -2981,6 +3122,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the ZooKeeper container.
                     tlsSidecarContainer:
                       type: object
@@ -2998,6 +3186,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Kafka broker TLS sidecar container.
                   description: Template for ZooKeeper cluster resources. The template
                     allows users to specify how are the `StatefulSet`, `Pods` and
@@ -4362,6 +4597,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Entity Operator TLS sidecar container.
                     topicOperatorContainer:
                       type: object
@@ -4379,6 +4661,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Entity Topic Operator container.
                     userOperatorContainer:
                       type: object
@@ -4396,6 +4725,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Entity User Operator container.
                   description: Template for Entity Operator resources. The template
                     allows users to specify how is the `Deployment` and `Pods` generated.
@@ -4555,6 +4931,74 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                template:
+                  type: object
+                  properties:
+                    jmxTransContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The environment variable key.
+                              value:
+                                type: string
+                                description: The environment variable value.
+                          description: Environment variables which should be applied
+                            to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
+                      description: Template for JmxTrans container.
+                  description: Template for JmxTrans resources.
               required:
               - outputDefinitions
               - kafkaQueries
@@ -4966,6 +5410,53 @@ spec:
                                 description: The environment variable value.
                           description: Environment variables which should be applied
                             to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
                       description: Template for the Kafka Exporter container.
                   description: Customization of deployment templates and pods.
                 livenessProbe:

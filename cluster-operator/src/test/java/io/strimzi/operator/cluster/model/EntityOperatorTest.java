@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -41,10 +43,14 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 
 public class EntityOperatorTest {
 
@@ -715,13 +721,13 @@ public class EntityOperatorTest {
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
-                        .withNewEntityOperator()
-                        .withTopicOperator(entityTopicOperatorSpec)
-                        .withUserOperator(entityUserOperatorSpec)
-                        .withNewTemplate()
-                        .withTlsSidecarContainer(tlsContainer)
-                        .endTemplate()
-                        .endEntityOperator()
+                            .withNewEntityOperator()
+                                .withTopicOperator(entityTopicOperatorSpec)
+                                .withUserOperator(entityUserOperatorSpec)
+                                .withNewTemplate()
+                                    .withTlsSidecarContainer(tlsContainer)
+                                .endTemplate()
+                            .endEntityOperator()
                         .endSpec()
                         .build();
 
@@ -731,5 +737,125 @@ public class EntityOperatorTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+    }
+
+    @Test
+    public void testUserOperatorContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewUserOperatorContainer()
+                                .withSecurityContext(securityContext)
+                            .endUserOperatorContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+
+        assertThat(eo.getUserOperator().templateContainerSecurityContext, is(securityContext));
+
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testTopicOperatorContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewTopicOperatorContainer()
+                                .withSecurityContext(securityContext)
+                            .endTopicOperatorContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+
+        assertThat(eo.getTopicOperator().templateContainerSecurityContext, is(securityContext));
+
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testTlsSidecarContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewTlsSidecarContainer()
+                                .withSecurityContext(securityContext)
+                            .endTlsSidecarContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+
+        assertThat(eo.getTemplateTlsSidecarContainerSecurityContext(), is(securityContext));
+
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityOperator.TLS_SIDECAR_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 }
