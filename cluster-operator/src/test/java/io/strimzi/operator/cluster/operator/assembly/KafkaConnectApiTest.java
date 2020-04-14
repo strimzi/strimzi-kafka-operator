@@ -176,7 +176,7 @@ public class KafkaConnectApiTest {
             })
             .setHandler(context.succeeding(status -> context.verify(() -> {
                 assertThat(status.get("name"), is("test"));
-                Map<String, Object> connectorStatus = ((Map<String, Object>) status.getOrDefault("connector", emptyMap()));
+                Map<String, Object> connectorStatus = (Map<String, Object>) status.getOrDefault("connector", emptyMap());
                 assertThat(connectorStatus.get("state"), is("RUNNING"));
                 assertThat(connectorStatus.get("worker_id"), is("localhost:18083"));
 
