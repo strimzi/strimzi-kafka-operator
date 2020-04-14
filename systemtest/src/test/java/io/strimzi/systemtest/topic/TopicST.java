@@ -155,7 +155,7 @@ public class TopicST extends BaseST {
             assertThat(topics.size(), is(NUMBER_OF_TOPICS));
         }
 
-        LOGGER.info("Verify that {} topics are inside Kubernetes CR", NUMBER_OF_TOPICS);
+        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created", NUMBER_OF_TOPICS);
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(NUMBER_OF_TOPICS));
     }
 
