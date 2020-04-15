@@ -2,10 +2,12 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -29,7 +31,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,7 +46,6 @@ public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private static final String NAMESPACE = "topic-cluster-test";
-    private static final int NUMBER_OF_TOPICS = 5000;
 
     @Test
     @Order(1)
@@ -88,28 +88,8 @@ public class TopicST extends BaseST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
     }
 
-    @Tag(SCALABILITY)
     @Test
     @Order(2)
-    void testBigAmountOfTopicsCreatingViaK8s() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int topicPartitions = 3;
-
-        LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME,
-                currentTopic, topicPartitions, 1, 1).build());
-        }
-
-        LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
-
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0).size(), is(NUMBER_OF_TOPICS));
-    }
-
-    @Test
-    @Order(3)
     void testCreateTopicViaKafka() {
         int topicPartitions = 3;
 
@@ -132,7 +112,7 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(4)
+    @Order(3)
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
@@ -163,7 +143,7 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(5)
+    @Order(4)
     void testSendingMessagesToNonExistingTopic() {
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -201,7 +181,7 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(6)
+    @Order(5)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
 
