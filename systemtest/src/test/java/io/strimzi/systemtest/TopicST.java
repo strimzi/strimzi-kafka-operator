@@ -20,8 +20,11 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.List;
 
@@ -37,19 +40,20 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
-
-    public static final String NAMESPACE = "topic-cluster-test";
+    private static final String NAMESPACE = "topic-cluster-test";
+    private static final int NUMBER_OF_TOPICS = 5000;
 
     @Test
+    @Order(1)
     void testMoreReplicasThanAvailableBrokers() {
         final String topicName = "topic-example";
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
         KafkaTopic kafkaTopic =
                 KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor, 1).build());
 
@@ -82,114 +86,59 @@ public class TopicST extends BaseST {
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
-
-        LOGGER.info("Delete topic {}", newTopicName);
-        cmdKubeClient().deleteByName("kafkatopic", newTopicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(newTopicName);
     }
 
     @Tag(SCALABILITY)
     @Test
+    @Order(2)
     void testBigAmountOfTopicsCreatingViaK8s() {
         final String topicName = "topic-example";
         String currentTopic;
-        int numberOfTopics = 50;
         int topicPartitions = 3;
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < numberOfTopics; i++) {
+        for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
             currentTopic = topicName + i;
-            KafkaTopicResource.topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
+            KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME,
+                currentTopic, topicPartitions, 1, 1).build());
         }
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
+        LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
 
-        topicPartitions = 5;
-        LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-
-            KafkaTopicResource.replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        LOGGER.info("Deleting all topics");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
-        }
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0).size(), is(NUMBER_OF_TOPICS));
     }
 
-    @Tag(SCALABILITY)
     @Test
-    void testBigAmountOfTopicsCreatingViaKafka() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int numberOfTopics = 50;
+    @Order(3)
+    void testCreateTopicViaKafka() {
         int topicPartitions = 3;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        LOGGER.debug("Creating topic {} with {} replicas and {} partitions", TOPIC_NAME, 3, topicPartitions);
+        KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, TOPIC_NAME, 3, topicPartitions);
 
-        LOGGER.info("Creating topic {} with partitions {} via Kafka", numberOfTopics, topicPartitions);
+        KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            LOGGER.debug("Creating topic {} with {} replicas and {} partitions", currentTopic, 3, topicPartitions);
-            KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicUtils.waitForKafkaTopicCreation(currentTopic);
-            KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(currentTopic).get();
-            verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
-        }
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, TOPIC_NAME, topicPartitions);
 
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, currentTopic, topicPartitions);
-            LOGGER.debug("Topic {} updated from {} to {} partitions", currentTopic, 3, topicPartitions);
-        }
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, TOPIC_NAME, topicPartitions);
+        LOGGER.debug("Topic {} updated from {} to {} partitions", TOPIC_NAME, 3, topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        LOGGER.info("Deleting all topics");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
-        }
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, topicPartitions);
+        verifyTopicViaKafka(TOPIC_NAME, topicPartitions);
     }
 
     @Test
+    @Order(4)
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2, 1).done();
-
         KafkaTopicResource.topic(CLUSTER_NAME, topicName)
                 .editSpec()
-                    .withReplicas(2)
+                    .withReplicas(3)
                 .endSpec()
                 .done();
 
@@ -199,7 +148,7 @@ public class TopicST extends BaseST {
 
         KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
 
-        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
+        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
 
         TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
             () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
@@ -214,15 +163,50 @@ public class TopicST extends BaseST {
     }
 
     @Test
+    @Order(5)
+    void testSendingMessagesToNonExistingTopic() {
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+
+        String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        boolean created = hasTopicInKafka(topicName);
+        assertThat(created, is(false));
+        LOGGER.info("Topic with name {} is not created yet", topicName);
+
+        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
+        internalKafkaClient.assertSentAndReceivedMessages(
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
+        );
+
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        created = hasTopicInKafka(topicName);
+        assertThat(created, is(true));
+
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
+        LOGGER.info("Topic successfully created");
+    }
+
+    @Test
+    @Order(6)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .addToConfig("delete.topic.enable", false)
-                .endKafka()
-            .endSpec()
-            .done();
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+            kafka.getSpec().getKafka().getConfig().put("delete.topic.enable", false));
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -257,46 +241,6 @@ public class TopicST extends BaseST {
 
         int received = internalKafkaClient.receiveMessagesPlain();
         assertThat(received, is(sent));
-
-    }
-
-    @Test
-    void testSendingMessagesToNonExistingTopic() {
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
-
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
-            .build();
-
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        boolean created = hasTopicInKafka(topicName);
-        assertThat(created, is(false));
-        LOGGER.info("Topic with name {} is not created yet", topicName);
-
-        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
-        internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
-        );
-
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        created = hasTopicInKafka(topicName);
-        assertThat(created, is(true));
-
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
-        LOGGER.info("Topic successfully created");
     }
 
     boolean hasTopicInKafka(String topicName) {
@@ -341,5 +285,8 @@ public class TopicST extends BaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
+
+        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
     }
 }
