@@ -14,7 +14,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
@@ -132,9 +135,15 @@ public class VerifiableClient {
 
         if (clientType == ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER) {
             this.consumerGroupName = verifiableClientBuilder.consumerGroupName;
-            this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
             this.clientArgumentMap.put(ClientArgument.GROUP_ID, consumerGroupName);
-            this.clientArgumentMap.put(ClientArgument.GROUP_INSTANCE_ID, this.consumerInstanceId);
+
+            String image = kubeClient().getPod(this.podName).getSpec().getContainers().get(0).getImage();
+            String clientVersion = image.substring(image.length() - 5);
+
+            if (allowParameter("2.3.0", clientVersion)) {
+                this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
+                this.clientArgumentMap.put(ClientArgument.GROUP_INSTANCE_ID, this.consumerInstanceId);
+            }
         }
 
         this.setArguments(this.clientArgumentMap);
@@ -159,8 +168,10 @@ public class VerifiableClient {
         arguments.clear();
         String argument;
         for (ClientArgument arg : args.getArguments()) {
+            LOGGER.info(arg);
             if (validateArgument(arg)) {
                 for (String value : args.getValues(arg)) {
+                    LOGGER.info(value);
                     if (arg.equals(ClientArgument.USER)) {
                         argument = String.format("%s=%s", arg.command(), value);
                         arguments.add(argument);
@@ -310,6 +321,18 @@ public class VerifiableClient {
 
     public String getBootstrapServer() {
         return bootstrapServer;
+    }
+
+    private boolean allowParameter(String minimalVersion, String clientVersion) {
+        Pattern pattern = Pattern.compile("(?<major>[0-9]).(?<minor>[0-9]).(?<micro>[0-9])");
+        Matcher current = pattern.matcher(clientVersion);
+        Matcher minimal = pattern.matcher(minimalVersion);
+        if (current.find() && minimal.find()) {
+            return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
+                    && Integer.parseInt(current.group("minor")) >= Integer.parseInt(minimal.group("minor"))
+                    && Integer.parseInt(current.group("micro")) >= Integer.parseInt(minimal.group("micro"));
+        }
+        return false;
     }
 
     @Override
