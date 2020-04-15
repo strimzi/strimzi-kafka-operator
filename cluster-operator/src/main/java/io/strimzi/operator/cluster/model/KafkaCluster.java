@@ -85,6 +85,7 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerOverride;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
@@ -96,6 +97,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -478,6 +480,13 @@ public class KafkaCluster extends AbstractModel {
                 log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.");
+
+                Condition warning = StatusUtils.buildWarningCondition("KafkaStorage",
+                        "The desired Kafka storage configuration contains changes which are not allowed. As a " +
+                                "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
+                                "about the detected changes.");
+                result.addWarningCondition(warning);
+
                 result.setStorage(oldStorage);
             } else {
                 result.setStorage(newStorage);
