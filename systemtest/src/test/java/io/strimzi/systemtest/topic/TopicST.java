@@ -22,11 +22,9 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.List;
 
@@ -41,14 +39,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private static final String NAMESPACE = "topic-cluster-test";
 
     @Test
-    @Order(1)
     void testMoreReplicasThanAvailableBrokers() {
         final String topicName = "topic-example";
         int topicReplicationFactor = 5;
@@ -89,7 +85,6 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(2)
     void testCreateTopicViaKafka() {
         int topicPartitions = 3;
 
@@ -112,7 +107,6 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(3)
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
@@ -143,7 +137,6 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(4)
     void testSendingMessagesToNonExistingTopic() {
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -184,24 +177,30 @@ public class TopicST extends BaseST {
     @Order(5)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
+        String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-            kafka.getSpec().getKafka().getConfig().put("delete.topic.enable", false));
+        KafkaResource.kafkaEphemeral(isolatedKafkaCluster, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("delete.topic.enable", false)
+                .endKafka()
+            .endSpec()
+            .done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(isolatedKafkaCluster, topicName).done();
 
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} was created", topicName);
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(isolatedKafkaCluster)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
