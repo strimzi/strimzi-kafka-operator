@@ -988,46 +988,6 @@ public class KafkaStatusTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
 
-        // Mock Pods Operator
-        /*Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                .withNewName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                .withNewHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod1 = new PodBuilder()
-                .withNewMetadata()
-                .withNewName(clusterName + "-kafka-" + 1)
-                .endMetadata()
-                .withNewStatus()
-                .withNewHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod2 = new PodBuilder()
-                .withNewMetadata()
-                .withNewName(clusterName + "-kafka-" + 2)
-                .endMetadata()
-                .withNewStatus()
-                .withNewHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-        pods.add(pod1);
-        pods.add(pod2);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));*/
-
         MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
