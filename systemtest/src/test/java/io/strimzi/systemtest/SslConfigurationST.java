@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
@@ -69,14 +70,17 @@ public class SslConfigurationST extends SecurityST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(KafkaConnectResources.deploymentName(CLUSTER_NAME)); // pod is not ready...
+        LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
-        LOGGER.info("Replacing Kafka connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+
+        LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
+
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls));
 
         Map<String, Object> configsFromKafkaConnectCustomResource = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getConfig();
 
-        LOGGER.info("Verifying that Kafka connect has the excepted configuration:\n" +
+        LOGGER.info("Verifying that Kafka Connect has the excepted configuration:\n" +
                 "" + SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG + " -> {}\n" +
                 "" + SslConfigs.SSL_PROTOCOL_CONFIG + " -> {}",
             configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG),
