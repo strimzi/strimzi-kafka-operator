@@ -57,6 +57,7 @@ import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -750,10 +751,11 @@ class ConnectST extends BaseST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
     @Test
-    void testConnectTlsAuthWithWeirdUserName() throws Exception {
+    void testConnectTlsAuthWithWeirdUserName() {
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
         String connectClusterName = "connect-cluster";
@@ -797,6 +799,7 @@ class ConnectST extends BaseST {
         testConnectAuthorizationWithWeirdUserName(weirdUserName, SecurityProtocol.SSL);
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
     @Test
