@@ -89,7 +89,7 @@ public class SslConfigurationST extends SecurityST {
         assertThat(configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG), is(tlsVersion12));
         assertThat(configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_PROTOCOL_CONFIG), is(SslConfigs.DEFAULT_SSL_PROTOCOL));
 
-        LOGGER.info("Verifying that Kafka connect is stable");
+        LOGGER.info("Verifying that Kafka Connect is stable");
 
         PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
