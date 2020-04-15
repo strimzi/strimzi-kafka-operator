@@ -1036,20 +1036,19 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-            assertThat(res.succeeded(), is(true));
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+                .setHandler(context.succeeding(v -> context.verify(() -> {
+                    assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+                    assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+                    KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-            System.out.println(status.getConditions().get(0));
-            assertThat(status.getConditions().size(), is(2));
-            assertThat(status.getConditions().get(0).getType(), is("Warning"));
-            assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
-            assertThat(status.getConditions().get(1).getType(), is("Ready"));
+                    assertThat(status.getConditions().size(), is(2));
+                    assertThat(status.getConditions().get(0).getType(), is("Warning"));
+                    assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
+                    assertThat(status.getConditions().get(1).getType(), is("Ready"));
 
-            async.flag();
-        });
+                    async.flag();
+                })));
     }
 
     // This allows to test the status handling when reconciliation succeeds
