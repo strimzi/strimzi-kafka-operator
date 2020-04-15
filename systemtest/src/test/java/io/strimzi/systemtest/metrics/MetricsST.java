@@ -53,7 +53,7 @@ public class MetricsST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
-    public static final String NAMESPACE = "metrics-cluster-test-2";
+    public static final String NAMESPACE = "metrics-cluster-test";
     public static final String SECOND_CLUSTER = "second-kafka-cluster";
     public static final String MIRROR_MAKER_CLUSTER = "mm2-cluster";
     private final Object lock = new Object();
