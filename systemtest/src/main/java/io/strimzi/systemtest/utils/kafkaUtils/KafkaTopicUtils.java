@@ -77,8 +77,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicStatus(String topicName, String status) {
         LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
-        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT
-            , () -> {
+        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             Condition kafkaCondition = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0);
             return kafkaCondition.getType().equals(status);
         });
