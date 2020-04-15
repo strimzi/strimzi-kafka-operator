@@ -15,7 +15,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +51,7 @@ public class KafkaSpecCheckerTest {
                 emptyMap()) { };
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, versions);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(kafka, versions);
-        return new KafkaSpecChecker(this::dateSupplier, kafka.getSpec(), kafkaCluster, zkCluster);
+        return new KafkaSpecChecker(kafka.getSpec(), kafkaCluster, zkCluster);
     }
 
     @Test
@@ -78,7 +77,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
     }
@@ -101,7 +99,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
     }
@@ -122,7 +119,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperStorage"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
     }
@@ -135,7 +131,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperReplicas"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
     }
@@ -148,7 +143,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperReplicas"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("Running ZooKeeper with an odd number of replicas is recommended."));
     }
@@ -171,7 +165,6 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaLogMessageFormatVersion"));
-        assertThat(warning.getLastTransitionTime(), is(ModelUtils.formatTimestamp(dateSupplier())));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
     }

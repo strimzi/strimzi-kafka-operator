@@ -1053,7 +1053,13 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
         zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral, replicas);
+
+        // Storage is reverted
         assertThat(zc.getStorage(), is(ephemeral));
+
+        // Warning status condition is set
+        assertThat(zc.getWarningConditions().size(), is(1));
+        assertThat(zc.getWarningConditions().get(0).getReason(), is("ZooKeeperStorage"));
     }
 
     @Test
