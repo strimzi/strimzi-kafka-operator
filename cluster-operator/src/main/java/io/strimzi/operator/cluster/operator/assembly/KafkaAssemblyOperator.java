@@ -255,6 +255,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 .compose(state -> state.getZookeeperDescription())
+                .compose(state -> state.zkModelWarnings())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkNetPolicy())
                 .compose(state -> state.zkManualRollingUpdate())
@@ -278,7 +279,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPersistentClaimDeletion())
 
                 .compose(state -> state.getKafkaClusterDescription())
-                .compose(state -> state.checkKafkaSpec(this::dateSupplier))
+                .compose(state -> state.checkKafkaSpec())
+                .compose(state -> state.kafkaModelWarnings())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaNetPolicy())
                 .compose(state -> state.kafkaManualRollingUpdate())
@@ -533,10 +535,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Checks the requested Kafka spec for potential issues, and adds warnings and advice for best
          * practice to the status.
          */
-        Future<ReconciliationState> checkKafkaSpec(Supplier<Date> dateSupplier) {
-            KafkaSpecChecker checker = new KafkaSpecChecker(dateSupplier, kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
+        Future<ReconciliationState> checkKafkaSpec() {
+            KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
             List<Condition> warnings = checker.run();
             kafkaStatus.addConditions(warnings);
+            return Future.succeededFuture(this);
+        }
+
+        /**
+         * Takes the warning conditions from the Model and adds them in the KafkaStatus
+         */
+        Future<ReconciliationState> kafkaModelWarnings() {
+            kafkaStatus.addConditions(kafkaCluster.getWarningConditions());
+            return Future.succeededFuture(this);
+        }
+
+        /**
+         * Takes the warning conditions from the Model and adds them in the KafkaStatus
+         */
+        Future<ReconciliationState> zkModelWarnings() {
+            kafkaStatus.addConditions(zkCluster.getWarningConditions());
             return Future.succeededFuture(this);
         }
 

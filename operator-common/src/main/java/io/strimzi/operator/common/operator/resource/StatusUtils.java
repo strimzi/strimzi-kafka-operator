@@ -48,6 +48,16 @@ public class StatusUtils {
         return readyCondition;
     }
 
+    public static Condition buildWarningCondition(String reason, String message) {
+        return new ConditionBuilder()
+                .withLastTransitionTime(iso8601Now())
+                .withType("Warning")
+                .withStatus("True")
+                .withReason(reason)
+                .withMessage(message)
+                .build();
+    }
+
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }

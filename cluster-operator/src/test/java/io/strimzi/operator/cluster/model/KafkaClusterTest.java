@@ -2340,7 +2340,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, ephemeral, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(ephemeral));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2351,7 +2357,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, persistent, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(persistent));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2362,7 +2374,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2373,7 +2391,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
     }
 
     @Test
