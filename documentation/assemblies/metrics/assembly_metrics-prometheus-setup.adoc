@@ -5,20 +5,19 @@
 [id='assembly-metrics-setup-{context}']
 = Add Prometheus and Grafana
 
-This section describes how to monitor {ProductName} Kafka, ZooKeeper, Kafka Connect, and Kafka MirrorMaker 2.0 clusters using Prometheus to provide monitoring data for example Grafana dashboards.
+This section describes how to monitor {ProductName} Kafka, ZooKeeper, Kafka Connect, and Kafka MirrorMaker and MirrorMaker 2.0 clusters using Prometheus to provide monitoring data for example Grafana dashboards.
+
+Prometheus and Grafana can be also used to monitor the operators.
+The example Grafana dashboard for operators provides:
+
+* Information about the operator such as the number of reconciliations or number of Custom Resources they are processing
+* JVM metrics from the operators
 
 In order to run the example Grafana dashboards, you must:
 
 . xref:assembly-metrics-kafka-{context}[Add metrics configuration to your Kafka cluster resource]
 . xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
 . xref:assembly-metrics-grafana-{context}[Deploy Grafana]
-
-.Operators
-Prometheus and Grafana can be also used to monitor the operators.
-The example Grafana dashboard for operators provides:
-
-* Information about the operator such as the number of reconciliations or number of Custom Resources they are processing
-* JVM metrics from the operators
 
 NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
 If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.

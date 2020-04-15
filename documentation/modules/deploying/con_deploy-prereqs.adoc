@@ -24,7 +24,7 @@ ifdef::InstallationAppendix[]
 [discrete]
 == Alternatives if a Kubernetes cluster is not available
 
-If you don't have access to a Kubernetes cluster, as an alternative you can try installing {ProductName} with:
+If you do not have access to a Kubernetes cluster, as an alternative you can try installing {ProductName} with:
 
 * xref:deploy-kubernetes-{context}[_Minikube_]
 * xref:deploy-openshift-{context}[_Minishift_]
