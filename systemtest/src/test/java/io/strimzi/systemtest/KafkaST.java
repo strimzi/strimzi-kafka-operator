@@ -2026,7 +2026,7 @@ class KafkaST extends BaseST {
         statefulSetLabels.put("app.kubernetes.io/part-of", "some-app");
         statefulSetLabels.put("app.kubernetes.io/managed-by", "some-app");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewTemplate()
@@ -2074,9 +2074,9 @@ class KafkaST extends BaseST {
             .done();
 
         LOGGER.info("Check if Kubernetes labels are applied");
-        Map<String,String> actualStatefulSetLabels = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                .getSpec().getKafka().getTemplate().getStatefulset().getMetadata().getLabels();
-        assertThat(actualStatefulSetLabels, is(statefulSetLabels));
+        Map<String, String> actualStatefulSetLabels = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels();
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is(not("some-app")));
         LOGGER.info("Kubernetes labels are correctly set and present");
 
         List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims();
