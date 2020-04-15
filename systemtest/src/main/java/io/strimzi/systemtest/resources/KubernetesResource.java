@@ -332,6 +332,11 @@ public class KubernetesResource {
      */
     public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
         String clientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+
+        if (kubeClient().getDeployment(clientsDeploymentName).getSpec().getSelector() == null) {
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the Kafka Connect");
+        }
+
         LabelSelector labelSelector = kubeClient().getDeployment(clientsDeploymentName).getSpec().getSelector();
 
         LOGGER.info("Apply NetworkPolicy access to {} from {}", deploymentName, clientsDeploymentName);
