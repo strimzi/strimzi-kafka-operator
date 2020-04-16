@@ -106,7 +106,7 @@ public class FileUtils {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
             String yaml = new String(encoded, StandardCharsets.UTF_8);
-            yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
+            yaml = yaml.replaceAll("myproject", namespace);
 
             osw.write(yaml);
             return yamlFile.toPath().toFile();
