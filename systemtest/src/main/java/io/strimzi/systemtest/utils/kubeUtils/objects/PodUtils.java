@@ -290,7 +290,9 @@ public class PodUtils {
                     pod.getMetadata().getName(), pod.getStatus().getPhase(),
                     Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
             } else {
-                LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                LOGGER.info("Pod {} is not stable in phase following phase {} reset the stability counter from {} to {}",
+                    pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
+                stabilityCounter[0] = 0;
                 return false;
             }
         }
