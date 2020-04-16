@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.security;
 
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -78,16 +78,68 @@ public class SslConfigurationST extends SecurityST {
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls));
 
-        Map<String, Object> configsFromKafkaConnectCustomResource = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getConfig();
+        LOGGER.info("Verifying that Kafka Connect has the excepted configuration:\n" +
+            SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG + " -> {}\n" + SslConfigs.SSL_PROTOCOL_CONFIG + " -> {}",
+            tlsVersion12, SslConfigs.DEFAULT_SSL_PROTOCOL);
+
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, NAMESPACE, CLUSTER_NAME);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, NAMESPACE, CLUSTER_NAME);
+
+        LOGGER.info("Verifying that Kafka Connect is stable");
+
+        PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+    }
+
+    @Test
+    void testKafkaAndKafkaConnectCipherSuites() {
+        Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
+
+        final String cipherSuitesSha384 = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
+        final String cipherSuitesSha256 = "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256";
+
+        configWithCipherSuitesSha384.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384);
+
+        LOGGER.info("Deploying Kafka cluster with the support {} TLS",  cipherSuitesSha384);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withConfig(configWithCipherSuitesSha384)
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getConfig();
+
+        LOGGER.info("Verifying that Kafka cluster has the excepted configuration:\n" + SslConfigs.SSL_CIPHER_SUITES_CONFIG + " -> {}",
+            configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
+
+        assertThat(configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG), is(cipherSuitesSha384));
+
+        Map<String, Object> configWithCipherSuitesSha256 = new HashMap<>();
+
+        configWithCipherSuitesSha256.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha256);
+
+        KafkaClientsResource.deployKafkaClients(KAFKA_CLIENTS_NAME).done();
+
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withConfig(configWithCipherSuitesSha256)
+            .endSpec()
+            .build());
+
+        LOGGER.info("Verifying that Kafka Connect status is NotReady because of different cipher suites complexity of algorithm");
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+
+        LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
+
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384));
 
         LOGGER.info("Verifying that Kafka Connect has the excepted configuration:\n" +
-                "" + SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG + " -> {}\n" +
-                "" + SslConfigs.SSL_PROTOCOL_CONFIG + " -> {}",
-            configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG),
-            configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_PROTOCOL_CONFIG));
+            SslConfigs.SSL_CIPHER_SUITES_CONFIG + " -> {}", configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
-        assertThat(configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG), is(tlsVersion12));
-        assertThat(configsFromKafkaConnectCustomResource.get(SslConfigs.SSL_PROTOCOL_CONFIG), is(SslConfigs.DEFAULT_SSL_PROTOCOL));
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, NAMESPACE, CLUSTER_NAME);
 
         LOGGER.info("Verifying that Kafka Connect is stable");
 
