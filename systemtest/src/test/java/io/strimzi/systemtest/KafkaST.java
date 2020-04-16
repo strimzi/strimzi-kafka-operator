@@ -1009,34 +1009,31 @@ class KafkaST extends BaseST {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))
-                .get(0).getMetadata().getName();
+        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.setTopicOperator(null);
-            entityOperatorSpec.setUserOperator(null);
-            k.getSpec().setEntityOperator(entityOperatorSpec);
+            k.getSpec().getEntityOperator().setTopicOperator(null);
+            k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
         //Waiting when EO pod will be deleted
-        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        ReplicaSetUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        PodUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
+        ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
 
+        if (kubeClient().listPodsByPrefixInName(eoDeploymentName).size() != 0) {
+            PodUtils.waitForPodDeletion(kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName());
+        }
         //Checking that EO was removed
-        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
+        assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.setTopicOperator(new EntityTopicOperatorSpec());
-            entityOperatorSpec.setUserOperator(new EntityUserOperatorSpec());
-            k.getSpec().setEntityOperator(entityOperatorSpec);
+            k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
+            k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec());
         });
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentReady(eoDeploymentName);
 
         //Checking that EO was created
-        kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+        kubeClient().listPodsByPrefixInName(eoDeploymentName).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
                 assertThat(container.getName(), anyOf(
                     containsString("topic-operator"),
