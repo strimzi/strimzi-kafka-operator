@@ -188,6 +188,15 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
+    public K createContent(String yamlContent) {
+        try (Context context = defaultContext()) {
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
+            return (K) this;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, true, false);
@@ -340,6 +349,18 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @Override
     public String getResourceAsYaml(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "yaml")).out();
+    }
+
+    @Override
+    public void createResourceAndApply(String template, Map<String, String> params) {
+        List<String> cmd = namespacedCommand("process", template, "-l", "app=" + template, "-o", "yaml");
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            cmd.add("-p");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+
+        String yaml = Exec.exec(cmd).out();
+        createContent(yaml);
     }
 
     @Override
