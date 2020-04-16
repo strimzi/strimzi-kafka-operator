@@ -225,10 +225,8 @@ class MirrorMaker2ST extends BaseST {
 
         // Create Kafka user
         KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).done();
-        SecretUtils.waitForSecretReady(kafkaUserSourceName);
 
         KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
-        SecretUtils.waitForSecretReady(kafkaUserTargetName);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
