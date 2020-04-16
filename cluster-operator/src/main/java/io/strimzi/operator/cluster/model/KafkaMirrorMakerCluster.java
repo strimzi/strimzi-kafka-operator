@@ -182,6 +182,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                     kafkaMirrorMakerCluster.templateContainerEnvVars = template.getMirrorMakerContainer().getEnv();
                 }
 
+                if (template.getMirrorMakerContainer() != null && template.getMirrorMakerContainer().getSecurityContext() != null) {
+                    kafkaMirrorMakerCluster.templateContainerSecurityContext = template.getMirrorMakerContainer().getSecurityContext();
+                }
+
                 ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
                 ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
             }

@@ -104,9 +104,6 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -117,12 +114,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -757,33 +752,5 @@ public class ResourceUtils {
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
         return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()));
-    }
-
-    /**
-     * hasEntries is a custom matcher that checks is entries is a map whose entries
-     * are contained within the actual
-     *
-     * @param entries a map of entries expected in the actual map
-     * @return a custom Matcher which iterates through entries and delegates matching to hasEntry
-     */
-    public static Matcher<Map<String, String>> hasEntries(Map<String, String> entries) {
-        return new TypeSafeDiagnosingMatcher<Map<String, String>>() {
-
-            @Override
-            public void describeTo(final Description description) {
-                description.appendText("Expected Map with entries").appendValue(entries);
-            }
-
-            @Override
-            protected boolean matchesSafely(Map<String, String> actual, Description mismatchDescription) {
-                Map<String, String> misMatchedEntries = entries.entrySet()
-                        .stream()
-                        .filter(entry -> !hasEntry(entry.getKey(), entry.getValue()).matches(actual))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                mismatchDescription.appendText(" was ").appendValue(actual)
-                        .appendText("\nMismatched entries : ").appendValue(misMatchedEntries);
-                return misMatchedEntries.isEmpty();
-            }
-        };
     }
 }
