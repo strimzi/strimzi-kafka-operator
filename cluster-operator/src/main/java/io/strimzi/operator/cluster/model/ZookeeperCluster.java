@@ -203,7 +203,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
