@@ -64,7 +64,16 @@ public class KafkaBrokerConfigurationHelper {
             if (coKeySecret == null) {
                 return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(cluster)));
             }
-            acPromise.complete(adminClientProvider.createAdminClient(hostname, clusterCaKeySecret, coKeySecret, "cluster-operator"));
+
+            Admin ac;
+            try {
+                log.info("about to create an admin client");
+                ac = adminClientProvider.createAdminClient(hostname, clusterCaKeySecret, coKeySecret, "cluster-operator");
+                acPromise.complete(ac);
+            } catch (RuntimeException e) {
+                log.warn("Failed to create Admin Client. {}", e);
+                acPromise.complete(null);
+            }
             return acPromise.future();
         });
     }
