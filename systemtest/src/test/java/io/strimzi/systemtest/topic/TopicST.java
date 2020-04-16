@@ -2,10 +2,12 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -20,13 +22,13 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,8 +42,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
-
-    public static final String NAMESPACE = "topic-cluster-test";
+    private static final String NAMESPACE = "topic-cluster-test";
 
     @Test
     void testMoreReplicasThanAvailableBrokers() {
@@ -49,7 +50,6 @@ public class TopicST extends BaseST {
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
         KafkaTopic kafkaTopic =
                 KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor, 1).build());
 
@@ -82,114 +82,37 @@ public class TopicST extends BaseST {
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
-
-        LOGGER.info("Delete topic {}", newTopicName);
-        cmdKubeClient().deleteByName("kafkatopic", newTopicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(newTopicName);
     }
 
-    @Tag(SCALABILITY)
     @Test
-    void testBigAmountOfTopicsCreatingViaK8s() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int numberOfTopics = 50;
+    void testCreateTopicViaKafka() {
         int topicPartitions = 3;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        LOGGER.debug("Creating topic {} with {} replicas and {} partitions", TOPIC_NAME, 3, topicPartitions);
+        KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, TOPIC_NAME, 3, topicPartitions);
 
-        LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicResource.topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
-        }
+        KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        topicPartitions = 5;
-        LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-
-            KafkaTopicResource.replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        LOGGER.info("Deleting all topics");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
-        }
-    }
-
-    @Tag(SCALABILITY)
-    @Test
-    void testBigAmountOfTopicsCreatingViaKafka() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int numberOfTopics = 50;
-        int topicPartitions = 3;
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
-        LOGGER.info("Creating topic {} with partitions {} via Kafka", numberOfTopics, topicPartitions);
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            LOGGER.debug("Creating topic {} with {} replicas and {} partitions", currentTopic, 3, topicPartitions);
-            KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicUtils.waitForKafkaTopicCreation(currentTopic);
-            KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(currentTopic).get();
-            verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
-        }
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, TOPIC_NAME, topicPartitions);
 
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, currentTopic, topicPartitions);
-            LOGGER.debug("Topic {} updated from {} to {} partitions", currentTopic, 3, topicPartitions);
-        }
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, TOPIC_NAME, topicPartitions);
+        LOGGER.debug("Topic {} updated from {} to {} partitions", TOPIC_NAME, 3, topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        LOGGER.info("Deleting all topics");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
-        }
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, topicPartitions);
+        verifyTopicViaKafka(TOPIC_NAME, topicPartitions);
     }
 
     @Test
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2, 1).done();
-
         KafkaTopicResource.topic(CLUSTER_NAME, topicName)
                 .editSpec()
-                    .withReplicas(2)
+                    .withReplicas(3)
                 .endSpec()
                 .done();
 
@@ -199,7 +122,7 @@ public class TopicST extends BaseST {
 
         KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
 
-        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
+        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
 
         TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
             () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
@@ -214,57 +137,8 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    void testDeleteTopicEnableFalse() {
-        String topicName = "my-deleted-topic";
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .addToConfig("delete.topic.enable", false)
-                .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
-        LOGGER.info("Topic {} was created", topicName);
-
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-            .build();
-
-        int sent = internalKafkaClient.sendMessagesPlain();
-
-        String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
-        LOGGER.info("Going to delete topic {}", topicName);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
-        LOGGER.info("Topic {} deleted", topicName);
-
-        KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
-
-        LOGGER.info("Wait topic {} recreation", topicName);
-        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
-        LOGGER.info("Topic {} recreated", topicName);
-
-        int received = internalKafkaClient.receiveMessagesPlain();
-        assertThat(received, is(sent));
-
-    }
-
-    @Test
     void testSendingMessagesToNonExistingTopic() {
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -297,6 +171,55 @@ public class TopicST extends BaseST {
 
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
         LOGGER.info("Topic successfully created");
+    }
+
+    @Test
+    @Order(5)
+    void testDeleteTopicEnableFalse() {
+        String topicName = "my-deleted-topic";
+        String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";
+
+        KafkaResource.kafkaEphemeral(isolatedKafkaCluster, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("delete.topic.enable", false)
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaClientsResource.deployKafkaClients(false, isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).done();
+
+        KafkaTopicResource.topic(isolatedKafkaCluster, topicName).done();
+
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
+        LOGGER.info("Topic {} was created", topicName);
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(isolatedKafkaCluster)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        int sent = internalKafkaClient.sendMessagesPlain();
+
+        String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
+        LOGGER.info("Going to delete topic {}", topicName);
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
+        LOGGER.info("Topic {} deleted", topicName);
+
+        KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
+
+        LOGGER.info("Wait topic {} recreation", topicName);
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
+        LOGGER.info("Topic {} recreated", topicName);
+
+        int received = internalKafkaClient.receiveMessagesPlain();
+        assertThat(received, is(sent));
     }
 
     boolean hasTopicInKafka(String topicName) {
@@ -341,5 +264,8 @@ public class TopicST extends BaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
+
+        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
     }
 }

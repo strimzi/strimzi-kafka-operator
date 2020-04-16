@@ -311,7 +311,7 @@ class CustomResourceStatusST extends BaseST {
 
     @Test
     void testKafkaTopicStatus() {
-        KafkaTopicUtils.waitForKafkaTopicStatus("Ready", TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, "Ready");
         // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
         assertKafkaTopicStatus(2, TOPIC_NAME);
     }
@@ -320,7 +320,7 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
-        KafkaTopicUtils.waitForKafkaTopicStatus("NotReady", topicName);
+        KafkaTopicUtils.waitForKafkaTopicStatus(topicName, "NotReady");
         assertKafkaTopicStatus(1, topicName);
     }
 
