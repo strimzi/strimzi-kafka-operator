@@ -26,14 +26,18 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.ResourceUtils.hasEntries;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -172,7 +176,56 @@ public class JmxTransTest {
     }
 
     @Test
-    public void testJmxTransContainerEnvVars() {
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
+
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editOrNewJmxTrans()
+                        .editOrNewTemplate()
+                            .withNewDeployment()
+                                .withNewMetadata()
+                                    .withLabels(depLabels)
+                                    .withAnnotations(depAnots)
+                                .endMetadata()
+                            .endDeployment()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                                .withNewPriorityClassName("top-priority")
+                                .withNewSchedulerName("my-scheduler")
+                            .endPod()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+        JmxTrans jmxTrans = JmxTrans.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        Deployment dep = jmxTrans.generateDeployment(null, null);
+        assertThat(dep.getMetadata().getLabels(), hasEntries(expectedDepLabels));
+        assertThat(dep.getMetadata().getAnnotations(), hasEntries(depAnots));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+
+        // Check Pods
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), hasEntries(podLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntries(podAnots));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+    }
+
+    @Test
+    public void testContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -189,16 +242,16 @@ public class JmxTransTest {
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
         testEnvs.add(envVar2);
-        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
-        kafkaConnectContainer.setEnv(testEnvs);
+        ContainerTemplate container = new ContainerTemplate();
+        container.setEnv(testEnvs);
 
         Kafka resource = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editJmxTrans()
                         .withNewTemplate()
-                            .withNewJmxTransContainer()
+                            .withNewContainer()
                                 .withEnv(testEnvs)
-                            .endJmxTransContainer()
+                            .endContainer()
                         .endTemplate()
                     .endJmxTrans()
                 .endSpec()
@@ -215,7 +268,7 @@ public class JmxTransTest {
     }
 
     @Test
-    public void testJmxTransContainerEnvVarsConflict() {
+    public void testContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL;
         String testEnvOneValue = "test.env.one";
@@ -224,16 +277,16 @@ public class JmxTransTest {
 
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
-        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
-        kafkaConnectContainer.setEnv(testEnvs);
+        ContainerTemplate container = new ContainerTemplate();
+        container.setEnv(testEnvs);
 
         Kafka resource = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editJmxTrans()
                         .withNewTemplate()
-                            .withNewJmxTransContainer()
+                            .withNewContainer()
                                 .withEnv(testEnvs)
-                            .endJmxTransContainer()
+                            .endContainer()
                         .endTemplate()
                     .endJmxTrans()
                 .endSpec()
@@ -247,7 +300,7 @@ public class JmxTransTest {
     }
 
     @Test
-    public void testJmxTransConnectContainerSecurityContext() {
+    public void testContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
@@ -263,9 +316,9 @@ public class JmxTransTest {
                 .editSpec()
                     .editJmxTrans()
                         .withNewTemplate()
-                            .withNewJmxTransContainer()
+                            .withNewContainer()
                                 .withSecurityContext(securityContext)
-                            .endJmxTransContainer()
+                            .endContainer()
                         .endTemplate()
                     .endJmxTrans()
                 .endSpec()

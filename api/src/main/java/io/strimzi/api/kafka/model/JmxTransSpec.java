@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
+import io.strimzi.api.kafka.model.template.JmxTransTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;

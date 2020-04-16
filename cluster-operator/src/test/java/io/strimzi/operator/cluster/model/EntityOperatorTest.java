@@ -767,9 +767,6 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
-
-        assertThat(eo.getUserOperator().templateContainerSecurityContext, is(securityContext));
-
         Deployment deployment = eo.generateDeployment(false, null, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
@@ -807,9 +804,6 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
-
-        assertThat(eo.getTopicOperator().templateContainerSecurityContext, is(securityContext));
-
         Deployment deployment = eo.generateDeployment(false, null, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
@@ -847,9 +841,6 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
-
-        assertThat(eo.getTemplateTlsSidecarContainerSecurityContext(), is(securityContext));
-
         Deployment deployment = eo.generateDeployment(false, null, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),

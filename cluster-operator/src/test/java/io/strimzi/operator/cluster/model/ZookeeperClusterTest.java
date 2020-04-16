@@ -1277,9 +1277,6 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        assertThat(zc.templateZookeeperContainerSecurityContext, is(securityContext));
-
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
@@ -1316,9 +1313,6 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        assertThat(zc.templateTlsSidecarContainerSecurityContext, is(securityContext));
-
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),

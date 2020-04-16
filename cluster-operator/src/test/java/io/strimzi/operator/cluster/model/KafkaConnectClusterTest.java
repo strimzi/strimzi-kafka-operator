@@ -1027,8 +1027,6 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
-        assertThat(kcc.templateContainerSecurityContext, is(securityContext));
-
         Deployment deployment = kcc.generateDeployment(null, false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),

@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -44,6 +45,7 @@ public class ContainerTemplate implements Serializable, UnknownPropertyPreservin
     }
 
     @Description("Security context for the container")
+    @KubeLink(group = "core", version = "v1", kind = "securitycontext")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public SecurityContext getSecurityContext() {
         return securityContext;

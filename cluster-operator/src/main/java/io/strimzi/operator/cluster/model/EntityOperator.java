@@ -399,8 +399,4 @@ public class EntityOperator extends AbstractModel {
         }
     }
 
-    public SecurityContext getTemplateTlsSidecarContainerSecurityContext() {
-        return templateTlsSidecarContainerSecurityContext;
-    }
-
 }

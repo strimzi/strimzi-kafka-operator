@@ -23,13 +23,13 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
-import io.strimzi.api.kafka.model.JmxTransTemplate;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
+import io.strimzi.api.kafka.model.template.JmxTransTemplate;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
@@ -131,14 +131,23 @@ public class JmxTrans extends AbstractModel {
 
             if (spec.getTemplate() != null) {
                 JmxTransTemplate template = spec.getTemplate();
-                if (template.getJmxTransContainer() != null && template.getJmxTransContainer().getEnv() != null) {
-                    result.templateContainerEnvVars = template.getJmxTransContainer().getEnv();
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                    result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
                 }
 
-                if (template.getJmxTransContainer() != null && template.getJmxTransContainer().getSecurityContext() != null) {
-                    result.templateContainerSecurityContext = template.getJmxTransContainer().getSecurityContext();
+                ModelUtils.parsePodTemplate(result, template.getPod());
+
+                if (template.getContainer() != null && template.getContainer().getEnv() != null) {
+                    result.templateContainerEnvVars = template.getContainer().getEnv();
+                }
+
+                if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
+                    result.templateContainerSecurityContext = template.getContainer().getSecurityContext();
                 }
             }
+
         }
 
         return result;

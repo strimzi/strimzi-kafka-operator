@@ -2888,8 +2888,6 @@ public class KafkaClusterTest {
 
         List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getInitContainerEnvVars();
 
-        System.err.println(kafkaEnvVars);
-
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
@@ -2964,8 +2962,6 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(kc.templateTlsSidecarContainerSecurityContext, is(securityContext));
-
         StatefulSet sts = kc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
@@ -3006,8 +3002,6 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(kc.templateInitContainerSecurityContext, is(securityContext));
-
         StatefulSet sts = kc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers(),

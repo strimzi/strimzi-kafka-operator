@@ -995,7 +995,7 @@ Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`],
 [id='type-PodTemplate-{context}']
 ### `PodTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1030,7 +1030,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1083,8 +1083,10 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 |Property                |Description
 |env              1.2+<.<|Environment variables which should be applied to the container.
 |xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
-|securityContext  1.2+<.<|Security context for the container.
-|xref:type-SecurityContext-{context}[`SecurityContext`]
+|securityContext  1.2+<.<|Security context for the container. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#securitycontext-v1-core[core/v1 securitycontext].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#securitycontext-v1-core[SecurityContext]
 |====
 
 [id='type-ContainerEnvVar-{context}']
@@ -1099,86 +1101,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |name   1.2+<.<|The environment variable key.
 |string
 |value  1.2+<.<|The environment variable value.
-|string
-|====
-
-[id='type-SecurityContext-{context}']
-### `SecurityContext` schema reference
-
-Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-
-
-[options="header"]
-|====
-|Property                         |Description
-|allowPrivilegeEscalation  1.2+<.<|
-|boolean
-|capabilities              1.2+<.<|
-|xref:type-Capabilities-{context}[`Capabilities`]
-|privileged                1.2+<.<|
-|boolean
-|procMount                 1.2+<.<|
-|string
-|readOnlyRootFilesystem    1.2+<.<|
-|boolean
-|runAsGroup                1.2+<.<|
-|integer
-|runAsNonRoot              1.2+<.<|
-|boolean
-|runAsUser                 1.2+<.<|
-|integer
-|seLinuxOptions            1.2+<.<|
-|xref:type-SELinuxOptions-{context}[`SELinuxOptions`]
-|windowsOptions            1.2+<.<|
-|xref:type-WindowsSecurityContextOptions-{context}[`WindowsSecurityContextOptions`]
-|====
-
-[id='type-Capabilities-{context}']
-### `Capabilities` schema reference
-
-Used in: xref:type-SecurityContext-{context}[`SecurityContext`]
-
-
-[options="header"]
-|====
-|Property     |Description
-|add   1.2+<.<|
-|string array
-|drop  1.2+<.<|
-|string array
-|====
-
-[id='type-SELinuxOptions-{context}']
-### `SELinuxOptions` schema reference
-
-Used in: xref:type-SecurityContext-{context}[`SecurityContext`]
-
-
-[options="header"]
-|====
-|Property      |Description
-|level  1.2+<.<|
-|string
-|role   1.2+<.<|
-|string
-|type   1.2+<.<|
-|string
-|user   1.2+<.<|
-|string
-|====
-
-[id='type-WindowsSecurityContextOptions-{context}']
-### `WindowsSecurityContextOptions` schema reference
-
-Used in: xref:type-SecurityContext-{context}[`SecurityContext`]
-
-
-[options="header"]
-|====
-|Property                       |Description
-|gmsaCredentialSpec      1.2+<.<|
-|string
-|gmsaCredentialSpecName  1.2+<.<|
 |string
 |====
 
@@ -1488,8 +1410,12 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 
 [options="header"]
 |====
-|Property                  |Description
-|jmxTransContainer  1.2+<.<|Template for JmxTrans container.
+|Property           |Description
+|deployment  1.2+<.<|Template for JmxTrans `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for JmxTrans `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|container   1.2+<.<|Template for JmxTrans container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
