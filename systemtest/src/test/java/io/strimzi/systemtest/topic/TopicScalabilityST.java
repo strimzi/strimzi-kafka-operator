@@ -16,7 +16,7 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 @Tag(SCALABILITY)
 public class TopicScalabilityST extends TopicST {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
     private static final int NUMBER_OF_TOPICS = 2500;
 
     @Test
