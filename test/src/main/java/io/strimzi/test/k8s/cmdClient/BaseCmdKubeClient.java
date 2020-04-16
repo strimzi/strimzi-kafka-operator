@@ -188,15 +188,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
-    public K createContent(String yamlContent) {
-        try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
-            return (K) this;
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, true, false);
