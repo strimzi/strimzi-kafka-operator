@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -74,12 +75,19 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void waitForKafkaTopicStatus(String status, String topicName) {
+    public static void waitForKafkaTopicStatus(String topicName, String status) {
         LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
-        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             Condition kafkaCondition = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0);
             return kafkaCondition.getType().equals(status);
         });
-        LOGGER.info("Kafka Topic {} is in desired state: {}", topicName, status);
+    }
+
+    public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {
+        LOGGER.info("Wait until we create {} Kafka Topics", topicCount);
+        TestUtils.waitFor("Wait until we create" + topicCount + " Kafka Topics",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).size() == topicCount);
+        LOGGER.info("We created {} Kafka Topics", topicCount);
     }
 }
