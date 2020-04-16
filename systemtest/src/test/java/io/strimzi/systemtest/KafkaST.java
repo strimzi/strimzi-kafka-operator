@@ -845,12 +845,21 @@ class KafkaST extends BaseST {
         kubeClient().getPod(eoPod).getSpec().getContainers().forEach(container -> {
             if (!container.getName().equals("tls-sidecar")) {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
-                String value = container.getEnv().stream().filter(envVar ->
-                        envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
-                if (container.getName().equals("topic-operator"))
-                    assertThat(value, is("-Xms1024M -Xmx2G -Djavax.net.debug=verbose"));
-                if (container.getName().equals("user-operator"))
-                    assertThat(value, is("-Xms512M -Xmx1G -Djavax.net.debug=verbose"));
+
+                String javaSystemProp = container.getEnv().stream().filter(envVar ->
+                    envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
+                String javaOpts = container.getEnv().stream().filter(envVar ->
+                    envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().get().getValue();
+
+                if (container.getName().equals("topic-operator")) {
+                    assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
+                    assertThat(javaOpts, is("-Xms1024M -Xmx2G"));
+                }
+
+                if (container.getName().equals("user-operator")) {
+                    assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
+                    assertThat(javaOpts, is("-Xms512M -Xmx1G"));
+                }
             }
         });
 
