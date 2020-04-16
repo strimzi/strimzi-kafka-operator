@@ -106,6 +106,7 @@ public class Config {
     public static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
     public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
     public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
+    public static final String TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = "STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -155,6 +156,8 @@ public class Config {
     public static final Value<String> TLS_KEYSTORE_LOCATION = new Value<>(TC_TLS_KEYSTORE_LOCATION, STRING, "");
     /** The password for keystore with private key and certificate for client authentication against Kafka broker */
     public static final Value<String> TLS_KEYSTORE_PASSWORD = new Value<>(TC_TLS_KEYSTORE_PASSWORD, STRING, "");
+    /** The endpoint identification algorithm used by clients to validate server host name. The default value is https. Clients including client connections created by the broker for inter-broker communication verify that the broker host name matches the host name in the broker’s certificate. Disable server host name verification by setting to an empty string.**/
+    public static final Value<String> TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new Value<>(TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, STRING, "HTTPS");
 
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
@@ -174,6 +177,7 @@ public class Config {
         addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);
         addConfigValue(configValues, TLS_KEYSTORE_LOCATION);
         addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
+        addConfigValue(configValues, TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {
