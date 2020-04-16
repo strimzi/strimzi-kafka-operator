@@ -168,10 +168,8 @@ public class VerifiableClient {
         arguments.clear();
         String argument;
         for (ClientArgument arg : args.getArguments()) {
-            LOGGER.info(arg);
             if (validateArgument(arg)) {
                 for (String value : args.getValues(arg)) {
-                    LOGGER.info(value);
                     if (arg.equals(ClientArgument.USER)) {
                         argument = String.format("%s=%s", arg.command(), value);
                         arguments.add(argument);

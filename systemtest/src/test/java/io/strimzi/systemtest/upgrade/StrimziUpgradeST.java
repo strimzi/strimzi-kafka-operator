@@ -271,14 +271,14 @@ public class StrimziUpgradeST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterName)
             .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(produceMessagesCount)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(produceMessagesCount));
 
-        internalKafkaClient.setMessageCount(produceMessagesCount);
+        internalKafkaClient.setMessageCount(consumeMessagesCount);
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
