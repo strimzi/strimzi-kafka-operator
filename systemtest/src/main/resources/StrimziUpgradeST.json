@@ -1,42 +1,5 @@
 [
   {
-    "fromVersion":"0.8.2",
-    "toVersion":"0.11.4",
-    "fromExamples":"strimzi-0.8.2",
-    "toExamples":"strimzi-0.11.4",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.4/strimzi-0.11.4.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/zookeeper:0.11.4-kafka-2.0.0",
-      "kafka": "strimzi/kafka:0.11.4-kafka-2.0.0",
-      "topicOperator": "strimzi/topic-operator:0.11.4",
-      "userOperator": "strimzi/user-operator:0.11.4"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/zookeeper:0.11.4-kafka-2.0.0",
-      "kafka": "strimzi/kafka:0.11.4-kafka-2.1.0",
-      "topicOperator": "strimzi/topic-operator:0.11.4",
-      "userOperator": "strimzi/user-operator:0.11.4"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "2.0.0",
-      "logMessageVersion": "2.0"
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "2.1.0",
-      "logMessageVersion": "2.1"
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
-      "reason": "0.8.2 and 0.11.4 test clients images are not compatible with current client execution mechanism in system tests"
-    },
-    "supportedK8sVersion": {
-      "version": "1.11",
-      "reason" : "Currently 0.8.2 CO cannot be deployed on newer versions of Kubernetes than 1.11.x. This test will be skipped until better understanding of the issue."
-    }
-  },
-  {
     "fromVersion":"0.11.4",
     "toVersion":"0.12.1",
     "fromExamples":"strimzi-0.11.4",
