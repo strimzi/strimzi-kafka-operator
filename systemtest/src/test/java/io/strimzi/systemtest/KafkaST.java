@@ -125,9 +125,8 @@ class KafkaST extends BaseST {
     void testDeployKafkaClusterViaTemplate() {
         cluster.createCustomResources("../examples/templates/cluster-operator");
         String templateName = "strimzi-ephemeral";
-        Oc oc = (Oc) cmdKubeClient();
         String clusterName = "openshift-my-cluster";
-        oc.createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
+        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
@@ -140,10 +139,10 @@ class KafkaST extends BaseST {
         verifyLabelsForKafkaCluster(clusterName, templateName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
-        oc.deleteByName("Kafka", clusterName);
+        cmdKubeClient().deleteByName("Kafka", clusterName);
 
         //Wait for kafka deletion
-        oc.waitForResourceDeletion("Kafka", clusterName);
+        cmdKubeClient().waitForResourceDeletion("Kafka", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
             .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));

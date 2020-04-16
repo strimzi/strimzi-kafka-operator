@@ -360,7 +360,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         }
 
         String yaml = Exec.exec(cmd).out();
-        createContent(yaml);
+        applyContent(yaml);
     }
 
     @Override
