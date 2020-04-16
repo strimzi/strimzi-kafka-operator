@@ -2,7 +2,7 @@ include::shared/version-dependent-attrs.adoc[]
 include::shared/attributes.adoc[]
 
 :context: str
-:BookURLDeploying: https://strimzi.io/docs/latest/
+:BookURLDeploying: https://strimzi.io/docs/deploying/latest/
 
 = Using {ProductLongName}
 
