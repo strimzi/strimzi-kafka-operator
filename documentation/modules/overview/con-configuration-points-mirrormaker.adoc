@@ -25,7 +25,8 @@ MirrorMaker 2.0 uses:
 You configure a `KafkaMirrorMaker2` resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
 and start running a set of MirrorMaker 2.0 connectors to make the connection.
 
-Topic configuration is automatically synchronized between source and target clusters according to the topics defined in the MirrorMaker2 custom resource. Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
+Topic configuration is automatically synchronized between source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
+Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
 Topic replication is defined using regular expression patterns to _whitelist_ or _blacklist_ topics.
 
 MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
