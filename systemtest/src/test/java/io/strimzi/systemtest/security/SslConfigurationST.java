@@ -102,7 +102,7 @@ public class SslConfigurationST extends SecurityST {
 
         configWithCipherSuitesSha384.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384);
 
-        LOGGER.info("Deploying Kafka cluster with the support {} TLS",  cipherSuitesSha384);
+        LOGGER.info("Deploying Kafka cluster with the support {} cipher algorithms",  cipherSuitesSha384);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
