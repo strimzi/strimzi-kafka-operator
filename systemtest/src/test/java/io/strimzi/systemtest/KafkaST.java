@@ -97,7 +97,6 @@ import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
@@ -1269,18 +1268,14 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        String userName = "alice";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> kubeClient().getSecret("alice") != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(TOPIC_NAME)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(userName)
+                .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
@@ -1341,11 +1336,7 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        String userName = "alice";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> kubeClient().getSecret("alice") != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
@@ -1354,7 +1345,7 @@ class KafkaST extends BaseST {
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(userName)
+                .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();

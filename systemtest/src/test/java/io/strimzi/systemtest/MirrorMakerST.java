@@ -197,10 +197,8 @@ public class MirrorMakerST extends BaseST {
 
         // Create Kafka user
         KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
-        SecretUtils.waitForSecretReady(kafkaSourceUserName);
 
         KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaTargetUserName).done();
-        SecretUtils.waitForSecretReady(kafkaTargetUserName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
