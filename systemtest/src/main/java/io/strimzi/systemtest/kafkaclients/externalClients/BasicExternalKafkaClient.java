@@ -52,7 +52,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     /**
      * Send messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
-     * @return future with sent message count
+     * @return sent message count
      */
     public int sendMessagesPlain(long timeoutMs) {
 
@@ -88,7 +88,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     /**
      * Send messages to external entrypoint of the cluster with SSL security protocol setting
-     * @return future with sent message count
+     * @return sent message count
      */
     public int sendMessagesTls(long timeoutMs) {
 
@@ -131,7 +131,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     /**
      * Receive messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
-     * @return
+     * @return received message count
      */
     public int receiveMessagesPlain(long timeoutMs) {
 
@@ -169,7 +169,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     /**
      * Receive messages to external entrypoint of the cluster with SSL security protocol setting
-     * @return future with received message count
+     * @return received message count
      */
     public int receiveMessagesTls(long timeoutMs) {
 

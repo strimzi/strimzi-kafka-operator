@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag(INTERNAL_CLIENTS_USED)
 class RollingUpdateST extends BaseST {
 
-    private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
+    private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 
     static final String NAMESPACE = "rolling-update-cluster-test";
 
