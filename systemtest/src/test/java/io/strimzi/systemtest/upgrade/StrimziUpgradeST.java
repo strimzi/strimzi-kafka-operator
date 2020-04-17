@@ -69,6 +69,7 @@ public class StrimziUpgradeST extends BaseST {
     private Map<String, String> zkPods;
     private Map<String, String> kafkaPods;
     private Map<String, String> eoPods;
+    private Map<String, String> coPods;
 
     private File coDir = null;
     private File kafkaYaml = null;
@@ -331,7 +332,7 @@ public class StrimziUpgradeST extends BaseST {
         copyModifyApply(coInstallDir);
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+        DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPods);
         LOGGER.info("Waiting for ZK StatefulSet roll");
         StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
@@ -380,6 +381,7 @@ public class StrimziUpgradeST extends BaseST {
     }
 
     private void makeSnapshots() {
+        coPods = DeploymentUtils.depSnapshot(Constants.STRIMZI_DEPLOYMENT_NAME);
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);

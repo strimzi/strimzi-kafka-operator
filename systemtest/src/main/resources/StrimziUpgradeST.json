@@ -181,10 +181,46 @@
   },
   {
     "fromVersion":"0.16.2",
-    "toVersion":"HEAD",
+    "toVersion":"0.17.0",
     "fromExamples":"strimzi-0.16.2",
-    "toExamples":"HEAD",
+    "toExamples":"strimzi-0.17.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
+    "imagesBeforeKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
+      "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
+      "topicOperator": "strimzi/operator:0.17.0",
+      "userOperator": "strimzi/operator:0.17.0"
+    },
+    "imagesAfterKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.4.0",
+      "topicOperator": "strimzi/operator:0.17.0",
+      "userOperator": "strimzi/operator:0.17.0"
+    },
+    "proceduresBefore": {
+      "kafkaVersion": "",
+      "logMessageVersion": ""
+    },
+    "proceduresAfter": {
+      "kafkaVersion": "",
+      "logMessageVersion": ""
+    },
+    "client": {
+      "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0",
+      "afterKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0"
+    },
+    "supportedK8sVersion": {
+      "version": "latest",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
+    "fromVersion":"0.17.0",
+    "toVersion":"HEAD",
+    "fromExamples":"strimzi-0.17.0",
+    "toExamples":"HEAD",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
     "urlTo":"HEAD",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.4.0",
@@ -207,7 +243,7 @@
       "logMessageVersion": ""
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.3.1",
+      "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.4.0"
     },
     "supportedK8sVersion": {

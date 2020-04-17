@@ -78,6 +78,10 @@ pipeline {
                         env.DOCKER_ORG="strimzi"
                         env.DOCKER_REGISTRY = env.OC_VERSION == "3" ? "172.30.1.1:5000" : "default-route-openshift-image-registry.apps-crc.testing"
                         env.DOCKER_TAG="pr"
+                        // For upgrade tests running with locally builded images we need to change tag in StrimziUpgradeST.json
+                        if ("${env.TEST_PROFILE}".contains("upgrade")) {
+                            sh(script: "sed -i 's#:latest#:${env.env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
+                        }
                     }
                     env.BUILD_PROJECT_STATUS = false
                     env.BUILD_DOCKER_IMAGE_STATUS = false
