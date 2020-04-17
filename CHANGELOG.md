@@ -9,6 +9,7 @@
 * Add more metrics to Cluster and User Operators
 * New Grafana dashboard for Operator monitoring 
 * Allow `ssl.cipher.suites`, `ssl.protocol` and `ssl.enabled.protocols` to be configurable for Kafka and the different components supported by Strimzi
+* Add support for user configurable SecurityContext for each Strimzi container
 
 ## 0.17.0
 
