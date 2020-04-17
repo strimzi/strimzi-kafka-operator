@@ -61,7 +61,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
-import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -124,10 +123,10 @@ class KafkaST extends BaseST {
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
         cluster.createCustomResources("../examples/templates/cluster-operator");
-        String appName = "strimzi-ephemeral";
-        Oc oc = (Oc) cmdKubeClient();
+        String templateName = "strimzi-ephemeral";
         String clusterName = "openshift-my-cluster";
-        oc.newApp(appName, map("CLUSTER_NAME", clusterName));
+        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
+
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
         DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
@@ -136,13 +135,13 @@ class KafkaST extends BaseST {
         testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
 
         //Testing labels
-        verifyLabelsForKafkaCluster(clusterName, appName);
+        verifyLabelsForKafkaCluster(clusterName, templateName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
-        oc.deleteByName("Kafka", clusterName);
+        cmdKubeClient().deleteByName("Kafka", clusterName);
 
         //Wait for kafka deletion
-        oc.waitForResourceDeletion("Kafka", clusterName);
+        cmdKubeClient().waitForResourceDeletion("Kafka", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
             .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));

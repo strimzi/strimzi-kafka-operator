@@ -514,7 +514,7 @@ public abstract class BaseST implements TestSeparator {
         kubeClient().listCustomResourceDefinition().stream()
             .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
             .forEach(crd -> {
-                LOGGER.info("Verifying labels for custom resource {]", crd.getMetadata().getName());
+                LOGGER.info("Verifying labels for custom resource {}", crd.getMetadata().getName());
                 assertThat(crd.getMetadata().getLabels().get("app"), is("strimzi"));
             });
     }

@@ -9,6 +9,7 @@ import io.strimzi.test.executor.ExecResult;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -126,6 +127,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     List<String> list(String resourceType);
 
     String getResourceAsYaml(String resourceType, String resourceName);
+
+    void createResourceAndApply(String template, Map<String, String> params);
 
     String describe(String resourceType, String resourceName);
 
