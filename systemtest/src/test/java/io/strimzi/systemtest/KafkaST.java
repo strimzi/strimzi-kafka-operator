@@ -1028,10 +1028,8 @@ class KafkaST extends BaseST {
         //Waiting when EO pod will be deleted
         DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
         ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
+        PodUtils.waitForPodDeletion(kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName());
 
-        if (kubeClient().listPodsByPrefixInName(eoDeploymentName).size() != 0) {
-            PodUtils.waitForPodDeletion(kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName());
-        }
         //Checking that EO was removed
         assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
 
