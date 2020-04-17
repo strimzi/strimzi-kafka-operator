@@ -48,7 +48,6 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
@@ -137,7 +136,8 @@ public class TopicOperatorMockTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown(VertxTestContext context) {
+        Checkpoint checkpoint = context.checkpoint(1);
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId, undeployResult -> {
                 if (adminClient != null) {
@@ -146,6 +146,7 @@ public class TopicOperatorMockTest {
                 if (kafkaCluster != null) {
                     kafkaCluster.shutdown();
                 }
+                checkpoint.flag();
             });
         }
     }
