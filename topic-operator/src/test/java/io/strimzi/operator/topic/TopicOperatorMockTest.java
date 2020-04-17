@@ -28,9 +28,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,22 +65,14 @@ public class TopicOperatorMockTest {
 
     // TODO this is all in common with TOIT, so factor out a common base class
 
-    @BeforeAll
-    public static void before() {
+    @BeforeEach
+    public void createMockKube(VertxTestContext context) throws Exception {
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true));
         vertx = Vertx.vertx(options);
-    }
 
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
-    @BeforeEach
-    public void createMockKube(VertxTestContext context) throws Exception {
         assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
@@ -148,6 +138,7 @@ public class TopicOperatorMockTest {
         if (kafkaCluster != null) {
             kafkaCluster.shutdown();
         }
+        vertx.close();
     }
 
     private static int zkPort(KafkaCluster cluster) {
