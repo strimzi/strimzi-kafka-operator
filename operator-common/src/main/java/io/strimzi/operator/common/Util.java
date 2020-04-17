@@ -82,7 +82,7 @@ public class Util {
                     true,
                     res -> {
                         if (res.succeeded()) {
-                            LOGGER.debug("{} is ready", logContext);
+                            LOGGER.debug("{} is {}", logContext, logState);
                             promise.complete();
                         } else {
                             long timeLeft = deadline - System.currentTimeMillis();

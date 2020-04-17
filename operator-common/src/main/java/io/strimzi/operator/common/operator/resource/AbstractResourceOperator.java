@@ -333,12 +333,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * is ready.
      */
     public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-        return Util.waitFor(vertx,
-            String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
-            "ready",
-            pollIntervalMs,
-            timeoutMs,
-            () -> predicate.test(namespace, name));
+        return waitFor(namespace, name, "ready", pollIntervalMs, timeoutMs, predicate);
     }
 
     /**
