@@ -7,21 +7,7 @@
 
 To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
-You can use {ProductName} with MirrorMaker or MirrorMaker 2.0.
-
-[discrete]
-== MirrorMaker
-
-MirrorMaker uses producers and consumers to replicate data across clusters.
-
-MirrorMaker uses:
-
-* Consumer configuration to consume data from the source cluster
-* Producer configuration to output data to the target cluster
-
-Consumer and producer configuration includes any authentication and encryption settings.
-
-A _whitelist_ defines the topics to mirror from a source to a target cluster.
+You can use {ProductName} with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
 
 [discrete]
 == MirrorMaker 2.0
@@ -33,29 +19,97 @@ MirrorMaker 2.0 uses:
 * Source cluster configuration to consume data from the source cluster
 * Target cluster configuration to output data to the target cluster
 
-A MirrorMaker 2.0 `MirrorSourceConnector` custom resource replicates topics from a source cluster to a target cluster.
+[discrete]
+=== Cluster configuration
+
+You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
+and then run a set of MirrorMaker 2.0 connectors to make the connection.
+
+Topic configuration is automatically synchronized between the source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
+Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
+Topic replication is defined using regular expression patterns to _whitelist_ or _blacklist_ topics.
+
+The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
+
+MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster.
+MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an _offset sync_ topic and _checkpoint_ topic.
+The offset sync topic maps the source and target offsets for replicated topic partitions from record metadata.
+A checkpoint is emitted from each source cluster and replicated in the target cluster through the checkpoint topic.
+The checkpoint topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
+MirrorHeartbeatConnector:: A _MirrorHeartbeatConnector_ periodically checks connectivity between clusters.
+A heartbeat is produced every second by the MirrorHeartbeatConnector into a _heartbeat_ topic that is created on the local cluster.
+If you have MirrorMaker 2.0 at both the remote and local locations, the heartbeat emitted at the remote location by the MirrorHeartbeatConnector is treated like any remote topic and mirrored by the MirrorSourceConnector at the local cluster.
+The heartbeat topic makes it easy to check that the remote cluster is available and the clusters are connected.
+If things go wrong, the heartbeat topic offset positions and time stamps can help with recovery and diagnosis.
 
 .Replication across two clusters
 image::mirrormaker.png[MirrorMaker 2.0 replication]
 
+[discrete]
+=== Bidirectional replication across two clusters
+
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration,
-so both clusters are active and provide the same data simultaneously. A MirrorMaker 2.0 cluster is required at each target destination.
+so both clusters are active and provide the same data simultaneously.
+A MirrorMaker 2.0 cluster is required at each target destination.
+Remote topics are distinguished by automatic renaming that prepends the name of cluster to the name of the topic.
 This is useful if you want to make the same data available locally in different geographical locations.
 
+.Bidirectional replication
+image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
+
 [discrete]
-== Key Consumer configuration
+=== Example YAML showing MirrorMaker 2.0 configuration
+
+[source,yaml,subs="+quotes,attributes"]
+----
+  apiVersion: {KafkaApiVersionPrev}
+  kind: KafkaMirrorMaker2
+  metadata:
+    name: my-mirror-maker2
+    spec:
+      version: {DefaultKafkaVersion}
+      connectCluster: "my-cluster-target"
+      clusters:
+      - alias: "my-cluster-source"
+        bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+      - alias: "my-cluster-target"
+        bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+      mirrors:
+      - sourceCluster: "my-cluster-source"
+        targetCluster: "my-cluster-target"
+        sourceConnector: {}
+      topicsPattern: ".*"
+      groupsPattern: "group1|group2|group3"
+----
+
+[discrete]
+== MirrorMaker
+
+The earlier version of MirrorMaker uses producers and consumers to replicate data across clusters.
+
+MirrorMaker uses:
+
+* Consumer configuration to consume data from the source cluster
+* Producer configuration to output data to the target cluster
+
+Consumer and producer configuration includes any authentication and encryption settings.
+
+A _whitelist_ defines the topics to mirror from a source to a target cluster.
+
+[discrete]
+=== Key Consumer configuration
 
 Consumer group identifier:: The consumer group ID for a MirrorMaker consumer so that messages consumed are assigned to a consumer group.
 Number of consumer streams:: A value to determine the number of consumers in a consumer group that consume a message in parallel.
 Offset commit interval:: An offset commit interval to set the time between consuming and committing a message.
 
 [discrete]
-== Key Producer configuration
+=== Key Producer configuration
 
 Cancel option for send failure:: You can define whether a message send failure is ignored or MirrorMaker is terminated and recreated.
 
 [discrete]
-== Example YAML showing MirrorMaker configuration
+=== Example YAML showing MirrorMaker configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
