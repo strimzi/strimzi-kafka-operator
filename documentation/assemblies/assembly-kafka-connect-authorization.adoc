@@ -1,0 +1,34 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-connect.adoc
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
+
+[id='assembly-kafka-connect-authorization-{context}']
+
+= Kafka Connect user authorization
+
+If simple authorization is enabled for Kafka Connect, the `KafkaUser` resource for the Kafka Connect user must be configured to provide access rights to the consumer group and
+internal topics, which are automatically configured or specified as configuration parameters in the `spec` for the `KafkaConnect` or `KafkaConnectS2I` configuration.
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    group.id: my-connect-cluster <1>
+    offset.storage.topic: my-connect-cluster-offsets <2>
+    config.storage.topic: my-connect-cluster-configs <3>
+    status.storage.topic: my-connect-cluster-status <4>
+    # ...
+  # ...
+----
+<1> Kafka Connect cluster group the instance belongs to.
+<2> Kafka topic that stores connector offsets.
+<3> Kafka topic that stores connector and task status configurations.
+<4> Kafka topic that stores connector and task status updates.
+
+include::../modules/proc-configuring-kafka-connect-user-authorization.adoc[leveloffset=+1]
