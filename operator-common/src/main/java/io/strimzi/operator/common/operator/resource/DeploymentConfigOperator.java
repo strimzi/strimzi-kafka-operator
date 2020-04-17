@@ -59,7 +59,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      * generation sequence number of the desired state.
      */
     public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isObserved);
+        return waitFor(namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
     /**

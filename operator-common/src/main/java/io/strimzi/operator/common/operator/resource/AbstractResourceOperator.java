@@ -335,6 +335,29 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
         return Util.waitFor(vertx,
             String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
+            "ready",
+            pollIntervalMs,
+            timeoutMs,
+            () -> predicate.test(namespace, name));
+    }
+
+    /**
+     * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param predicate The predicate.
+     * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
+     */
+    public Future<Void> waitFor(String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        return Util.waitFor(vertx,
+            String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
+            logState,
             pollIntervalMs,
             timeoutMs,
             () -> predicate.test(namespace, name));

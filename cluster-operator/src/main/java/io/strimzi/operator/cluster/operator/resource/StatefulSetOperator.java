@@ -325,7 +325,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
 
-            Future<Void> deletedFut = waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+            Future<Void> deletedFut = waitFor(namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
                 log.trace("Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;
