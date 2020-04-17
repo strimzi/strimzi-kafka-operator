@@ -108,15 +108,21 @@ class MirrorMaker2ST extends BaseST {
             .build();
 
         // Check brokers availability
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            availabilityTopicSourceName, kafkaClusterSourceName, MESSAGE_COUNT);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
 
+        LOGGER.info("Setting topic to {}, cluster to {} and changing consumer group",
+            availabilityTopicTargetName, kafkaClusterTargetName);
         internalKafkaClient.setTopicName(availabilityTopicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            availabilityTopicTargetName, kafkaClusterTargetName, MESSAGE_COUNT);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
@@ -139,34 +145,44 @@ class MirrorMaker2ST extends BaseST {
         verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
 
+        LOGGER.info("Setting topic to {}, cluster to {} and changing consumer group",
+            topicSourceName, kafkaClusterSourceName);
         internalKafkaClient.setTopicName(topicSourceName);
         internalKafkaClient.setClusterName(kafkaClusterSourceName);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            topicSourceName, kafkaClusterSourceName, MESSAGE_COUNT);
         int sent = internalKafkaClient.sendMessagesPlain();
 
+        LOGGER.info("Consumer in source cluster and topic should receive {} messages", MESSAGE_COUNT);
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesPlain()
         );
 
+        LOGGER.info("Now setting topic to {} and cluster to {} - the messages should be mirrored",
+            topicTargetName, kafkaClusterTargetName);
         internalKafkaClient.setTopicName(topicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
+        LOGGER.info("Consumer in target cluster and topic should receive {} messages", MESSAGE_COUNT);
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesPlain()
         );
 
+        LOGGER.info("Changing topic to {}", topicSourceNameMirrored);
         internalKafkaClient.setTopicName(topicSourceNameMirrored);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        // Check that mm2 mirror automatically created topic
+        LOGGER.info("Check if mm2 mirror automatically created topic");
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesPlain()
         );
+        LOGGER.info("Mirrored successful");
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
         assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
@@ -242,16 +258,22 @@ class MirrorMaker2ST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            "my-topic-test-1", kafkaClusterSourceName, messagesCount);
         // Check brokers availability
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
         );
 
+        LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
+            "my-topic-test-2", kafkaClusterTargetName, userTarget.getMetadata().getName());
         internalKafkaClient.setTopicName("my-topic-test-2");
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            "my-topic-test-2", kafkaClusterTargetName, messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
@@ -310,25 +332,35 @@ class MirrorMaker2ST extends BaseST {
             .endSpec()
             .done();
 
+        LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
+            topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
         internalKafkaClient.setTopicName(topicSourceName);
         internalKafkaClient.setClusterName(kafkaClusterSourceName);
         internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            topicSourceName, kafkaClusterSourceName, messagesCount);
         int sent = internalKafkaClient.sendMessagesTls();
 
+        LOGGER.info("Receiving messages from - topic {}, cluster {} and message count of {}",
+            topicSourceName, kafkaClusterSourceName, messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesTls()
         );
 
+        LOGGER.info("Now setting topic to {}, cluster to {} and user to {} - the messages should be mirrored",
+            topicTargetName, kafkaClusterTargetName, userTarget.getMetadata().getName());
         internalKafkaClient.setTopicName(topicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
 
+        LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
             internalKafkaClient.receiveMessagesTls()
         );
+        LOGGER.info("Messages successfully mirrored");
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
         assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
@@ -418,17 +450,23 @@ class MirrorMaker2ST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            availabilityTopicSourceName, kafkaClusterSourceName, messagesCount);
         // Check brokers availability
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
         );
 
+        LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
+            availabilityTopicTargetName, kafkaClusterTargetName, userTarget.getMetadata().getName());
         internalKafkaClient.setTopicName(availabilityTopicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            availabilityTopicTargetName, kafkaClusterTargetName, messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
@@ -470,31 +508,34 @@ class MirrorMaker2ST extends BaseST {
                 .endMirror()
             .endSpec().done();
 
-        // Deploy topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
-
+        LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
+            topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
         internalKafkaClient.setTopicName(topicSourceName);
         internalKafkaClient.setClusterName(kafkaClusterSourceName);
         internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            topicSourceName, kafkaClusterSourceName, messagesCount);
+        int sent = internalKafkaClient.sendMessagesTls();
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
+            sent,
             internalKafkaClient.receiveMessagesTls()
         );
 
-        int sent = internalKafkaClient.sendMessagesTls();
-
+        LOGGER.info("Changing to target - topic {}, cluster {}, user {}", topicTargetName, kafkaClusterTargetName, userTarget.getMetadata().getName());
         internalKafkaClient.setTopicName(topicTargetName);
         internalKafkaClient.setClusterName(kafkaClusterTargetName);
         internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
-            Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
-            () -> {
-                internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
-                return sent == internalKafkaClient.receiveMessagesTls();
-            });
+        LOGGER.info("Now messages should be mirrored to target topic and cluster");
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            internalKafkaClient.receiveMessagesTls()
+        );
+        LOGGER.info("Messages successfully mirrored");
 
         KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicTargetName).get();
         assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
