@@ -150,7 +150,6 @@ public class PodUtils {
                     }
                 });
         }
-
         LOGGER.info("Pod {} deleted", name);
     }
 

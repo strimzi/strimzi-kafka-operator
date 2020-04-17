@@ -851,13 +851,13 @@ class KafkaST extends BaseST {
                 String javaOpts = container.getEnv().stream().filter(envVar ->
                     envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().get().getValue();
 
+                assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
+
                 if (container.getName().equals("topic-operator")) {
-                    assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
                     assertThat(javaOpts, is("-Xms1024M -Xmx2G"));
                 }
 
                 if (container.getName().equals("user-operator")) {
-                    assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
                     assertThat(javaOpts, is("-Xms512M -Xmx1G"));
                 }
             }
@@ -1019,6 +1019,7 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(null);
@@ -1028,7 +1029,7 @@ class KafkaST extends BaseST {
         //Waiting when EO pod will be deleted
         DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
         ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.waitForPodDeletion(kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName());
+        PodUtils.waitForPodDeletion(eoPodName);
 
         //Checking that EO was removed
         assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
