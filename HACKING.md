@@ -247,6 +247,16 @@ The project requires that all commits are signed-off, indicating that _you_ cert
 This can be done using `git commit -s` for each commit in your pull request. 
 Alternatively, to signoff a bunch of commits you can use `git rebase --signoff _your-branch_`.
 
+## Checkstyle pre-commit hook
+
+The Checkstyle plugin in run on all pull requests to the Strimzi repository. If you haven't compiled the code via maven, before you submit the PR, then formatting bugs can slip through and this can lead to annoying extra pushes to fix things. In the first instance you should see if your IDE has a Checkstyle plugin that can highlight errors in-line, such as [this one](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) for IntelliJ. 
+
+You can also run the Checkstyle plugin for every commit you make by adding a pre-commit hook to your local Strimzi git repository. To do this, add the following line to your `.git/hooks/pre-commit` script, to execute the checks and fail the commit if errors are detected:
+
+```
+./tools/git-hooks/checkstyle-pre-commit
+```
+
 ## IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ) don't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.

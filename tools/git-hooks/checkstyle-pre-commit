@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+mvn checkstyle:checkstyle@validate
+STATUS=$?
+if [ $STATUS -eq 0 ]; then
+    exit 0
+else
+    printf >&2 "\nERROR: Checkstyle issues found! Check the log output above for ERROR lines.\n\n"
+    exit 1
+fi
