@@ -83,7 +83,6 @@ public class TopicOperatorMockTest {
 
     @BeforeEach
     public void createMockKube(VertxTestContext context) throws Exception {
-        assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
