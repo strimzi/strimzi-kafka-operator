@@ -4,7 +4,7 @@ set -x
 . ./set_kafka_gc_options.sh
 
 # Defaults
-CONFIG_REGEX="USER=([A-Za-z\_]*)"
+CONFIG_REGEX="USER=([A-Za-z0-9\_]*)"
 CONSUMER_CONFIGURATION_ENV="CONSUMER_CONFIGURATION"
 
 # Create options for consumer
