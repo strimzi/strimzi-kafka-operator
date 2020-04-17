@@ -121,7 +121,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
             if (kafkaMirrorMaker2.getSpec() == null) {
-                log.error("{}: Resource lacks spec property", reconciliation, kafkaMirrorMaker2.getMetadata().getName());
+                log.error("{}: Resource lacks spec property", reconciliation);
                 throw new InvalidResourceException("spec property is required");
             }
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, versions);
@@ -203,7 +203,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         .map(mirror -> mirror.getSourceCluster() + "->" + mirror.getTargetCluster() + connectorEntry.getKey())
                         .collect(Collectors.toSet()));
             }
-            log.debug("{}: {}} cluster: delete MirrorMaker 2.0 connectors: {}", reconciliation, kind(), deleteMirrorMaker2ConnectorNames);
+            log.debug("{}: delete MirrorMaker 2.0 connectors: {}", reconciliation, deleteMirrorMaker2ConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteMirrorMaker2ConnectorNames.stream()
                     .map(connectorName -> apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName));
             Stream<Future<Void>> createUpdateFutures = mirrors.stream()
@@ -250,7 +250,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .build();                      
 
                         prepareMirrorMaker2ConnectorConfig(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
-                        log.debug("{}: {}} cluster: creating/updating connector {} config: {}", reconciliation, kind(), connectorName, asJson(connectorSpec).toString());
+                        log.debug("{}: creating/updating connector {} config: {}", reconciliation, connectorName, asJson(connectorSpec).toString());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })                            
                     .collect(Collectors.toList()))
