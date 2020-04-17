@@ -78,13 +78,6 @@ pipeline {
                         env.DOCKER_ORG="strimzi"
                         env.DOCKER_REGISTRY = env.OC_VERSION == "3" ? "172.30.1.1:5000" : "default-route-openshift-image-registry.apps-crc.testing"
                         env.DOCKER_TAG="pr"
-                        // For upgrade tests running with locally builded images we need to change tag in StrimziUpgradeST.json
-                        if ("${env.TEST_PROFILE}".contains("upgrade")) {
-                            println("[INFO] Update files for upgrade procedure")
-                            sh(script: "sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml")
-                            sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
-                            sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml")
-                        }
                     }
                     env.BUILD_PROJECT_STATUS = false
                     env.BUILD_DOCKER_IMAGE_STATUS = false
@@ -136,6 +129,13 @@ pipeline {
                     catchError {
                         if (env.OC_VERSION == "4" && !env.ghprbCommentBody.contains('test_only')) {
                             env.DOCKER_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
+                        }
+                        // For upgrade tests running with locally builded images we need to change tag in StrimziUpgradeST.json
+                        if ("${env.TEST_PROFILE}".contains("upgrade")) {
+                            println("[INFO] Update files for upgrade procedure")
+                            sh(script: "sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml")
+                            sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
+                            sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml")
                         }
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
