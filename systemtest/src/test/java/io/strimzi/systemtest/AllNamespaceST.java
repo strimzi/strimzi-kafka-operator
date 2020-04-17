@@ -170,6 +170,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             .withNamespaceName(THIRD_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(USER_NAME)
             .withConsumerGroupName(CONSUMER_GROUP_NAME)
             .build();
 
