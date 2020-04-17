@@ -231,8 +231,8 @@ class ConnectST extends BaseST {
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
