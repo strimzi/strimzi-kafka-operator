@@ -157,14 +157,14 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, weirdUserName, client), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .withKafkaUsername(weirdUserName)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .withKafkaUsername(weirdUserName)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages

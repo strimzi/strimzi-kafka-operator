@@ -69,14 +69,14 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(userName)
-                .withMessageCount(messageCount)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(userName)
+            .withMessageCount(messageCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
 
         assertThat(kafkaClient.receiveMessagesTls(), is(messageCount));
     }
@@ -88,14 +88,14 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(userName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(userName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
 
         // Send messages to Kafka
         assertThat(kafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -161,14 +161,14 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, weirdUserName, client), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-                .withKafkaUsername(weirdUserName)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withKafkaUsername(weirdUserName)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
