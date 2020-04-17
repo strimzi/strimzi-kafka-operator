@@ -137,7 +137,7 @@ public class TopicOperatorMockTest {
 
     @AfterEach
     public void tearDown(VertxTestContext context) {
-        Checkpoint checkpoint = context.checkpoint(1);
+        Checkpoint checkpoint = context.checkpoint();
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId, undeployResult -> {
                 if (adminClient != null) {
