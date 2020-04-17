@@ -132,20 +132,23 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
+        // Create user with normal name -> we don't need to set weird name for consumer
+        String aliceUser = "alice";
 
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // Create user
         KafkaUserResource.tlsUser(CLUSTER_NAME, weirdUserName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUser).done();
 
         JsonObject config = new JsonObject();
-        config.put("name", weirdUserName);
+        config.put("name", aliceUser);
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
         JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
-        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(weirdUserName));
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
 
         // Create topics json
         JsonArray topic = new JsonArray();
@@ -154,7 +157,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         topics.put("topics", topic);
 
         // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, weirdUserName, client), is(true));
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -168,14 +171,14 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, weirdUserName, client);
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, weirdUserName, client);
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, weirdUserName), is(true));
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser), is(true));
     }
 
     @BeforeAll
