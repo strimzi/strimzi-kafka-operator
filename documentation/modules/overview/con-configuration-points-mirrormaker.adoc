@@ -7,7 +7,7 @@
 
 To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
-You can use {ProductName} with MirrorMaker 2.0, though the earlier version of MirrorMaker continues to be supported.
+You can use {ProductName} with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
 
 [discrete]
 == MirrorMaker 2.0
@@ -22,21 +22,21 @@ MirrorMaker 2.0 uses:
 [discrete]
 === Cluster configuration
 
-You configure a `KafkaMirrorMaker2` resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
-and start running a set of MirrorMaker 2.0 connectors to make the connection.
+You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
+and then run a set of MirrorMaker 2.0 connectors to make the connection.
 
-Topic configuration is automatically synchronized between source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
+Topic configuration is automatically synchronized between the source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
 Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
 Topic replication is defined using regular expression patterns to _whitelist_ or _blacklist_ topics.
 
-MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
+The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
 
-MirrorSourceConnector:: _MirrorSourceConnector_ creates remote topics from the originating cluster.
-MirrorCheckpointConnector:: _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an _offset sync_ topic and _checkpoint_ topic.
+MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster.
+MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an _offset sync_ topic and _checkpoint_ topic.
 The offset sync topic maps the source and target offsets for replicated topic partitions from record metadata.
 A checkpoint is emitted from each source cluster and replicated in the target cluster through the checkpoint topic.
 The checkpoint topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
-MirrorHeartbeatConnector:: _MirrorHeartbeatConnector_ periodically checks connectivity between clusters.
+MirrorHeartbeatConnector:: A _MirrorHeartbeatConnector_ periodically checks connectivity between clusters.
 A heartbeat is produced every second by the MirrorHeartbeatConnector into a _heartbeat_ topic that is created on the local cluster.
 If you have MirrorMaker 2.0 at both the remote and local locations, the heartbeat emitted at the remote location by the MirrorHeartbeatConnector is treated like any remote topic and mirrored by the MirrorSourceConnector at the local cluster.
 The heartbeat topic makes it easy to check that the remote cluster is available and the clusters are connected.
