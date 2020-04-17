@@ -80,7 +80,7 @@ pipeline {
                         env.DOCKER_TAG="pr"
                         // For upgrade tests running with locally builded images we need to change tag in StrimziUpgradeST.json
                         if ("${env.TEST_PROFILE}".contains("upgrade")) {
-                            sh(script: "sed -i 's#:latest#:${env.env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
+                            sh(script: "sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
                         }
                     }
                     env.BUILD_PROJECT_STATUS = false
