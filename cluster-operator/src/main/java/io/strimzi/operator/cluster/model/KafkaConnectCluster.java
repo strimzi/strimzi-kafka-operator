@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -105,6 +106,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
     protected Tracing tracing;
 
     private KafkaConnectTls tls;
@@ -225,6 +227,10 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (template.getConnectContainer() != null && template.getConnectContainer().getEnv() != null) {
                 kafkaConnect.templateContainerEnvVars = template.getConnectContainer().getEnv();
+            }
+
+            if (template.getConnectContainer() != null && template.getConnectContainer().getSecurityContext() != null) {
+                kafkaConnect.templateContainerSecurityContext = template.getConnectContainer().getSecurityContext();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
@@ -444,6 +450,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         containers.add(container);

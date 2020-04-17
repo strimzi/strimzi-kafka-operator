@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -72,6 +73,7 @@ public class EntityUserOperator extends AbstractModel {
     private int clientsCaValidityDays;
     private int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
      * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
@@ -258,6 +260,7 @@ public class EntityUserOperator extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build());
     }
 
@@ -324,5 +327,9 @@ public class EntityUserOperator extends AbstractModel {
 
     public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
         templateContainerEnvVars = envVars;
+    }
+
+    public void setContainerSecurityContext(SecurityContext securityContext) {
+        templateContainerSecurityContext = securityContext;
     }
 }

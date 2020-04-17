@@ -14,11 +14,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -58,10 +60,14 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -995,6 +1001,39 @@ public class KafkaConnectClusterTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
+    }
+
+    @Test
+    public void testKafkaConnectContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .editOrNewTemplate()
+                        .withNewConnectContainer()
+                            .withSecurityContext(securityContext)
+                        .endConnectContainer()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment deployment = kcc.generateDeployment(null, false, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(cluster + "-connect")),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 
     @Test

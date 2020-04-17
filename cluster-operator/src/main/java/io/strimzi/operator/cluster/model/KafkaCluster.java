@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -233,6 +234,11 @@ public class KafkaCluster extends AbstractModel {
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
+
+    protected SecurityContext templateKafkaContainerSecurityContext;
+    protected SecurityContext templateTlsSidecarContainerSecurityContext;
+    protected SecurityContext templateInitContainerSecurityContext;
+
     protected ExternalTrafficPolicy templateExternalBootstrapServiceTrafficPolicy;
     protected List<String> templateExternalBootstrapServiceLoadBalancerSourceRanges;
     protected ExternalTrafficPolicy templatePerPodServiceTrafficPolicy;
@@ -682,6 +688,18 @@ public class KafkaCluster extends AbstractModel {
 
             if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
                 result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
+            }
+
+            if (template.getKafkaContainer() != null && template.getKafkaContainer().getSecurityContext() != null) {
+                result.templateKafkaContainerSecurityContext = template.getKafkaContainer().getSecurityContext();
+            }
+
+            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
+                result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
+            }
+
+            if (template.getInitContainer() != null && template.getInitContainer().getSecurityContext() != null) {
+                result.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -1668,6 +1686,7 @@ public class KafkaCluster extends AbstractModel {
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
+                    .withSecurityContext(templateInitContainerSecurityContext)
                     .build();
 
             initContainers.add(initContainer);
@@ -1699,6 +1718,7 @@ public class KafkaCluster extends AbstractModel {
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withCommand("/opt/kafka/kafka_run.sh")
+                .withSecurityContext(templateKafkaContainerSecurityContext)
                 .build();
 
         String tlsSidecarImage = getImage();
@@ -1720,6 +1740,7 @@ public class KafkaCluster extends AbstractModel {
                         .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
 
         containers.add(container);

@@ -728,6 +728,53 @@ spec:
                             description: The environment variable value.
                       description: Environment variables which should be applied to
                         the container.
+                    securityContext:
+                      type: object
+                      properties:
+                        allowPrivilegeEscalation:
+                          type: boolean
+                        capabilities:
+                          type: object
+                          properties:
+                            add:
+                              type: array
+                              items:
+                                type: string
+                            drop:
+                              type: array
+                              items:
+                                type: string
+                        privileged:
+                          type: boolean
+                        procMount:
+                          type: string
+                        readOnlyRootFilesystem:
+                          type: boolean
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
+                      description: Security context for the container.
                   description: Template for the Kafka Bridge container.
                 podDisruptionBudget:
                   type: object
