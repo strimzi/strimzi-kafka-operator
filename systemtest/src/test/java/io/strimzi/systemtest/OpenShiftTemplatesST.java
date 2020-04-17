@@ -70,7 +70,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testStrimziEphemeral() {
         String clusterName = "foo";
-        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -86,7 +86,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testStrimziPersistent() {
         String clusterName = "bar";
-        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -101,7 +101,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
-        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -130,7 +130,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
-        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -163,7 +163,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testConnect() {
         String clusterName = "test-connect";
-        oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnect connect = getKafkaConnect(clusterName);
@@ -174,7 +174,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testS2i() {
         String clusterName = "test-s2i";
-        oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
@@ -185,7 +185,7 @@ public class OpenShiftTemplatesST extends BaseST {
     @Test
     void testTopicOperator() {
         String topicName = "test-topic-topic";
-        oc.newApp("strimzi-topic", map(
+        oc.createResourceAndApply("strimzi-topic", map(
                 "TOPIC_NAME", topicName,
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));

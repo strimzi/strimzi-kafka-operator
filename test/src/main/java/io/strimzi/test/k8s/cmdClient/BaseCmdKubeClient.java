@@ -343,6 +343,18 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    public void createResourceAndApply(String template, Map<String, String> params) {
+        List<String> cmd = namespacedCommand("process", template, "-l", "app=" + template, "-o", "yaml");
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            cmd.add("-p");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+
+        String yaml = Exec.exec(cmd).out();
+        applyContent(yaml);
+    }
+
+    @Override
     public String describe(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).out();
     }
