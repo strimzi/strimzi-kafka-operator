@@ -247,6 +247,12 @@ The project requires that all commits are signed-off, indicating that _you_ cert
 This can be done using `git commit -s` for each commit in your pull request. 
 Alternatively, to signoff a bunch of commits you can use `git rebase --signoff _your-branch_`.
 
+You can add a commit-msg hook to warn you if the commit you just made locally has not been signed off. Add the following line to you `.git/hooks/commit-msg` script to print the warning:
+
+```
+./tools/git-hooks/signoff-warning-commit-msg $1
+```
+
 ## Checkstyle pre-commit hook
 
 The Checkstyle plugin in run on all pull requests to the Strimzi repository. If you haven't compiled the code via maven, before you submit the PR, then formatting bugs can slip through and this can lead to annoying extra pushes to fix things. In the first instance you should see if your IDE has a Checkstyle plugin that can highlight errors in-line, such as [this one](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) for IntelliJ. 
