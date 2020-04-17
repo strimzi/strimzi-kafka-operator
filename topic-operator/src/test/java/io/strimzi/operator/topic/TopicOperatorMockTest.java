@@ -48,7 +48,6 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
@@ -83,7 +82,6 @@ public class TopicOperatorMockTest {
 
     @BeforeEach
     public void createMockKube(VertxTestContext context) throws Exception {
-        assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
@@ -138,15 +136,18 @@ public class TopicOperatorMockTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown(VertxTestContext context) {
+        Checkpoint checkpoint = context.checkpoint();
         if (vertx != null && deploymentId != null) {
-            vertx.undeploy(deploymentId);
-        }
-        if (adminClient != null) {
-            adminClient.close();
-        }
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
+            vertx.undeploy(deploymentId, undeployResult -> {
+                if (adminClient != null) {
+                    adminClient.close();
+                }
+                if (kafkaCluster != null) {
+                    kafkaCluster.shutdown();
+                }
+                checkpoint.flag();
+            });
         }
     }
 
