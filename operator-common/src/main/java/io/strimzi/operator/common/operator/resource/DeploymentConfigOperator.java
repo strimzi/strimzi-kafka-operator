@@ -5,6 +5,8 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.fabric8.openshift.api.model.DeploymentCondition;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
@@ -72,9 +74,35 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
     private boolean isObserved(String namespace, String name) {
         DeploymentConfig dep = get(namespace, name);
         if (dep != null)   {
-            return dep.getMetadata().getGeneration().equals(dep.getStatus().getObservedGeneration());
+            // Get the roll out status
+            //     => Sometimes it takes OCP some time before the generations are updated.
+            //        So we need to check the conditions in addition to detect such situation.
+            boolean rollOutNotStartedYet = false;
+            DeploymentCondition progressing = getProgressingCondition(dep);
+
+            if (progressing != null)    {
+                rollOutNotStartedYet = progressing.getReason() == null && "Unknown".equals(progressing.getStatus());
+            }
+
+            return dep.getMetadata().getGeneration().equals(dep.getStatus().getObservedGeneration())
+                    && !rollOutNotStartedYet;
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Retrieves the Progressing condition from the DeploymentConfig status
+     *
+     * @param dep   DeploymentConfig resource
+     * @return      Progressing condition
+     */
+    private DeploymentCondition getProgressingCondition(DeploymentConfig dep)  {
+        if (dep.getStatus() != null
+                && dep.getStatus().getConditions() != null) {
+            return dep.getStatus().getConditions().stream().filter(condition -> "Progressing".equals(condition.getType())).findFirst().orElse(null);
+        } else {
+            return null;
         }
     }
 }
