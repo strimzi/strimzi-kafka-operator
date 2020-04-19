@@ -269,8 +269,6 @@ public class MirrorMakerST extends BaseST {
             .endSpec()
             .done();
 
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-
         internalKafkaClient.setTopicName(topicSourceName);
         internalKafkaClient.setClusterName(kafkaClusterSourceName);
         internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
