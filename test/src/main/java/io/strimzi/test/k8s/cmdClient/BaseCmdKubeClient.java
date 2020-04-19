@@ -181,8 +181,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            // TODO remove this
-            LOGGER.info(yamlContent);
             Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
             return (K) this;
         }

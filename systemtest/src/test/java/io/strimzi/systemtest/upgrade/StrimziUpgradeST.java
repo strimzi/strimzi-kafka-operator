@@ -87,7 +87,7 @@ public class StrimziUpgradeST extends BaseST {
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
     void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
 
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
@@ -136,7 +136,7 @@ public class StrimziUpgradeST extends BaseST {
 
         try {
             for (JsonValue testParameters : parameters) {
-                if (StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("supportedK8sVersion").getString("version"))) {
+                if (StUtils.isAllowOnCurrentEnvironment(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("flakyEnvVariable"))) {
                     performUpgrade(testParameters.asJsonObject(), MESSAGE_COUNT, consumedMessagesCount);
                     consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
                 } else {
