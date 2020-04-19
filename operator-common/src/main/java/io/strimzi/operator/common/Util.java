@@ -55,10 +55,10 @@ public class Util {
      * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
-     * @param ready Determines when the wait is complete by returning true.
-     * @return A future that completes when the given {@code ready} indicates readiness.
+     * @param completed Determines when the wait is complete by returning true.
+     * @return A future that completes when the given {@code completed} indicates readiness.
      */
-    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
+    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
         Promise<Void> promise = Promise.promise();
         LOGGER.debug("Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -68,7 +68,7 @@ public class Util {
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
-                            if (ready.getAsBoolean())   {
+                            if (completed.getAsBoolean())   {
                                 future.complete();
                             } else {
                                 LOGGER.trace("{} is not {}", logContext, logState);
