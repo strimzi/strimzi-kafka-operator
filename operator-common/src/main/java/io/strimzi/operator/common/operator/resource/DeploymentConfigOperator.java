@@ -76,15 +76,15 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
             // Get the roll out status
             //     => Sometimes it takes OCP some time before the generations are updated.
             //        So we need to check the conditions in addition to detect such situation.
-            boolean rollOutNotStartedYet = false;
+            boolean rollOutNotStarting = true;
             DeploymentCondition progressing = getProgressingCondition(dep);
 
             if (progressing != null)    {
-                rollOutNotStartedYet = progressing.getReason() == null && "Unknown".equals(progressing.getStatus());
+                rollOutNotStarting = progressing.getReason() != null && !"Unknown".equals(progressing.getStatus());
             }
 
             return dep.getMetadata().getGeneration().equals(dep.getStatus().getObservedGeneration())
-                    && !rollOutNotStartedYet;
+                    && rollOutNotStarting;
         } else {
             return false;
         }
