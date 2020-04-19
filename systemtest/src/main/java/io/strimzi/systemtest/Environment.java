@@ -53,7 +53,7 @@ public class Environment {
     /**
      * Image pull policy env var for Components images (Kafka, Bridge, ...)
      */
-    private static final String COMPONENTS_IMAGE_PULL_POLICY_ENV = "IMAGE_PULL_POLICY";
+    private static final String COMPONENTS_IMAGE_PULL_POLICY_ENV = "COMPONENTS_IMAGE_PULL_POLICY";
     /**
      * Image pull policy env var for Operator images
      */
