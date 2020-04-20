@@ -129,8 +129,11 @@ public class ZookeeperLeaderFinderTest {
             netServer = vertx.createNetServer(nso);
         }
 
-        public void stop() {
-            netServer.close();
+        public void stop(VertxTestContext vertxTestContext) {
+            Checkpoint checkpoint = vertxTestContext.checkpoint();
+            netServer.close(closeResult -> {
+                checkpoint.flag();
+            });
         }
 
         public Future<Integer> start() {
@@ -190,9 +193,12 @@ public class ZookeeperLeaderFinderTest {
     }
 
     @AfterEach
-    public void stopZks() {
+    public void stopZks(VertxTestContext vertxTestContext) {
+        if (zks.isEmpty()) {
+            vertxTestContext.completeNow();
+        }
         for (FakeZk zk : zks) {
-            zk.stop();
+            zk.stop(vertxTestContext);
         }
     }
 
@@ -365,7 +371,7 @@ public class ZookeeperLeaderFinderTest {
 
         int[] ports = startMockZks(context, 2, (id, attempt) -> false);
         // Close ports to ensure closed ports are used so as to mock network problems
-        stopZks();
+        stopZks(context);
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
