@@ -37,7 +37,7 @@ public class KafkaConnectS2IResource {
 
     public static DoneableKafkaConnectS2I kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
-        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build(), clusterName);
+        return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build());
     }
 
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -68,9 +68,9 @@ public class KafkaConnectS2IResource {
             .endSpec();
     }
 
-    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String clusterName) {
+    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
-            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()), clusterName);
+            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         }
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
             TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
