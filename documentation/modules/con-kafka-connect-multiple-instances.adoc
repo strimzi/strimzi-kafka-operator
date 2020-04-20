@@ -5,7 +5,7 @@
 [id='con-kafka-connect-multiple-instances-{context}']
 = Kafka Connect configuration for multiple instances
 
-If you are running multiple instances of Kafka Connect, pay attention to the default configuration of the following `config` properties:
+If you are running multiple instances of Kafka Connect, you have to change the default configuration of the following `config` properties:
 
 [source,yaml,subs="attributes+"]
 ----

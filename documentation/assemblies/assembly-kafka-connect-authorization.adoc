@@ -7,7 +7,7 @@
 
 = Kafka Connect user authorization
 
-If simple authorization is enabled for Kafka Connect, the `KafkaUser` resource for the Kafka Connect user must be configured to provide access rights to the consumer group and
+If authorization is enabled for Kafka Connect, the `KafkaUser` resource for the Kafka Connect user must be configured to provide read/write access rights to the consumer group and
 internal topics, which are automatically configured or specified as configuration parameters in the `spec` for the `KafkaConnect` or `KafkaConnectS2I` configuration.
 
 [source,yaml,subs=attributes+]

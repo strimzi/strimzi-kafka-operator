@@ -44,4 +44,4 @@ This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 
-. If simple authorization is enabled for Kafka Connect, xref:assembly-kafka-connect-authorization-{context}[configure the Kafka Connect user to enable access to the Kafka Connect consumer group and topics].
+. If authorization is enabled for Kafka Connect, xref:assembly-kafka-connect-authorization-{context}[configure the Kafka Connect user to enable access to the Kafka Connect consumer group and topics].
