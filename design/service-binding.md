@@ -1,12 +1,12 @@
 # Service Binding Proposal for Strimzi
 
-This document is intended to progress discussion about how to enable Strimzi to work well with the Service Binding Operator. It includes some suggested enhancements to both Strimzi and the Service Binding Operator. It would be good to settle on an agreement about how these two technologies can best work together so we can begin the technical work to deliver.
+This document is intended to progress discussion about how to enable Strimzi to work well with the Service Binding Operator. It includes some suggested enhancements to Strimzi to make it work more nicely with the Service Binding Operator. It would be good to settle on an agreement about how these two technologies can best work together so we can begin the technical work to deliver.
 
 The Service Binding Operator is responsible for binding services such as databases and message brokers to runtime applications in Kubernetes. It's still under development, but the intention is that it becomes part of Operator Lifecycle Management.
 
 ## Service Binding Operator today
 
-Today, Strimzi does not fit very nicely with service binding. With the current Service Binding Opeerator implementation, you need to include a template in the `ServiceBindingRequest` to extract the address information from the listener status.
+Today, Strimzi does not fit very nicely with service binding. When a user wishes to bind to Strimzi, they create a `ServiceBindingRequest` that refers to the Strimzi `Kafka`. Then, they can extract the listener address information for a particular listener from the CR status, and that gives them the bootstrap address in an environment variable.
 
 ``` yaml
 apiVersion: apps.openshift.io/v1alpha1
@@ -40,15 +40,15 @@ While this is quite a clever use of a Go template, it has several problems.
 
 1) The code is included in an annotation for the user's custom resource. This is fragile and ugly.
 1) The code includes the name of a listener. If a different listener name is being used, the code is incorrect.
-1) The code picks just the first of the array of addresses. It's common Kafka practice to have a list of bootstrap servers.
+1) The code picks just the first of the array of addresses. It's common Kafka practice to have a list of bootstrap servers, and while Strimzi usually only has a single bootstrap address per listener, it is still necessary for the user to concatenate the `host:port` pair.
 
-What would be better is to annotate the Strimzi objects in a way that enabled the Service Binding Operator to populate the environment variables itself.
+What would be better is to annotate the Strimzi objects in a way that enabled the Service Binding Operator to populate the binding information itself. The user should only really need to refer to the `Kafka` in their `ServiceBindingRequest` and let the SBO take care of the details of the binding.
 
 ## Service Binding Specification
 
-As an enhancement to the Service Binding Operator, the [Service Binding Specification](https://github.com/application-stacks/service-binding-specification) is being developed by the community to describe how services can be made bindable, which essentially means providing binding data and a description of where to find it.
+As an enhancement to the Service Binding Operator, the [Service Binding Specification](https://github.com/application-stacks/service-binding-specification) is being developed by the community to describe how services can be made bindable, which essentially means providing binding data and a description of where to find it. Then the Service Binding Operator provides the binding information in a standard way, such as environment variables or a volume-mounted secret (refer to the [Service Binding Specification](https://github.com/application-stacks/service-binding-specification) for more details).
 
-Using the service binding specification annotations with Strimzi is still a bit fiddly. Here's an example of a `Kafka` CR annotated to enable service binding.
+Using the Service Binding Specification annotations with Strimzi is still a bit fiddly. Here's an example of a `Kafka` CR annotated to enable service binding, just as an illustration of how annotations would work with Strimzi as it is today.
 
 ``` yaml
 apiVersion: kafka.strimzi.io/v1beta1
@@ -88,23 +88,23 @@ status:
   listeners:
   - type: plain
     addresses:
-    - host: myhost.example.com
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
       port: 9092
 ```
 
-The Service Binding Operator looks for annotations starting `servicebinding`.
+The Service Binding Operator looks for annotations starting `servicebinding` and then it can extract the host and port information.
 
 This has the same shortcomings as the first example, with the advantage that the template code is not required in every single `ServiceBindingRequest`.
 
-It would be preferable if Strimzi custom resources were appropriately annotated without the user needing to do it.
+It would be preferable if Strimzi custom resources were appropriately annotated without the user needing to do it. This document proposes how this can be achieved.
 
-## Desired way of consuming binding information
+# Proposal
 
-The aim is to make it easy to bind to any service using a `ServiceBindingRequest` CR. Here's an example:
+The aim is to make it easy to bind to any service using a `ServiceBinding` CR referring to `Kafka` and `KafkaUser` CRs only, without needing complex annotations provided by the user. (The API group and kind is still being settled, but this looks like the likely name.) Here's an example:
 
 ``` yaml
 apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
+kind: ServiceBinding
 metadata:
   name: my-binding
 spec:
@@ -115,11 +115,7 @@ spec:
     resourceRef: my-cluster
 ```
 
-Then the binding information is supplied in in a standard way, such as environment variables or secrets. For convenience, I have in general chosen to use secrets for binding information (this is controlled by the CSV annotations). Of course, in combination with developer tooling, this can remove the need for the developer to write the code to read credentials and so on. Instead, they're presented to the application as environment variables with well known names.
-
-## Binding data
-
-To connect to Strimzi, a service binding needs the followng:
+To connect to Strimzi, a service binding needs the following:
 
 * **host** - hostname or IP address
 * **port** - port number
@@ -127,21 +123,13 @@ To connect to Strimzi, a service binding needs the followng:
 * **password** - password or token, optional
 * **certificate** - certificate, optional
 
-These pieces of information can be provided in a variety of ways:
-
-* annotations on custom resources, indicating `spec` and `status` properties
-* ConfigMap
-* Secret
+Some of this comes from the `Kafka` CR and some from `KafkaUser`.
 
 ## Binding to a Kafka cluster with no TLS or authentication
 
-Because Strimzi support multiple listeners and there is also a future plan to enhance the listener configuration capabilities, it seems prudent to design a scheme that works nicely with multiple listeners.
+The current form of the `status.listeners.addresses` information available for the `Kafka` CR is inconvenient for consumption by the Service Binding Operator.
 
-There are two proposals here, with a preference for the first. Consequently, this format is used for the later examples.
-
-### Option 1 - Augment Kafka CR status
-
-This introduces a list of bootstrap addresses into the `status` for a `Kafka` CR like this:
+I propose that the current format of:
 
 ``` yaml
 apiVersion: kafka.strimzi.io/v1beta1
@@ -154,32 +142,36 @@ status:
   listeners:
   - type: plain
     addresses:
-    - host: myhost1.example.com
-      port: 9092
-    - host: myhost2.example.com
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
       port: 9092
   - type: tls
     addresses:
-    - host: myhost3.example.com
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
       port: 9093
-  bootstrap:
-    plain: myhost1.example.com:9092,myhost2.example.com:9092
-    tls: myhost3.example.com
+```
+
+is augmented with a briefer form that provides the information in the syntax that the Kafka clients will use with a simpler structure that the Service Binding Operator can consume, like this:
+
+``` yaml
+status:
+  listeners:
+  - type: plain
+    addresses:
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
+      port: 9092
+    bootstrap: my-cluster-kafka-bootstrap.my-namespace.svc:9092
+  - type: tls
+    addresses:
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
+      port: 9093
+    bootstrap: my-cluster-kafka-bootstrap.my-namespace.svc:9093
 ```
 
 This has the advantage that the bootstrap servers information is at a known point in the `status` of the `Kafka` custom resource which makes is simple to annotate the CSV so the Service Binding Operator can find it.
 
-Because that structure is a little odd, perhaps this would be preferred.
+Because Strimzi support multiple listeners and there is also a future plan to enhance the listener configuration capabilities, it seems prudent to design a scheme that works nicely with multiple listeners.
 
-``` yaml
-bootstrap:
-- name: plain
-  value: myhost1.example.com:9092,myhost2.example.com:9092
-- name: tls
-  value: myhost3.example.com
-```
-
-This is trying of course to find a syntax that is sufficiently general that the Service Binding Operator can be extended to support it.
+Now, the Service Binding Operator can discover the bootstrap information using the following status descriptor in the `ClusterServiceVersion`:
 
 ``` yaml
 apiVersion: operators.coreos/com:v1alpha1
@@ -189,6 +181,8 @@ metadata:
   namespace: placeholder
   annotations:
     containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
 spec:
   customresourcedefinitions:
     owned:
@@ -200,18 +194,18 @@ spec:
       statusDescriptors:
       - description: The addresses of the bootstrap servers for Kafka clients
         displayName: Bootstrap servers
-        path: status.bootstrap
+        path: listeners
         x-descriptors:
-        - binding:env:object:secret:endpoints
+        - servicebinding:endpoints:elementType=sliceOfMaps,sourceKey=type,sourceValue=bootstrap
 ```
 
-#### Consuming client's ServiceBindingRequest
+#### Consuming client's ServiceBinding
 
 All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR.
 
 ``` yaml
 apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
+kind: ServiceBinding
 metadata:
   name: my-binding
 spec:
@@ -224,100 +218,15 @@ spec:
 
 The consuming client needs to know the listener name.
 
-The Service Binding Operator creates a `Secret` which contains:
+The Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
-
-
-### Option 2 - Generate a binding ConfigMap
-
-Rather than adding bootstrap server information to the `status`, Strimzi could create a ConfigMap and use the annotations to point the Service Binding Operator to that.
-
-Here's the content of the ConfigMap, with type and protocol added:
-
-``` yaml
-type=kafka
-protocol=kafka
-endpoints.plain=myhost1.example.com:9092,myhost2.example.com:9092
-endpoints.tls=myhost3.example.com
-```
-
-And the `status` changed to point to it:
-
-``` yaml
-apiVersion:kafka.strimzi.io/v1beta1
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
- ...
-status:
-  listeners:
-  - type: plain
-    addresses:
-    - host: myhost1.example.com
-      port: 9092
-    - host: myhost2.example.com
-      port: 9092
-  - type: tls
-    addresses:
-    - host: myhost3.example.com
-      port: 9093
-  bindingConfigMap: binding-cm
-```
-
-And the CSV annotations:
-
-``` yaml
-apiVersion: operators.coreos/com:v1alpha1
-kind: ClusterServiceVersion
-metadata:
-  name: strimzi-cluster-operator.v0.16.2
-  namespace: placeholder
-  annotations:
-    containerImage: docker.io/strimzi/operator:0.16.2
-spec:
-  customresourcedefinitions:
-    owned:
-    - description: Represents a Kafka cluster
-      displayName: Kafka
-      kind: Kafka
-      name: kafkas.kafka.strimzi.io
-      version: v1beta1
-      statusDescriptors:
-      - description: The binding information for Kafka clients
-        displayName: ConfigMap containing binding information
-        path: status.bindingConfigMap
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:ConfigMap
-```
-
-#### Consuming client's ServiceBindingRequest
-
-All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR.
-
-``` yaml
-apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
-metadata:
-  name: my-binding
-spec:
-  services:
-  - group: kafka.strimzi.io
-    kind: Kafka
-    version: v1beta1
-    resourceRef: my-cluster
-```
-
-The consuming client needs to know the listener name.
-
-The Service Binding Operator creates a `ConfigMap` with the same content as the Strimzi binding ConfigMap.
 
 ## Binding to a Kafka cluster with TLS but no authentication
 
 The addition with this scenario is that Kafka clients need access to the CA certificate that signed the broker's server certificate. The Service Binding Specification does not currently have support for a separate CA certificate, which seems like a simple enhancement, which it indicated using `caSecret` in the example below.
 
-The CA certificate is most easily obtained from the `<cluster>-cluster-ca-cert` secret using the `ca.p12` and `ca.password` fields in the secret. To enable the Service Binding Operator to obtain this information, the same pattern of enhancing the CR `status` and annotating the CSV can be used.
+The CA certificate is most easily obtained from the `<cluster>-cluster-ca-cert` secret. While this name is predictable, it is not known to the Service Binding Operator. To enable the Service Binding Operator to obtain this information, the same pattern of enhancing the CR `status` and annotating the CSV can be used.
 
 ``` yaml
 apiVersion:kafka.strimzi.io/v1beta1
@@ -330,19 +239,14 @@ status:
   listeners:
   - type: plain
     addresses:
-    - host: myhost1.example.com
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
       port: 9092
-    - host: myhost2.example.com
-      port: 9092
+    bootstrap: my-cluster-kafka-bootstrap.my-namespace.svc:9092
   - type: tls
     addresses:
-    - host: myhost3.example.com
+    - host: my-cluster-kafka-bootstrap.my-namespace.svc
       port: 9093
-  bootstrap:
-  - name: plain
-    value: myhost1.example.com:9092,myhost2.example.com:9092
-  - name: tls
-    value: myhost3.example.com
+    bootstrap: my-cluster-kafka-bootstrap.my-namespace.svc:9093
   caCertificateSecret: my-cluster-cluster-ca-cert
 ---
 apiVersion: operators.coreos/com:v1alpha1
@@ -352,6 +256,8 @@ metadata:
   namespace: placeholder
   annotations:
     containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
 spec:
   customresourcedefinitions:
     owned:
@@ -361,22 +267,26 @@ spec:
       name: kafkas.kafka.strimzi.io
       version: v1beta1
       statusDescriptors:
+      - description: The addresses of the bootstrap servers for Kafka clients
+        displayName: Bootstrap servers
+        path: bootstrap
+        x-descriptors:
+        - servicebinding:endpoints:elementType=sliceOfMaps,sourceKey=type,sourceValue=bootstrap
       - description: The secret containing the CA certificate
         displayName: Secret containing the CA certificate
-        path: status.caCertificateSecret
+        path: caCertificateSecret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - binding:env:object:secret:ca.p12
-        - binding:env:object:secret:ca.password
+        - servicebinding
 ```
 
-### Consuming client's ServiceBindingRequest
+### Consuming client's ServiceBinding
 
 All of the required annotations are applied to the `Kafka` CSV, so the binding should only need to refer to the `Kafka` CR, and the CA certificate secret can be obtained from there.
 
 ``` yaml
 apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
+kind: ServiceBinding
 metadata:
   name: my-binding
 spec:
@@ -389,11 +299,12 @@ spec:
 
 The consuming client needs to know the listener name and also the keys for the CA certificate secret fields for the certificate and password.
 
-The Service Binding Operator creates a `Secret` which contains:
+The Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
 * **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **ca.crt** - CA certificate for the cluster
 
 
 ## Binding to a Kafka cluster with username/password authentication
@@ -450,6 +361,8 @@ metadata:
   namespace: placeholder
   annotations:
     containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
 spec:
   customresourcedefinitions:
     owned:
@@ -458,31 +371,27 @@ spec:
       kind: KafkaUser
       name: kafkausers.kafka.strimzi.io
       version: v1beta1
-      resources:
-      - kind: Secret
-        name: ''
-        version: v1
       statusDescriptors:
       - description: The username
         displayName: Username
-        path: status.username
+        path: username
         x-descriptors:
-        - binding:env:object:secret:username
+        - servicebinding:username
       - description: The secret containing the credentials
         displayName: Secret
-        path: status.secret
+        path: secret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - binding:env:object:secret:password
+        - servicebinding
 ```
 
-### Consuming client's ServiceBindingRequest
+### Consuming client's ServiceBinding
 
 The binding needs to refer to the `Kafka` CR for the endpoint information and the `KafkaUser` CR for the username and password.
 
 ``` yaml
 apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
+kind: ServiceBinding
 metadata:
   name: my-binding
 spec:
@@ -501,7 +410,7 @@ There are of course two secrets now, the CA certificate secret accessed via the 
 
 The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the key for the password field in the `KafkaUser` secret.
 
-The Service Binding Operator creates a `Secret` which contains:
+TThe Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
@@ -527,11 +436,11 @@ spec:
   authorization:
     type: simple
     acls:
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Read
+    - resource:
+        type: topic
+        name: my-topic
+        patternType: literal
+      operation: Read
 status:
   username: my-user-name
   secret: my-user
@@ -564,6 +473,8 @@ metadata:
   namespace: placeholder
   annotations:
     containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
 spec:
   customresourcedefinitions:
     owned:
@@ -572,32 +483,27 @@ spec:
       kind: KafkaUser
       name: kafkausers.kafka.strimzi.io
       version: v1beta1
-      resources:
-      - kind: Secret
-        name: ''
-        version: v1
       statusDescriptors:
       - description: The username
         displayName: Username
-        path: status.username
+        path: username
         x-descriptors:
-        - binding:env:object:secret:username
+        - servicebinding:username
       - description: The secret containing the credentials
         displayName: Secret
-        path: status.secret
+        path: secret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - binding:env:object:secret:user.p12
-        - binding:env:object:secret:user.password
+        - servicebinding
 ```
 
-### Consuming client's ServiceBindingRequest
+### Consuming client's ServiceBinding
 
 The binding needs to refer to the `Kafka` CR for the endpoint information and the `KafkaUser` CR for the client certificate.
 
 ``` yaml
 apiVersion: service.binding/v1alpha1
-kind: ServiceBindingRequest
+kind: ServiceBinding
 metadata:
   name: my-binding
 spec:
@@ -616,15 +522,109 @@ There are of course two secrets now, the CA certificate secret accessed via the 
 
 The consuming client needs to know the listener name, the keys for the CA certificate secret fields for the certificate and password, and the keys for the client certificate `KafkaUser` secret for the certificate and password.
 
-The Service Binding Operator creates a `Secret` which contains:
+The Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
-* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **ca.password** - password for protecting the CA certificate PKCS #12 archive file
 * **username** - username for the consuming client
-* **user.p12** - user certificate for the consuming client PKCS #12 archive file for storing certificates and keys
-* **user.password** - password for protecting the user certficate PKCS #12 archive file
+* **user.p12** - client certificate for the consuming client PKCS #12 archive file for storing certificates and keys
+* **user.password** - password for protecting the client certficate PKCS #12 archive file
+* **user.crt** - certificate for the consuming client signed by the clients' CA
+* **user.key** - private key for the consuming client
 
+# Summary of changes
+
+## Augment Kafka status information with bootstrap and CA certificate secret
+
+Add `status.listeners[].bootstrap` and `status.caCertificateSecret` information to the status of the `Kafka` CR.
+
+``` yaml
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+ ...
+status:
+  listeners:
+  - type: <listener type>
+    ...
+    bootstrap: <host:post(,host:port...)>
+  caCertificateSecret: <secret name>
+```
+
+## Kafka ClusterServiceVersion
+
+Add annotations and x-descriptors to the `Kafka` CSV.
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Kafka cluster
+      displayName: Kafka
+      kind: Kafka
+      name: kafkas.kafka.strimzi.io
+      version: v1beta1
+      statusDescriptors:
+      - description: The addresses of the bootstrap servers for Kafka clients
+        displayName: Bootstrap servers
+        path: bootstrap
+        x-descriptors:
+        - servicebinding:endpoints:elementType=sliceOfMaps,sourceKey=type,sourceValue=bootstrap
+      - description: The secret containing the CA certificate
+        displayName: Secret containing the CA certificate
+        path: caCertificateSecret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - servicebinding
+```
+
+## KafkaUser ClusterServiceVersion
+
+Add annotations and x-descriptors to the `KafkaUser` CSV.
+
+``` yaml
+apiVersion: operators.coreos/com:v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.16.2
+  namespace: placeholder
+  annotations:
+    containerImage: docker.io/strimzi/operator:0.16.2
+  categories:
+  - Bindable
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a user inside a Kafka cluster
+      displayName: Kafka User
+      kind: KafkaUser
+      name: kafkausers.kafka.strimzi.io
+      version: v1beta1
+      statusDescriptors:
+      - description: The username
+        displayName: Username
+        path: username
+        x-descriptors:
+        - servicebinding:username
+      - description: The secret containing the credentials
+        displayName: Secret
+        path: secret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - servicebinding
+```
 
 # Rejected alternatives
 
