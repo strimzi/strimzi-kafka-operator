@@ -301,7 +301,7 @@ public class MetricsST extends BaseST {
         KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1, false).done();
+        KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
         KafkaTopicResource.topic(CLUSTER_NAME, "test-topic", 7, 2).done();
 
