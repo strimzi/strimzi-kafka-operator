@@ -167,7 +167,6 @@ public class OauthAuthorizationST extends OauthBaseST {
         teamBOauthKafkaClient.setKafkaUsername(USER_NAME);
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
         assertThrows(WaitException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
