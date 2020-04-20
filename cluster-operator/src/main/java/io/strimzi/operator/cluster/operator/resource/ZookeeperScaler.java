@@ -141,6 +141,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
             Util.waitFor(vertx,
                 String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
+                "connected",
                 1_000,
                 operationTimeoutMs,
                 () -> zkAdmin.getState().isAlive() && zkAdmin.getState().isConnected())

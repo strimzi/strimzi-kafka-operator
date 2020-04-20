@@ -225,7 +225,7 @@ public class KafkaImpl implements Kafka {
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         queueWork(new UniWork<>("deleteTopic", future, handler));
         return handler.future().compose(ig ->
-                Util.waitFor(vertx, "deleted sync " + topicName, 1000, 120_000, () -> {
+                Util.waitFor(vertx, "deleted sync " + topicName, "deleted", 1000, 120_000, () -> {
                     try {
                         return adminClient.describeTopics(Collections.singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
                     } catch (ExecutionException e) {
