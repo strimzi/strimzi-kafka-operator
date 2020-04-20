@@ -281,14 +281,16 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * is ready.
      *
      * @param name The resource name.
+     * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      * @param predicate The predicate.
      * @return a future that completes when the resource identified by the given {@code name} is ready.
      */
-    public Future<Void> waitFor(String name, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
+    public Future<Void> waitFor(String name, String logState, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
         return Util.waitFor(vertx,
             String.format("%s resource %s", resourceKind, name),
+            logState,
             pollIntervalMs,
             timeoutMs,
             () -> predicate.test(name));

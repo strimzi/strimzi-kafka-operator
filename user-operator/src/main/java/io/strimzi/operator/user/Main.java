@@ -5,6 +5,7 @@
 package io.strimzi.operator.user;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -12,6 +13,8 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -19,12 +22,14 @@ import io.strimzi.operator.user.operator.KafkaUserQuotasOperator;
 import io.strimzi.operator.user.operator.ScramShaCredentials;
 import io.strimzi.operator.user.operator.ScramShaCredentialsOperator;
 import io.strimzi.operator.user.operator.SimpleAclOperator;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,9 +61,9 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
         KubernetesClient client = new DefaultKubernetesClient();
-        kafka.security.auth.SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
+        AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
-        run(vertx, client, authorizer, config).setHandler(ar -> {
+        run(vertx, client, adminClientProvider, config).setHandler(ar -> {
             if (ar.failed()) {
                 log.error("Unable to start operator", ar.cause());
                 System.exit(1);
@@ -66,7 +71,7 @@ public class Main {
         });
     }
 
-    static Future<String> run(Vertx vertx, KubernetesClient client, kafka.security.auth.SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
+    static Future<String> run(Vertx vertx, KubernetesClient client, AdminClientProvider adminClientProvider, UserOperatorConfig config) {
         printEnvInfo();
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
@@ -74,48 +79,65 @@ public class Main {
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, Crds.kafkaUser());
-        SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
-        ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
-        ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
-        KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
+        return createAdminClient(adminClientProvider, config, secretOperations)
+                .compose(adminClient -> {
+                    SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);
+                    ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
+                    ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
+                    KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
 
-        KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                certManager, crdOperations,
-                config.getLabels(),
-                secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
+                    KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
+                            certManager, crdOperations,
+                            config.getLabels(),
+                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
 
-        Promise<String> promise = Promise.promise();
-        UserOperator operator = new UserOperator(config.getNamespace(),
-                config,
-                client,
-                kafkaUserOperations);
-        vertx.deployVerticle(operator,
-            res -> {
-                if (res.succeeded()) {
-                    log.info("User Operator verticle started in namespace {}", config.getNamespace());
-                } else {
-                    log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
-                    System.exit(1);
-                }
-                promise.handle(res);
-            });
-
-        return promise.future();
+                    Promise<String> promise = Promise.promise();
+                    UserOperator operator = new UserOperator(config.getNamespace(),
+                            config,
+                            client,
+                            kafkaUserOperations);
+                    vertx.deployVerticle(operator,
+                        res -> {
+                            if (res.succeeded()) {
+                                log.info("User Operator verticle started in namespace {}", config.getNamespace());
+                            } else {
+                                log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
+                                System.exit(1);
+                            }
+                            promise.handle(res);
+                        });
+                    return promise.future();
+                });
     }
 
-    private static kafka.security.auth.SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
-        log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
-        Map<String, Object> authorizerConfig = new HashMap<>();
-        // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
-        // See the comments in the SimpleAclAuthorizer.scala class for more details
-        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
-        authorizerConfig.put("zookeeper.connect", config.getZookeperConnect());
-        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
-        authorizerConfig.put(kafka.security.auth.SimpleAclAuthorizer.ZkSessionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+    private static Future<Admin> createAdminClient(AdminClientProvider adminClientProvider, UserOperatorConfig config, SecretOperator secretOperations) {
+        Promise<Admin> promise = Promise.promise();
 
-        kafka.security.auth.SimpleAclAuthorizer authorizer = new kafka.security.auth.SimpleAclAuthorizer();
-        authorizer.configure(authorizerConfig);
-        return authorizer;
+        Future<Secret> clusterCaCertSecretFuture;
+        if (config.getClusterCaCertSecretName() != null && !config.getClusterCaCertSecretName().isEmpty()) {
+            clusterCaCertSecretFuture = secretOperations.getAsync(config.getCaNamespace(), config.getClusterCaCertSecretName());
+        } else {
+            clusterCaCertSecretFuture = Future.succeededFuture(null);
+        }
+        Future<Secret> eoKeySecretFuture;
+        if (config.getEoKeySecretName() != null && !config.getEoKeySecretName().isEmpty()) {
+            eoKeySecretFuture = secretOperations.getAsync(config.getCaNamespace(), config.getEoKeySecretName());
+        } else {
+            eoKeySecretFuture = Future.succeededFuture(null);
+        }
+
+        CompositeFuture.join(clusterCaCertSecretFuture, eoKeySecretFuture)
+                .onComplete(ar -> {
+                    if (ar.succeeded()) {
+                        Admin adminClient = adminClientProvider.createAdminClient(config.getKafkaBootstrapServers(),
+                                clusterCaCertSecretFuture.result(), eoKeySecretFuture.result(), eoKeySecretFuture.result() != null ? "entity-operator" : null);
+                        promise.complete(adminClient);
+                    } else {
+                        promise.fail(ar.cause());
+                    }
+                });
+
+        return promise.future();
     }
 
     static void printEnvInfo() {

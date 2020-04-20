@@ -94,7 +94,7 @@ public class K8sImpl implements K8s {
                     LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
                     future.complete();
                 } else {
-                    Util.waitFor(vertx, "sync resource deletion " + resourceName, 1000, Long.MAX_VALUE, () -> {
+                    Util.waitFor(vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
                         KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
                         boolean notExists = kafkaTopic == null;
                         LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);

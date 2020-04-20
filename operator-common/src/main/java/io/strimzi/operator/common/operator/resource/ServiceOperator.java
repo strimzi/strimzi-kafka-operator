@@ -116,7 +116,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return A future that succeeds when the Service has an assigned address.
      */
     public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isIngressAddressReady);
+        return waitFor(namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 
     /**

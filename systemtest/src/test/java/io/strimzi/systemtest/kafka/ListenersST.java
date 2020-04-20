@@ -657,12 +657,15 @@ public class ListenersST extends BaseST {
         );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-71");
-        internalKafkaClient.setMessageCount(MESSAGE_COUNT * 3);
+        internalKafkaClient.setMessageCount(MESSAGE_COUNT);
 
         sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(3 * MESSAGE_COUNT));
+        assertThat(sent, is(MESSAGE_COUNT));
+
+        internalKafkaClient.setMessageCount(MESSAGE_COUNT * 5);
+
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(3 * MESSAGE_COUNT));
+        assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
@@ -701,9 +704,10 @@ public class ListenersST extends BaseST {
         );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-83");
+        internalKafkaClient.setMessageCount(6 * MESSAGE_COUNT);
 
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(3 * MESSAGE_COUNT));
+        assertThat(received, is(6 * MESSAGE_COUNT));
     }
 
     @Test

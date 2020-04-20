@@ -25,7 +25,8 @@ public class StatefulSetDiff extends AbstractResourceDiff {
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-        "^(/spec/revisionHistoryLimit"
+        "^(/metadata/managedFields"
+        + "|/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/" + SHORTENED_STRIMZI_DOMAIN + "~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"

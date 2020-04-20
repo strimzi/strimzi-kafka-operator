@@ -61,7 +61,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
-import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -97,7 +96,6 @@ import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
@@ -125,10 +123,10 @@ class KafkaST extends BaseST {
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
         cluster.createCustomResources("../examples/templates/cluster-operator");
-        String appName = "strimzi-ephemeral";
-        Oc oc = (Oc) cmdKubeClient();
+        String templateName = "strimzi-ephemeral";
         String clusterName = "openshift-my-cluster";
-        oc.newApp(appName, map("CLUSTER_NAME", clusterName));
+        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
+
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
         DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
@@ -137,13 +135,13 @@ class KafkaST extends BaseST {
         testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
 
         //Testing labels
-        verifyLabelsForKafkaCluster(clusterName, appName);
+        verifyLabelsForKafkaCluster(clusterName, templateName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
-        oc.deleteByName("Kafka", clusterName);
+        cmdKubeClient().deleteByName("Kafka", clusterName);
 
         //Wait for kafka deletion
-        oc.waitForResourceDeletion("Kafka", clusterName);
+        cmdKubeClient().waitForResourceDeletion("Kafka", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
             .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
@@ -846,12 +844,21 @@ class KafkaST extends BaseST {
         kubeClient().getPod(eoPod).getSpec().getContainers().forEach(container -> {
             if (!container.getName().equals("tls-sidecar")) {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
-                String value = container.getEnv().stream().filter(envVar ->
-                        envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
-                if (container.getName().equals("topic-operator"))
-                    assertThat(value, is("-Xms1024M -Xmx2G -Djavax.net.debug=verbose"));
-                if (container.getName().equals("user-operator"))
-                    assertThat(value, is("-Xms512M -Xmx1G -Djavax.net.debug=verbose"));
+
+                String javaSystemProp = container.getEnv().stream().filter(envVar ->
+                    envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
+                String javaOpts = container.getEnv().stream().filter(envVar ->
+                    envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().get().getValue();
+
+                assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
+
+                if (container.getName().equals("topic-operator")) {
+                    assertThat(javaOpts, is("-Xms1024M -Xmx2G"));
+                }
+
+                if (container.getName().equals("user-operator")) {
+                    assertThat(javaOpts, is("-Xms512M -Xmx1G"));
+                }
             }
         });
 
@@ -1010,34 +1017,30 @@ class KafkaST extends BaseST {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))
-                .get(0).getMetadata().getName();
+        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.setTopicOperator(null);
-            entityOperatorSpec.setUserOperator(null);
-            k.getSpec().setEntityOperator(entityOperatorSpec);
+            k.getSpec().getEntityOperator().setTopicOperator(null);
+            k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
         //Waiting when EO pod will be deleted
-        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        ReplicaSetUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
+        ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
         PodUtils.waitForPodDeletion(eoPodName);
 
         //Checking that EO was removed
-        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
+        assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.setTopicOperator(new EntityTopicOperatorSpec());
-            entityOperatorSpec.setUserOperator(new EntityUserOperatorSpec());
-            k.getSpec().setEntityOperator(entityOperatorSpec);
+            k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
+            k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec());
         });
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentReady(eoDeploymentName);
 
         //Checking that EO was created
-        kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+        kubeClient().listPodsByPrefixInName(eoDeploymentName).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
                 assertThat(container.getName(), anyOf(
                     containsString("topic-operator"),
@@ -1269,18 +1272,14 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        String userName = "alice";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> kubeClient().getSecret("alice") != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(TOPIC_NAME)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(userName)
+                .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
@@ -1341,11 +1340,7 @@ class KafkaST extends BaseST {
             .endSpec()
             .done();
 
-        String userName = "alice";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> kubeClient().getSecret("alice") != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
@@ -1354,7 +1349,7 @@ class KafkaST extends BaseST {
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(userName)
+                .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
@@ -2022,10 +2017,19 @@ class KafkaST extends BaseST {
         pvcLabel.put(labelAnnotationKey, "testValue");
         Map<String, String> pvcAnnotation = pvcLabel;
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        Map<String, String> statefulSetLabels = new HashMap<>();
+        statefulSetLabels.put("app.kubernetes.io/part-of", "some-app");
+        statefulSetLabels.put("app.kubernetes.io/managed-by", "some-app");
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewTemplate()
+                        .withNewStatefulset()
+                            .withNewMetadata()
+                                .withLabels(statefulSetLabels)
+                            .endMetadata()
+                        .endStatefulset()
                         .withNewPersistentVolumeClaim()
                             .withNewMetadata()
                                 .addToLabels(pvcLabel)
@@ -2063,6 +2067,12 @@ class KafkaST extends BaseST {
                 .endZookeeper()
             .endSpec()
             .done();
+
+        LOGGER.info("Check if Kubernetes labels are applied");
+        Map<String, String> actualStatefulSetLabels = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels();
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is(not("some-app")));
+        LOGGER.info("Kubernetes labels are correctly set and present");
 
         List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims();
 

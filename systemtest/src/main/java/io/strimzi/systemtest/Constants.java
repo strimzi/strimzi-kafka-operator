@@ -74,8 +74,14 @@ public interface Constants {
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
 
+    /**
+     * Constants for specific ports
+     */
     int HTTP_KEYCLOAK_DEFAULT_PORT = 8080;
     int HTTPS_KEYCLOAK_DEFAULT_PORT = 8443;
+    int COMPONENTS_METRICS_PORT = 9404;
+    int CLUSTER_OPERATOR_METRICS_PORT = 8080;
+    int USER_OPERATOR_METRICS_PORT = 8081;
 
     String DEPLOYMENT = "Deployment";
     String SERVICE = "Service";
@@ -225,4 +231,9 @@ public interface Constants {
      * Tag for tests which use external Kafka clients (called from test code)
      */
     String EXTERNAL_CLIENTS_USED = "externalclients";
+
+    /**
+     * Tag for tests where metrics are used
+     */
+    String METRICS = "metrics";
 }

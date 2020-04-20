@@ -19,6 +19,8 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
@@ -94,10 +96,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -2340,7 +2346,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, ephemeral, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(ephemeral));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2351,7 +2363,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, persistent, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(persistent));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2362,7 +2380,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -2373,7 +2397,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod, replicas);
+
+        // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
+
+        // Warning status condition is set
+        assertThat(kc.getWarningConditions().size(), is(1));
+        assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
     }
 
     @Test
@@ -2633,7 +2663,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testKafkaContainerEnvVars() {
+    public void testKafkaContainerEnvars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -2650,17 +2680,17 @@ public class KafkaClusterTest {
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
         testEnvs.add(envVar2);
-        ContainerTemplate kafkaContainer = new ContainerTemplate();
-        kafkaContainer.setEnv(testEnvs);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withNewTemplate()
-                .withKafkaContainer(kafkaContainer)
-                .endTemplate()
-                .endKafka()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .withEnv(testEnvs)
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endKafka()
                 .endSpec()
                 .build();
 
@@ -2882,8 +2912,6 @@ public class KafkaClusterTest {
 
         List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getInitContainerEnvVars();
 
-        System.err.println(kafkaEnvVars);
-
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
@@ -2891,6 +2919,120 @@ public class KafkaClusterTest {
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
 
+    }
+
+    @Test
+    public void testKafkaContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .withSecurityContext(securityContext)
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kc.templateKafkaContainerSecurityContext, is(securityContext));
+
+        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(KafkaCluster.KAFKA_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testTlsSidecarContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewTlsSidecarContainer()
+                                .withSecurityContext(securityContext)
+                            .endTlsSidecarContainer()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(KafkaCluster.TLS_SIDECAR_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testInitContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        // Set a rack to force init-container to be templated
+                        .withNewRack()
+                            .withNewTopologyKey("a-topology")
+                        .endRack()
+                        .withNewTemplate()
+                            .withNewInitContainer()
+                                .withSecurityContext(securityContext)
+                            .endInitContainer()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+
+        assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(KafkaCluster.INIT_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 
     @Test

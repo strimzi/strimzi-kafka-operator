@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
+import io.strimzi.api.kafka.model.template.JmxTransTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -28,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"image", "outputDefinitions", "logLevel", "kafkaQueries", "resources"})
+@JsonPropertyOrder({ "image", "outputDefinitions", "logLevel", "kafkaQueries", "resources", "template" })
 @EqualsAndHashCode
 public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -39,8 +40,8 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     private String logLevel;
     private List<JmxTransOutputDefinitionTemplate> outputDefinitions = null;
     private List<JmxTransQueryTemplate> kafkaQueries = null;
-
     private ResourceRequirements resources;
+    private JmxTransTemplate template;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -95,6 +96,16 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @Description("Template for JmxTrans resources.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public JmxTransTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(JmxTransTemplate template) {
+        this.template = template;
     }
 
     @Override

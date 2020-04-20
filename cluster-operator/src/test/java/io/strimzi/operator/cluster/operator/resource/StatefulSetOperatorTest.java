@@ -419,7 +419,7 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+            public Future<Void> waitFor(String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
                 return Future.succeededFuture();
             }
         };

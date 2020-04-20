@@ -89,7 +89,7 @@ public class StrimziUpgradeST extends BaseST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
 
         try {
-            performUpgrade(parameters, 50, 50);
+            performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
             // Tidy up
         } catch (KubeClusterException e) {
             e.printStackTrace();
@@ -131,14 +131,13 @@ public class StrimziUpgradeST extends BaseST {
         JsonReader jsonReader = Json.createReader(inputStream);
         JsonArray parameters = jsonReader.readArray();
 
-        int produceMessagesCount = 50;
-        int consumedMessagesCount = 50;
+        int consumedMessagesCount = MESSAGE_COUNT;
 
         try {
             for (JsonValue testParameters : parameters) {
                 if (StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("supportedK8sVersion").getString("version"))) {
-                    performUpgrade(testParameters.asJsonObject(), produceMessagesCount, consumedMessagesCount);
-                    consumedMessagesCount = consumedMessagesCount + produceMessagesCount;
+                    performUpgrade(testParameters.asJsonObject(), MESSAGE_COUNT, consumedMessagesCount);
+                    consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
                 } else {
                     LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", testParameters.asJsonObject().getString("fromVersion"), testParameters.asJsonObject().getString("toVersion"));
                 }
@@ -272,14 +271,14 @@ public class StrimziUpgradeST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterName)
             .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(produceMessagesCount)
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(produceMessagesCount));
 
-        internalKafkaClient.setMessageCount(produceMessagesCount);
+        internalKafkaClient.setMessageCount(consumeMessagesCount);
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));

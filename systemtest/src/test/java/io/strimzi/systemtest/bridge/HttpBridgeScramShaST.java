@@ -69,14 +69,14 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(userName)
-                .withMessageCount(messageCount)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(userName)
+            .withMessageCount(messageCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
 
         assertThat(kafkaClient.receiveMessagesTls(), is(messageCount));
     }
@@ -88,14 +88,14 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(userName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(userName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
 
         // Send messages to Kafka
         assertThat(kafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -129,6 +129,62 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }
 
+    @Test
+    void testScramShaAuthWithWeirdNamedUser() throws Exception {
+        String topicName = "topic" + rng.nextInt(Integer.MAX_VALUE);
+        String groupId = "my-group-" + rng.nextInt(Integer.MAX_VALUE);
+
+        // Create weird named user with . and more than 64 chars -> SCRAM-SHA
+        String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
+        // Create user with normal name -> we don't need to set weird name for consumer
+        String aliceUser = "alice";
+
+        // Create topic
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        // Create user
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, weirdUserName).done();
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, aliceUser).done();
+
+        JsonObject config = new JsonObject();
+        config.put("name", aliceUser);
+        config.put("format", "json");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // Create consumer
+        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
+
+        // Create topics json
+        JsonArray topic = new JsonArray();
+        topic.add(topicName);
+        JsonObject topics = new JsonObject();
+        topics.put("topics", topic);
+
+        // Subscribe
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withKafkaUsername(weirdUserName)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .build();
+
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        // Try to consume messages
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+        if (bridgeResponse.size() == 0) {
+            // Real consuming
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+        }
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
+        // Delete consumer
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser), is(true));
+    }
+
     @BeforeAll
     void setup() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
@@ -143,7 +199,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .editKafka()
                     .withNewListeners()
                         .withNewKafkaListenerExternalNodePort()
-                            .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationScramSha512())
                         .endKafkaListenerExternalNodePort()
                         .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()

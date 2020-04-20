@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -23,15 +22,13 @@ import java.util.function.Consumer;
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
-    public static final String PATH_TO_KAFKA_USER_CONFIG = "../examples/user/kafka-user.yaml";
-
     public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserClient() {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
     }
 
     public static DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(defaultUser(clusterName, name)
-            .editSpec()
+            .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
             .endSpec()
@@ -40,7 +37,7 @@ public class KafkaUserResource {
 
     public static DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(defaultUser(clusterName, name)
-            .editSpec()
+            .withNewSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec()
@@ -48,8 +45,7 @@ public class KafkaUserResource {
     }
 
     public static KafkaUserBuilder defaultUser(String clusterName, String name) {
-        KafkaUser kafkaUser = getKafkaUserFromYaml(PATH_TO_KAFKA_USER_CONFIG);
-        return new KafkaUserBuilder(kafkaUser)
+        return new KafkaUserBuilder()
             .withNewMetadata()
                 .withClusterName(clusterName)
                 .withName(name)
@@ -69,10 +65,6 @@ public class KafkaUserResource {
     public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
         kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
         return user;
-    }
-
-    private static KafkaUser getKafkaUserFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaUser.class);
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -63,6 +64,7 @@ public class KafkaExporter extends AbstractModel {
     private boolean isDeployed;
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
      * Constructor
@@ -132,6 +134,10 @@ public class KafkaExporter extends AbstractModel {
 
                 if (template.getContainer() != null && template.getContainer().getEnv() != null) {
                     kafkaExporter.templateContainerEnvVars = template.getContainer().getEnv();
+                }
+
+                if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
+                    kafkaExporter.templateContainerSecurityContext = template.getContainer().getSecurityContext();
                 }
 
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
@@ -226,6 +232,7 @@ public class KafkaExporter extends AbstractModel {
                 .withVolumeMounts(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         containers.add(container);

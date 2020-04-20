@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -47,6 +49,7 @@ public class EntityUserOperator extends AbstractModel {
 
     // User Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
+    public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -56,9 +59,12 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
+    public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
+    private String kafkaBootstrapServers;
     private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
@@ -67,6 +73,7 @@ public class EntityUserOperator extends AbstractModel {
     private int clientsCaValidityDays;
     private int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
      * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
@@ -79,7 +86,8 @@ public class EntityUserOperator extends AbstractModel {
         this.livenessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
-                // create a default configuration
+        // create a default configuration
+        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
@@ -143,6 +151,18 @@ public class EntityUserOperator extends AbstractModel {
 
     public String getZookeeperConnect() {
         return zookeeperConnect;
+    }
+
+    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
+    }
+
+    public String getKafkaBootstrapServers() {
+        return kafkaBootstrapServers;
+    }
+
+    protected static String defaultBootstrapServers(String cluster) {
+        return KafkaCluster.serviceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     public static String userOperatorName(String cluster) {
@@ -240,6 +260,7 @@ public class EntityUserOperator extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build());
     }
 
@@ -247,6 +268,7 @@ public class EntityUserOperator extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
@@ -256,6 +278,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
+        varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityOperator.secretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
@@ -269,7 +293,9 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return singletonList(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        return asList(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
     public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
@@ -301,5 +327,9 @@ public class EntityUserOperator extends AbstractModel {
 
     public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
         templateContainerEnvVars = envVars;
+    }
+
+    public void setContainerSecurityContext(SecurityContext securityContext) {
+        templateContainerSecurityContext = securityContext;
     }
 }

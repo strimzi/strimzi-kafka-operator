@@ -18,12 +18,16 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(REGRESSION)
 @Tag(PROMETHEUS)
+@Tag(METRICS)
 public class PrometheusST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
@@ -34,12 +38,6 @@ public class PrometheusST extends BaseST {
     private static final String PROMETHEUS_POD = "prometheus-prometheus-0";
     private static final String ALERTMANAGER = "alertmanager";
     private static final String ALERTMANAGER_POD = "alertmanager-alertmanager-0";
-
-    @Test
-    public void testPrometheusService() {
-        assertThat("Prometheus service not found", kubeClient().getService(PROMETHEUS) != null);
-        assertThat("Prometheus service port is not 9090", kubeClient().getService(PROMETHEUS).getSpec().getPorts().get(0).getPort() == 9090);
-    }
 
     @Test
     public void testAlertManagerService() {
@@ -89,6 +87,7 @@ public class PrometheusST extends BaseST {
         DeploymentUtils.waitForDeploymentReady("prometheus-operator", 1);
 
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-pod-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus.yaml", NAMESPACE));

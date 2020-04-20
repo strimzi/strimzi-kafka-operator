@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+if [ "1" != "$(grep -c '^Signed-off-by: ' "$1")" ]; then
+    printf >&2 "\nERROR: Missing Signed-off-by line. Run 'git commit --amend --signoff' to fix.\n\n"
+    # Uncomment the below to cause the commit to be cancelled if there is no signoff.
+    # Be aware that this will erase the commit message
+    # exit 1
+fi

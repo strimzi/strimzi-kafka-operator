@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -112,6 +113,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
     private List<ContainerEnvVar> templateContainerEnvVars;
+    private SecurityContext templateContainerSecurityContext;
     private Tracing tracing;
 
     /**
@@ -194,6 +196,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
             if (template.getBridgeContainer() != null && template.getBridgeContainer().getEnv() != null) {
                 kafkaBridgeCluster.templateContainerEnvVars = template.getBridgeContainer().getEnv();
+            }
+
+            if (template.getBridgeContainer() != null && template.getBridgeContainer().getSecurityContext() != null) {
+                kafkaBridgeCluster.templateContainerSecurityContext = template.getBridgeContainer().getSecurityContext();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
@@ -344,6 +350,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         containers.add(container);

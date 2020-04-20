@@ -102,6 +102,7 @@ public class EntityUserOperatorTest {
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(String.format("%s:%d", "foo-kafka-bootstrap", EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(uoWatchedNamespace).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(uoReconciliationInterval * 1000)).build());
@@ -109,6 +110,8 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME).withValue(KafkaCluster.clientsCaKeySecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaCertSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_NAMESPACE).withValue(namespace).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME).withValue(EntityOperator.secretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
@@ -150,6 +153,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getReconciliationIntervalMs(), is(uoReconciliationInterval * 1000L));
         assertThat(entityUserOperator.getZookeeperSessionTimeoutMs(), is(uoZookeeperSessionTimeout * 1000L));
         assertThat(entityUserOperator.getZookeeperConnect(), is(EntityUserOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(String.format("%s:%d", KafkaCluster.serviceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
         assertThat(((InlineLogging) entityUserOperator.getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
     }
@@ -178,6 +182,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(entityUserOperator.getZookeeperConnect(), is(EntityUserOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(EntityUserOperator.defaultBootstrapServers(cluster)));
         assertThat(entityUserOperator.getLogging(), is(nullValue()));
     }
 
