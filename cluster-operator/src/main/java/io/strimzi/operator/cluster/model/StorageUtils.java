@@ -60,7 +60,7 @@ public class StorageUtils {
             char ch = size.charAt(i);
             if (ch == 'e') {
                 seenE = true;
-            } else if (ch < '0' || '9' < ch) {
+            } else if ((ch < '0' || '9' < ch) && ch != '.') {
                 end = i;
                 factor = memoryFactor(size.substring(i));
                 break;
@@ -70,7 +70,7 @@ public class StorageUtils {
         if (seenE) {
             result = (long) Double.parseDouble(size);
         } else {
-            result = Long.parseLong(size.substring(0, end)) * factor;
+            result = (long) (Double.parseDouble(size.substring(0, end)) * factor);
         }
         return result;
     }

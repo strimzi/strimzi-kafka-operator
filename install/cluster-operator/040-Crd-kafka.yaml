@@ -5580,8 +5580,9 @@ spec:
                   properties:
                     disk:
                       type: string
-                      pattern: ^[0-9]+([KMGTPE]i?)?$
-                      description: Broker capacity for disk, for example, 100Gi.
+                      pattern: ^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$
+                      description: Broker capacity for disk in bytes, for example,
+                        100Gi.
                     cpuUtilization:
                       type: integer
                       minimum: 0
@@ -5591,13 +5592,13 @@ spec:
                     inboundNetwork:
                       type: string
                       pattern: '[0-9]+([KMG]i?)?B/s'
-                      description: Broker capacity for network inbound throughput,
-                        for example, 10000KB/s.
+                      description: Broker capacity for inbound network throughput
+                        in bytes per second, for example, 10000KB/s.
                     outboundNetwork:
                       type: string
                       pattern: '[0-9]+([KMG]i?)?B/s'
-                      description: Broker capacity for network outbound throughput,
-                        for example 10000KB/s.
+                      description: Broker capacity for outbound network throughput
+                        in bytes per second, for example 10000KB/s.
                   description: The Cruise Control `brokerCapacity` configuration.
               required:
               - replicas

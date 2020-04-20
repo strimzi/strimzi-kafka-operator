@@ -41,6 +41,7 @@ import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.Annotations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -89,12 +90,10 @@ public class CruiseControl extends AbstractModel {
     private Double brokerInboundNetworkKiBPerSecondCapacity;
     private Double brokerOuboundNetworkKiBPerSecondCapacity;
 
-
     public static final String REST_API_PORT_NAME = "rest-api";
     public static final int REST_API_PORT = 9090;
     protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
     public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
-
 
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
@@ -105,7 +104,6 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY = "BROKER_CPU_UTILIZATION_CAPACITY";
     protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
     protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
-
 
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
@@ -290,9 +288,7 @@ public class CruiseControl extends AbstractModel {
             return null;
         }
 
-        List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
-
+        List<ServicePort> ports = Collections.singletonList(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
         return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
@@ -309,22 +305,15 @@ public class CruiseControl extends AbstractModel {
     }
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(1);
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-
-        return volumeList;
+        return Arrays.asList(createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
+                createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
+                createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(1);
-
-        volumeMountList.add(createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-
-        return volumeMountList;
+        return Arrays.asList(createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
+                createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
+                createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
     public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {

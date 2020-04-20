@@ -3093,8 +3093,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         cruiseControl.getLogging() instanceof ExternalLogging ?
                                 configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
                                 null);
-                Map<String, String> annotations = new HashMap<>();
-                annotations.put(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
+                Map<String, String> annotations = Collections.singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
 
                 this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                 this.cruiseControl = cruiseControl;

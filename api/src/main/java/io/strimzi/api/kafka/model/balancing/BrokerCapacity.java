@@ -42,8 +42,8 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Pattern("^[0-9]+([KMGTPE]i?)?$")
-    @Description("Broker capacity for disk, for example, 100Gi.")
+    @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
+    @Description("Broker capacity for disk in bytes, for example, 100Gi.")
     public String getDisk() {
         return disk;
     }
@@ -66,7 +66,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Pattern("[0-9]+([KMG]i?)?B/s")
-    @Description("Broker capacity for network inbound throughput, for example, 10000KB/s")
+    @Description("Broker capacity for inbound network throughput in bytes per second, for example, 10000KB/s")
     public String getInboundNetwork() {
         return inboundNetwork;
     }
@@ -77,7 +77,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Pattern("[0-9]+([KMG]i?)?B/s")
-    @Description("Broker capacity for network outbound throughput, for example 10000KB/s")
+    @Description("Broker capacity for outbound network throughput in bytes per second, for example 10000KB/s")
     public String getOutboundNetwork() {
         return outboundNetwork;
     }

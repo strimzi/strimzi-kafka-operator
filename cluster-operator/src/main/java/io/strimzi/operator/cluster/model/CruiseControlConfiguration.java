@@ -58,8 +58,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         CC_DEFAULT_PROPERTIES_MAP.put("default.goals", DEFAULT_GOALS);
         CC_DEFAULT_PROPERTIES_MAP.put("goals", DEFAULT_GOALS);
 
-        FORBIDDEN_OPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_OPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", *"));
+        EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", *"));
     }
 
     /**
