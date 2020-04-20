@@ -166,6 +166,8 @@ public class OauthAuthorizationST extends OauthBaseST {
         teamBOauthKafkaClient.setTopicName(TOPIC_X);
         teamBOauthKafkaClient.setKafkaUsername(USER_NAME);
 
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
         assertThrows(WaitException.class, () -> teamBOauthKafkaClient.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         LOGGER.info("Verifying that team A is not able read to topic starting with 'x-' because in kafka cluster" +
@@ -175,7 +177,7 @@ public class OauthAuthorizationST extends OauthBaseST {
         teamAOauthKafkaClient.setKafkaUsername(USER_NAME);
         teamAOauthKafkaClient.setConsumerGroup("x_consumer_group_b1");
 
-        assertThrows(Exception.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -189,9 +191,6 @@ public class OauthAuthorizationST extends OauthBaseST {
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 
