@@ -52,14 +52,15 @@ public class Util {
     /**
      * @param vertx The vertx instance.
      * @param logContext A string used for context in logging.
+     * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
-     * @param ready Determines when the wait is complete by returning true.
-     * @return A future that completes when the given {@code ready} indicates readiness.
+     * @param completed Determines when the wait is complete by returning true.
+     * @return A future that completes when the given {@code completed} indicates readiness.
      */
-    public static Future<Void> waitFor(Vertx vertx, String logContext, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
+    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
         Promise<Void> promise = Promise.promise();
-        LOGGER.debug("Waiting for {} to get ready", logContext);
+        LOGGER.debug("Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -67,26 +68,26 @@ public class Util {
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
-                            if (ready.getAsBoolean())   {
+                            if (completed.getAsBoolean())   {
                                 future.complete();
                             } else {
-                                LOGGER.trace("{} is not ready", logContext);
-                                future.fail("Not ready yet");
+                                LOGGER.trace("{} is not {}", logContext, logState);
+                                future.fail("Not " + logState + " yet");
                             }
                         } catch (Throwable e) {
-                            LOGGER.warn("Caught exception while waiting for {} to get ready", logContext, e);
+                            LOGGER.warn("Caught exception while waiting for {} to get {}", logContext, logState, e);
                             future.fail(e);
                         }
                     },
                     true,
                     res -> {
                         if (res.succeeded()) {
-                            LOGGER.debug("{} is ready", logContext);
+                            LOGGER.debug("{} is {}", logContext, logState);
                             promise.complete();
                         } else {
                             long timeLeft = deadline - System.currentTimeMillis();
                             if (timeLeft <= 0) {
-                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be ready", timeoutMs, logContext);
+                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
                                 LOGGER.error(exceptionMessage);
                                 promise.fail(new TimeoutException(exceptionMessage));
                             } else {
