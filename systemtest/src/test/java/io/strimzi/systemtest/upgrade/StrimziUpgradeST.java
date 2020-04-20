@@ -411,7 +411,7 @@ public class StrimziUpgradeST extends BaseST {
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
                 LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), is(image));
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
             }
         }
     }
