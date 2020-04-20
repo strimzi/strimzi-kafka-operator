@@ -91,6 +91,10 @@ public class SslConfigurationST extends SecurityST {
         LOGGER.info("Verifying that Kafka Connect is stable");
 
         PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
     }
 
     @Test
@@ -147,5 +151,9 @@ public class SslConfigurationST extends SecurityST {
         LOGGER.info("Verifying that Kafka Connect is stable");
 
         PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
+
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
     }
 }
