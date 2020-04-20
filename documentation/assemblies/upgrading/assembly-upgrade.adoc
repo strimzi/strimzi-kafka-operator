@@ -15,6 +15,6 @@ Newer versions of {ProductName} may support newer versions of Kafka, but you nee
 
 IMPORTANT: If applicable, xref:assembly-upgrade-resources-{context}[Resource upgrades] _must_ be performed after upgrading {ProductName} and Kafka.
 
-include::assembly_upgrade-kafka.adoc[leveloffset=+1]
+include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 
-include::assembly_upgrade-resources.adoc[leveloffset=+1]
+include::assembly-upgrade-resources.adoc[leveloffset=+1]

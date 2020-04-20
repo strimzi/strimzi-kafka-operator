@@ -18,6 +18,6 @@ include::../modules/overview/con-key-features-product.adoc[leveloffset=+1]
 //description of operators
 include::overview/assembly-overview-components.adoc[leveloffset=+1]
 //Custom resources intro
-include::deploying/assembly_deploy-intro-custom-resources.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]
 //formatting conventions used in guide
 include::../shared/ref-document-conventions.adoc[leveloffset=+1]

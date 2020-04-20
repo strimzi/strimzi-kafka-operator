@@ -11,4 +11,4 @@ The availability of Kafka clusters managed by the Cluster Operator is not affect
 
 NOTE: Refer to the documentation supporting a specific version of {ProductName} for information on how to upgrade to that version.
 
-include::modules/proc_upgrade-cluster-operator.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]

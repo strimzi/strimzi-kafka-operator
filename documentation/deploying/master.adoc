@@ -8,16 +8,16 @@ include::shared/attributes.adoc[]
 = Deploying and Upgrading {ProductName}
 
 //Introduction to the install process
-include::assemblies/deploying/assembly_deploy-intro.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]
 //Checklist to show deployment order and the options available
-include::assemblies/deploying/assembly_deploy-options.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-options.adoc[leveloffset=+1]
 //Prep for the deployment
-include::assemblies/deploying/assembly_deploy-tasks-prep.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
 //Deployment steps
-include::assemblies/deploying/assembly_deploy-tasks.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-tasks.adoc[leveloffset=+1]
 //Verifying the deployment
-include::assemblies/deploying/assembly_deploy-verify.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-verify.adoc[leveloffset=+1]
 //Introduce metrics and monitoring to your deployment
-include::assemblies/metrics/assembly_metrics.adoc[leveloffset=+1]
+include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Upgrading the deployment
-include::assemblies/upgrading/assembly_upgrade.adoc[leveloffset=+1]
+include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]

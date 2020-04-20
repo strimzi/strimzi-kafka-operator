@@ -16,10 +16,10 @@ Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deplo
 The procedures assume a Kubernetes cluster is available and running.
 
 //Procedures to create Kafka cluster: deploy the Cluster Operator, deploy the Kafka cluster
-include::assembly_deploy-create-cluster.adoc[leveloffset=+1]
+include::assembly-deploy-create-cluster.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Connect
-include::assembly_deploy-kafka-connect.adoc[leveloffset=+1]
+include::assembly-deploy-kafka-connect.adoc[leveloffset=+1]
 //Procedure to deploy Kafka MirrorMaker
-include::assembly_deploy-kafka-mirror-maker.adoc[leveloffset=+1]
+include::assembly-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Bridge
-include::assembly_deploy-kafka-bridge.adoc[leveloffset=+1]
+include::assembly-deploy-kafka-bridge.adoc[leveloffset=+1]

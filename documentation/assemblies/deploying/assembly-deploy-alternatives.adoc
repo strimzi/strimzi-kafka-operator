@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// deploying/assembly_deploy-tasks-prep.adoc
+// deploying/assembly-deploy-tasks-prep.adoc
 //
 
 [id="deploy-alternatives_{context}"]
@@ -14,6 +14,6 @@ If a Kubernetes cluster is unavailable, you can use:
 * _Minishift_ to create a local OpenShift cluster and use OpenShift-specific features
 
 //Deploy a Minikube cluster
-include::modules/con_deploy-kubernetes-cluster.adoc[leveloffset=+1]
+include::modules/con-deploy-kubernetes-cluster.adoc[leveloffset=+1]
 //Deploy a Minishift cluster
-include::modules/con_deploy-openshift-cluster.adoc[leveloffset=+1]
+include::modules/con-deploy-openshift-cluster.adoc[leveloffset=+1]

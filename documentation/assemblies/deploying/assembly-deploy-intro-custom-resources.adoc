@@ -1,7 +1,7 @@
 // Module included in the following assemblies:
 //
 // assemblies/assembly-overview.adoc
-// deploying/assembly_deploy-intro.adoc
+// deploying/assembly-deploy-intro.adoc
 
 [id='assembly-custom-resources-{context}']
 = {ProductName} custom resources
@@ -13,4 +13,4 @@ include::modules/snip-intro-custom-resources.adoc[leveloffset=+1]
 * {K8sCRDs}
 
 //Example custom resource showing configuration options
-include::modules/con_deploy-custom-resources-example.adoc[leveloffset=+1]
+include::modules/con-deploy-custom-resources-example.adoc[leveloffset=+1]

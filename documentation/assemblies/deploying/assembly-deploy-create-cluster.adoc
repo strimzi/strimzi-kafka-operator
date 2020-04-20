@@ -1,7 +1,7 @@
 // This assembly is included in:
 //
 // assembly-getting-started.adoc
-// deploying/assembly_deploy-tasks.adoc
+// deploying/assembly-deploy-tasks.adoc
 
 [id="deploy-create-cluster_{context}"]
 = Create the Kafka cluster
@@ -31,8 +31,8 @@ Perform these deployment steps if you want to use the Topic Operator and User Op
 . xref:deploying-the-user-operator-standalone-{context}[Deploy the standalone User Operator]
 
 //Options and instruction for deploying Cluster Operator
-include::assembly_deploy-cluster-operator.adoc[leveloffset=+1]
+include::assembly-deploy-cluster-operator.adoc[leveloffset=+1]
 //Options and instructions for deploying Kafka resource
-include::assembly_deploy-kafka-cluster.adoc[leveloffset=+1]
+include::assembly-deploy-kafka-cluster.adoc[leveloffset=+1]
 //Alternative standalone deployment of Topic Operator and Cluster Operator
-include::assembly_deploy-standalone-operators.adoc[leveloffset=+1]
+include::assembly-deploy-standalone-operators.adoc[leveloffset=+1]

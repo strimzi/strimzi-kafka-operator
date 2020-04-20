@@ -24,14 +24,14 @@ endif::Downloading[]
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
 
 //Prep for the deployment
-include::deploying/assembly_deploy-tasks-prep.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
 //Procedures to create Kafka cluster - deploy the Cluster Operator, deploy the Kafka cluster
-include::deploying/assembly_deploy-create-cluster.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-create-cluster.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Connect
-include::deploying/assembly_deploy-kafka-connect.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-kafka-connect.adoc[leveloffset=+1]
 //Procedure to deploy MirrorMaker
-include::deploying/assembly_deploy-kafka-mirror-maker.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Bridge
-include::deploying/assembly_deploy-kafka-bridge.adoc[leveloffset=+1]
+include::deploying/assembly-deploy-kafka-bridge.adoc[leveloffset=+1]
 //Verify deployment using Kafka clients
-include::../modules/deploying/proc_deploy-example-clients.adoc[leveloffset=+1]
+include::../modules/deploying/proc-deploy-example-clients.adoc[leveloffset=+1]

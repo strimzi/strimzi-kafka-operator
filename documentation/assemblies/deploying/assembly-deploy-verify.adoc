@@ -10,4 +10,4 @@ Having xref:deploy-tasks_{context}[deployed {ProductName}], the procedure in thi
 The procedure assumes a {ProductName} is available and running in a Kubernetes cluster.
 
 //how to create clients that can access and use the deployment
-include::modules/proc_deploy-example-clients.adoc[leveloffset=+1]
+include::modules/proc-deploy-example-clients.adoc[leveloffset=+1]

@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// deploying/assembly_deploy-create-cluster.adoc
+// deploying/assembly-deploy-create-cluster.adoc
 
 [id='cluster-operator-{context}']
 = Deploying the Cluster Operator
@@ -22,20 +22,20 @@ ifdef::OperatorHubio[]
 endif::OperatorHubio[]
 
 //Options for deploying the Cluster Operator
-include::modules/con_deploy-cluster-operator-watch-options.adoc[leveloffset=+1]
+include::modules/con-deploy-cluster-operator-watch-options.adoc[leveloffset=+1]
 //Deploy the Cluster Operator to watch a single namespace
-include::modules/proc_deploy-cluster-operator-watch-namespace.adoc[leveloffset=+1]
+include::modules/proc-deploy-cluster-operator-watch-namespace.adoc[leveloffset=+1]
 //Deploy the Cluster Operator to watch multiple namespaces
-include::modules/proc_deploy-cluster-operator-watch-multiple-namespaces.adoc[leveloffset=+1]
+include::modules/proc-deploy-cluster-operator-watch-multiple-namespaces.adoc[leveloffset=+1]
 //Deploy the Cluster Operator to watch all namespaces
-include::modules/proc_deploy-cluster-operator-watch-whole-cluster.adoc[leveloffset=+1]
+include::modules/proc-deploy-cluster-operator-watch-whole-cluster.adoc[leveloffset=+1]
 
 //Deploy the Cluster Operator to using Helm
 ifdef::Helm[]
-include::modules/proc_deploy-cluster-operator-helm-chart.adoc[leveloffset=+1]
+include::modules/proc-deploy-cluster-operator-helm-chart.adoc[leveloffset=+1]
 endif::Helm[]
 
 //Deploy the Cluster Operator using operatorhub.io
 ifdef::OperatorHubio[]
-include::modules/con_deploy-cluster-operator-from-operator-hub.adoc[leveloffset=+1]
+include::modules/con-deploy-cluster-operator-from-operator-hub.adoc[leveloffset=+1]
 endif::OperatorHubio[]

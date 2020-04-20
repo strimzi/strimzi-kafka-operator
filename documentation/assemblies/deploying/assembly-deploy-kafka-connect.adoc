@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// deploy/assembly_deploy-tasks.adoc
+// deploy/assembly-deploy-tasks.adoc
 // assembly-getting-started.adoc
 
 [id='kafka-connect-{context}']
@@ -23,10 +23,10 @@ NOTE: The term _connector_ is used interchangably to mean a connector instance r
 In this guide, the term _connector_ is used when the meaning is clear from the context.
 
 //Procedure to deploy a Kafka Connect cluster
-include::modules/proc_deploy-kafka-connect.adoc[leveloffset=+1]
+include::modules/proc-deploy-kafka-connect.adoc[leveloffset=+1]
 //Options to deploy Kafka Connect with new container image
-include::assembly_deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
+include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Overview of creating connectors through API
-include::modules/con_deploy-kafka-connect-managing-connectors.adoc[leveloffset=+1]
+include::modules/con-deploy-kafka-connect-managing-connectors.adoc[leveloffset=+1]
 //Procedure to deploy a KafkaConnector resource
 include::modules/kafkaconnectors/proc-deploying-kafkaconnector.adoc[leveloffset=+1]

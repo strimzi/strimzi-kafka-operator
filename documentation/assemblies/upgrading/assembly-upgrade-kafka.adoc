@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly_upgrade.adoc
+// assembly-upgrade.adoc
 
 [id='assembly-upgrade-kafka-{context}']
 = {ProductName} and Kafka upgrades
@@ -13,10 +13,10 @@ Upgrading {ProductName} is a two-stage process. To upgrade brokers and clients w
 . Upgrade all Kafka brokers and client applications to the latest Kafka version.
 ** xref:assembly-upgrading-kafka-versions-{context}[]
 
-include::modules/ref_upgrade-kafka-versions.adoc[leveloffset=+1]
+include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
 
-include::assembly_upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
+include::assembly-upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
 
-include::assembly_upgrade-kafka-versions.adoc[leveloffset=+1]
+include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 
-include::assembly_downgrade-kafka-versions.adoc[leveloffset=+1]
+include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]

@@ -16,4 +16,4 @@ include::../../modules/overview/con-key-features-product.adoc[leveloffset=+1]
 //Operators overviews
 include::../overview/assembly-overview-components.adoc[leveloffset=+1]
 //Custom resources intro
-include::assembly_deploy-intro-custom-resources.adoc[leveloffset=+1]
+include::assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]
