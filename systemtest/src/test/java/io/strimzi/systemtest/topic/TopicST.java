@@ -56,8 +56,6 @@ public class TopicST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private static final String NAMESPACE = "topic-cluster-test";
 
-    private static final int NUMBER_OF_TOPICS = 500;
-
     @Test
     void testMoreReplicasThanAvailableBrokers() {
         final String topicName = "topic-example";
@@ -121,9 +119,8 @@ public class TopicST extends BaseST {
     }
 
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(SCALABILITY)
     @Test
-    void testBigAmountOfTopicsCreatingViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
+    void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -142,21 +139,18 @@ public class TopicST extends BaseST {
 
         try (AdminClient adminClient = AdminClient.create(properties)) {
 
-            for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
-                String topicName = TOPIC_NAME + "-" + i;
-                LOGGER.debug("Creating async topic {} via Admin client", topicName);
-                CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
-                crt.all().get();
-            }
+            LOGGER.info("Creating async topic {} via Admin client", TOPIC_NAME);
+            CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(TOPIC_NAME, 1, (short) 1)));
+            crt.all().get();
 
             Set<String> topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
 
-            LOGGER.info("Verify that in Kafka cluster contains {} topics", NUMBER_OF_TOPICS);
-            assertThat(topics.size(), is(NUMBER_OF_TOPICS));
+            LOGGER.info("Verify that in Kafka cluster contains {} topics", 1);
+            assertThat(topics.size(), is(1));
         }
 
-        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created", NUMBER_OF_TOPICS);
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(NUMBER_OF_TOPICS));
+        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created", 1);
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(1));
     }
 
     @Test
