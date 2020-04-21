@@ -19,4 +19,4 @@ When deployed alongside a Kafka cluster, Cruise Control can perform the followin
 * Making optimization proposals: balanced partition assignments based on configurable optimization goals.
 * Executing partition reassignments based on optimization proposals.
 
-The following sections explain how to xref:proc-deploying-cruise-control-{context}[deploy Cruise Control], xref:ref-cruise-control-configuration-{context}[set configuration options], xref:proc-interacting-with-cruise-control-api-{context}[use the Cruise Control API], and xref:proc-executing-cruise-control-rebalance-operations-{context}[execute a cluster rebalance operation].
+The following sections explain how to xref:proc-deploying-cruise-control-{context}[deploy Cruise Control] and xref:ref-cruise-control-configuration-{context}[set configuration options].
