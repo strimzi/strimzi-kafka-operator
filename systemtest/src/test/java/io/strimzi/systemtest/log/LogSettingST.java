@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.log;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -15,6 +17,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -28,6 +32,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +43,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -360,6 +366,139 @@ class LogSettingST extends AbstractST {
                 .findAny()
                 .get();
         return configMapData.get(configMapKey);
+    }
+
+    @Test
+    @Order(14)
+    void testDynamicallySetEOloggingLevels() {
+        String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
+
+
+        // change inline logging
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("rootLogger.level", INFO));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(il);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(il);
+        });
+
+        String eoPodName = eoPods.keySet().iterator().next();
+        String eoPodHash = eoPods.get(eoPodName);
+        String finalEoPodName = eoPodName;
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+                    return cmdKubeClient().execInPodContainer(finalEoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+                            && cmdKubeClient().execInPodContainer(finalEoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO");
+                }
+        );
+
+        eoPods = DeploymentUtils.depSnapshot(eoName);
+        String eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
+        assertThat("Pod name changed after logging changed", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
+        assertThat("Pod hash changed after logging changed", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+
+
+        ConfigMap configMapTo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-to")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j2.properties", "name = TOConfig\n" +
+                        "\n" +
+                        "appender.console.type = Console\n" +
+                        "appender.console.name = STDOUT\n" +
+                        "appender.console.layout.type = PatternLayout\n" +
+                        "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "\n" +
+                        "rootLogger.level = TRACE\n" +
+                        "rootLogger.appenderRefs = stdout\n" +
+                        "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                        "rootLogger.additivity = false"))
+                .build();
+
+        ConfigMap configMapUo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-uo")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData(Collections.singletonMap("log4j2.properties", "name = UOConfig\n" +
+                        "\n" +
+                        "appender.console.type = Console\n" +
+                        "appender.console.name = STDOUT\n" +
+                        "appender.console.layout.type = PatternLayout\n" +
+                        "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "\n" +
+                        "rootLogger.level = TRACE\n" +
+                        "rootLogger.appenderRefs = stdout\n" +
+                        "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                        "rootLogger.additivity = false"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
+
+        ExternalLogging elTo = new ExternalLoggingBuilder()
+                .withName("external-configmap-to")
+                .build();
+
+        ExternalLogging elUo = new ExternalLoggingBuilder()
+                .withName("external-configmap-uo")
+                .build();
+
+        // change to external logging
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(elTo);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
+        });
+
+        String finalEoPodName1 = eoPodName;
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+                    return cmdKubeClient().execInPodContainer(finalEoPodName1, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = TRACE")
+                            && cmdKubeClient().execInPodContainer(finalEoPodName1, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = TRACE");
+                }
+        );
+
+        eoPodName = eoPods.keySet().iterator().next();
+        eoPodHash = eoPods.get(eoPodName);
+        eoPods = DeploymentUtils.depSnapshot(eoName);
+        eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
+        assertThat("Pod name changed after logging changed", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
+        assertThat("Pod hash changed after logging changed", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+
+
+        configMapTo.setData(Collections.singletonMap("log4j2.properties", "name = TOConfig\n" +
+                "\n" +
+                "appender.console.type = Console\n" +
+                "appender.console.name = STDOUT\n" +
+                "appender.console.layout.type = PatternLayout\n" +
+                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                "\n" +
+                "rootLogger.level = DEBUG\n" +
+                "rootLogger.appenderRefs = stdout\n" +
+                "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                "rootLogger.additivity = false"));
+
+        configMapUo.setData(Collections.singletonMap("log4j2.properties", "name = UOConfig\n" +
+                "\n" +
+                "appender.console.type = Console\n" +
+                "appender.console.name = STDOUT\n" +
+                "appender.console.layout.type = PatternLayout\n" +
+                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                "\n" +
+                "rootLogger.level = DEBUG\n" +
+                "rootLogger.appenderRefs = stdout\n" +
+                "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                "rootLogger.additivity = false"));
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
+
+        // update external configmap
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+                    return cmdKubeClient().execInPodContainer(finalEoPodName1, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
+                            && cmdKubeClient().execInPodContainer(finalEoPodName1, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG");
+                }
+        );
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
