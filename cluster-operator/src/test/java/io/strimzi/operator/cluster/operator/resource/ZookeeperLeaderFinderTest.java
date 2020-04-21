@@ -129,11 +129,16 @@ public class ZookeeperLeaderFinderTest {
             netServer = vertx.createNetServer(nso);
         }
 
-        public void stop(VertxTestContext vertxTestContext) {
-            Checkpoint checkpoint = vertxTestContext.checkpoint();
+        public void stop() {
+            CountDownLatch countDownLatch = new CountDownLatch(1);
             netServer.close(closeResult -> {
-                checkpoint.flag();
+                countDownLatch.countDown();
             });
+            try {
+                countDownLatch.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                log.error("Failed to close zk instance {}", e);
+            }
         }
 
         public Future<Integer> start() {
@@ -193,12 +198,9 @@ public class ZookeeperLeaderFinderTest {
     }
 
     @AfterEach
-    public void stopZks(VertxTestContext vertxTestContext) {
-        if (zks.isEmpty()) {
-            vertxTestContext.completeNow();
-        }
+    public void stopZks() {
         for (FakeZk zk : zks) {
-            zk.stop(vertxTestContext);
+            zk.stop();
         }
     }
 
@@ -371,7 +373,7 @@ public class ZookeeperLeaderFinderTest {
 
         int[] ports = startMockZks(context, 2, (id, attempt) -> false);
         // Close ports to ensure closed ports are used so as to mock network problems
-        stopZks(context);
+        stopZks();
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
