@@ -130,7 +130,15 @@ public class ZookeeperLeaderFinderTest {
         }
 
         public void stop() {
-            netServer.close();
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            netServer.close(closeResult -> {
+                countDownLatch.countDown();
+            });
+            try {
+                countDownLatch.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                log.error("Failed to close zk instance {}", e);
+            }
         }
 
         public Future<Integer> start() {
