@@ -10,9 +10,9 @@ This procedure describes how to authorize user access to Kafka Connect.
 When any type of authorization is being used in Kafka, a Kafka Connect user requires access rights to the consumer group
 and the internal topics of Kafka Connect.
 
-In this procedure, we show how access is provided when `simple` authorization is being used.
+This procedure shows how access is provided when `simple` authorization is being used.
 
-Simple authorization uses ACL rules to provide the right level of access, which are handled by the Kafka `SimpleAclAuthorizer` plugin.
+Simple authorization uses ACL rules, handled by the Kafka `SimpleAclAuthorizer` plugin, to provide the right level of access.
 For more information on configuring a `KafkaUser` resource to use simple authorization, see xref:ref-kafka-user-using-uo[Kafka User resource].
 
 NOTE: The default values for the consumer group and topics will differ when xref:con-kafka-connect-multiple-instances-{context}[running multiple instances].
@@ -26,7 +26,7 @@ NOTE: The default values for the consumer group and topics will differ when xref
 
 . Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
 +
-For example, here we see access rights configured for the Kafka Connect topics and consumer group using the following `literal` name values:
+For example, here access rights are configured for the Kafka Connect topics and consumer group using the following `literal` name values:
 +
 [table,stripes=none]
 |===
