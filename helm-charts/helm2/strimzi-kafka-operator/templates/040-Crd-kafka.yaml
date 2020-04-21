@@ -966,7 +966,7 @@ spec:
                     allowOnError:
                       type: boolean
                       description: Defines the authorizer behaviour when the OPA calls
-                        fail.
+                        fail. Defaults to `false`.
                     clientId:
                       type: string
                       description: OAuth Client ID which the Kafka client can use
@@ -983,13 +983,16 @@ spec:
                         value is `false`.
                     expireAfterMs:
                       type: integer
-                      description: Decision cache expiry in milliseconds.
+                      description: Decision cache expiry in milliseconds. Defaults
+                        to `3600000`.
                     initialCacheCapacity:
                       type: integer
-                      description: Initial capacity of the decision cache.
+                      description: Initial capacity of the decision cache. Defaults
+                        to `5000`.
                     maximumCacheSize:
                       type: integer
-                      description: Maximum capacity of the decision cache.
+                      description: Maximum capacity of the decision cache. Defaults
+                        to `50000`.
                     superUsers:
                       type: array
                       items:
@@ -1034,7 +1037,7 @@ spec:
                       type: string
                       example: http://opa:8181/v1/data/kafka/authz/allow
                       description: URL of the OPA server with the policy name which
-                        should be queried.
+                        should be queried. This option is required.
                   required:
                   - type
                   description: Authorization configuration for Kafka brokers.

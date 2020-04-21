@@ -28,14 +28,14 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
 
     public static final String TYPE_OPA = "opa";
 
-    public static final String AUTHORIZER_CLASS_NAME = "com.lbg.kafka.opa.OpaAuthorizer";
+    public static final String AUTHORIZER_CLASS_NAME = "com.bisnode.kafka.authorization.OpaAuthorizer";
 
     private List<String> superUsers;
     private String url;
     private boolean allowOnError = false;
-    private int initialCacheCapacity = 100;
-    private int maximumCacheSize = 100;
-    private long expireAfterMs = 600000;
+    private int initialCacheCapacity = 5000;
+    private int maximumCacheSize = 50000;
+    private long expireAfterMs = 3600000;
     private String token;
 
     @Description("Must be `" + TYPE_OPA + "`")
@@ -80,7 +80,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     }
 
     @Description("Initial capacity of the decision cache. " +
-            "Defaults to `100`.")
+            "Defaults to `5000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getInitialCacheCapacity() {
         return initialCacheCapacity;
@@ -91,7 +91,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     }
 
     @Description("Maximum capacity of the decision cache. " +
-            "Defaults to `100`.")
+            "Defaults to `50000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getMaximumCacheSize() {
         return maximumCacheSize;
@@ -102,7 +102,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     }
 
     @Description("Decision cache expiry in milliseconds. " +
-            "Defaults to `600000`.")
+            "Defaults to `3600000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public long getExpireAfterMs() {
         return expireAfterMs;

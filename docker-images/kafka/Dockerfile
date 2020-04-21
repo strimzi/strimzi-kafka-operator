@@ -58,6 +58,16 @@ COPY kafka-thirdparty-libs/cc/target/dependency/ ${CRUISE_CONTROL_HOME}/libs/
 COPY ./cruise-control-scripts $CRUISE_CONTROL_HOME
 
 #####
+# Add OPA authroizer
+#####
+ENV OPA_AUTHORIZER_VERSION=0.4.0
+ENV OPA_AUTHORIZER_CHECKSUM="9162cc4afcbd77c2431979d2c6b0e38b658df2920057ad8789ef16d7f5a45d557eec2fd9164b372c7a6af1039b736c0ffe1c70855f42beaaf2a4697505c4e553 opa-authorizer-${OPA_AUTHORIZER_VERSION}-all.jar"
+RUN curl -LO https://github.com/Bisnode/opa-kafka-plugin/releases/download/v${OPA_AUTHORIZER_VERSION}/opa-authorizer-${OPA_AUTHORIZER_VERSION}-all.jar \
+    && echo $OPA_AUTHORIZER_CHECKSUM > opa-authorizer-${OPA_AUTHORIZER_VERSION}-all.jar.sha512 \
+    && sha512sum --check pa-authorizer-${OPA_AUTHORIZER_VERSION}-all.jar.sha512 \
+    && mv opa-authorizer-${OPA_AUTHORIZER_VERSION}-all.jar ${KAFKA_HOME}/libs/
+
+#####
 # Add Stunnel
 #####
 ENV STUNNEL_HOME=/opt/stunnel

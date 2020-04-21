@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.lbg.kafka.opa.OpaAuthorizer;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -28,6 +27,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -485,14 +485,14 @@ public class KafkaBrokerConfigurationBuilder {
             KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
             writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
 
-            writer.println(String.format("%s=%s", OpaAuthorizer.OPA_AUTHORIZER_URL_CONFIG, opaAuthz.getUrl()));
-            writer.println(String.format("%s=%b", OpaAuthorizer.OPA_AUTHORIZER_DENY_ON_ERROR_CONFIG, opaAuthz.isAllowOnError()));
-            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_INITIAL_CAPACITY_CONFIG, opaAuthz.getInitialCacheCapacity()));
-            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_MAXIMUM_SIZE_CONFIG, opaAuthz.getMaximumCacheSize()));
-            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_EXPIRE_AFTER_MS_CONFIG, opaAuthz.getExpireAfterMs()));
+            writer.println(String.format("%s=%s", "opa.authorizer.url", opaAuthz.getUrl()));
+            writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", opaAuthz.isAllowOnError()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", opaAuthz.getInitialCacheCapacity()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));
 
             if (opaAuthz.getToken() != null && !opaAuthz.getToken().isEmpty())  {
-                writer.println(String.format("%s=%s", OpaAuthorizer.OPA_AUTHORIZER_TOKEN, opaAuthz.getToken()));
+                writer.println(String.format("%s=%s", "opa.authorizer.token", opaAuthz.getToken()));
             }
 
             // User configured super users
