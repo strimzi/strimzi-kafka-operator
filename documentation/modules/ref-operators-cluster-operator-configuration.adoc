@@ -108,3 +108,19 @@ env:
            compiler=gc
            platform=linux/amd64
 ----
+
+`KUBERNETES_SERVICE_DNS_DOMAIN`:: Optional.
+Overrides the default Kubernetes DNS domain name suffix.
++
+By default, services assigned in the Kubernetes cluster have a DNS domain name that uses the default suffix `cluster.local`.
++
+For example, for broker _kafka-0_:
++
+[source,shell,subs="+quotes"]
+----
+`_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc._cluster.local_`
+----
++
+The DNS domain name is added to the Kafka broker certificates used for hostname verification.
++
+If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
