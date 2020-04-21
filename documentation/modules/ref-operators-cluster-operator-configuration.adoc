@@ -114,7 +114,7 @@ Overrides the default Kubernetes DNS domain name suffix.
 +
 By default, services assigned in the Kubernetes cluster have a DNS domain name that uses the default suffix `cluster.local`.
 +
-For example, for broker _Kafka-0_:
+For example, for broker _kafka-0_:
 +
 [source,shell,subs="+quotes"]
 ----
