@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.lbg.kafka.opa.OpaAuthorizer;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
@@ -478,6 +480,24 @@ public class KafkaBrokerConfigurationBuilder {
             // User configured super users
             if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
                 superUsers.addAll(simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
+            }
+        } else if (KafkaAuthorizationOpa.TYPE_OPA.equals(authorization.getType())) {
+            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+            writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
+
+            writer.println(String.format("%s=%s", OpaAuthorizer.OPA_AUTHORIZER_URL_CONFIG, opaAuthz.getUrl()));
+            writer.println(String.format("%s=%b", OpaAuthorizer.OPA_AUTHORIZER_DENY_ON_ERROR_CONFIG, opaAuthz.isAllowOnError()));
+            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_INITIAL_CAPACITY_CONFIG, opaAuthz.getInitialCacheCapacity()));
+            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_MAXIMUM_SIZE_CONFIG, opaAuthz.getMaximumCacheSize()));
+            writer.println(String.format("%s=%d", OpaAuthorizer.OPA_AUTHORIZER_CACHE_EXPIRE_AFTER_MS_CONFIG, opaAuthz.getExpireAfterMs()));
+
+            if (opaAuthz.getToken() != null && !opaAuthz.getToken().isEmpty())  {
+                writer.println(String.format("%s=%s", OpaAuthorizer.OPA_AUTHORIZER_TOKEN, opaAuthz.getToken()));
+            }
+
+            // User configured super users
+            if (opaAuthz.getSuperUsers() != null && opaAuthz.getSuperUsers().size() > 0) {
+                superUsers.addAll(opaAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
             }
         } else if (KafkaAuthorizationKeycloak.TYPE_KEYCLOAK.equals(authorization.getType())) {
             KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
