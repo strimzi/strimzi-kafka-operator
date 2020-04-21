@@ -35,8 +35,8 @@ spec:
   cruiseControl:
     replicas: 1 <1>
     capacity: <2>
-      networkIn: 10000
-      networkOut: 10000
+      networkIn: 10000KB/s
+      networkOut: 10000KB/s
       # ...
     config: <3>
       default.goals: >

@@ -66,7 +66,7 @@ public class CruiseControl extends AbstractModel {
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
 
-    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
+    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "logging";
 
     private String zookeeperConnect;
 

@@ -174,7 +174,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve for the Cruise Control container.")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
     }

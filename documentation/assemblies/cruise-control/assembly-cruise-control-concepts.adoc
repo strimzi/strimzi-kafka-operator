@@ -13,6 +13,6 @@ include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[levelof
 
 include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-interacting-with-cruise-control-api.adoc[leveloffset=+1]
+//include::../../modules/cruise-control/proc-interacting-with-cruise-control-api.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-executing-cruise-control-rebalance-operations.adoc[leveloffset=+1]
+//include::../../modules/cruise-control/proc-executing-cruise-control-rebalance-operations.adoc[leveloffset=+1]

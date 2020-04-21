@@ -1274,8 +1274,7 @@ spec:
                       type: object
                     requests:
                       type: object
-                  description: CPU and memory resources to reserve for the Cruise
-                    Control container.
+                  description: CPU and memory resources to reserve.
                 metrics:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter

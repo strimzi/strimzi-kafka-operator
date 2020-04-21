@@ -86,7 +86,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions           1.2+<.<|JMX Options for Kafka brokers.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|resources            1.2+<.<|CPU and memory resources to reserve for the Cruise Control container.
+|resources            1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map

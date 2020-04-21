@@ -68,8 +68,8 @@ Capacity limits can be set for the following broker resources in the described u
 
 * `disk`            - Disk storage in bytes
 * `cpuUtilization`  - CPU utilization as a percent (0-100)
-* `inboundNetwork`  - Network inbound throughput in bytes per second
-* `outboundNetwork` - Network outbound throughput in bytes per second
+* `inboundNetwork`  - Inbound network throughput in bytes per second
+* `outboundNetwork` - Outbound network throughput in bytes per second
 
 Because {ProductName} Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
