@@ -122,7 +122,7 @@ public class TopicST extends BaseST {
     @Test
     void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
