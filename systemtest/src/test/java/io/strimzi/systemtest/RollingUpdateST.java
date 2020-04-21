@@ -867,6 +867,7 @@ class RollingUpdateST extends BaseST {
 
         // some kind of accident happened and the CA secret has been deleted
         kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zkCrtBeforeAccident)));

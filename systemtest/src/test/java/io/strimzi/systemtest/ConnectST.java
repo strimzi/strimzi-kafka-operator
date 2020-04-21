@@ -147,7 +147,7 @@ class ConnectST extends BaseST {
         KafkaConnectUtils.createFileSinkConnector(kafkaClientsPodName, CONNECT_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaConnectPodName)
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(CONNECT_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
