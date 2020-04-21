@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// getting-started.adoc
+
+[id='assembly-getting-started-strimzi-admin-{context}']
+= Strimzi Administrators
+
+{ProductName} includes several custom resources.
+By default, permission to view, create, edit, and delete these resources is limited to Kubernetes cluster administrators.
+{ProductName} provides two additional `ClusterRoles` which you can use to assign these rights also to other users.
+The role `strimzi-view` allows used to view and list the {ProductName} resources.
+The role `strimzi-admin` allows them to also create, edit or delete them.
+When you install these roles, they will automatically add (aggregate) these rights to the default Kubernetes `ClusterRoles`.
+`strimzi-view` will aggregate to the `view` role and `strimzi-admin` to the `edit` and `admin` roles.
+Thanks to the aggregation, you might not need to assign these roles to users who already have similar rights.
+
+include::../modules/proc-designating-strimzi-administrators.adoc[leveloffset=+1]
+
