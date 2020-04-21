@@ -2,7 +2,10 @@
 
 This document is intended to progress discussion about how to enable Strimzi to work well with the Service Binding Operator. It includes some suggested enhancements to Strimzi to make it work more nicely with the Service Binding Operator. It would be good to settle on an agreement about how these two technologies can best work together so we can begin the technical work to deliver.
 
-The Service Binding Operator is responsible for binding services such as databases and message brokers to runtime applications in Kubernetes. It's still under development, but the intention is that it becomes part of Operator Lifecycle Management.
+The Service Binding Operator is responsible for binding services such as databases and message brokers to runtime applications in Kubernetes. It's still under development, but the intention is that it becomes part of Operator Lifecycle Management. This document matches Service Binding Specification RC1.
+
+Note: The document is intentionally vague about the precise form of the binding information being made available to the consuming clients. That's because it's changing as the Service Binding Specification evolves, in terms of the format and names of the environment variables and the names of the keys in the secrets.
+
 
 ## Service Binding Operator today
 
@@ -43,6 +46,7 @@ While this is quite a clever use of a Go template, it has several problems.
 1) The code picks just the first of the array of addresses. It's common Kafka practice to have a list of bootstrap servers, and while Strimzi usually only has a single bootstrap address per listener, it is still necessary for the user to concatenate the `host:port` pair.
 
 What would be better is to annotate the Strimzi objects in a way that enabled the Service Binding Operator to populate the binding information itself. The user should only really need to refer to the `Kafka` in their `ServiceBindingRequest` and let the SBO take care of the details of the binding.
+
 
 ## Service Binding Specification
 
@@ -98,6 +102,7 @@ This has the same shortcomings as the first example, with the advantage that the
 
 It would be preferable if Strimzi custom resources were appropriately annotated without the user needing to do it. This document proposes how this can be achieved.
 
+
 # Proposal
 
 The aim is to make it easy to bind to any service using a `ServiceBinding` CR referring to `Kafka` and `KafkaUser` CRs only, without needing complex annotations provided by the user. (The API group and kind is still being settled, but this looks like the likely name.) Here's an example:
@@ -124,6 +129,7 @@ To connect to Strimzi, a service binding needs the following:
 * **certificate** - certificate, optional
 
 Some of this comes from the `Kafka` CR and some from `KafkaUser`.
+
 
 ## Binding to a Kafka cluster with no TLS or authentication
 
@@ -222,6 +228,9 @@ The Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 
+This information will be provided to the consuming client as an environment variable unless overridden.
+
+
 ## Binding to a Kafka cluster with TLS but no authentication
 
 The addition with this scenario is that Kafka clients need access to the CA certificate that signed the broker's server certificate. The Service Binding Specification does not currently have support for a separate CA certificate, which seems like a simple enhancement, which it indicated using `caSecret` in the example below.
@@ -277,7 +286,7 @@ spec:
         path: caCertificateSecret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - servicebinding
+        - servicebinding:bindAs=volume
 ```
 
 ### Consuming client's ServiceBinding
@@ -303,8 +312,10 @@ The Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
-* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **ca.password** - password for protecting the CA certificate PKCS #12 archive file
 * **ca.crt** - CA certificate for the cluster
+
+This information will be provided to the consuming client as environment variables unless overridden.
 
 
 ## Binding to a Kafka cluster with username/password authentication
@@ -326,11 +337,11 @@ spec:
   authorization:
     type: simple
     acls:
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Read
+    - resource:
+        type: topic
+        name: my-topic
+        patternType: literal
+      operation: Read
 status:
   username: my-user-name
   secret: my-user
@@ -382,7 +393,7 @@ spec:
         path: secret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - servicebinding
+        - servicebinding:bindAs=volume
 ```
 
 ### Consuming client's ServiceBinding
@@ -414,9 +425,12 @@ TThe Service Binding Operator creates binding information which contains:
 
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
-* **ca.password** - password for protecting the CA certficate PKCS #12 archive file
+* **ca.password** - password for protecting the CA certificate PKCS #12 archive file
+* **ca.crt** - CA certificate for the cluster
 * **username** - username for the consuming client
 * **password** - password for the consuming client
+
+This information will be provided to the consuming client as environment variables and a volume-mounted secret unless overridden.
 
 
 ## Binding to a Kafka cluster with mutual TLS authentication
@@ -458,9 +472,10 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: # Public key of the clients' CA
-  user.crt: # Public key of the user
-  user.key: # Private key of the user
+  user.p12:      # User PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the user certificate PKCS #12 archive file
+  user.crt:      # Public key of the user
+  user.key:      # Private key of the user
 ```
 
 The CSV can be annotated like this:
@@ -494,7 +509,7 @@ spec:
         path: secret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - servicebinding
+        - servicebinding:bindAs=volume
 ```
 
 ### Consuming client's ServiceBinding
@@ -527,11 +542,15 @@ The Service Binding Operator creates binding information which contains:
 * **endpoints.<listener_name>** - bootstrap server information for all listeners
 * **ca.p12** - CA certificate PKCS #12 archive file for storing certificates and keys
 * **ca.password** - password for protecting the CA certificate PKCS #12 archive file
+* **ca.crt** - CA certificate for the cluster
 * **username** - username for the consuming client
 * **user.p12** - client certificate for the consuming client PKCS #12 archive file for storing certificates and keys
-* **user.password** - password for protecting the client certficate PKCS #12 archive file
+* **user.password** - password for protecting the client certificate PKCS #12 archive file
 * **user.crt** - certificate for the consuming client signed by the clients' CA
 * **user.key** - private key for the consuming client
+
+This information will be provided to the consuming client as environment variables and a volume-mounted secret unless overridden.
+
 
 # Summary of changes
 
@@ -587,7 +606,7 @@ spec:
         path: caCertificateSecret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - servicebinding
+        - servicebinding:bindAs=volume
 ```
 
 ## KafkaUser ClusterServiceVersion
@@ -623,7 +642,7 @@ spec:
         path: secret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-        - servicebinding
+        - servicebinding:bindAs=volume
 ```
 
 # Rejected alternatives
