@@ -164,12 +164,12 @@ public class Exec {
             synchronized (LOCK) {
                 if (logToOutput) {
                     LOGGER.info("Command: {}", command);
-                    LOGGER.info("Return code: {}", ret);
+                    LOGGER.info("RETURN code: {}", ret);
                     if (!executor.out().isEmpty()) {
-                        LOGGER.info("stdout: \n{}", executor.out());
+                        LOGGER.info("====STDOUT START====\n{}\n====STDOUT END====", executor.out());
                     }
                     if (!executor.err().isEmpty()) {
-                        LOGGER.info("stderr: \n{}", executor.err());
+                        LOGGER.info("====STDERR START====\n{}\n====STDERR END====", executor.err());
                     }
                 }
             }
