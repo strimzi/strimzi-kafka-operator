@@ -23,5 +23,4 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
-  cruiseControl:
-    replicas: 1
+  cruiseControl: {}

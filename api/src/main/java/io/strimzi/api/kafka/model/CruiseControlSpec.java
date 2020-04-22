@@ -5,14 +5,11 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Maximum;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -41,7 +38,6 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         + "capacity.config.file, self.healing., ssl.";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
-    private int replicas;
     private String image;
     private TlsSidecar tlsSidecar;
     private ResourceRequirements resources;
@@ -53,18 +49,6 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    @Description("The number of pods in the `Deployment`.")
-    @Minimum(0)
-    @Maximum(1)
-    @JsonProperty(required = true)
-    public int getReplicas() {
-        return replicas;
-    }
-
-    public void setReplicas(int replicas) {
-        this.replicas = replicas;
-    }
 
     @Description("The docker image for the pods.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)

@@ -92,7 +92,6 @@ public class CruiseControlTest {
 
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
-            .withReplicas(replicas)
             .withConfig((Map) configuration.asOrderedProperties().asMap())
             .build();
 

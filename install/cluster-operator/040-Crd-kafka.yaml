@@ -4844,11 +4844,6 @@ spec:
             cruiseControl:
               type: object
               properties:
-                replicas:
-                  type: integer
-                  minimum: 0
-                  maximum: 1
-                  description: The number of pods in the `Deployment`.
                 image:
                   type: string
                   description: The docker image for the pods.
@@ -5599,8 +5594,6 @@ spec:
                       description: Broker capacity for outbound network throughput
                         in bytes per second, for example 10000KB/s.
                   description: The Cruise Control `brokerCapacity` configuration.
-              required:
-              - replicas
               description: Configuration for Cruise Control deployment. Deploys a
                 Cruise Control instance when specified.
             jmxTrans:

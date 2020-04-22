@@ -1350,8 +1350,6 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [options="header"]
 |====
 |Property               |Description
-|replicas        1.2+<.<|The number of pods in the `Deployment`.
-|integer
 |image           1.2+<.<|The docker image for the pods.
 |string
 |config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., ssl.
