@@ -2,7 +2,7 @@
 include::shared/attributes.adoc[]
 
 :context: str
-:BookURLUsing: https://strimzi.io/docs/latest/
+:BookURLUsing: ./using.html
 
 [id="deploying-book_{context}"]
 = Deploying and Upgrading {ProductName}
