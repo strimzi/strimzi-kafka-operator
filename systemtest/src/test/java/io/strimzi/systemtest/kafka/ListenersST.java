@@ -68,7 +68,7 @@ public class ListenersST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testCustomSoloCertificatesForNodePort() throws Exception {
+    void testCustomSoloCertificatesForNodePort() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -139,7 +139,7 @@ public class ListenersST extends BaseST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testCustomChainCertificatesForNodePort() throws Exception {
+    void testCustomChainCertificatesForNodePort() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -222,7 +222,7 @@ public class ListenersST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testCustomSoloCertificatesForLoadBalancer() throws Exception {
+    void testCustomSoloCertificatesForLoadBalancer() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -293,7 +293,7 @@ public class ListenersST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testCustomChainCertificatesForLoadBalancer() throws Exception {
+    void testCustomChainCertificatesForLoadBalancer() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -369,7 +369,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @OpenShiftOnly
-    void testCustomSoloCertificatesForRoute() throws Exception {
+    void testCustomSoloCertificatesForRoute() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -440,7 +440,7 @@ public class ListenersST extends BaseST {
 
     @Test
     @OpenShiftOnly
-    void testCustomChainCertificatesForRoute() throws Exception {
+    void testCustomChainCertificatesForRoute() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
@@ -513,7 +513,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertLoadBalancerAndTlsRollingUpdate() throws Exception {
+    void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
@@ -713,7 +713,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertNodePortAndTlsRollingUpdate() throws Exception {
+    void testCustomCertNodePortAndTlsRollingUpdate() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
@@ -909,7 +909,7 @@ public class ListenersST extends BaseST {
     @Test
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertRouteAndTlsRollingUpdate() throws Exception {
+    void testCustomCertRouteAndTlsRollingUpdate() {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
