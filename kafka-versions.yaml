@@ -18,10 +18,10 @@
 #   <unsupported-features> is a list of Strimzi features that are not supported by this Kafka version
 
 #- version: 2.3.0
-  #format: 2.3     
-  #protocol: 2.3   
+  #format: 2.3
+  #protocol: 2.3
   #url: https://archive.apache.org/dist/kafka/2.3.0/kafka_2.12-2.3.0.tgz
-  #checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E   
+  #checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E
   #zookeeper: 3.4.14
   #third-party-libs: 2.3.x
   #default: false
@@ -41,5 +41,13 @@
   url: https://archive.apache.org/dist/kafka/2.4.0/kafka_2.12-2.4.0.tgz
   checksum: 53B52F86EA56C9FAC62046524F03F75665A089EA2DAE554AEFE3A3D2694F2DA88B5BA8725D8BE55F198BA80695443559ED9DE7C0B2A2817F7A6141008FF79F49
   zookeeper: 3.5.6
+  third-party-libs: 2.4.x
+  default: false
+- version: 2.4.1
+  format: 2.4
+  protocol: 2.4
+  url: https://archive.apache.org/dist/kafka/2.4.1/kafka_2.12-2.4.1.tgz
+  checksum: 8582DC25CB14A2E9C6966EFD98E41CD0EBF6369B42436954800B847298E763B22CAECF130FDCCC58BF79FE9E95FACCE6E0B5AACAD072D69F6DC1EED7678A49B8
+  zookeeper: 3.5.7
   third-party-libs: 2.4.x
   default: true
