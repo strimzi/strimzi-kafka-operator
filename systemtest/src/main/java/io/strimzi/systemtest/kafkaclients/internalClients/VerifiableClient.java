@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -198,15 +199,21 @@ public class VerifiableClient {
         messages.clear();
         try {
             executor = new Exec();
-            int ret = executor.execute(null, prepareCommand(), timeoutMs);
+            ArrayList<String> command = prepareCommand();
+            LOGGER.info(command.stream().collect(Collectors.joining(" ")));
+            int ret = executor.execute(null, command, timeoutMs);
             synchronized (lock) {
-                LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.info("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
                     if (ret == 0) {
                         parseToList(executor.out());
-                    } else if (!executor.err().isEmpty()) {
-                        LOGGER.error("{} {} stderr : {}", this.getClass().getSimpleName(), clientType, executor.err());
+                    } else {
+                        LOGGER.info("{} RETURN code: {}", clientType,  ret);
+                        if (!executor.out().isEmpty()) {
+                            LOGGER.info("{} STDOUT: {}", clientType, executor.out());
+                        }
+                        if (!executor.err().isEmpty()) {
+                            LOGGER.error("{} STDERR: {}", clientType, executor.err());
+                        }
                     }
                 }
             }

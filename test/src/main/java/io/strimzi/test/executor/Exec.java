@@ -165,8 +165,12 @@ public class Exec {
                 if (logToOutput) {
                     LOGGER.info("Command: {}", command);
                     LOGGER.info("Return code: {}", ret);
-                    LOGGER.info("stdout: \n{}", executor.out());
-                    LOGGER.info("stderr: \n{}", executor.err());
+                    if (!executor.out().isEmpty()) {
+                        LOGGER.info("stdout: \n{}", executor.out());
+                    }
+                    if (!executor.err().isEmpty()) {
+                        LOGGER.info("stderr: \n{}", executor.err());
+                    }
                 }
             }
 
