@@ -3,7 +3,7 @@
 // assembly-management-tasks.adoc
 
 [id='proc-accessing-resource-status-{context}']
-= Checking the status of a custom resource
+= Finding the status of a custom resource
 
 This procedure describes how to find the status of a custom resource.
 

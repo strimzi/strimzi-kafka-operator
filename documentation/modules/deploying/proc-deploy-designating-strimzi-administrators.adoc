@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks-prep.adoc
+
+[id='adding-users-the-strimzi-admin-role-{context}']
+= Designating {ProductName} administrators
+
+{ProductName} provides custom resources for configuration of your deployment.
+By default, permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators.
+
+The following procedure shows how to assign a `strimzi-admin` role that allows non-cluster administrators to manage {ProductName} resources.
+
+A system administrator can designate {ProductName} administrators after the Cluster Operator is deployed.
+
+.Prerequisites
+
+* The {ProductName} Custom Resource Definitions (CRDs) and role-based access control (RBAC) resources to manage the CRDs have been xref:cluster-operator-{context}[deployed with the Cluster Operator].
+
+.Procedure
+
+. Create the `strimzi-admin` cluster role in Kubernetes.
++
+[source,shell,subs=+quotes]
+kubectl apply -f install/strimzi-admin
+
+. Assign the `strimzi-admin` `ClusterRole` to one or more existing users in the Kubernetes cluster.
++
+[source,shell,subs=+quotes]
+kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_user1_ --user=_user2_

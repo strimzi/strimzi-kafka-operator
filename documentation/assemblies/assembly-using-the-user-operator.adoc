@@ -11,8 +11,6 @@
 
 The User Operator provides a way of managing Kafka users via Kubernetes resources.
 
-include::../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
-
 include::../modules/con-mutual-tls-authentication.adoc[leveloffset=+1]
 
 include::../modules/proc-creating-kafka-user-tls.adoc[leveloffset=+1]

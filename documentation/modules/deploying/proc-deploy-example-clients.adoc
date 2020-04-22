@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-verify.adoc
+// getting-started.adoc
+
+[id='deploying-example-clients-{context}']
+= Deploying example clients
+
+This procedure shows how to deploy example producer and consumer clients that use the Kafka cluster you created to send and receive messages.
+
+.Prerequisites
+
+* The Kafka cluster is available for the clients.
+
+.Procedure
+
+. Deploy a Kafka producer.
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
+
+. Type a message into the console where the producer is running.
+
+. Press _Enter_ to send the message.
+
+. Deploy a Kafka consumer.
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl run kafka-consumer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_ --from-beginning
+
+. Confirm that you see the incoming messages in the consumer console.

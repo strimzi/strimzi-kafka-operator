@@ -1,0 +1,20 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-prometheus-alertmanager.adoc
+
+[id='con-metrics-prometheus-alerts-{context}']
+
+= Alerting rules
+
+Alerting rules provide notifications about specific conditions observed in the metrics. Rules are declared on the Prometheus server, but Prometheus Alertmanager is responsible for alert notifications.
+
+Prometheus alerting rules describe conditions using https://prometheus.io/docs/prometheus/latest/querying/basics/[PromQL] expressions that are continuously evaluated.
+
+When an alert expression becomes true, the condition is met and the Prometheus server sends alert data to the Alertmanager.
+Alertmanager then sends out a notification using the communication method configured for its deployment.
+
+Alertmanager can be configured to use email, chat messages or other notification methods.
+
+.Additional resources
+
+For more information about setting up alerting rules, see {PrometheusConfig} in the Prometheus documentation.
