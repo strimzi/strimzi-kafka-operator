@@ -208,7 +208,7 @@ public class StrimziUpgradeST extends BaseST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.1"));
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {

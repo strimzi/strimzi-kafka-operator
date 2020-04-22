@@ -3,7 +3,7 @@ kind: KafkaMirrorMaker
 metadata:
   name: my-mirror-maker
 spec:
-  version: 2.4.0
+  version: 2.4.1
   replicas: 1
   consumer:
     bootstrapServers: my-source-cluster-kafka-bootstrap:9093

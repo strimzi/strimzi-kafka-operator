@@ -25,7 +25,7 @@ spec:
     replicas: 3
     storage:
       type: ephemeral
-    version: 2.4.0
+    version: 2.4.1
     tlsSidecar: {}
   topicOperator: {}
   zookeeper:
