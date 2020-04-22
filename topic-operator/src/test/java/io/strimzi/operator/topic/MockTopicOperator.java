@@ -90,6 +90,31 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
+    public void initMetrics() {
+        return;
+    }
+
+    @Override
+    public void incrementFailedReconciliationsCounter() {
+        return;
+    }
+
+    @Override
+    public void incrementSuccessfulReconciliationsCounter() {
+        return;
+    }
+
+    @Override
+    public void incrementTopicCounter() {
+        return;
+    }
+
+    @Override
+    public void decrementTopicCounter() {
+        return;
+    }
+
+    @Override
     public Future<Void> onTopicCreated(LogContext logContext, TopicName topicName) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, topicName));
         return topicCreatedResult;

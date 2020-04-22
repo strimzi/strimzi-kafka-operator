@@ -62,12 +62,12 @@ class TopicOperator {
     private final ConcurrentHashMap<TopicName, Integer> inflight = new ConcurrentHashMap<>();
 
     protected final MetricsProvider metrics;
-    private final Counter periodicReconciliationsCounter;
-    private final Counter reconciliationsCounter;
-    private final Counter failedReconciliationsCounter;
-    private final Counter successfulReconciliationsCounter;
-    private final AtomicInteger topicCounter;
-    private final Timer reconciliationsTimer;
+    private Counter periodicReconciliationsCounter;
+    private Counter reconciliationsCounter;
+    private Counter failedReconciliationsCounter;
+    private Counter successfulReconciliationsCounter;
+    private AtomicInteger topicCounter;
+    private Timer reconciliationsTimer;
 
     enum EventType {
         INFO("Info"),
@@ -383,6 +383,10 @@ class TopicOperator {
         this.config = config;
         this.metrics = metrics;
 
+        initMetrics();
+    }
+
+    public void initMetrics() {
         Tags metricTags = Tags.of(Tag.of("kind", "KafkaTopic"));
 
         periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
@@ -422,18 +426,21 @@ class TopicOperator {
         return this.periodicReconciliationsCounter;
     }
 
-    public Counter getFailedReconciliationsCounter() {
-        return this.failedReconciliationsCounter;
+    public void incrementFailedReconciliationsCounter() {
+        this.failedReconciliationsCounter.increment();
     }
 
-    public Counter getSuccessfulReconciliationsCounter() {
-        return this.successfulReconciliationsCounter;
+    public void incrementSuccessfulReconciliationsCounter() {
+        this.successfulReconciliationsCounter.increment();
     }
 
-    public AtomicInteger getTopicCounter() {
-        return this.topicCounter;
+    public void incrementTopicCounter() {
+        this.topicCounter.getAndIncrement();
     }
 
+    public void decrementTopicCounter() {
+        this.topicCounter.getAndDecrement();
+    }
 
     /**
      * Run the given {@code action} on the context thread,
