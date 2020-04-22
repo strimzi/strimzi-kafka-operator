@@ -45,15 +45,12 @@ public class StUtils {
     private StUtils() { }
 
     /**
-     * Method for check if test is allowed on current Kubernetes version
-     * @param desiredKubernetesVersion kubernetes version which test needs
+     * Method for check if test is allowed on specific testing environment
+     * @param envVariableForCheck environment variable which is specific for a specific environment
      * @return true if test is allowed, false if not
      */
-    public static boolean isAllowedOnCurrentK8sVersion(String desiredKubernetesVersion) {
-        if (desiredKubernetesVersion.equals("latest")) {
-            return true;
-        }
-        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
+    public static boolean isAllowOnCurrentEnvironment(String envVariableForCheck) {
+        return System.getenv().get(envVariableForCheck) == null;
     }
 
     /**
