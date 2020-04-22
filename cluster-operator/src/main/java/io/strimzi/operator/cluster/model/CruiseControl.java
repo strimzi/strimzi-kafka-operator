@@ -54,8 +54,6 @@ public class CruiseControl extends AbstractModel {
     protected static final String APPLICATION_NAME = "cruise-control";
 
     public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
-    public static final String CRUISE_CONTROL_METRICS_TOPIC = "cruise.control.metrics.topic";
-    public static final String CRUISE_CONTROL_METRICS_TOPIC_VALUE = "strimzi.cruisecontrol.metrics";
 
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
@@ -92,7 +90,7 @@ public class CruiseControl extends AbstractModel {
 
     public static final String REST_API_PORT_NAME = "rest-api";
     public static final int REST_API_PORT = 9090;
-    protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
+    protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
     // Cruise Control configuration keys (EnvVariables)

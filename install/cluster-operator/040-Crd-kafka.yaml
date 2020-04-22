@@ -4861,7 +4861,7 @@ spec:
                     failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
                     webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
                     metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
-                    self.healing.'
+                    self.healing., ssl.'
                 livenessProbe:
                   type: object
                   properties:

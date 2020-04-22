@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set +x
 
 export CLASSPATH="$CLASSPATH:/opt/cruise-control/libs/*"
@@ -40,7 +40,7 @@ fi
 
 # Generate and print the config file
 echo "Starting Cruise Control with configuration:"
-$CRUISE_CONTROL_HOME/cruise_control_config_generator.sh | tee /tmp/cruisecontrol.properties
+$CRUISE_CONTROL_HOME/cruise_control_config_generator.sh | tee /tmp/cruisecontrol.properties | sed -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 # JVM performance options

@@ -1488,6 +1488,12 @@ public class KafkaClusterTest {
                 .endPodSelector()
                 .build();
 
+        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster)))
+                .endPodSelector()
+                .build();
+
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
@@ -1506,10 +1512,11 @@ public class KafkaClusterTest {
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertThat(rules.size(), is(4));
+        assertThat(rules.size(), is(5));
         assertThat(rules.contains(kafkaBrokersPeer), is(true));
         assertThat(rules.contains(eoPeer), is(true));
         assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(cruiseControlPeer), is(true));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
