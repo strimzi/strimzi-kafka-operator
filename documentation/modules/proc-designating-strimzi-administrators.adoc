@@ -17,7 +17,7 @@ Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f install/strimzi-admin
 
-. If needed, assign the roles to one or more existing users in the Kubernetes cluster.
+. If needed, assign the roles that provide access rights to users that require them.
 +
 Use `kubectl create`, for example:
 [source,shell,subs=+quotes]
