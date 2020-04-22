@@ -30,18 +30,18 @@ apiVersion: {KafkaApiVersionPrev}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2
-  spec:
-    version: {DefaultKafkaVersion}
-    connectCluster: "my-cluster-target"
-    clusters:
-    - alias: "my-cluster-source"
-      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-    - alias: "my-cluster-target"
-      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-    mirrors:
-    - sourceCluster: "my-cluster-source"
-      targetCluster: "my-cluster-target"
-      sourceConnector: {}
+spec:
+  version: {DefaultKafkaVersion}
+  connectCluster: "my-cluster-target"
+  clusters:
+  - alias: "my-cluster-source"
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+  - alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector: {}
 ----
 
 You can configure access control for source and target clusters using TLS or SASL authentication.

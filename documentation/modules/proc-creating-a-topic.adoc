@@ -43,6 +43,6 @@ kubectl apply -f _your-file_
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
-* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
-* For more information about deploying the standalone Topic Operator, see xref:deploying-the-topic-operator-standalone-deploying[].
+* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[Deploying the Cluster Operator].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[Deploying the Topic Operator using the Cluster Operator].
+* For more information about deploying the standalone Topic Operator, see xref:deploying-the-topic-operator-standalone-{context}[Deploying the standalone Topic Operator].

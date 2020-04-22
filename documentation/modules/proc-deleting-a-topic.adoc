@@ -26,6 +26,6 @@ This can be done using `kubectl delete`:
 kubectl delete kafkatopic _your-topic-name_
 
 .Additional resources
-* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
-* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[].
+* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[Deploying the Cluster Operator].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[Deploying the Topic Operator using the Cluster Operator].
+* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[Creating a Topic].

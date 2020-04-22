@@ -1,6 +1,7 @@
 // This module is included in:
 //
 // overview/assembly-key-features.adoc
+// deploying/assembly_deploy-intro.adoc
 
 [id="key-features-product_{context}"]
 = How {ProductName} supports Kafka

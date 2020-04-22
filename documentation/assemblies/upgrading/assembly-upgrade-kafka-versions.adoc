@@ -1,0 +1,32 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='assembly-upgrading-kafka-versions-{context}']
+
+= Upgrading Kafka
+
+After you have upgraded your Cluster Operator, you can upgrade your brokers to a higher supported version of Kafka.
+
+Kafka upgrades are performed using the Cluster Operator. How the Cluster Operator performs an upgrade depends on the differences between versions of:
+
+* Interbroker protocol
+* Log message format
+* ZooKeeper
+
+When the versions are the same for the current and target Kafka version, as is typically the case for a patch level upgrade, the Cluster Operator can upgrade through a single rolling update of the Kafka brokers.
+
+When one or more of these versions differ, the Cluster Operator requires two or three rolling updates of the Kafka brokers to perform the upgrade.
+
+.Additional resources
+
+* xref:assembly-upgrade-cluster-operator-str[]
+
+include::modules/con-upgrade-versions-and-images.adoc[leveloffset=+1]
+
+include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
+
+include::modules/proc-upgrade-brokers-newer-kafka.adoc[leveloffset=+1]
+
+//upgrade clients and kafka streams to incremental cooperative rebalance protocol added in kafka 2.4
+include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]
