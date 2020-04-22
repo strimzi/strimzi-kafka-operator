@@ -35,11 +35,21 @@ public class KafkaMirrorMaker2Utils {
         LOGGER.info("KafkaMirrorMaker2 is in state: {}", state);
     }
 
-    public static void waitForKafkaMirrorMaker2IsReady(String clusterName) {
+    public static void waitForKafkaMirrorMaker2Ready(String clusterName) {
         waitForKafkaMirrorMaker2Status(clusterName, "Ready");
     }
 
-    public static void waitForKafkaMirrorMaker2IsNotReady(String clusterName) {
+    public static void waitForKafkaMirrorMaker2NotReady(String clusterName) {
         waitForKafkaMirrorMaker2Status(clusterName, "NotReady");
+    }
+
+    public static void waitForKafkaMirrorMaker2IsReady(String clusterName, int expectPods) {
+        String mirrorMaker2DeploymentName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
+
+        waitForKafkaMirrorMaker2IsReady(clusterName);
+        LOGGER.info("Wait for KafkaMirrorMaker2 pods is ready");
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mirrorMaker2DeploymentName), expectPods, true,
+            () -> StUtils.logCurrentStatus(kafkaMirrorMaker2Client().inNamespace(namespace).withName(clusterName).get()));
+        LOGGER.info("Expected pods are ready");
     }
 }

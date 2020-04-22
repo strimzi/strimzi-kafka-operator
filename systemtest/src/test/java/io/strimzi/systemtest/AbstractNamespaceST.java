@@ -66,7 +66,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerIsReady(CLUSTER_NAME, 1);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME, 1);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -101,7 +101,7 @@ public abstract class AbstractNamespaceST extends BaseST {
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
             .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorIsReady(clusterName);
+        KafkaConnectorUtils.waitForConnectorReady(clusterName);
 
         String kafkaConnectPodName = kubeClient().listPods("type", connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);

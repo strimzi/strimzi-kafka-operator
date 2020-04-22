@@ -35,11 +35,11 @@ public class KafkaConnectS2IUtils {
         LOGGER.info("KafkaConnectS2I {} is in desired state: {}", clusterName, status);
     }
 
-    public static void waitForConnectS2IIsReady(String clusterName) {
+    public static void waitForConnectS2IReady(String clusterName) {
         waitForConnectS2IStatus(clusterName, "Ready");
     }
 
-    public static void waitForConnectS2IIsNotReady(String clusterName) {
+    public static void waitForConnectS2INotReady(String clusterName) {
         waitForConnectS2IStatus(clusterName, "NotReady");
     }
 
@@ -48,8 +48,8 @@ public class KafkaConnectS2IUtils {
      * @param clusterName name of KafkaConnectS2I cluster
      * @param expectPods expected number of pods to be ready
      */
-    public static void waitForConnectS2IIsReady(String clusterName, int expectPods) {
-        waitForConnectS2IIsReady(clusterName);
+    public static void waitForConnectS2IReady(String clusterName, int expectPods) {
+        waitForConnectS2IReady(clusterName);
         LOGGER.info("Waiting for KafkaConnectS2I pods to be ready");
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(clusterName), expectPods, true,
             () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(namespace).withName(clusterName).get()));

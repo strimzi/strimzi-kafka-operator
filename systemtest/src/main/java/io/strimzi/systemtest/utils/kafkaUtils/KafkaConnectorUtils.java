@@ -58,11 +58,11 @@ public class KafkaConnectorUtils {
         LOGGER.info("KafkaConnector {} is {}", connectorName);
     }
 
-    public static void waitForConnectorIsReady(String connectorName) {
+    public static void waitForConnectorReady(String connectorName) {
         waitForConnectorStatus(connectorName, "Ready");
     }
 
-    public static void waitForConnectorIsNotReady(String connectorName) {
+    public static void waitForConnectorNotReady(String connectorName) {
         waitForConnectorStatus(connectorName, "Ready");
     }
 

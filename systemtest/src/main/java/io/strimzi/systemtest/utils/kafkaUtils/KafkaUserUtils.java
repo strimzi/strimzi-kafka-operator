@@ -75,11 +75,11 @@ public class KafkaUserUtils {
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, state);
     }
 
-    public static void waitForKafkaUserIsReady(String userName) {
+    public static void waitForKafkaUserReady(String userName) {
         waitForKafkaUserStatus(userName, "Ready");
     }
 
-    public static void waitForKafkaUserIsNotReady(String userName) {
+    public static void waitForKafkaUserNotReady(String userName) {
         waitForKafkaUserStatus(userName, "NotReady");
     }
 }

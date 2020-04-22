@@ -90,11 +90,11 @@ public class KafkaTopicUtils {
         LOGGER.info("Kafka Topic {} is in desired state: {}", topicName, state);
     }
 
-    public static void waitForKafkaTopicIsReady(String topicName) {
+    public static void waitForKafkaTopicReady(String topicName) {
         waitForKafkaTopicStatus(topicName, "Ready");
     }
 
-    public static void waitForKafkaTopicIsNotReady(String topicName) {
+    public static void waitForKafkaTopicNotReady(String topicName) {
         waitForKafkaTopicStatus(topicName, "NotReady");
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {

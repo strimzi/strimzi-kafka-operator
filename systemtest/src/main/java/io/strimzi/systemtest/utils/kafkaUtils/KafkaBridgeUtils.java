@@ -82,11 +82,11 @@ public class KafkaBridgeUtils {
         LOGGER.info("KafkaBridge {}} is in state: {}", clusterName, state);
     }
 
-    public static void waitForKafkaBridgeIsReady(String clusterName) {
+    public static void waitForKafkaBridgeReady(String clusterName) {
         waitForKafkaBridgeStatus(clusterName, "Ready");
     }
 
-    public static void waitForKafkaBridgeIsNotReady(String clusterName) {
+    public static void waitForKafkaBridgeNotReady(String clusterName) {
         waitForKafkaBridgeStatus(clusterName, "NotReady");
     }
 
@@ -95,10 +95,10 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param expectPods number of expected pods to be ready
      */
-    public static void waitForKafkaBridgeIsReady(String clusterName, int expectPods) {
+    public static void waitForKafkaBridgeReady(String clusterName, int expectPods) {
         String bridgeDeploymentName = KafkaBridgeResources.deploymentName(clusterName);
 
-        waitForKafkaBridgeIsReady(clusterName);
+        waitForKafkaBridgeReady(clusterName);
         LOGGER.info("Waiting for KafkaBridge pods to be ready");
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(bridgeDeploymentName), expectPods, true,
             () -> StUtils.logCurrentStatus(kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get()));

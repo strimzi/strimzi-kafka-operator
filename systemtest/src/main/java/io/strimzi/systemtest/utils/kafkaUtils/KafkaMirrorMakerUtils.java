@@ -35,11 +35,11 @@ public class KafkaMirrorMakerUtils {
         LOGGER.info("KafkaMirrorMaker CR is in state: {}", state);
     }
 
-    public static void waitForKafkaMirrorMakerIsReady(String clusterName) {
+    public static void waitForKafkaMirrorMakerReady(String clusterName) {
         waitForKafkaMirrorMakerStatus(clusterName, "Ready");
     }
 
-    public static void waitForKafkaMirrorMakerIsNotReady(String clusterName) {
+    public static void waitForKafkaMirrorMakerNotReady(String clusterName) {
         waitForKafkaMirrorMakerStatus(clusterName, "Ready");
     }
 }

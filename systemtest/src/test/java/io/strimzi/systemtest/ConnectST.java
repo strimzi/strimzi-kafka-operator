@@ -346,13 +346,13 @@ class ConnectST extends BaseST {
 
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));
-        KafkaConnectUtils.waitForConnectIsReady(CLUSTER_NAME, scaleTo);
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME, scaleTo);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
-        KafkaConnectUtils.waitForConnectIsReady(CLUSTER_NAME, initialReplicas);
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME, initialReplicas);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(initialReplicas));
     }
@@ -646,7 +646,7 @@ class ConnectST extends BaseST {
                 .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
             .endSpec().build());
 
-        KafkaConnectS2IUtils.waitForConnectS2IIsNotReady(CLUSTER_NAME);
+        KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
@@ -661,7 +661,7 @@ class ConnectST extends BaseST {
         String connectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorCreation(connectPodName, CLUSTER_NAME);
 
-        KafkaConnectS2IUtils.waitForConnectS2IIsNotReady(CLUSTER_NAME);
+        KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
 
         String newTopic = "new-topic";
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
@@ -686,7 +686,7 @@ class ConnectST extends BaseST {
         final String connectorName = "sink-test";
         KafkaConnectorUtils.waitForConnectorCreation(connectPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectPodName);
-        KafkaConnectS2IUtils.waitForConnectS2IIsNotReady(CLUSTER_NAME);
+        KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 

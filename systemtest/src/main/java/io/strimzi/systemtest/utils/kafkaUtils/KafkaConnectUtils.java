@@ -35,11 +35,11 @@ public class KafkaConnectUtils {
         LOGGER.info("Kafka Connect {} is in desired state: {}", clusterName, status);
     }
 
-    public static void waitForConnectIsReady(String clusterName) {
+    public static void waitForConnectReady(String clusterName) {
         waitForConnectStatus(clusterName, "Ready");
     }
 
-    public static void waitForConnectIsNotReady(String clusterName) {
+    public static void waitForConnectNotReady(String clusterName) {
         waitForConnectStatus(clusterName, "NotReady");
     }
 
@@ -48,8 +48,8 @@ public class KafkaConnectUtils {
      * @param clusterName name of KafkaConnect cluster
      * @param expectPods expected pods to be ready
      */
-    public static void waitForConnectIsReady(String clusterName, int expectPods) {
-        waitForConnectIsReady(clusterName);
+    public static void waitForConnectReady(String clusterName, int expectPods) {
+        waitForConnectReady(clusterName);
         LOGGER.info("Wait for KafkaConnect pods to be ready");
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(clusterName), expectPods, true,
             () -> StUtils.logCurrentStatus(kafkaConnectClient().inNamespace(namespace).withName(clusterName).get()));

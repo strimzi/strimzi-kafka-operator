@@ -108,7 +108,7 @@ class ConnectS2IST extends BaseST {
                 "   \"database.history.kafka.bootstrap.servers\" : \"localhost:9092\"}" +
                 "}";
 
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
+        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
             String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
@@ -133,7 +133,7 @@ class ConnectS2IST extends BaseST {
         deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
 
         // Make sure that Connenct API is ready
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
+        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
@@ -335,7 +335,7 @@ class ConnectS2IST extends BaseST {
                 .endJvmOptions()
             .endSpec().build());
 
-        KafkaConnectS2IUtils.waitForConnectS2IIsNotReady(kafkaConnectS2IName);
+        KafkaConnectS2IUtils.waitForConnectS2INotReady(kafkaConnectS2IName);
 
         TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
@@ -356,7 +356,7 @@ class ConnectS2IST extends BaseST {
 
         cmdKubeClient().exec("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
 
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(kafkaConnectS2IName);
+        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
@@ -411,7 +411,7 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("status.storage.topic", connectClusterName + "-status")
             .endSpec().build());
 
-        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
@@ -426,7 +426,7 @@ class ConnectS2IST extends BaseST {
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
 
-        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
 
         String newTopic = "new-topic";
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
@@ -451,7 +451,7 @@ class ConnectS2IST extends BaseST {
         final String connectorName = "sink-test";
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
-        KafkaConnectUtils.waitForConnectIsNotReady(CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
         KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
