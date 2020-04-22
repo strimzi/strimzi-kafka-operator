@@ -14,7 +14,7 @@ import java.util.List;
 class MockTopicOperator extends TopicOperator {
 
     public MockTopicOperator() {
-        super(null, null, null, null, null, null, null);
+        super(null, null, null, null, null, null, null, null);
     }
 
     static class MockOperatorEvent {

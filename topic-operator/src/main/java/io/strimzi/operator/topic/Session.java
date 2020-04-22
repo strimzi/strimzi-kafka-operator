@@ -6,11 +6,13 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -182,7 +184,7 @@ public class Session extends AbstractVerticle {
 
                 LOGGER.debug("Using TopicStore {}", topicStore);
 
-                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config);
+                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
                 LOGGER.debug("Using Operator {}", topicOperator);
 
                 this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
@@ -222,8 +224,18 @@ public class Session extends AbstractVerticle {
                         if (!stopped) {
                             timerId = null;
                             boolean isInitialReconcile = oldTimerId == null;
+                            Timer.Sample reconciliationTimerSample = Timer.start(topicOperator.getMetrics().meterRegistry());
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
+                                topicOperator.getPeriodicReconciliationsCounter().increment();
+                                if (result.failed()) {
+                                    topicOperator.getFailedReconciliationsCounter().increment();
+                                    reconciliationTimerSample.stop(topicOperator.getReconciliationsTimer());
+                                } else {
+                                    topicOperator.getSuccessfulReconciliationsCounter().increment();
+                                    reconciliationTimerSample.stop(topicOperator.getReconciliationsTimer());
+                                }
                                 if (isInitialReconcile) {
+                                    topicOperator.getSuccessfulReconciliationsCounter().increment();
                                     initReconcilePromise.complete();
                                 }
                                 if (!stopped) {

@@ -8,16 +8,22 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
@@ -48,9 +54,10 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 @ExtendWith(VertxExtension.class)
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class TopicOperatorTest {
 
     private final Labels labels = Labels.fromString("app=strimzi");
@@ -63,6 +70,7 @@ public class TopicOperatorTest {
     private MockK8s mockK8s = new MockK8s();
     private TopicOperator topicOperator;
     private Config config;
+    private MetricsProvider metrics;
     private ObjectMeta metadata = new ObjectMeta();
 
     private static final Map<String, String> MANDATORY_CONFIG = new HashMap<>();
@@ -77,7 +85,11 @@ public class TopicOperatorTest {
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx();
+        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true)
+        ));
     }
 
     @AfterAll
@@ -91,7 +103,8 @@ public class TopicOperatorTest {
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
         config = new Config(new HashMap<>(MANDATORY_CONFIG));
-        topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, labels, "default-namespace", config);
+        metrics = createCleanMetricsProvider();
+        topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, labels, "default-namespace", config, metrics);
         metadata.setName(topicName.toString());
         Map<String, String> lbls = new HashMap<>();
         lbls.put("app", "strimzi");
@@ -993,6 +1006,90 @@ public class TopicOperatorTest {
             context.verify(() -> assertThat(e.getCause(), is(error)));
             context.completeNow();
         }));
+    }
+
+    @Test
+    public void testFailedReconcileMetrics(VertxTestContext context) throws InterruptedException {
+        RuntimeException error = new RuntimeException("some failure");
+        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        mockK8s.setListMapsResult(() -> Future.failedFuture(error));
+
+        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+        resourceAdded(context, null, null);
+
+
+        Checkpoint async = context.checkpoint();
+        reconcileFuture.setHandler(context.failing(e -> context.verify(() -> {
+            MeterRegistry registry = metrics.meterRegistry();
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testReconcileMetrics(VertxTestContext context) throws InterruptedException {
+        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+        resourceAdded(context, null, null);
+
+        Checkpoint async = context.checkpoint();
+        reconcileFuture.setHandler(context.succeeding(e -> context.verify(() -> {
+            MeterRegistry registry = metrics.meterRegistry();
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testReconcileMetricsDeletedTopic(VertxTestContext context) throws InterruptedException {
+        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+        resourceAdded(context, null, null);
+        resourceRemoved(context, null, null);
+
+        Checkpoint async = context.checkpoint();
+        reconcileFuture.setHandler(context.succeeding(e -> context.verify(() -> {
+            MeterRegistry registry = metrics.meterRegistry();
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            async.flag();
+        })));
+    }
+
+    /**
+     * Created new MetricsProvider and makes sure it doesn't contain any metrics from previous tests.
+     *
+     * @return  Clean MetricsProvider
+     */
+    public MetricsProvider createCleanMetricsProvider() {
+        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MeterRegistry registry = metrics.meterRegistry();
+
+        registry.forEachMeter(meter -> {
+            registry.remove(meter);
+        });
+
+        return metrics;
     }
 
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)

@@ -22,6 +22,11 @@ class TopicConfigsWatcher extends ZkWatcher {
         LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child);
         log.info("{}: Topic config change", logContext);
         topicOperator.onTopicConfigChanged(logContext, new TopicName(child)).setHandler(ar2 -> {
+            if (ar2.failed()) {
+                topicOperator.getFailedReconciliationsCounter().increment();
+            } else {
+                topicOperator.getSuccessfulReconciliationsCounter().increment();
+            }
             log.info("{}: Reconciliation result due to topic config change on topic {}: {}", logContext, child, ar2);
         });
     }

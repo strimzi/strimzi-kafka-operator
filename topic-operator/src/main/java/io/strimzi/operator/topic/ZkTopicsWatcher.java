@@ -84,8 +84,13 @@ class ZkTopicsWatcher {
                     LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "-" + topicName);
                     topicOperator.onTopicDeleted(logContext, new TopicName(topicName)).setHandler(ar -> {
                         if (ar.succeeded()) {
+                            if (topicOperator.getTopicCounter().get() > 0) {
+                                topicOperator.getTopicCounter().getAndDecrement();
+                            }
+                            topicOperator.getSuccessfulReconciliationsCounter().increment();
                             LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
                         } else {
+                            topicOperator.getFailedReconciliationsCounter().increment();
                             LOGGER.warn("{}: Error responding to deletion of topic {}", logContext, topicName, ar.cause());
                         }
                     });
@@ -101,8 +106,11 @@ class ZkTopicsWatcher {
                     topicOperator.onTopicCreated(logContext, new TopicName(topicName)).setHandler(ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
+                            topicOperator.getTopicCounter().getAndIncrement();
+                            topicOperator.getSuccessfulReconciliationsCounter().increment();
                         } else {
                             LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
+                            topicOperator.getFailedReconciliationsCounter().increment();
                         }
                     });
                 }
@@ -121,6 +129,7 @@ class ZkTopicsWatcher {
                 for (String child : result) {
                     tcw.addChild(child);
                     tw.addChild(child);
+                    topicOperator.getTopicCounter().getAndIncrement();
                 }
                 this.state = 1;
             });
