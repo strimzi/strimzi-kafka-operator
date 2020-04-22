@@ -330,20 +330,22 @@ public class ResourceManager {
     }
 
     public static void deleteClassResources() {
-        LOGGER.info("Going to clear all class resources");
+        LOGGER.info("-----CLEARING CLASS RESOURCES-----");
         while (!classResources.empty()) {
             classResources.pop().run();
         }
         classResources.clear();
+        LOGGER.info("-----CLASS RESOURCES CLEARED-----");
     }
 
     public static void deleteMethodResources() {
-        LOGGER.info("Going to clear all method resources");
+        LOGGER.info("-----CLEARING METHOD RESOURCES-----");
         while (!methodResources.empty()) {
             methodResources.pop().run();
         }
         methodResources.clear();
         pointerResources = classResources;
+        LOGGER.info("-----METHOD RESOURCES CLEARED-----");
     }
 
     public static String getImageValueFromCO(String name) {
