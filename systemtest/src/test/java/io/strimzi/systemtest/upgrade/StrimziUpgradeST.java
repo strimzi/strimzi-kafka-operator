@@ -69,6 +69,7 @@ public class StrimziUpgradeST extends BaseST {
     private Map<String, String> zkPods;
     private Map<String, String> kafkaPods;
     private Map<String, String> eoPods;
+    private Map<String, String> coPods;
 
     private File coDir = null;
     private File kafkaYaml = null;
@@ -86,7 +87,7 @@ public class StrimziUpgradeST extends BaseST {
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
     void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
 
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
@@ -135,7 +136,7 @@ public class StrimziUpgradeST extends BaseST {
 
         try {
             for (JsonValue testParameters : parameters) {
-                if (StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("supportedK8sVersion").getString("version"))) {
+                if (StUtils.isAllowOnCurrentEnvironment(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("flakyEnvVariable"))) {
                     performUpgrade(testParameters.asJsonObject(), MESSAGE_COUNT, consumedMessagesCount);
                     consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
                 } else {
@@ -331,7 +332,7 @@ public class StrimziUpgradeST extends BaseST {
         copyModifyApply(coInstallDir);
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+        DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPods);
         LOGGER.info("Waiting for ZK StatefulSet roll");
         StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
@@ -380,6 +381,7 @@ public class StrimziUpgradeST extends BaseST {
     }
 
     private void makeSnapshots() {
+        coPods = DeploymentUtils.depSnapshot(Constants.STRIMZI_DEPLOYMENT_NAME);
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);
@@ -409,7 +411,7 @@ public class StrimziUpgradeST extends BaseST {
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
                 LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), is(image));
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
             }
         }
     }
