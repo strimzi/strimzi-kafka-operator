@@ -146,8 +146,6 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
             .endSpec().done();
 
-        KafkaConnectorUtils.waitForConnectorIsReady(kafkaConnectS2IName);
-
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
 
         String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
@@ -188,7 +186,6 @@ class ConnectS2IST extends BaseST {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
 
@@ -424,7 +421,6 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         // Check that KafkaConnectS2I contains created connector
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
@@ -488,7 +484,6 @@ class ConnectS2IST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -549,7 +544,6 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(scaleReplicasTo));
         DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, scaleReplicasTo);
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(CONNECT_S2I_CLUSTER_NAME);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), Matchers.is(scaleReplicasTo));
@@ -560,7 +554,6 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(initialReplicas));
         Map<String, String> depConfSnapshot = DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(CONNECT_S2I_CLUSTER_NAME);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), is(initialReplicas));

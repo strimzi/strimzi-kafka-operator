@@ -656,7 +656,6 @@ class ConnectST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         // Check that KafkaConnect contains created connector
         String connectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
@@ -712,7 +711,6 @@ class ConnectST extends BaseST {
                     .addToConfig("config.storage.topic", connectClusterName + "-config")
                     .addToConfig("status.storage.topic", connectClusterName + "-status")
                 .endSpec().done();
-        KafkaConnectUtils.waitForConnectIsReady(CLUSTER_NAME);
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
                 .editSpec()
@@ -722,7 +720,6 @@ class ConnectST extends BaseST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
-        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)

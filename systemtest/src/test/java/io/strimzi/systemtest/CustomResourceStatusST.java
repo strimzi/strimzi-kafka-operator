@@ -49,7 +49,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -132,7 +131,7 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaUserStatus() {
         String userName = "status-user-test";
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
+
         LOGGER.info("Checking status of deployed KafkaUser");
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
@@ -225,9 +224,9 @@ class CustomResourceStatusST extends BaseST {
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
-        KafkaConnectUtils.waitForConnectIsReady(CLUSTER_NAME);
+
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME).done();
-        KafkaConnectorUtils.waitForConnectorIsReady(CLUSTER_NAME);
+
         assertKafkaConnectStatus(1, connectUrl);
         assertKafkaConnectorStatus(CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
 
@@ -276,11 +275,12 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaConnectS2IStatus() {
         String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_CLUSTER_NAME);
         String connectS2IUrl = KafkaConnectS2IResources.url(CONNECTS2I_CLUSTER_NAME, NAMESPACE, 8083);
+
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
-        KafkaConnectS2IUtils.waitForConnectS2IIsReady(CONNECTS2I_CLUSTER_NAME);
+
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()

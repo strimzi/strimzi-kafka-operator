@@ -16,9 +16,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -320,11 +318,9 @@ public class MirrorMakerST extends BaseST {
 
         // Create Kafka user for source cluster
         KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
-        SecretUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
         KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
-        SecretUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
@@ -446,9 +442,6 @@ public class MirrorMakerST extends BaseST {
 
         KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
         KafkaTopicResource.topic(kafkaClusterSourceName, topicNotInWhitelist).done();
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
-        KafkaTopicUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 

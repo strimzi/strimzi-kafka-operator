@@ -20,8 +20,6 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -130,8 +128,6 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        // Check that UO created a secret for new user
-        SecretUtils.waitForSecretReady(USER_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -140,7 +136,6 @@ class AllNamespaceST extends AbstractNamespaceST {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
