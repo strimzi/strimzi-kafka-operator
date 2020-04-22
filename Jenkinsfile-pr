@@ -130,7 +130,7 @@ pipeline {
                         if (env.OC_VERSION == "4" && !env.ghprbCommentBody.contains('test_only')) {
                             env.DOCKER_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
                         }
-                        // For upgrade tests running with locally builded images we need to change tag in StrimziUpgradeST.json
+                        // For upgrade tests running with locally built images we need to change tag in StrimziUpgradeST.json
                         if ("${env.TEST_PROFILE}".contains("upgrade")) {
                             println("[INFO] Update files for upgrade procedure")
                             sh(script: """
