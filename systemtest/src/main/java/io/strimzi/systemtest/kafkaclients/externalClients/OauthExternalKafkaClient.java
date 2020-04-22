@@ -100,21 +100,23 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
-            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
-            .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeySerializerConfig(StringSerializer.class)
-            .withValueSerializerConfig(StringSerializer.class)
-            .withClientIdConfig(kafkaUsername + "-producer")
-            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
-            .withSaslLoginCallbackHandlerClass()
-            .withSharedProperties()
-            .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
-            .build();
+        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
+            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withKeySerializerConfig(StringSerializer.class)
+                .withValueSerializerConfig(StringSerializer.class)
+                .withClientIdConfig(kafkaUsername + "-producer")
+                .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
+                .withSaslLoginCallbackHandlerClass()
+                .withSharedProperties()
+                .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
+                .build();
+        }
 
-        try (Producer plainProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer plainProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
@@ -139,23 +141,25 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
-            .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeySerializerConfig(StringSerializer.class)
-            .withValueSerializerConfig(StringSerializer.class)
-            .withCaSecretName(caCertName)
-            .withKafkaUsername(kafkaUsername)
-            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withClientIdConfig(kafkaUsername + "-producer")
-            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
-            .withSaslLoginCallbackHandlerClass()
-            .withSharedProperties()
-            .withSaslJassConfigAndTls(clientId, clientSecretName, oauthTokenEndpointUri)
-            .build();
+        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
+            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withKeySerializerConfig(StringSerializer.class)
+                .withValueSerializerConfig(StringSerializer.class)
+                .withCaSecretName(caCertName)
+                .withKafkaUsername(kafkaUsername)
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+                .withClientIdConfig(kafkaUsername + "-producer")
+                .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
+                .withSaslLoginCallbackHandlerClass()
+                .withSharedProperties()
+                .withSaslJassConfigAndTls(clientId, clientSecretName, oauthTokenEndpointUri)
+                .build();
+        }
 
-        try (Producer tlsProducer = new Producer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 
@@ -176,23 +180,25 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
-            .withGroupIdConfig(consumerGroup)
-            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
-            .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeyDeserializerConfig(StringDeserializer.class)
-            .withValueDeserializerConfig(StringDeserializer.class)
-            .withClientIdConfig(kafkaUsername + "-consumer")
-            .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
-            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
-            .withSaslLoginCallbackHandlerClass()
-            .withSharedProperties()
-            .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
-            .build();
+        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
+            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withGroupIdConfig(consumerGroup)
+                .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withKeyDeserializerConfig(StringDeserializer.class)
+                .withValueDeserializerConfig(StringDeserializer.class)
+                .withClientIdConfig(kafkaUsername + "-consumer")
+                .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
+                .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
+                .withSaslLoginCallbackHandlerClass()
+                .withSharedProperties()
+                .withSaslJassConfig(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
+                .build();
+        }
 
-        try (Consumer plainConsumer = new Consumer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Consumer plainConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             plainConsumer.getVertx().deployVerticle(plainConsumer);
 
@@ -218,25 +224,27 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
-            .withCaSecretName(caCertName)
-            .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
-            .withKeyDeserializerConfig(StringDeserializer.class)
-            .withValueDeserializerConfig(StringDeserializer.class)
-            .withKafkaUsername(kafkaUsername)
-            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withGroupIdConfig(consumerGroup)
-            .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
-            .withClientIdConfig(kafkaUsername + "-consumer")
-            .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
-            .withSaslLoginCallbackHandlerClass()
-            .withSharedProperties()
-            .withSaslJassConfigAndTls(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
-            .build();
+        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
+            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withCaSecretName(caCertName)
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withKeyDeserializerConfig(StringDeserializer.class)
+                .withValueDeserializerConfig(StringDeserializer.class)
+                .withKafkaUsername(kafkaUsername)
+                .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+                .withGroupIdConfig(consumerGroup)
+                .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
+                .withClientIdConfig(kafkaUsername + "-consumer")
+                .withSaslMechanism(OAuthBearerLoginModule.OAUTHBEARER_MECHANISM)
+                .withSaslLoginCallbackHandlerClass()
+                .withSharedProperties()
+                .withSaslJassConfigAndTls(this.clientId, this.clientSecretName, this.oauthTokenEndpointUri)
+                .build();
+        }
 
-        try (Consumer tlsConsumer = new Consumer(clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Consumer tlsConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             tlsConsumer.getVertx().deployVerticle(tlsConsumer);
 
