@@ -100,8 +100,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
@@ -116,7 +118,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer plainProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
@@ -141,8 +143,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -159,7 +163,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer tlsProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 
@@ -180,8 +184,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withGroupIdConfig(consumerGroup)
@@ -198,7 +204,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Consumer plainConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Consumer plainConsumer = new Consumer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             plainConsumer.getVertx().deployVerticle(plainConsumer);
 
@@ -224,8 +230,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withCaSecretName(caCertName)
@@ -244,7 +252,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Consumer tlsConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Consumer tlsConsumer = new Consumer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
 
             tlsConsumer.getVertx().deployVerticle(tlsConsumer);
 

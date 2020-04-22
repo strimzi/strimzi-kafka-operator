@@ -63,22 +63,22 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
-                .withClientIdConfig(kafkaUsername + "-producer")
+                .withClientIdConfig("producer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
                 .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                 .withSharedProperties()
                 .build();
         }
 
-        this.clientProperties.getProperties().setProperty(ProducerConfig.CLIENT_ID_CONFIG, "producer-" + new Random().nextInt(Integer.MAX_VALUE));
-
-        try (Producer plainProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
@@ -107,14 +107,16 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
-                .withClientIdConfig(kafkaUsername + "-producer")
+                .withClientIdConfig("producer-tls-" + new Random().nextInt(Integer.MAX_VALUE))
                 .withCaSecretName(caCertName)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(securityProtocol)
@@ -123,7 +125,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer tlsProducer = new Producer(this.clientProperties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 
@@ -148,14 +150,16 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
-                .withClientIdConfig(kafkaUsername + "-consumer")
+                .withClientIdConfig("consumer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
                 .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
                 .withGroupIdConfig(consumerGroup)
                 .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -163,7 +167,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Consumer plainConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Consumer plainConsumer = new Consumer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
 
             plainConsumer.getVertx().deployVerticle(plainConsumer);
 
@@ -192,14 +196,16 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, this.clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        if (this.clientProperties == null || this.clientProperties.getProperties().isEmpty()) {
-            this.clientProperties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+        KafkaClientProperties properties = this.clientProperties;
+
+        if (properties == null || properties.getProperties().isEmpty()) {
+            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
-                .withClientIdConfig("consumer-" + new Random().nextInt(Integer.MAX_VALUE))
+                .withClientIdConfig("consumer-tls-" + new Random().nextInt(Integer.MAX_VALUE))
                 .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
                 .withGroupIdConfig(consumerGroup)
                 .withSecurityProtocol(securityProtocol)
@@ -210,7 +216,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Consumer tlsConsumer = new Consumer(this.clientProperties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Consumer tlsConsumer = new Consumer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
 
             tlsConsumer.getVertx().deployVerticle(tlsConsumer);
 
