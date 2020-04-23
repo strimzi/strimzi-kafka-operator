@@ -6,7 +6,15 @@
 = Designating {ProductName} administrators
 
 {ProductName} provides custom resources for configuration of your deployment.
-By default, permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators.
+By default, permission to view, create, edit, and delete these resources is limited to Kubernetes cluster administrators.
+{ProductName} provides two cluster roles which you can use to assign these rights also to other users:
+
+* `strimzi-view` allows users to view and list {ProductName} resources.
+* `strimzi-admin` allows users to also create, edit or delete {ProductName} resources.
+
+When you install these roles, they will automatically aggregate (add) these rights to the default Kubernetes cluster roles.
+`strimzi-view` aggregates to the `view` role, and `strimzi-admin` aggregates to the `edit` and `admin` roles.
+Because of the aggregation, you might not need to assign these roles to users who already have similar rights.
 
 The following procedure shows how to assign a `strimzi-admin` role that allows non-cluster administrators to manage {ProductName} resources.
 
@@ -18,12 +26,12 @@ A system administrator can designate {ProductName} administrators after the Clus
 
 .Procedure
 
-. Create the `strimzi-admin` cluster role in Kubernetes.
+. Create the `strimzi-view` and `strimzi-admin` cluster roles in Kubernetes.
 +
 [source,shell,subs=+quotes]
 kubectl apply -f install/strimzi-admin
 
-. Assign the `strimzi-admin` `ClusterRole` to one or more existing users in the Kubernetes cluster.
+. If needed, assign the roles that provide access rights to users that require them.
 +
 [source,shell,subs=+quotes]
 kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_user1_ --user=_user2_
