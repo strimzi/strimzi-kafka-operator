@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -65,6 +66,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.replicas = replicas;
     }
 
+    @PreserveUnknownFields(true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("**Currently not supported** The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")

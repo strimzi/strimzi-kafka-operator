@@ -24,6 +24,7 @@ import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.strimzi.crdgenerator.annotations.Type;
 
 import java.io.File;
@@ -260,6 +261,7 @@ public class CrdGenerator {
             }
             result.set("subresources", statusNode);
         }
+        result.put("preserveUnknownFields", false);
         result.set("validation", buildValidation(crdClass));
         return result;
     }
@@ -475,6 +477,7 @@ public class CrdGenerator {
             schema = buildObjectSchema(property, returnType);
         }
         addDescription(schema, property);
+        addPreserveUnknownFields(schema, property);
         return schema;
     }
 
@@ -522,6 +525,13 @@ public class CrdGenerator {
         if (element.isAnnotationPresent(Description.class)) {
             Description description = element.getAnnotation(Description.class);
             result.put("description", DocGenerator.getDescription(description));
+        }
+    }
+
+    private void addPreserveUnknownFields(ObjectNode result, AnnotatedElement element) {
+        if (element.isAnnotationPresent(PreserveUnknownFields.class)) {
+            PreserveUnknownFields preserve = element.getAnnotation(PreserveUnknownFields.class);
+            result.put("x-kubernetes-preserve-unknown-fields", preserve.value());
         }
     }
 

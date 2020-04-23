@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -77,6 +78,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
         this.storageClass = storageClass;
     }
 
+    @PreserveUnknownFields(true)
     @Description("Specifies a specific persistent volume to use. " +
             "It contains key:value pairs representing labels for selecting such a volume.")
     public Map<String, String> getSelector() {

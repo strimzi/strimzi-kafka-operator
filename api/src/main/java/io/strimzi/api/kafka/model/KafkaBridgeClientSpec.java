@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,6 +29,7 @@ public abstract class KafkaBridgeClientSpec implements UnknownPropertyPreserving
 
     private Map<String, Object> additionalProperties;
 
+    @PreserveUnknownFields(true)
     public Map<String, Object> getConfig() {
         return config;
     }

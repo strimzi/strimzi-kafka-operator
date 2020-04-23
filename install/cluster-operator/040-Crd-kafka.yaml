@@ -36,6 +36,7 @@ spec:
     type: integer
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       properties:
@@ -88,6 +89,7 @@ spec:
                       description: Specifies a specific persistent volume to use.
                         It contains key:value pairs representing labels for selecting
                         such a volume.
+                      x-kubernetes-preserve-unknown-fields: true
                     size:
                       type: string
                       description: When type=persistent-claim, defines the size of
@@ -145,6 +147,7 @@ spec:
                             description: Specifies a specific persistent volume to
                               use. It contains key:value pairs representing labels
                               for selecting such a volume.
+                            x-kubernetes-preserve-unknown-fields: true
                           size:
                             type: string
                             description: When type=persistent-claim, defines the size
@@ -674,6 +677,7 @@ spec:
                                   description: Annotations that will be added to the
                                     `Ingress` resource. You can use this field to
                                     configure DNS providers such as External DNS.
+                                  x-kubernetes-preserve-unknown-fields: true
                                 host:
                                   type: string
                                   description: Host for the bootstrap route. This
@@ -707,6 +711,7 @@ spec:
                                       the `Ingress` resources for individual brokers.
                                       You can use this field to configure DNS providers
                                       such as External DNS.
+                                    x-kubernetes-preserve-unknown-fields: true
                                 required:
                                 - host
                               description: External broker ingress configuration.
@@ -806,6 +811,7 @@ spec:
                                   description: Annotations that will be added to the
                                     `Service` resource. You can use this field to
                                     configure DNS providers such as External DNS.
+                                  x-kubernetes-preserve-unknown-fields: true
                                 nodePort:
                                   type: integer
                                   description: Node port for the bootstrap service.
@@ -835,6 +841,7 @@ spec:
                                       the `Service` resources for individual brokers.
                                       You can use this field to configure DNS providers
                                       such as External DNS.
+                                    x-kubernetes-preserve-unknown-fields: true
                               description: External broker services configuration.
                           description: Overrides for external bootstrap and broker
                             services and externally advertised addresses.
@@ -921,6 +928,7 @@ spec:
                     zookeeper.set.acl, authorizer., super.user (with the exception
                     of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
                     ssl.enabled.protocols).'
+                  x-kubernetes-preserve-unknown-fields: true
                 rack:
                   type: object
                   properties:
@@ -1222,6 +1230,7 @@ spec:
                     "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
+                      x-kubernetes-preserve-unknown-fields: true
                     "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
@@ -1278,12 +1287,14 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                  x-kubernetes-preserve-unknown-fields: true
                 logging:
                   type: object
                   properties:
                     loggers:
                       type: object
                       description: A Map from logger name to logger level.
+                      x-kubernetes-preserve-unknown-fields: true
                     name:
                       type: string
                       description: The name of the `ConfigMap` from which to get the
@@ -1393,12 +1404,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                         podManagementPolicy:
                           type: string
@@ -1420,12 +1433,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -1736,12 +1751,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka bootstrap `Service`.
                     brokersService:
@@ -1755,12 +1772,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka broker `Service`.
                     externalBootstrapService:
@@ -1774,12 +1793,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                         externalTrafficPolicy:
                           type: string
@@ -1817,12 +1838,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                         externalTrafficPolicy:
                           type: string
@@ -1861,12 +1884,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka external bootstrap `Route`.
                     perPodRoute:
@@ -1880,12 +1905,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka per-pod `Routes` used for access
                         from outside of OpenShift.
@@ -1900,12 +1927,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka external bootstrap `Ingress`.
                     perPodIngress:
@@ -1919,12 +1948,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka per-pod `Ingress` used for access
                         from outside of Kubernetes.
@@ -1939,12 +1970,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for all Kafka `PersistentVolumeClaims`.
                     podDisruptionBudget:
@@ -1958,12 +1991,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata to apply to the `PodDistruptionBugetTemplate`
                             resource.
                         maxUnavailable:
@@ -2226,6 +2261,7 @@ spec:
                       description: Specifies a specific persistent volume to use.
                         It contains key:value pairs representing labels for selecting
                         such a volume.
+                      x-kubernetes-preserve-unknown-fields: true
                     size:
                       type: string
                       description: When type=persistent-claim, defines the size of
@@ -2250,6 +2286,7 @@ spec:
                   description: 'The ZooKeeper broker config. Properties with the following
                     prefixes cannot be set: server., dataDir, dataLogDir, clientPort,
                     authProvider, quorum.auth, requireClientAuthScheme.'
+                  x-kubernetes-preserve-unknown-fields: true
                 affinity:
                   type: object
                   properties:
@@ -2535,6 +2572,7 @@ spec:
                     "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
+                      x-kubernetes-preserve-unknown-fields: true
                     "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
@@ -2573,12 +2611,14 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                  x-kubernetes-preserve-unknown-fields: true
                 logging:
                   type: object
                   properties:
                     loggers:
                       type: object
                       description: A Map from logger name to logger level.
+                      x-kubernetes-preserve-unknown-fields: true
                     name:
                       type: string
                       description: The name of the `ConfigMap` from which to get the
@@ -2688,12 +2728,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                         podManagementPolicy:
                           type: string
@@ -2715,12 +2757,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -3031,12 +3075,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for ZooKeeper client `Service`.
                     nodesService:
@@ -3050,12 +3096,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for ZooKeeper nodes `Service`.
                     persistentVolumeClaim:
@@ -3069,12 +3117,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for all ZooKeeper `PersistentVolumeClaims`.
                     podDisruptionBudget:
@@ -3088,12 +3138,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata to apply to the `PodDistruptionBugetTemplate`
                             resource.
                         maxUnavailable:
@@ -3567,6 +3619,7 @@ spec:
                     loggers:
                       type: object
                       description: A Map from logger name to logger level.
+                      x-kubernetes-preserve-unknown-fields: true
                     name:
                       type: string
                       description: The name of the `ConfigMap` from which to get the
@@ -3586,6 +3639,7 @@ spec:
                     "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
+                      x-kubernetes-preserve-unknown-fields: true
                     "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
@@ -3759,6 +3813,7 @@ spec:
                         loggers:
                           type: object
                           description: A Map from logger name to logger level.
+                          x-kubernetes-preserve-unknown-fields: true
                         name:
                           type: string
                           description: The name of the `ConfigMap` from which to get
@@ -3778,6 +3833,7 @@ spec:
                         "-XX":
                           type: object
                           description: A map of -XX options to the JVM.
+                          x-kubernetes-preserve-unknown-fields: true
                         "-Xms":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
@@ -3890,6 +3946,7 @@ spec:
                         loggers:
                           type: object
                           description: A Map from logger name to logger level.
+                          x-kubernetes-preserve-unknown-fields: true
                         name:
                           type: string
                           description: The name of the `ConfigMap` from which to get
@@ -3909,6 +3966,7 @@ spec:
                         "-XX":
                           type: object
                           description: A map of -XX options to the JVM.
+                          x-kubernetes-preserve-unknown-fields: true
                         "-Xms":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
@@ -4257,12 +4315,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Entity Operator `Deployment`.
                     pod:
@@ -4276,12 +4336,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -4945,12 +5007,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for JmxTrans `Deployment`.
                     pod:
@@ -4964,12 +5028,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -5386,12 +5452,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka Exporter `Deployment`.
                     pod:
@@ -5405,12 +5473,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -5721,12 +5791,14 @@ spec:
                               description: Labels which should be added to the resource
                                 template. Can be applied to different resources such
                                 as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                             annotations:
                               type: object
                               description: Annotations which should be added to the
                                 resource template. Can be applied to different resources
                                 such as `StatefulSets`, `Deployments`, `Pods`, and
                                 `Services`.
+                              x-kubernetes-preserve-unknown-fields: true
                           description: Metadata which should be applied to the resource.
                       description: Template for Kafka Exporter `Service`.
                     container:

@@ -34,6 +34,7 @@ spec:
     priority: 1
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       properties:
@@ -229,6 +230,7 @@ spec:
                     prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl.,
                     security. (with the exception of: ssl.endpoint.identification.algorithm,
                     ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                  x-kubernetes-preserve-unknown-fields: true
               description: Kafka consumer related configuration.
             producer:
               type: object
@@ -240,6 +242,7 @@ spec:
                     prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
                     (with the exception of: ssl.endpoint.identification.algorithm,
                     ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                  x-kubernetes-preserve-unknown-fields: true
               description: Kafka producer related configuration.
             resources:
               type: object
@@ -255,6 +258,7 @@ spec:
                 "-XX":
                   type: object
                   description: A map of -XX options to the JVM.
+                  x-kubernetes-preserve-unknown-fields: true
                 "-Xms":
                   type: string
                   pattern: '[0-9]+[mMgG]?'
@@ -287,6 +291,7 @@ spec:
                 loggers:
                   type: object
                   description: A Map from logger name to logger level.
+                  x-kubernetes-preserve-unknown-fields: true
                 name:
                   type: string
                   description: The name of the `ConfigMap` from which to get the logging
@@ -305,6 +310,7 @@ spec:
               description: '**Currently not supported** The Prometheus JMX Exporter
                 configuration. See {JMXExporter} for details of the structure of this
                 configuration.'
+              x-kubernetes-preserve-unknown-fields: true
             livenessProbe:
               type: object
               properties:
@@ -373,11 +379,13 @@ spec:
                           description: Labels which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                         annotations:
                           type: object
                           description: Annotations which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                       description: Metadata which should be applied to the resource.
                   description: Template for Kafka Bridge `Deployment`.
                 pod:
@@ -391,11 +399,13 @@ spec:
                           description: Labels which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                         annotations:
                           type: object
                           description: Annotations which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                       description: Metadata applied to the resource.
                     imagePullSecrets:
                       type: array
@@ -705,11 +715,13 @@ spec:
                           description: Labels which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                         annotations:
                           type: object
                           description: Annotations which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                       description: Metadata which should be applied to the resource.
                   description: Template for Kafka Bridge API `Service`.
                 bridgeContainer:
@@ -787,11 +799,13 @@ spec:
                           description: Labels which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                         annotations:
                           type: object
                           description: Annotations which should be added to the resource
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          x-kubernetes-preserve-unknown-fields: true
                       description: Metadata to apply to the `PodDistruptionBugetTemplate`
                         resource.
                     maxUnavailable:

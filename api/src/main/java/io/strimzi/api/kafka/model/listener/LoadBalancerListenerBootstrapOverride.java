@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.listener;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,6 +29,7 @@ public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBoots
     private Map<String, String> dnsAnnotations = new HashMap<>(0);
     private String loadBalancerIP;
 
+    @PreserveUnknownFields(true)
     @Description("Annotations that will be added to the `Service` resource. " +
             "You can use this field to configure DNS providers such as External DNS.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

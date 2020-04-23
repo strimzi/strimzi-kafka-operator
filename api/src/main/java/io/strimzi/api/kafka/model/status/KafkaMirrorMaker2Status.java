@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -33,6 +34,7 @@ public class KafkaMirrorMaker2Status extends KafkaConnectStatus {
 
     private List<Map<String, Object>> connectors = new ArrayList<>();
 
+    @PreserveUnknownFields(true)
     @Description("List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<Map<String, Object>> getConnectors() {

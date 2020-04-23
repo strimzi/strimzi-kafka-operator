@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -79,6 +80,7 @@ public class KafkaTopicSpec implements UnknownPropertyPreserving, Serializable {
         this.replicas = replicas;
     }
 
+    @PreserveUnknownFields(true)
     @Description("The topic configuration.")
     public Map<String, Object> getConfig() {
         return config;

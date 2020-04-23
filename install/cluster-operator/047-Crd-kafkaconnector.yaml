@@ -24,6 +24,7 @@ spec:
     - strimzi
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       properties:
@@ -41,6 +42,7 @@ spec:
               type: object
               description: 'The Kafka Connector configuration. The following properties
                 cannot be set: connector.class, tasks.max.'
+              x-kubernetes-preserve-unknown-fields: true
             pause:
               type: boolean
               description: Whether the connector should be paused. Defaults to false.
@@ -83,4 +85,5 @@ spec:
               type: object
               description: The connector status, as reported by the Kafka Connect
                 REST API.
+              x-kubernetes-preserve-unknown-fields: true
           description: The status of the Kafka Connector.

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -87,6 +88,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.javaSystemProperties = javaSystemProperties;
     }
 
+    @PreserveUnknownFields(true)
     @JsonProperty("-XX")
     @Description("A map of -XX options to the JVM")
     public Map<String, String> getXx() {

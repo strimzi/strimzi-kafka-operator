@@ -36,6 +36,7 @@ spec:
     type: string
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       properties:

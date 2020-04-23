@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -43,6 +44,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
         this.authentication = authentication;
     }
 
+    @PreserveUnknownFields(true)
     public Map<String, Object> getConfig() {
         return config;
     }

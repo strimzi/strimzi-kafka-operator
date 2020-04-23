@@ -25,6 +25,7 @@ spec:
     description: "The foo"
     JSONPath: "..."
     type: "integer"
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       properties:

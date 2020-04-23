@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -42,6 +43,7 @@ public class IngressListenerBrokerConfiguration extends ExternalListenerBrokerOv
         this.host = host;
     }
 
+    @PreserveUnknownFields(true)
     @Description("Annotations that will be added to the `Ingress` resources for individual brokers. " +
             "You can use this field to configure DNS providers such as External DNS.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

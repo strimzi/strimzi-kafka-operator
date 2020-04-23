@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -30,6 +31,7 @@ public class KafkaConnectorStatus extends Status {
 
     private Map<String, Object> connectorStatus;
 
+    @PreserveUnknownFields(true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The connector status, as reported by the Kafka Connect REST API.")
     public Map<String, Object> getConnectorStatus() {
