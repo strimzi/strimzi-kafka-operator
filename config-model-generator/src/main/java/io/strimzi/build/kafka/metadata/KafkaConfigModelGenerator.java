@@ -72,12 +72,10 @@ public class KafkaConfigModelGenerator {
         for (ConfigDef.ConfigKey key : keys) {
             String configName = String.valueOf(getConfigValueMethod.invoke(def, key, "Name"));
             Type type = parseType(String.valueOf(getConfigValueMethod.invoke(def, key, "Type")));
-            Object defaultVal = getConfigValueMethod.invoke(def, key, "Default");
             Scope scope = parseScope(dynamicUpdates.getOrDefault(key.name, "read-only"));
             ConfigModel descriptor = new ConfigModel();
             descriptor.setType(type);
             descriptor.setScope(scope);
-            descriptor.setDefaultValue(defaultVal);
 
             if (key.validator instanceof ConfigDef.Range) {
                 descriptor = range(key, descriptor);
