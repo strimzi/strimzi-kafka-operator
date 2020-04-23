@@ -23,7 +23,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "config",
+        "image", "config",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
         "logging", "tlsSidecar", "template", "brokerCapacity"})

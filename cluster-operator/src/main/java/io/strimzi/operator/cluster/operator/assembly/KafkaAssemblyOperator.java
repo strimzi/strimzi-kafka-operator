@@ -340,6 +340,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorReady())
 
                 .compose(state -> state.getCruiseControlDescription())
+                .compose(state -> state.cruiseControlNetPolicy())
                 .compose(state -> state.cruiseControlServiceAccount())
                 .compose(state -> state.cruiseControlAncillaryCm())
                 .compose(state -> state.cruiseControlSecret(this::dateSupplier))
@@ -3163,6 +3164,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).map(i -> this);
             }
             return withVoid(Future.succeededFuture());
+        }
+
+        Future<ReconciliationState> cruiseControlNetPolicy() {
+            return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name), this.cruiseControl.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported())));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

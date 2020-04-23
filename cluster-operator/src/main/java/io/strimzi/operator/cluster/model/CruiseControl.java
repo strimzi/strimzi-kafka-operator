@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -23,6 +24,12 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -39,6 +46,7 @@ import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +71,7 @@ public class CruiseControl extends AbstractModel {
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
+    private static final String NAME_SUFFIX = "-cruise-control";
 
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "logging";
 
@@ -106,6 +115,9 @@ public class CruiseControl extends AbstractModel {
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
+
+    protected SecurityContext templateCruiseControlContainerSecurityContext;
+    protected SecurityContext templateTlsSidecarContainerSecurityContext;
 
     private boolean isDeployed;
 
@@ -250,6 +262,14 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
             }
 
+            if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getSecurityContext() != null) {
+                cruiseControl.templateCruiseControlContainerSecurityContext = template.getCruiseControlContainer().getSecurityContext();
+            }
+
+            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
+                cruiseControl.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(cruiseControl, template.getPodDisruptionBudget());
         }
         return cruiseControl;
@@ -352,6 +372,7 @@ public class CruiseControl extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateCruiseControlContainerSecurityContext)
                 .build();
 
         String tlsSidecarImage = this.tlsSidecarImage;
@@ -374,6 +395,7 @@ public class CruiseControl extends AbstractModel {
                                 String.valueOf(templateTerminationGracePeriodSeconds))
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
 
         containers.add(container);
@@ -481,4 +503,57 @@ public class CruiseControl extends AbstractModel {
         return ModelUtils.buildSecret(clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the network policy.
+     */
+    public static String policyName(String cluster) {
+        return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
+    }
+
+    /**
+     * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
+     * @return The network policy.
+     */
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
+
+        // CO can access the REST API
+        NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
+                .addNewPort()
+                    .withNewPort(REST_API_PORT)
+                .endPort()
+                .build();
+
+        if (namespaceAndPodSelectorNetworkPolicySupported) {
+            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                    .endPodSelector()
+                    .withNewNamespaceSelector()
+                    .endNamespaceSelector()
+                    .build();
+            restApiRule.setFrom(Collections.singletonList(clusterOperatorPeer));
+        }
+
+        rules.add(restApiRule);
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewMetadata()
+                    .withName(policyName(cluster))
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withNewPodSelector()
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, cruiseControlName(cluster))
+                    .endPodSelector()
+                .withIngress(rules)
+                .endSpec()
+                .build();
+
+        log.trace("Created network policy {}", networkPolicy);
+        return networkPolicy;
+    }
 }
