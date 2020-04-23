@@ -50,7 +50,7 @@ public class MetricsUtils {
         int ret = exec.execute(null, executableCommand, 20_000);
 
         synchronized (LOCK) {
-            LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
+            LOGGER.info("Metrics collection for Pod {} finished with return code: {}", podName, ret);
         }
         return exec.out();
     }

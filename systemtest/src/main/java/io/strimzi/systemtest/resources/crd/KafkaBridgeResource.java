@@ -92,9 +92,9 @@ public class KafkaBridgeResource {
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
         String kafkaBridgeCrName = kafkaBridge.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridgeCrName);
+        LOGGER.info("Waiting for KafkaBridge {}", kafkaBridgeCrName);
         DeploymentUtils.waitForDeploymentReady(KafkaBridgeResources.deploymentName(kafkaBridgeCrName), kafkaBridge.getSpec().getReplicas());
-        LOGGER.info("Kafka Bridge {} is ready", kafkaBridgeCrName);
+        LOGGER.info("KafkaBridge {} is ready", kafkaBridgeCrName);
 
         return kafkaBridge;
     }

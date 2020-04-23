@@ -46,7 +46,7 @@ public class KafkaUtils {
     }
 
     public static void waitUntilKafkaStatus(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka CR will be in state: {}", state);
+        LOGGER.info("Wait until Kafka CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             List<Condition> conditions =
                     Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName)

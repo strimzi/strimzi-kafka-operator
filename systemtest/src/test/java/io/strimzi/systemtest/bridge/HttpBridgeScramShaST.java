@@ -187,7 +187,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
     @BeforeAll
     void setup() throws InterruptedException {
-        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
+        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();

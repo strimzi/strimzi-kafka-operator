@@ -32,8 +32,8 @@ public class HttpUtils {
     private HttpUtils() { }
 
     public static void waitUntilServiceWithNameIsReady(String baserURI, String serviceName) {
-        LOGGER.info("Waiting till service name {} is present in json", serviceName);
-        TestUtils.waitFor("Waiting till service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        LOGGER.info("Wait until Service name {} is present in json", serviceName);
+        TestUtils.waitFor("Service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
             () -> {
                 Response response = given()
                         .when()
@@ -54,8 +54,8 @@ public class HttpUtils {
     }
 
     public static void waitUntilServiceHasSomeTraces(String baseURI, String serviceName) {
-        LOGGER.info("Waiting till service {} has some traces", serviceName);
-        TestUtils.waitFor("Waiting till service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        LOGGER.info("Wait untill Service {} has some traces", serviceName);
+        TestUtils.waitFor("Service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
             () -> {
                 Response response = given()
                             .when()
@@ -78,7 +78,7 @@ public class HttpUtils {
     }
 
     public static JsonObject generateHttpMessages(int messageCount) {
-        LOGGER.info("Creating {} records for Kafka Bridge", messageCount);
+        LOGGER.info("Creating {} records for KafkaBridge", messageCount);
         JsonArray records = new JsonArray();
         JsonObject json = new JsonObject();
         for (int i = 0; i < messageCount; i++) {
@@ -91,7 +91,7 @@ public class HttpUtils {
     }
 
     public static JsonObject sendMessagesHttpRequest(JsonObject records, String bridgeHost, int bridgePort, String topicName, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
-        LOGGER.info("Sending records to Kafka Bridge");
+        LOGGER.info("Sending records to KafkaBridge");
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost, "/topics/" + topicName)
                 .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
@@ -125,7 +125,7 @@ public class HttpUtils {
                         if (response.body().size() > 0) {
                             for (int i = 0; i < response.body().size(); i++) {
                                 JsonObject jsonResponse = response.body().getJsonObject(i);
-                                LOGGER.info("This is jsonResponse object {}", jsonResponse.toString());
+                                LOGGER.info("JsonResponse: {}", jsonResponse.toString());
                                 String kafkaTopic = jsonResponse.getString("topic");
                                 int kafkaPartition = jsonResponse.getInteger("partition");
                                 String key = jsonResponse.getString("key");
@@ -133,10 +133,9 @@ public class HttpUtils {
                                 long offset = jsonResponse.getLong("offset");
                                 LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                             }
-                            LOGGER.info("Received {} messages from the bridge", response.body().size());
+                            LOGGER.info("Received {} messages from KafkaBridge", response.body().size());
                         } else {
-                            LOGGER.info("Received body:{}", response.body());
-                            LOGGER.debug("Received 0 messages, going to consume again");
+                            LOGGER.warn("Received body 0 messages: {}", response.body());
                         }
                         future.complete(response.body());
                     } else {
@@ -155,7 +154,7 @@ public class HttpUtils {
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(topics, ar -> {
                     if (ar.succeeded() && ar.result().statusCode() == 204) {
-                        LOGGER.info("Subscribed");
+                        LOGGER.info("Consumer subscribed");
                         future.complete(ar.succeeded());
                     } else {
                         LOGGER.error("Cannot subscribe consumer", ar.cause());

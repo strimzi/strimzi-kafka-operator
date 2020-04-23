@@ -108,7 +108,7 @@ public class PodUtils {
      * @param clusterName Cluster name where pods should be deleted
      */
     public static void waitForKafkaClusterPodsDeletion(String clusterName) {
-        LOGGER.info("Waiting when all pods in Kafka cluster {} will be deleted", clusterName);
+        LOGGER.info("Waiting when all Pods in Kafka cluster {} will be deleted", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
             .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
@@ -132,6 +132,7 @@ public class PodUtils {
                 }
                 return true;
             });
+        LOGGER.info("Pod {} is ready", name);
     }
 
     public static void waitForPodDeletion(String name) {
@@ -154,7 +155,7 @@ public class PodUtils {
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
-        LOGGER.info("Waiting till {} pods with prefix {} are present", numberOfPods, podNamePrefix);
+        LOGGER.info("Wait until {} Pods with prefix {} are present", numberOfPods, podNamePrefix);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == numberOfPods);
         LOGGER.info("Pods with count {} are present", numberOfPods);
@@ -164,33 +165,35 @@ public class PodUtils {
         LOGGER.info("Waiting for message will be in the log");
         TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
             () -> kubeClient().logs(podName).contains(message));
+        LOGGER.info("Message {} found in {} log", message, podName);
     }
 
     public static void waitUntilMessageIsInLogs(String podName, String containerName, String message) {
         LOGGER.info("Waiting for message will be in the log");
         TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
             () -> kubeClient().logs(podName, containerName).contains(message));
+        LOGGER.info("Message {} found in {}:{} log", message, podName, containerName);
     }
 
     public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
-        LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
-        TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
+        LOGGER.info("Wait until Pod {} will have {} containers", podNamePrefix, numberOfContainers);
+        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
     }
 
     public static void waitUntilPodReplicasCount(String podNamePrefix, int exceptedPods) {
-        LOGGER.info("Waiting till pod {} will have {} replicas", podNamePrefix, exceptedPods);
-        TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
+        LOGGER.info("Wait until Pod {} will have {} replicas", podNamePrefix, exceptedPods);
+        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods);
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
     }
 
     public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
-        LOGGER.info("Waiting till pod {} is in CrashLoopBackOff state", podName);
-        TestUtils.waitFor("Waiting till pod {} is in CrashLoopBackOff state",
+        LOGGER.info("Wait until Pod {} is in CrashLoopBackOff state", podName);
+        TestUtils.waitFor("Pod {} is in CrashLoopBackOff state",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().getPod(podName).getStatus().getContainerStatuses().get(0)
                 .getState().getWaiting().getReason().equals("CrashLoopBackOff"));
@@ -198,16 +201,16 @@ public class PodUtils {
     }
 
     public static void waitUntilPodIsPresent(String podNamePrefix) {
-        LOGGER.info("Waiting till pod {} is present but not ready", podNamePrefix);
-        TestUtils.waitFor("Waiting till pod {} is in CrashLoopBackOff state",
+        LOGGER.info("Wait until Pod {} is present", podNamePrefix);
+        TestUtils.waitFor("Pod is present",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0) != null);
-        LOGGER.info("Pod {} is present but not ready", podNamePrefix);
+        LOGGER.info("Pod {} is present", podNamePrefix);
     }
 
     public static void waitUntilPodIsInPendingStatus(String podName) {
-        LOGGER.info("Waiting till pod:" + podName + " is in pending status");
-        TestUtils.waitFor("Waiting till pod:" + podName + " is in pending status", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Wait until Pod {} is in pending state", podName);
+        TestUtils.waitFor("Pod " + podName + " is in pending state", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () ->  kubeClient().getPod(podName).getStatus().getPhase().equals("Pending")
         );
         LOGGER.info("Pod:" + podName + " is in pending status");
@@ -215,12 +218,12 @@ public class PodUtils {
 
     public static void waitUntilPodLabelsDeletion(String podName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
-            LOGGER.info("Waiting for Kafka pod label {} change to {}", labelKey, null);
-            TestUtils.waitFor("Waiting for Kafka pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            LOGGER.info("Waiting for Pod label {} change to {}", labelKey, null);
+            TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                     kubeClient().getPod(podName).getMetadata().getLabels().get(labelKey) == null
             );
-            LOGGER.info("Kafka pod label {} change to {}", labelKey, null);
+            LOGGER.info("Pod label {} changed to {}", labelKey, null);
         }
     }
 
@@ -233,7 +236,7 @@ public class PodUtils {
     public static void waitUntilPodsStability(List<Pod> pods) {
         int[] stabilityCounter = {0};
 
-        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 for (Pod pod : pods) {
                     if (pod.getStatus().getPhase().equals("Running")) {
@@ -241,14 +244,14 @@ public class PodUtils {
                             pod.getMetadata().getName(), pod.getStatus().getPhase(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
                     } else {
-                        LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        LOGGER.info("Pod {} is not stable with phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
                         return false;
                     }
                 }
                 stabilityCounter[0]++;
 
                 if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
-                    LOGGER.info("All pods are stable {}", pods.toString());
+                    LOGGER.info("All pods are stable {}", pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(" ,")));
                     return true;
                 }
                 return false;

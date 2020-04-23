@@ -163,10 +163,18 @@ public class Exec {
             ret = executor.execute(input, command, timeout);
             synchronized (LOCK) {
                 if (logToOutput) {
-                    LOGGER.info("Command: {}", command);
-                    LOGGER.info("Return code: {}", ret);
-                    LOGGER.info("stdout: \n{}", executor.out());
-                    LOGGER.info("stderr: \n{}", executor.err());
+                    LOGGER.info("Command: {}", String.join(" ", command));
+                    LOGGER.info("RETURN code: {}", ret);
+                    if (!executor.out().isEmpty()) {
+                        LOGGER.info("======STDOUT START=======");
+                        LOGGER.info("{}", executor.out());
+                        LOGGER.info("======STDOUT END======");
+                    }
+                    if (!executor.err().isEmpty()) {
+                        LOGGER.info("======STDERR START=======");
+                        LOGGER.info("{}", executor.err());
+                        LOGGER.info("======STDERR END======");
+                    }
                 }
             }
 

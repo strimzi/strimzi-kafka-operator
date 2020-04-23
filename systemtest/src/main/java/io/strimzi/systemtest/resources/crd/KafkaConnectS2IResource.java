@@ -107,9 +107,9 @@ public class KafkaConnectS2IResource {
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         String kafkaConnectS2ICrName = kafkaConnectS2I.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka ConnectS2I {}", kafkaConnectS2ICrName);
+        LOGGER.info("Waiting for KafkaConnectS2I {}", kafkaConnectS2ICrName);
         KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2ICrName, "Ready");
-        LOGGER.info("Kafka ConnectS2I {} is ready", kafkaConnectS2ICrName);
+        LOGGER.info("KafkaConnectS2I {} is ready", kafkaConnectS2ICrName);
 
         return kafkaConnectS2I;
     }

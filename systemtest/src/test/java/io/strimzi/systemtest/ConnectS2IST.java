@@ -236,7 +236,7 @@ class ConnectS2IST extends BaseST {
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
 
-        LOGGER.info("Verifying that in kafka connect logs are everything fine");
+        LOGGER.info("Verifying that in KafkaConnect logs not contain ERRORs");
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME);
@@ -354,7 +354,7 @@ class ConnectS2IST extends BaseST {
                     .build());
         });
 
-        TestUtils.waitFor("Kafka Connect CR change", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaConnect change", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect").get().getSpec().getResources().getRequests().get("cpu").equals(new Quantity("1")));
 
         cmdKubeClient().exec("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);

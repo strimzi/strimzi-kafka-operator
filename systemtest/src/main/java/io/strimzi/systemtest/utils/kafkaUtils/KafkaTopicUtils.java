@@ -43,8 +43,8 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicCreation(String topicName) {
-        LOGGER.info("Waiting for Kafka topic creation {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
+        TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
                     .withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
@@ -52,23 +52,23 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
-        LOGGER.info("Waiting for Kafka topic creation {}", topicNamePrefix);
-        TestUtils.waitFor("Waits for Kafka topic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        LOGGER.info("Waiting for KafkaTopic {} creation", topicNamePrefix);
+        TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
             Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
                 .list().getItems().stream().filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix)).findFirst().get().getStatus().getConditions().get(0).getType().equals("Ready")
         );
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
-        LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        LOGGER.info("Waiting for KafkaTopic {} deletion", topicName);
+        TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
             Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null
         );
     }
 
     public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
-        LOGGER.info("Waiting for Kafka topic change {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+        LOGGER.info("Waiting for KafkaTopic change {}", topicName);
+        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                 Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
                     .withName(topicName).get().getSpec().getPartitions() == partitions
@@ -76,18 +76,18 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicStatus(String topicName, String status) {
-        LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
-        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        LOGGER.info("Wait until KafkaTopic {} is in desired state: {}", topicName, status);
+        TestUtils.waitFor("KafkaTopic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             Condition kafkaCondition = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0);
             return kafkaCondition.getType().equals(status);
         });
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {
-        LOGGER.info("Wait until we create {} Kafka Topics", topicCount);
-        TestUtils.waitFor("Wait until we create" + topicCount + " Kafka Topics",
+        LOGGER.info("Wait until we create {} KafkaTopics", topicCount);
+        TestUtils.waitFor(topicCount + " KafkaTopics creation",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).size() == topicCount);
-        LOGGER.info("We created {} Kafka Topics", topicCount);
+        LOGGER.info("{} KafkaTopics were created", topicCount);
     }
 }

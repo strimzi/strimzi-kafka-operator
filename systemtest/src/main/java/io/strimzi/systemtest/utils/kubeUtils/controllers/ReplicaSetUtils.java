@@ -23,7 +23,7 @@ public class ReplicaSetUtils {
      * @param name The name of the ReplicaSet
      */
     public static void waitForReplicaSetDeletion(String name) {
-        LOGGER.debug("Waiting for deletion of ReplicaSet of Deployment {}", name);
+        LOGGER.debug("Waiting for ReplicaSet of Deployment {} deletion", name);
         TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
             () -> {
                 if (!kubeClient().replicaSetExists(name)) {

@@ -21,50 +21,50 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static void waitForKafkaUserCreation(String userName) {
-        LOGGER.info("Waiting for Kafka user creation {}", userName);
+        LOGGER.info("Waiting for KafkaUser creation {}", userName);
         SecretUtils.waitForSecretReady(userName,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        TestUtils.waitFor("Waits for Kafka user creation " + userName,
+        TestUtils.waitFor("KafkaUser creation " + userName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace())
                     .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
 
-        LOGGER.info("Kafka user {} created", userName);
+        LOGGER.info("KafkaUser {} created", userName);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
-        LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName,
+        LOGGER.info("Waiting for KafkaUser deletion {}", userName);
+        TestUtils.waitFor("KafkaUser deletion " + userName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
-        LOGGER.info("Kafka user {} deleted", userName);
+        LOGGER.info("KafkaUser {} deleted", userName);
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
-        TestUtils.waitFor("Wait until increase observation generation from " + observation + " for user " + userName,
+        TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
             Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> observation < KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
-        LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
-        TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Wait until KafkaUser {} status is available", userName);
+        TestUtils.waitFor("KafkaUser " + userName + " status is available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
         );
-        LOGGER.info("Kafka user name:{} is created in CRDs", userName);
+        LOGGER.info("KafkaUser {} status is available", userName);
     }
 
     public static void waitForKafkaUserStatus(String userName, String state) {
-        LOGGER.info("Waiting till kafka user name: {} is in desired state: {}", userName, state);
-        TestUtils.waitFor("Waiting for " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Wait until KafkaUser {} is in desired state: {}", userName, state);
+        TestUtils.waitFor("KafkaUser " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
                     .withName(userName).get().getStatus().getConditions().get(0).getType().equals(state)
         );
-        LOGGER.info("Kafka user name: {} is in desired state: {}", userName, state);
+        LOGGER.info("KafkaUser {} is in desired state: {}", userName, state);
     }
 }
