@@ -202,7 +202,7 @@ public class PodUtils {
 
     public static void waitUntilPodIsPresent(String podNamePrefix) {
         LOGGER.info("Wait until Pod {} is present", podNamePrefix);
-        TestUtils.waitFor( "Pod is present",
+        TestUtils.waitFor("Pod is present",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0) != null);
         LOGGER.info("Pod {} is present", podNamePrefix);
@@ -236,7 +236,7 @@ public class PodUtils {
     public static void waitUntilPodsStability(List<Pod> pods) {
         int[] stabilityCounter = {0};
 
-        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 for (Pod pod : pods) {
                     if (pod.getStatus().getPhase().equals("Running")) {
@@ -244,14 +244,14 @@ public class PodUtils {
                             pod.getMetadata().getName(), pod.getStatus().getPhase(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
                     } else {
-                        LOGGER.info("Pod {} is not stable in phase following phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        LOGGER.info("Pod {} is not stable with phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
                         return false;
                     }
                 }
                 stabilityCounter[0]++;
 
                 if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
-                    LOGGER.info("All pods are stable {}", pods.toString());
+                    LOGGER.info("All pods are stable {}", pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(" ,")));
                     return true;
                 }
                 return false;

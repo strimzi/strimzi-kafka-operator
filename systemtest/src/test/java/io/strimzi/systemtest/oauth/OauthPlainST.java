@@ -79,7 +79,7 @@ public class OauthPlainST extends OauthBaseST {
         );
     }
 
-    @Description("As an oauth kafka connect, I should be able to sink messages from kafka broker topic.")
+    @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)

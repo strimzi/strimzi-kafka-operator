@@ -168,7 +168,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
-        LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
+        LOGGER.info("Waiting for {} Pods of Deployment {} to be ready", expectPods, name);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
         LOGGER.info("Deployment {} is ready", name);

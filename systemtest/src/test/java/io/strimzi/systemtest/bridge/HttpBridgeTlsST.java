@@ -183,7 +183,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     @BeforeAll
     void createClassResources() throws InterruptedException {
-        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
+        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)

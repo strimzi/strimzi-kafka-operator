@@ -139,7 +139,7 @@ public class StatefulSetUtils {
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
             () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
 
-        LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", statefulSetName);
+        LOGGER.info("Waiting for {} Pods of StatefulSet {} to be ready", expectPods, statefulSetName);
         PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
             () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
         LOGGER.info("StatefulSet {} is ready", statefulSetName);

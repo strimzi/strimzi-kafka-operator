@@ -207,13 +207,13 @@ class UserST extends BaseST {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
 
-            LOGGER.info("Checking status of deployed Kafka User {}", userName);
+            LOGGER.info("Checking status of KafkaUser {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);
-            LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
+            LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is("Ready"));
-            LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
+            LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
         }
     }
 

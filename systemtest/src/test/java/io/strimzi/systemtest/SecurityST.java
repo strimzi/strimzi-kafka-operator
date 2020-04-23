@@ -1022,7 +1022,7 @@ class SecurityST extends BaseST {
 
         SecretUtils.waitForSecretReady(kafkaUserWrite);
 
-        LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
+        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -1071,7 +1071,7 @@ class SecurityST extends BaseST {
 
         assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
-        LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
+        LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
         assertThrows(WaitException.class, () -> basicExternalKafkaClient.sendMessagesTls());
     }
 

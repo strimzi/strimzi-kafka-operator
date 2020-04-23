@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -200,7 +199,7 @@ public class VerifiableClient {
         try {
             executor = new Exec();
             ArrayList<String> command = prepareCommand();
-            LOGGER.info(command.stream().collect(Collectors.joining(" ")));
+            LOGGER.info("Client command: {}", String.join(" ", command));
             int ret = executor.execute(null, command, timeoutMs);
             synchronized (lock) {
                 if (logToOutput) {

@@ -133,12 +133,12 @@ class CustomResourceStatusST extends BaseST {
         String userName = "status-user-test";
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         SecretUtils.waitForSecretReady(userName);
-        LOGGER.info("Checking status of deployed kafka user");
+        LOGGER.info("Checking status of deployed KafkaUser");
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
-        LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
-        LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
-        assertThat("Kafka user is in wrong state!", kafkaCondition.getType(), is("Ready"));
-        LOGGER.info("Kafka user is in desired state: Ready");
+        LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
+        LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is("Ready"));
+        LOGGER.info("KafkaUser is in desired state: Ready");
     }
 
     @Test
@@ -149,14 +149,14 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaUserUtils.waitForKafkaUserStatus(userName, "NotReady");
 
-        LOGGER.info("Checking status of deployed Kafka User {}", userName);
+        LOGGER.info("Checking status of deployed KafkaUser {}", userName);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
-        LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
-        LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
-        LOGGER.info("Kafka User Message: {}", kafkaCondition.getMessage());
-        LOGGER.info("Kafka User Reason: {}", kafkaCondition.getReason());
-        assertThat("Kafka User is in wrong state!", kafkaCondition.getType(), is("NotReady"));
-        LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
+        LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
+        LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
+        LOGGER.info("KafkaUser Message: {}", kafkaCondition.getMessage());
+        LOGGER.info("KafkaUser Reason: {}", kafkaCondition.getReason());
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is("NotReady"));
+        LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
     }
@@ -487,6 +487,6 @@ class CustomResourceStatusST extends BaseST {
 
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
-        assertThat("Kafka Topic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("KafkaTopic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 }
