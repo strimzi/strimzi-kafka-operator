@@ -3167,7 +3167,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name), this.cruiseControl.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported())));
+            return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name),
+                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported()) : null));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
