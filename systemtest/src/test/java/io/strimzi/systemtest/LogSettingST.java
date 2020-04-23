@@ -200,13 +200,13 @@ class LogSettingST extends BaseST {
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM_MAP), is(true));
+        assertThat("KafkaMirrorMaker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM_MAP), is(true));
     }
 
     @Test
     @Order(7)
     void testLoggersMirrorMaker2() {
-        assertThat("Mirror maker2's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM2_MAP), is(true));
+        assertThat("KafkaMirrorMaker2's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM2_MAP), is(true));
     }
 
     @Test

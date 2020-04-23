@@ -68,8 +68,8 @@ public class OauthTlsST extends OauthBaseST {
     private OauthExternalKafkaClient oauthExternalKafkaClientTls;
 
     @Description(
-            "As an oauth producer, i am able to produce messages to the kafka broker\n" +
-            "As an oauth consumer, i am able to consumer messages from the kafka broker using encrypted communication")
+            "As an oauth producer, I am able to produce messages to the kafka broker\n" +
+            "As an oauth consumer, I am able to consumer messages from the kafka broker using encrypted communication")
     @Test
     void testProducerConsumer() {
         oauthExternalKafkaClientTls.verifyProducedAndConsumedMessages(
@@ -78,7 +78,7 @@ public class OauthTlsST extends OauthBaseST {
         );
     }
 
-    @Description("As an oauth kafka connect, i am able to sink messages from kafka broker topic using encrypted communication.")
+    @Description("As an oauth KafkaConnect, I am able to sink messages from kafka broker topic using encrypted communication.")
     @Test
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)

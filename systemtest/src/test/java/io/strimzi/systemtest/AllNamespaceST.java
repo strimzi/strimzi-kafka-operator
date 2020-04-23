@@ -81,7 +81,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testDeployMirrorMakerAcrossMultipleNamespace() {
-        LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
+        LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
     }
 
@@ -143,8 +143,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
-        LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
-        LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
+        LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
+        LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
 
         assertThat(kafkaCondition.getType(), is("Ready"));
 

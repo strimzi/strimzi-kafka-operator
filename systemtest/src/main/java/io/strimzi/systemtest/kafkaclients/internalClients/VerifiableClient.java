@@ -198,15 +198,25 @@ public class VerifiableClient {
         messages.clear();
         try {
             executor = new Exec();
-            int ret = executor.execute(null, prepareCommand(), timeoutMs);
+            ArrayList<String> command = prepareCommand();
+            LOGGER.info("Client command: {}", String.join(" ", command));
+            int ret = executor.execute(null, command, timeoutMs);
             synchronized (lock) {
-                LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.info("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
                     if (ret == 0) {
                         parseToList(executor.out());
-                    } else if (!executor.err().isEmpty()) {
-                        LOGGER.error("{} {} stderr : {}", this.getClass().getSimpleName(), clientType, executor.err());
+                    } else {
+                        LOGGER.info("{} RETURN code: {}", clientType,  ret);
+                        if (!executor.out().isEmpty()) {
+                            LOGGER.info("======STDOUT START=======");
+                            LOGGER.info("{}", executor.out());
+                            LOGGER.info("======STDOUT END======");
+                        }
+                        if (!executor.err().isEmpty()) {
+                            LOGGER.info("======STDERR START=======");
+                            LOGGER.info("{}", executor.err());
+                            LOGGER.info("======STDERR END======");
+                        }
                     }
                 }
             }

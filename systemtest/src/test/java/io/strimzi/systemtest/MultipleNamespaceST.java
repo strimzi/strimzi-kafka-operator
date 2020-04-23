@@ -56,7 +56,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testDeployMirrorMakerAcrossMultipleNamespace() {
-        LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches multiple namespaces");
+        LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
     }
 

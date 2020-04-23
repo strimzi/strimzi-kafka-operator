@@ -80,9 +80,9 @@ public class KafkaTopicResource {
     private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
         String kafkaTopicCrName = kafkaTopic.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka Topic {}", kafkaTopicCrName);
+        LOGGER.info("Waiting for KafkaTopic {}", kafkaTopicCrName);
         KafkaTopicUtils.waitForKafkaTopicCreation(kafkaTopicCrName);
-        LOGGER.info("Kafka Topic {} is ready", kafkaTopicCrName);
+        LOGGER.info("KafkaTopic {} is ready", kafkaTopicCrName);
 
         return kafkaTopic;
     }

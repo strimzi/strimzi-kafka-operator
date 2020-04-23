@@ -256,7 +256,7 @@ public class StrimziUpgradeST extends BaseST {
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("Kafka User " + userName + "availability", 10_000L, 120_000L,
+        TestUtils.waitFor("KafkaUser " + userName + "availability", 10_000L, 120_000L,
             () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages

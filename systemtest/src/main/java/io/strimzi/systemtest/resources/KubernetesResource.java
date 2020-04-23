@@ -149,7 +149,6 @@ public class KubernetesResource {
     }
 
     private static DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
-        LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
         ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
         deleteLater(roleBinding);
         return new DoneableRoleBinding(roleBinding);
@@ -165,7 +164,6 @@ public class KubernetesResource {
     }
 
     public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
-        LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
         ResourceManager.kubeClient().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
         return new DoneableClusterRoleBinding(clusterRoleBinding);
@@ -254,14 +252,14 @@ public class KubernetesResource {
 
     public static DoneableService createServiceResource(String appName, int port, String clientNamespace, String transportProtocol) {
         Service service = getSystemtestsServiceResource(appName, port, clientNamespace, transportProtocol).build();
-        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
         return new DoneableService(service);
     }
 
     public static DoneableService createServiceResource(Service service, String clientNamespace) {
-        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
         return new DoneableService(service);
@@ -424,10 +422,7 @@ public class KubernetesResource {
 
     private static Deployment waitFor(Deployment deployment) {
         String deploymentName = deployment.getMetadata().getName();
-
-        LOGGER.info("Waiting for deployment {}", deploymentName);
         DeploymentUtils.waitForDeploymentReady(deploymentName, deployment.getSpec().getReplicas());
-        LOGGER.info("Deployment {} is ready", deploymentName);
         return deployment;
     }
 

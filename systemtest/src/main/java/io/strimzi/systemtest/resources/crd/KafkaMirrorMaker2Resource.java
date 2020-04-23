@@ -140,9 +140,9 @@ public class KafkaMirrorMaker2Resource {
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
         String kafkaMirrorMaker2CrName = kafkaMirrorMaker2.getMetadata().getName();
 
-        LOGGER.info("Waiting for Kafka MirrorMaker2 {}", kafkaMirrorMaker2CrName);
+        LOGGER.info("Waiting for KafkaMirrorMaker2 {}", kafkaMirrorMaker2CrName);
         DeploymentUtils.waitForDeploymentReady(KafkaMirrorMaker2Resources.deploymentName(kafkaMirrorMaker2CrName), kafkaMirrorMaker2.getSpec().getReplicas());
-        LOGGER.info("Kafka MirrorMaker2 {} is ready", kafkaMirrorMaker2CrName);
+        LOGGER.info("KafkaMirrorMaker2 {} is ready", kafkaMirrorMaker2CrName);
 
         return kafkaMirrorMaker2;
     }

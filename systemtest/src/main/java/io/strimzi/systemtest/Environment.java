@@ -119,7 +119,7 @@ public class Environment {
     private Environment() { }
 
     static {
-        String debugFormat = "{}:{}";
+        String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
         LOGGER.info(debugFormat, STRIMZI_ORG_ENV, STRIMZI_ORG);
         LOGGER.info(debugFormat, STRIMZI_TAG_ENV, STRIMZI_TAG);

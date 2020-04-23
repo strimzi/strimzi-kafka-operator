@@ -19,11 +19,11 @@ public class KafkaMirrorMakerUtils {
     private KafkaMirrorMakerUtils() {}
 
     public static void waitUntilKafkaMirrorMakerStatus(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka MirrorMaker CR will be in state: {}", state);
+        LOGGER.info("Wait until KafkaMirrorMaker CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace())
                 .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
         );
-        LOGGER.info("Kafka MirrorMaker CR is in state: {}", state);
+        LOGGER.info("KafkaMirrorMaker CR is in state: {}", state);
     }
 }
