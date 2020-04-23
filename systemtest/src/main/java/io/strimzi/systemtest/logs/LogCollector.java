@@ -41,7 +41,7 @@ public class LogCollector {
     }
 
     public void collectLogsFromPods() {
-        LOGGER.info("Collecting logs for pods in namespace {}", namespace);
+        LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespace);
 
         try {
             kubeClient.listPods().forEach(pod -> {
@@ -61,36 +61,36 @@ public class LogCollector {
     }
 
     public void collectEvents() {
-        LOGGER.info("Collecting events in namespace {}", namespace);
+        LOGGER.info("Collecting events in Namespace {}", namespace);
         String events = cmdKubeClient().getEvents();
         // Write events to file
         writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.getNamespace() + ".log", events);
     }
 
     public void collectConfigMaps() {
-        LOGGER.info("Collecting configmaps in namespace {}", namespace);
+        LOGGER.info("Collecting ConfigMaps in Namespace {}", namespace);
         kubeClient.listConfigMaps().forEach(configMap -> {
             writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
         });
     }
 
     public void collectDeployments() {
-        LOGGER.info("Collecting Deployments in namespaces {}", namespace);
+        LOGGER.info("Collecting Deployments in Namespace {}", namespace);
         writeFile(logDir + "/deployments.log", cmdKubeClient().list("deployment").toString());
     }
 
     public void collectStatefulSets() {
-        LOGGER.info("Collecting StatefulSets in namespaces {}", namespace);
+        LOGGER.info("Collecting StatefulSets in Namespace {}", namespace);
         writeFile(logDir + "/statefulsets.log", cmdKubeClient().list("statefulset").toString());
     }
 
     public void collectReplicaSets() {
-        LOGGER.info("Collecting ReplicaSet in namespaces {}", namespace);
+        LOGGER.info("Collecting ReplicaSet in Namespace {}", namespace);
         writeFile(logDir + "/replicasets.log", cmdKubeClient().list("replicaset").toString());
     }
 
     public void collectStrimzi() {
-        LOGGER.info("Collecting CR in namespaces {}", namespace);
+        LOGGER.info("Collecting Strimzi in Namespace {}", namespace);
         String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
         writeFile(logDir + "/strimzi-custom-resources.log", crData);
     }

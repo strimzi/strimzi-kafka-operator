@@ -208,10 +208,14 @@ public class VerifiableClient {
                     } else {
                         LOGGER.info("{} RETURN code: {}", clientType,  ret);
                         if (!executor.out().isEmpty()) {
-                            LOGGER.info("===={} STDOUT START====\n{}\n====STDOUT END====", clientType, executor.out());
+                            LOGGER.info("======STDOUT START=======");
+                            LOGGER.info("{}", executor.out());
+                            LOGGER.info("======STDOUT END======");
                         }
                         if (!executor.err().isEmpty()) {
-                            LOGGER.error("===={} STDERR START====\n{}\n====STDERR END====", clientType, executor.err());
+                            LOGGER.info("======STDERR START=======");
+                            LOGGER.info("{}", executor.err());
+                            LOGGER.info("======STDERR END======");
                         }
                     }
                 }

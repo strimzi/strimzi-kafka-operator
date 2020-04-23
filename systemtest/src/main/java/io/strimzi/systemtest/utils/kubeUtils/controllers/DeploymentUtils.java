@@ -168,7 +168,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
-        LOGGER.info("Waiting for {} Pods of Deployment {} to be ready", expectPods, name);
+        LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, name);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
         LOGGER.info("Deployment {} is ready", name);
@@ -239,7 +239,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("DeploymentConfig " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
 
-        LOGGER.info("Waiting for Pods of DeploymentConfig {} to be ready", name);
+        LOGGER.info("Waiting for Pod(s) of DeploymentConfig {} to be ready", name);
         LabelSelector deploymentConfigSelector =
                 new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);

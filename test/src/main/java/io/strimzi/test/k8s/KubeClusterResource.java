@@ -203,13 +203,13 @@ public class KubeClusterResource {
                 cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             }
 
-            LOGGER.info("Creating namespace: {}", namespace);
+            LOGGER.info("Creating Namespace {}", namespace);
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
         testNamespace = useNamespace;
-        LOGGER.info("Using namespace {}", useNamespace);
+        LOGGER.info("Using Namespace {}", useNamespace);
         cluster.setNamespace(useNamespace);
     }
 
@@ -228,13 +228,13 @@ public class KubeClusterResource {
     public void deleteNamespaces() {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
-            LOGGER.info("Deleting namespace: {}", namespace);
+            LOGGER.info("Deleting Namespace {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
         bindingsNamespaces = null;
-        LOGGER.info("Using namespace {}", testNamespace);
+        LOGGER.info("Using Namespace {}", testNamespace);
         setNamespace(testNamespace);
     }
 
@@ -246,7 +246,7 @@ public class KubeClusterResource {
      */
     public void createCustomResources(String... resources) {
         for (String resource : resources) {
-            LOGGER.info("Creating resources {} in namespace {}", resource, getNamespace());
+            LOGGER.info("Creating resources {} in Namespace {}", resource, getNamespace());
             deploymentResources.add(resource);
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
         }

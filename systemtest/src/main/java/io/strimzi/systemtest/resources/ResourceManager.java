@@ -103,7 +103,7 @@ public class ResourceManager {
     }
     @SuppressWarnings("unchecked")
     public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> operation, T resource) {
-        LOGGER.info("Scheduled deletion of {} {} in namespace {}",
+        LOGGER.debug("Scheduled deletion of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
