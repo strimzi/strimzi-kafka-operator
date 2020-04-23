@@ -22,7 +22,7 @@ public class KafkaConnectS2IUtils {
 
     /**
      * Wait until the given Kafka ConnectS2I cluster is in desired state.
-     * @param name The name of the Kafka ConnectS2I cluster.
+     * @param clusterName The name of the Kafka ConnectS2I cluster.
      * @param status desired status value
      */
     public static void waitForConnectS2IStatus(String clusterName, String status) {

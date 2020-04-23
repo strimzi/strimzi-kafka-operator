@@ -95,7 +95,7 @@ public class KafkaConnectorResource {
         String kafkaConnectorCrName = kafkaConnector.getMetadata().getName();
 
         LOGGER.info("Waiting for KafkaConnector {}", kafkaConnectorCrName);
-        KafkaConnectorUtils.waitForConnectorIsReady(kafkaConnectorCrName);
+        KafkaConnectorUtils.waitForConnectorReady(kafkaConnectorCrName);
         LOGGER.info("KafkaConnector {} is ready", kafkaConnectorCrName);
 
         return kafkaConnector;

@@ -71,7 +71,7 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
+    public static void waitForKafkaBridgeStatus(String clusterName, String state) {
         LOGGER.info("Wait until KafkaBridge {} will be in state: {}", clusterName, state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),

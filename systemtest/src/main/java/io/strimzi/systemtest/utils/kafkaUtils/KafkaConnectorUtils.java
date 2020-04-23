@@ -50,12 +50,12 @@ public class KafkaConnectorUtils {
      * @param state desired state
      */
     public static void waitForConnectorStatus(String connectorName, String state) {
-        LOGGER.info("Wait until KafkaConnector {} will be in state: {}", connectorName);
+        LOGGER.info("Wait until KafkaConnector {} will be in state: {}", connectorName, state);
         TestUtils.waitFor(" KafkaConnector " + connectorName + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
                     .withName(connectorName).get().getStatus().getConditions().get(0).getType().equals(state),
             () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
-        LOGGER.info("KafkaConnector {} is {}", connectorName);
+        LOGGER.info("KafkaConnector {} is {}", connectorName, state);
     }
 
     public static void waitForConnectorReady(String connectorName) {
