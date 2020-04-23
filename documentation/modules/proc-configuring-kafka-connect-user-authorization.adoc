@@ -26,7 +26,7 @@ NOTE: The default values for the consumer group and topics will differ when xref
 
 . Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
 +
-For example, here access rights are configured for the Kafka Connect topics and consumer group using the following `literal` name values:
+In the following example, access rights are configured for the Kafka Connect topics and consumer group using `literal` name values:
 +
 [table,stripes=none]
 |===
