@@ -338,6 +338,8 @@ class ConnectST extends BaseST {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
 
+        String deploymentName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
+
         // kafka cluster Connect already deployed
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         int initialReplicas = connectPods.size();
@@ -346,13 +348,15 @@ class ConnectST extends BaseST {
 
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));
-        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME, scaleTo);
+
+        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, scaleTo);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
-        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME, initialReplicas);
+
+        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, initialReplicas);
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnect");
         assertThat(connectPods.size(), is(initialReplicas));
     }

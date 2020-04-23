@@ -128,7 +128,7 @@ class KafkaST extends BaseST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
@@ -939,7 +939,7 @@ class KafkaST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
         //Waiting when EO pod will be recreated without TO
         PodUtils.waitForPodDeletion(eoPodName);
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
         PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that TO was removed
@@ -955,7 +955,7 @@ class KafkaST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
         //Waiting when EO pod will be recreated with TO
         PodUtils.waitForPodDeletion(eoPodName);
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that TO was created
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -981,7 +981,7 @@ class KafkaST extends BaseST {
 
         //Waiting when EO pod will be recreated without UO
         PodUtils.waitForPodDeletion(eoPodName);
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
         PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that UO was removed
@@ -997,7 +997,7 @@ class KafkaST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
         //Waiting when EO pod will be recreated with UO
         PodUtils.waitForPodDeletion(eoPodName);
-        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that UO was created
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {

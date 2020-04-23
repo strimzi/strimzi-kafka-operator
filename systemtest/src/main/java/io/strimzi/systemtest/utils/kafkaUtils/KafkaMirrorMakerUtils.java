@@ -4,10 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

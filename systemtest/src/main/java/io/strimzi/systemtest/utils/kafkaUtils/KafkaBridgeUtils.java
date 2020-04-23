@@ -5,10 +5,8 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -88,20 +86,5 @@ public class KafkaBridgeUtils {
 
     public static void waitForKafkaBridgeNotReady(String clusterName) {
         waitForKafkaBridgeStatus(clusterName, "NotReady");
-    }
-
-    /**
-     * Wait until KafkaBridge and its pods will be in Ready state
-     * @param clusterName name of KafkaBridge cluster
-     * @param expectPods number of expected pods to be ready
-     */
-    public static void waitForKafkaBridgeReady(String clusterName, int expectPods) {
-        String bridgeDeploymentName = KafkaBridgeResources.deploymentName(clusterName);
-
-        waitForKafkaBridgeReady(clusterName);
-        LOGGER.info("Waiting for KafkaBridge pods to be ready");
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(bridgeDeploymentName), expectPods, true,
-            () -> StUtils.logCurrentStatus(kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get()));
-        LOGGER.info("Expected pods are ready");
     }
 }

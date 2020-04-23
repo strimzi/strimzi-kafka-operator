@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,18 +40,5 @@ public class KafkaConnectS2IUtils {
 
     public static void waitForConnectS2INotReady(String clusterName) {
         waitForConnectS2IStatus(clusterName, "NotReady");
-    }
-
-    /**
-     * Wait until KafkaConnectS2I and its pods to be in Ready state
-     * @param clusterName name of KafkaConnectS2I cluster
-     * @param expectPods expected number of pods to be ready
-     */
-    public static void waitForConnectS2IReady(String clusterName, int expectPods) {
-        waitForConnectS2IReady(clusterName);
-        LOGGER.info("Waiting for KafkaConnectS2I pods to be ready");
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(clusterName), expectPods, true,
-            () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(namespace).withName(clusterName).get()));
-        LOGGER.info("Expected pods are ready");
     }
 }

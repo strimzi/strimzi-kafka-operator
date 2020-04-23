@@ -4,10 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,15 +39,5 @@ public class KafkaMirrorMaker2Utils {
 
     public static void waitForKafkaMirrorMaker2NotReady(String clusterName) {
         waitForKafkaMirrorMaker2Status(clusterName, "NotReady");
-    }
-
-    public static void waitForKafkaMirrorMaker2IsReady(String clusterName, int expectPods) {
-        String mirrorMaker2DeploymentName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
-
-        waitForKafkaMirrorMaker2IsReady(clusterName);
-        LOGGER.info("Wait for KafkaMirrorMaker2 pods is ready");
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mirrorMaker2DeploymentName), expectPods, true,
-            () -> StUtils.logCurrentStatus(kafkaMirrorMaker2Client().inNamespace(namespace).withName(clusterName).get()));
-        LOGGER.info("Expected pods are ready");
     }
 }
