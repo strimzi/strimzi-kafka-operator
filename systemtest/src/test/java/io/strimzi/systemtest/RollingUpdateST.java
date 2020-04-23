@@ -796,7 +796,7 @@ class RollingUpdateST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
 
-            LOGGER.info("Adding new bootstrap dns:{} to external listeners", bootstrapDns);
+            LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewOverrides()
@@ -830,8 +830,6 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Verifying that new DNS is inside kafka CR");
         assertThat(bootstrapAddressDns, is(bootstrapDns));
-
-        // TODO: send and recv messages via this new bootstrap (after client builder) https://github.com/strimzi/strimzi-kafka-operator/pull/2520
     }
 
     @Test

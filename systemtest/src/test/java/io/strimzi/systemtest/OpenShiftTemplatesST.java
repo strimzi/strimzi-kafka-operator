@@ -110,7 +110,6 @@ public class OpenShiftTemplatesST extends BaseST {
                 "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5",
                 "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
-        //TODO Add assertions to check that Kafka brokers have a custom configuration
         Kafka kafka = getKafka(clusterName);
         assertThat(kafka, is(notNullValue()));
 
