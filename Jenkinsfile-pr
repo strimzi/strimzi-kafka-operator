@@ -24,8 +24,6 @@ pipeline {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
         string(name: 'EXCLUDE', defaultValue: 'networkpolicies', description: 'maven parameter for exclude specific test tag')
-        string(name: 'OPERATOR_IMAGE_PULL_POLICY', defaultValue: 'IfNotPresent', description: 'parameter for pulling operator images')
-        string(name: 'COMPONENTS_IMAGE_PULL_POLICY', defaultValue: 'IfNotPresent', description: 'parameter for pulling component images')
     }
     options {
         timeout(time: 22, unit: 'HOURS')
