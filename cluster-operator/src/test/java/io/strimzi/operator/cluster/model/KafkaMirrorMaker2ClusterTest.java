@@ -1249,7 +1249,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                     .editSpec()
-                        .withVersion("2.3.1")  
+                        .withVersion("2.3.1")
                     .endSpec()
                     .build();
 

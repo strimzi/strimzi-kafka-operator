@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 2.4.1
+    version: 2.5.0
     replicas: 3
     listeners:
       plain: {}
@@ -13,7 +13,7 @@ spec:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: "2.4"
+      log.message.format.version: "2.5"
     storage:
       type: ephemeral
   zookeeper:
