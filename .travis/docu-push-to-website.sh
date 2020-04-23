@@ -12,18 +12,16 @@ git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
 # Operator docs
 rm -rf  /tmp/website/docs/operators/master/images
 rm -rf  /tmp/website/docs/operators/master/full/images
-cp -v   documentation/htmlnoheader/                     /tmp/website/docs/operators/master/
-cp -v   documentation/html/                             /tmp/website/docs/operators/master/
-cp -vrL documentation/htmlnoheader/images               /tmp/website/docs/operators/master/images
-cp -vrL documentation/html/images                       /tmp/website/docs/operators/master/full/images
+cp -vrL documentation/htmlnoheader                          /tmp/website/docs/operators/master
+cp -vrL documentation/html                                  /tmp/website/docs/operators/master/full
 
 # Contributing Guide
 rm -rf  /tmp/website/contributing/guide/images
 rm -rf  /tmp/website/contributing/guide/templates
-cp -v   documentation/htmlnoheader/contributing.html    /tmp/website/contributing/guide/contributing.html
-cp -v   documentation/html/contributing.html            /tmp/website/contributing/guide/full.html
-cp -vrL documentation/htmlnoheader/images               /tmp/website/contributing/guide/images
-cp -vrL documentation/contributing/templates            /tmp/website/contributing/guide/templates
+cp -v   documentation/htmlnoheader/contributing-book.html   /tmp/website/contributing/guide/contributing.html
+cp -v   documentation/html/contributing.html                /tmp/website/contributing/guide/full.html
+cp -vrL documentation/htmlnoheader/images                   /tmp/website/contributing/guide/images
+cp -vrL documentation/contributing/templates                /tmp/website/contributing/guide/templates
 
 pushd /tmp/website
 
