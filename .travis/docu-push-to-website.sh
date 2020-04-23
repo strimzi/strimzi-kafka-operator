@@ -12,8 +12,8 @@ git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
 # Operator docs
 rm -rf  /tmp/website/docs/operators/master/images
 rm -rf  /tmp/website/docs/operators/master/full/images
-cp -vrL documentation/htmlnoheader                          /tmp/website/docs/operators/master
-cp -vrL documentation/html                                  /tmp/website/docs/operators/master/full
+cp -vrL documentation/htmlnoheader/*                        /tmp/website/docs/operators/master
+cp -vrL documentation/html/*                                /tmp/website/docs/operators/master/full
 
 # Contributing Guide
 rm -rf  /tmp/website/contributing/guide/images
