@@ -8,24 +8,22 @@ eval `ssh-agent -s`
 ssh-add github_deploy_key
 
 git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
-cp -v documentation/htmlnoheader/master.html /tmp/website/docs/master/master.html
-cp -v documentation/html/index.html /tmp/website/docs/master/full.html
-cp -v documentation/htmlnoheader/overview.html /tmp/website/docs/overview/master/master.html
-cp -v documentation/html/overview.html /tmp/website/docs/overview/master/full.html
-cp -v documentation/htmlnoheader/quickstart.html /tmp/website/docs/quickstart/master/master.html
-cp -v documentation/html/quickstart.html /tmp/website/docs/quickstart/master/full.html
-cp -v documentation/htmlnoheader/contributing.html /tmp/website/contributing/guide/contributing.html
-cp -v documentation/html/contributing.html /tmp/website/contributing/guide/full.html
-rm -rf /tmp/website/docs/master/images
-rm -rf /tmp/website/docs/overview/master/images
-rm -rf /tmp/website/docs/quickstart/master/images
-rm -rf /tmp/website/contributing/guide/images
-rm -rf /tmp/website/contributing/guide/templates
-cp -vrL documentation/htmlnoheader/images /tmp/website/docs/master/images
-cp -vrL documentation/htmlnoheader/images /tmp/website/docs/overview/master/images
-cp -vrL documentation/htmlnoheader/images /tmp/website/docs/quickstart/master/images
-cp -vrL documentation/htmlnoheader/images /tmp/website/contributing/guide/images
-cp -vrL documentation/contributing/templates /tmp/website/contributing/guide/templates
+
+# Operator docs
+rm -rf  /tmp/website/docs/operators/master/images
+rm -rf  /tmp/website/docs/operators/master/full/images
+cp -v   documentation/htmlnoheader/                     /tmp/website/docs/operators/master/
+cp -v   documentation/html/                             /tmp/website/docs/operators/master/
+cp -vrL documentation/htmlnoheader/images               /tmp/website/docs/operators/master/images
+cp -vrL documentation/html/images                       /tmp/website/docs/operators/master/full/images
+
+# Contributing Guide
+rm -rf  /tmp/website/contributing/guide/images
+rm -rf  /tmp/website/contributing/guide/templates
+cp -v   documentation/htmlnoheader/contributing.html    /tmp/website/contributing/guide/contributing.html
+cp -v   documentation/html/contributing.html            /tmp/website/contributing/guide/full.html
+cp -vrL documentation/htmlnoheader/images               /tmp/website/contributing/guide/images
+cp -vrL documentation/contributing/templates            /tmp/website/contributing/guide/templates
 
 pushd /tmp/website
 
