@@ -65,10 +65,10 @@ public class KafkaBridgeUtils {
     }
 
     public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka Bridge CR will be in state: {}", state);
+        LOGGER.info("Wait until KafkaBridge {} will be in state: {}", clusterName, state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
         );
-        LOGGER.info("Kafka Bridge CR is in state: {}", state);
+        LOGGER.info("KafkaBridge {}} is in state: {}", clusterName, state);
     }
 }

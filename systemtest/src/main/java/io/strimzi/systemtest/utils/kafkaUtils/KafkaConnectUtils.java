@@ -29,14 +29,14 @@ public class KafkaConnectUtils {
     }
 
     public static void waitForConnectStatus(String name, String status) {
-        LOGGER.info("Waiting for Kafka Connect {} state: {}", name, status);
+        LOGGER.info("Waiting for KafkaConnect {} state: {}", name, status);
         TestUtils.waitFor("Kafka Connect " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
         LOGGER.info("Kafka Connect {} is in desired state: {}", name, status);
     }
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
-        LOGGER.info("Waiting until kafka connect service is present");
+        LOGGER.info("Waiting until KafkaConnect Service is present");
         TestUtils.waitFor("Waiting until kafka connect service is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> cmdKubeClient().execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
         LOGGER.info("Kafka connect service is present");

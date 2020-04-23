@@ -134,15 +134,15 @@ public class StatefulSetUtils {
     public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
 
-        LOGGER.debug("Waiting for StatefulSet {} to be ready", statefulSetName);
+        LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
         TestUtils.waitFor("statefulset " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
             () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
-        LOGGER.debug("StatefulSet {} is ready", statefulSetName);
-        LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", statefulSetName);
 
+        LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", statefulSetName);
         PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
             () -> StUtils.logCurrentStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+        LOGGER.info("StatefulSet {} is ready", statefulSetName);
     }
 
     /**
@@ -181,7 +181,7 @@ public class StatefulSetUtils {
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
-                LOGGER.info("Waiting for Kafka stateful set label change {} -> {}", entry.getKey(), entry.getValue());
+                LOGGER.info("Waiting for Stateful set label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for Kafka stateful set label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                         kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
@@ -192,12 +192,12 @@ public class StatefulSetUtils {
 
     public static void waitForKafkaStatefulSetLabelsDeletion(String statefulSet, String... labelKeys) {
         for (final String labelKey : labelKeys) {
-            LOGGER.info("Waiting for Kafka statefulSet label {} change to {}", labelKey, null);
+            LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for Kafka statefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                     kubeClient().getStatefulSet(statefulSet).getMetadata().getLabels().get(labelKey) == null
             );
-            LOGGER.info("Kafka statefulSet label {} change to {}", labelKey, null);
+            LOGGER.info("StatefulSet label {} change to {}", labelKey, null);
         }
     }
 

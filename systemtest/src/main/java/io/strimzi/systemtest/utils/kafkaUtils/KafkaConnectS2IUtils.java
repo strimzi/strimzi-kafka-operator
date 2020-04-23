@@ -20,28 +20,28 @@ public class KafkaConnectS2IUtils {
     private KafkaConnectS2IUtils() {}
 
     /**
-     * Wait until the given Kafka Connect S2I cluster is in desired state.
-     * @param name The name of the Kafka Connect S2I cluster.
+     * Wait until the given Kafka ConnectS2I cluster is in desired state.
+     * @param name The name of the Kafka ConnectS2I cluster.
      * @param status desired status value
      */
     public static void waitForConnectS2IStatus(String name, String status) {
-        LOGGER.info("Waiting for Kafka Connect S2I {} state: {}", name, status);
-        TestUtils.waitFor("Kafka Connect S2I " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        LOGGER.info("Wait until Kafka ConnectS2I {} will be in state: {}", name, status);
+        TestUtils.waitFor("Kafka ConnectS2I " + name + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace())
                     .withName(name).get().getStatus().getConditions().get(0).getType().equals(status),
             () -> StUtils.logCurrentStatus(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
-        LOGGER.info("Kafka Connect S2I {} is in desired state: {}", name, status);
+        LOGGER.info("Kafka ConnectS2I {} is in desired state: {}", name, status);
     }
 
     public static void waitForRebalancingDone(String name) {
-        LOGGER.info("Waiting for Kafka Connect S2I {} to rebalance", name);
-        TestUtils.waitFor("Kafka Connect S2I rebalancing", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        LOGGER.info("Waiting for Kafka ConnectS2I {} to rebalance", name);
+        TestUtils.waitFor("Kafka ConnectS2I rebalancing", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> {
                 String connect = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnectS2I").get(0);
                 String log = kubeClient().logs(connect);
                 // wait for second occurrence of message about finished rebalancing
                 return (log.length() - log.replace("Finished starting connectors and tasks", "").length()) / "Finished starting connectors and tasks".length() == 2;
             });
-        LOGGER.info("Kafka Connect S2I {} rebalanced", name);
+        LOGGER.info("Kafka ConnectS2I {} rebalanced", name);
     }
 }

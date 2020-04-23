@@ -19,7 +19,7 @@ public class KafkaMirrorMaker2Utils {
     private KafkaMirrorMaker2Utils() {}
 
     public static void waitUntilKafkaMirrorMaker2Status(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka MirrorMaker2 CR will be in state: {}", state);
+        LOGGER.info("Wait until Kafka MirrorMaker2 CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka MirrorMaker2 resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace())
                 .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)

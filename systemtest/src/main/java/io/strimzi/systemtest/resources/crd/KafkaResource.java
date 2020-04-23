@@ -212,25 +212,16 @@ public class KafkaResource {
 
         LOGGER.info("Waiting for Kafka {} in namespace {}", kafkaCrName, namespace);
 
-        LOGGER.info("Waiting for Zookeeper pods");
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(kafkaCrName), kafka.getSpec().getZookeeper().getReplicas());
-        LOGGER.info("Zookeeper pods are ready");
-
-        LOGGER.info("Waiting for Kafka pods");
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(kafkaCrName), kafka.getSpec().getKafka().getReplicas());
-        LOGGER.info("Kafka pods are ready");
 
         // EO should not be deployed if it does not contain UO and TO
         if (kafka.getSpec().getEntityOperator().getTopicOperator() != null || kafka.getSpec().getEntityOperator().getUserOperator() != null) {
-            LOGGER.info("Waiting for Entity Operator pods");
             DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(kafkaCrName));
-            LOGGER.info("Entity Operator pods are ready");
         }
         // Kafka Exporter is not setup everytime
         if (kafka.getSpec().getKafkaExporter() != null) {
-            LOGGER.info("Waiting for Kafka Exporter pods");
             DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(kafkaCrName));
-            LOGGER.info("Kafka Exporter pods are ready");
         }
         return kafka;
     }

@@ -236,7 +236,7 @@ class ConnectS2IST extends BaseST {
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
 
-        LOGGER.info("Verifying that in kafka connect logs are everything fine");
+        LOGGER.info("Verifying that in KafkaConnect logs not contain ERRORs");
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", tlsKafkaClientsPodName, CONNECT_S2I_TOPIC_NAME);

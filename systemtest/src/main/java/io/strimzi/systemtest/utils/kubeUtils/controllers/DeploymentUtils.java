@@ -69,7 +69,7 @@ public class DeploymentUtils {
             LOGGER.debug("All pods seem to have rolled");
             return true;
         } else {
-            LOGGER.debug("Some pods still to roll: {}", map);
+            LOGGER.debug("Some pods still need to roll: {}", map);
             return false;
         }
     }
@@ -91,7 +91,7 @@ public class DeploymentUtils {
             LOGGER.info("All pods seem to have rolled");
             return true;
         } else {
-            LOGGER.debug("Some pods still to roll: {}", map);
+            LOGGER.debug("Some pods still need to roll: {}", map);
             return false;
         }
     }
@@ -120,11 +120,12 @@ public class DeploymentUtils {
      * @return The snapshot of the DeploymentConfig after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillDepConfigHasRolled(String clusterName, Map<String, String> snapshot) {
-        LOGGER.info("Waiting for Kafka Connect S2I cluster {} rolling update", clusterName);
         String name = KafkaConnectS2IResources.deploymentName(clusterName);
+        LOGGER.info("Waiting for DeploymentConfig {} rolling update", name);
         TestUtils.waitFor("DeploymentConfig roll of " + name,
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depConfigHasRolled(name, snapshot));
         KafkaConnectS2IUtils.waitForConnectS2IStatus(clusterName, "Ready");
+        LOGGER.info("DeploymentConfig {} rolling update finished", name);
         return depConfigSnapshot(name);
     }
 
@@ -150,11 +151,11 @@ public class DeploymentUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentReady(String name) {
-        LOGGER.debug("Waiting for Deployment {}", name);
+        LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
-        LOGGER.debug("Deployment {} is ready", name);
+        LOGGER.info("Deployment {} is ready", name);
     }
 
     /**
@@ -163,14 +164,14 @@ public class DeploymentUtils {
      * @param expectPods The expected number of pods.
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
-        LOGGER.debug("Waiting for Deployment {}", name);
+        LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
-        LOGGER.debug("Deployment {} is ready", name);
-        LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
+        LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));
+        LOGGER.info("Deployment {} is ready", name);
     }
 
     /**
@@ -208,7 +209,7 @@ public class DeploymentUtils {
                     return false;
                 }
             });
-        LOGGER.debug("Deployment {} was deleted", name);
+        LOGGER.debug("DeploymentConfig {} was deleted", name);
     }
 
     public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
@@ -216,7 +217,7 @@ public class DeploymentUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 if (!DeploymentUtils.depHasRolled(deploymentName, pods)) {
                     LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
@@ -234,17 +235,15 @@ public class DeploymentUtils {
      * @param name The name of the DeploymentConfig.
      */
     public static Map<String, String> waitForDeploymentConfigReady(String name, int expectPods) {
-        LOGGER.debug("Waiting until DeploymentConfig {} is ready", name);
+        LOGGER.info("Waiting until DeploymentConfig {} is ready", name);
         TestUtils.waitFor("DeploymentConfig " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
 
-        LOGGER.debug("DeploymentConfig {} is ready", name);
-        LOGGER.debug("Waiting for Pods of DeploymentConfig {} to be ready", name);
-
+        LOGGER.info("Waiting for Pods of DeploymentConfig {} to be ready", name);
         LabelSelector deploymentConfigSelector =
                 new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);
-
+        LOGGER.info("DeploymentConfig {} is ready", name);
         return depConfigSnapshot(name);
     }
 

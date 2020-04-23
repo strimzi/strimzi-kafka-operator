@@ -262,7 +262,7 @@ public class ResourceManager {
     }
 
     private static void waitForDeletion(KafkaConnect kafkaConnect) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
+        LOGGER.info("Waiting when all the Pods are terminated for KafkaConnect {}", kafkaConnect.getMetadata().getName());
 
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
@@ -273,7 +273,7 @@ public class ResourceManager {
     }
 
     private static void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
+        LOGGER.info("Waiting when all the Pods are terminated for KafkaConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
 
         DeploymentUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
@@ -287,7 +287,7 @@ public class ResourceManager {
     }
 
     private static void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
+        LOGGER.info("Waiting when all the Pods are terminated for KafkaMirrorMaker {}", kafkaMirrorMaker.getMetadata().getName());
 
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
@@ -298,7 +298,7 @@ public class ResourceManager {
     }
 
     private static void waitForDeletion(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka MirrorMaker2 {}", kafkaMirrorMaker2.getMetadata().getName());
+        LOGGER.info("Waiting when all the Pods are terminated for KafkaMirrorMaker2 {}", kafkaMirrorMaker2.getMetadata().getName());
 
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker2.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker2.getMetadata().getName()));
@@ -309,7 +309,7 @@ public class ResourceManager {
     }
 
     private static void waitForDeletion(KafkaBridge kafkaBridge) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
+        LOGGER.info("Waiting when all the Pods are terminated for KafkaBridge {}", kafkaBridge.getMetadata().getName());
 
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));

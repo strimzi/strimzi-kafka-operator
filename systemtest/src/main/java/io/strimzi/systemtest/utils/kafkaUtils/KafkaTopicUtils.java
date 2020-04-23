@@ -85,7 +85,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {
         LOGGER.info("Wait until we create {} KafkaTopics", topicCount);
-        TestUtils.waitFor("Wait until we create" + topicCount + " KafkaTopics",
+        TestUtils.waitFor(topicCount + " KafkaTopics creation",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).size() == topicCount);
         LOGGER.info("{} KafkaTopics were created", topicCount);

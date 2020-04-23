@@ -45,14 +45,14 @@ public class KafkaUserUtils {
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
-        TestUtils.waitFor("Wait until increase observation generation from " + observation + " for user " + userName,
+        TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
             Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> observation < KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
-        LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
+        LOGGER.info("Wait until kafka user name:{} is created in CRDs", userName);
         TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
         );
@@ -60,7 +60,7 @@ public class KafkaUserUtils {
     }
 
     public static void waitForKafkaUserStatus(String userName, String state) {
-        LOGGER.info("Waiting till kafka user name: {} is in desired state: {}", userName, state);
+        LOGGER.info("Wait until kafka user name: {} is in desired state: {}", userName, state);
         TestUtils.waitFor("Waiting for " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
                     .withName(userName).get().getStatus().getConditions().get(0).getType().equals(state)

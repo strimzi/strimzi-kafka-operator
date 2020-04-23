@@ -32,7 +32,7 @@ public class ClientUtils {
                     receivedMessages = kafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
                     return receivedMessages == exceptedMessages;
                 } catch (Exception e) {
-                    LOGGER.info("Client not received excepted messages {}, instead received only {}!", exceptedMessages, receivedMessages);
+                    LOGGER.error("Client not received excepted messages {}, instead received only {}!", exceptedMessages, receivedMessages);
                     return false;
                 }
             });

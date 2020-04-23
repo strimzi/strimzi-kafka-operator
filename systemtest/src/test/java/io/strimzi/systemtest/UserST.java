@@ -200,7 +200,6 @@ class UserST extends BaseST {
 
         for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
-            LOGGER.info("Creating user with name {}", userName);
 
             if (typeOfUser.equals("TLS")) {
                 KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
