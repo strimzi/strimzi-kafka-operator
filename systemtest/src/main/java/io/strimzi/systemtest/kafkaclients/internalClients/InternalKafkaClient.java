@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,11 +78,8 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         LOGGER.info("Starting verifiableClient plain producer with the following configuration: {}", producer.toString());
         LOGGER.info("Producing {} messages to {}:{} from pod {}", messageCount, producer.getBootstrapServer(), topicName, podName);
 
-        TestUtils.waitFor("produce messages", Constants.PRODUCER_POLL_INTERVAL, Constants.GLOBAL_CLIENTS_TIMEOUT, () -> {
-            producer.run(Constants.PRODUCER_TIMEOUT);
-            int sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
-            return sent == messageCount;
-        });
+        boolean hasPassed = producer.run(Constants.PRODUCER_TIMEOUT);
+        LOGGER.info("Producer finished correctly: {}", hasPassed);
 
         int sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 
