@@ -138,6 +138,7 @@ public class TopicST extends BaseST {
 
     @Test
     void testSendingMessagesToNonExistingTopic() {
+        int sent = 0;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
@@ -160,8 +161,16 @@ public class TopicST extends BaseST {
         LOGGER.info("Topic with name {} is not created yet", topicName);
 
         LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
+        // Try produce multiple times in case first try will fail because topic is not exists yet
+        for (int retry = 0; retry < 3; retry++) {
+            sent = internalKafkaClient.sendMessagesPlain();
+            if (MESSAGE_COUNT == sent) {
+                break;
+            }
+        }
+
         internalKafkaClient.assertSentAndReceivedMessages(
-                internalKafkaClient.sendMessagesPlain(),
+                sent,
                 internalKafkaClient.receiveMessagesPlain()
         );
 

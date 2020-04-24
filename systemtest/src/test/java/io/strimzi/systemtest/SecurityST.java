@@ -1234,10 +1234,15 @@ class SecurityST extends BaseST {
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
+                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
-                LOGGER.info("Filtered pods are {}", filteredPod.toString());
-                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
+                if (pendingPods.isEmpty()) {
+                    LOGGER.info("No pods of {} are in desired state", KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+                    return false;
+                } else {
+                    LOGGER.info("Pod in 'Pending' state: {}", pendingPods.get(0).getMetadata().getName());
+                    return true;
+                }
             }
         );
 
@@ -1268,6 +1273,7 @@ class SecurityST extends BaseST {
 
         // Try to send and receive messages with new certificates
         topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         internalKafkaClient.setTopicName(topicName);
