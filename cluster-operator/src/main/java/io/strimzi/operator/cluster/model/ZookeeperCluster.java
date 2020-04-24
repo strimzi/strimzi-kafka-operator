@@ -456,12 +456,20 @@ public class ZookeeperCluster extends AbstractModel {
             clusterOperatorPeer.setPodSelector(labelSelector4);
             clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
 
+            NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
+            LabelSelector labelSelector5 = new LabelSelector();
+            Map<String, String> expressions5 = new HashMap<>();
+            expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
+            labelSelector5.setMatchLabels(expressions5);
+            cruiseControlPeer.setPodSelector(labelSelector5);
+            
             // This is a hack because we have no guarantee that the CO namespace has some particular labels
             List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
             clientsPortPeers.add(kafkaClusterPeer);
             clientsPortPeers.add(zookeeperClusterPeer);
             clientsPortPeers.add(entityOperatorPeer);
             clientsPortPeers.add(clusterOperatorPeer);
+            clientsPortPeers.add(cruiseControlPeer);
 
             clientsIngressRule.setFrom(clientsPortPeers);
         }
