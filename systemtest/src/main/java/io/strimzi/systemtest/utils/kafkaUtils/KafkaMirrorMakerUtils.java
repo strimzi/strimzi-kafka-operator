@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource.kafkaMirrorMakerClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMakerUtils {
@@ -27,8 +27,8 @@ public class KafkaMirrorMakerUtils {
     public static void waitForKafkaMirrorMakerStatus(String clusterName, String state) {
         LOGGER.info("Wait until KafkaMirrorMaker CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> StUtils.logCurrentStatus(kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get()));
+            () -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get()));
         LOGGER.info("KafkaMirrorMaker CR is in state: {}", state);
     }
 

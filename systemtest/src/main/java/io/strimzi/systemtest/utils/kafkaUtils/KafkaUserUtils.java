@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.crd.KafkaUserResource.kafkaUserClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
@@ -22,13 +22,13 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserCreation(String userName) {
         LOGGER.info("Waiting for KafkaUser creation {}", userName);
         SecretUtils.waitForSecretReady(userName,
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
         TestUtils.waitFor("KafkaUser creation " + userName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kafkaUserClient().inNamespace(kubeClient().getNamespace())
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace())
                     .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
 
         LOGGER.info("KafkaUser {} created", userName);
@@ -37,8 +37,8 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
         TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null,
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null,
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} deleted", userName);
     }
@@ -46,16 +46,16 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
         TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
             Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
-            () -> observation < kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration(),
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> observation < KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration(),
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
     }
 
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
         LOGGER.info("Wait until KafkaUser {} status is available", userName);
         TestUtils.waitFor("KafkaUser " + userName + " status is available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null,
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null,
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} status is available", userName);
     }
@@ -68,8 +68,8 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserStatus(String userName, String state) {
         LOGGER.info("Wait until KafkaUser {} is in desired state: {}", userName, state);
         TestUtils.waitFor("KafkaUser " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, state);
     }
