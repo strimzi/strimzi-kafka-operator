@@ -813,7 +813,7 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getPorts().size(), is(1));
         assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(2181)));
 
-        assertThat(clientsRule.getFrom().size(), is(4));
+        assertThat(clientsRule.getFrom().size(), is(5));
 
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(zc.getCluster())));
@@ -830,6 +830,10 @@ public class ZookeeperClusterTest {
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(clientsRule.getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build()));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(zc.getCluster())));
+        assertThat(clientsRule.getFrom().get(4), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Port 9404
         NetworkPolicyIngressRule metricsRule = rules.get(2);
