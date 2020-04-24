@@ -119,6 +119,11 @@ public class PodUtils {
             .findFirst().get().getMetadata().getName();
     }
 
+    public static String getFirstPodNameContaining(String searchTerm) {
+        return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
+                .findFirst().get().getMetadata().getName();
+    }
+
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 

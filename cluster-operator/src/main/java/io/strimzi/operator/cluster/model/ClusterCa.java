@@ -28,6 +28,7 @@ public class ClusterCa extends Ca {
     private Secret topicOperatorSecret;
     private Secret clusterOperatorSecret;
     private Secret kafkaExporterSecret;
+    private Secret cruiseControlSecret;
 
     private Secret brokersSecret;
     private Secret zkNodesSecret;
@@ -95,6 +96,8 @@ public class ClusterCa extends Ca {
                 clusterOperatorSecret = secret;
             } else if (KafkaExporter.secretName(clusterName).equals(name)) {
                 kafkaExporterSecret = secret;
+            } else if (CruiseControl.secretName(clusterName).equals(name)) {
+                cruiseControlSecret = secret;
             }
         }
     }
@@ -113,6 +116,10 @@ public class ClusterCa extends Ca {
 
     public Secret kafkaExporterSecret() {
         return kafkaExporterSecret;
+    }
+
+    public Secret cruiseControlSecret() {
+        return cruiseControlSecret;
     }
 
     public Map<String, CertAndKey> generateZkCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {

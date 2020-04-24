@@ -21,6 +21,13 @@ kafka_exporter_version="{{ default .Values.kafkaExporter.image.repository .Value
 
 for version in "${versions[@]}"
 do
+    zookeeper_version="{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    zookeeper_tls_sidecar_version="{{ default .Values.tlsSidecarZookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarZookeeper.image.name }}:{{ default .Values.tlsSidecarZookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    kafka_tls_sidecar_version="{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    kafka_exporter_version="{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    cruise_control_version="{{ default .Values.cruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.cruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    cruise_control_tls_sidecar_version="{{ default .Values.tlsSidecarCruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.tlsSidecarCruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_versions="${kafka_versions}
 ${version}={{ default .Values.kafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafka.image.name }}:{{ default .Values.kafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_connect_versions="${kafka_connect_versions}
@@ -60,6 +67,10 @@ cat >"$out" <<EOF
               value: ${zookeeper_tls_sidecar_version}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: ${kafka_exporter_version}
+            - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+              value: ${cruise_control_version}
+            - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE
+              value: ${cruise_control_tls_sidecar_version}
             - name: STRIMZI_KAFKA_IMAGES
               value: | ${kafka_versions}
             - name: STRIMZI_KAFKA_CONNECT_IMAGES

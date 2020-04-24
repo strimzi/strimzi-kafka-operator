@@ -17,8 +17,9 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **Topic Management** - Creates and manages Kafka Topics within the cluster.
 * **User Management** - Creates and manages Kafka Users within the cluster.
 * **Connector Management** - Creates and manages Kafka Connect connectors.
-* **Includes Kafka Mirror Maker** - Allows for morroring data between different Apache Kafka® clusters.
+* **Includes Kafka Mirror Maker** - Allows for mirroring data between different Apache Kafka® clusters.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
+* **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
 
 ### Upgrading your Clusters
 
@@ -106,6 +107,9 @@ the documentation for more details.
 | `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
 | `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `latest`                                             |
+| `cruiseControl.image.repository`     | Cruise Control image repository           | `strimzi`                                            |
+| `cruiseControl.image.name`           | Cruise Control image name                 | `kafka`                                              |
+| `cruiseControl.image.tag`            | Cruise Control image tag prefix           | `latest`                                             |
 | `topicOperator.image.repository`     | Topic Operator image repository           | `strimzi`                                            |
 | `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
 | `topicOperator.image.tag`            | Topic Operator image tag                  | `latest`                                             |
@@ -121,6 +125,9 @@ the documentation for more details.
 | `tlsSidecarKafka.image.repository`   | TLS Sidecar for Kafka image repository    | `strimzi`                                            |
 | `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka`                                              |
 | `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `latest`                                             |
+| `tlsSidecarCruiseControl.image.repository` | TLS Sidecar for Cruise Control image repository | `strimzi`                                         |
+| `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                              |
+| `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `latest`                                            |
 | `tlsSidecarTopicOperator.image.repository` | TLS Sidecar for Topic Operator image repository | `strimzi`                                |
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
