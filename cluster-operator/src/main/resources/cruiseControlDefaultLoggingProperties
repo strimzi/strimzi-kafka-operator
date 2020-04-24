@@ -1,0 +1,6 @@
+log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
+log4j.additivity.kafka.request.logger=false
+cruisecontrol.root.logger=INFO
+log4j.rootLogger=${cruisecontrol.root.logger}, CONSOLE

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -40,6 +41,7 @@ public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/kafka/kafka-cruise-control.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 
@@ -105,6 +107,11 @@ public class KafkaResource {
                 .endKafkaExporter()
             .endSpec()
             .build());
+    }
+
+    public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
@@ -219,9 +226,15 @@ public class KafkaResource {
         if (kafka.getSpec().getEntityOperator().getTopicOperator() != null || kafka.getSpec().getEntityOperator().getUserOperator() != null) {
             DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(kafkaCrName));
         }
-        // Kafka Exporter is not setup everytime
+        // Kafka Exporter is not setup every time
         if (kafka.getSpec().getKafkaExporter() != null) {
             DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(kafkaCrName));
+        }
+        // Cruise Control is not setup every time
+        if (kafka.getSpec().getCruiseControl() != null) {
+            LOGGER.info("Waiting for Cruise Control pods");
+            DeploymentUtils.waitForDeploymentReady(CruiseControlResources.deploymentName(kafkaCrName));
+            LOGGER.info("Cruise Control pods are ready");
         }
         return kafka;
     }

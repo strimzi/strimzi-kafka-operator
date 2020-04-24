@@ -9,7 +9,7 @@
 
 {ProductName} uses the Cluster Operator to deploy and manage clusters for:
 
-* Kafka (including ZooKeeper, Entity Operator and Kafka Exporter)
+* Kafka (including ZooKeeper, Entity Operator, Kafka Exporter, and Cruise Control)
 * Kafka Connect
 * Kafka MirrorMaker
 * Kafka Bridge

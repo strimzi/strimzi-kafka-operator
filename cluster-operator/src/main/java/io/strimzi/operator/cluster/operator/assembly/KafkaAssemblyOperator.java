@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
@@ -126,6 +127,7 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -337,6 +339,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
+                .compose(state -> state.getCruiseControlDescription())
+                .compose(state -> state.cruiseControlNetPolicy())
+                .compose(state -> state.cruiseControlServiceAccount())
+                .compose(state -> state.cruiseControlAncillaryCm())
+                .compose(state -> state.cruiseControlSecret(this::dateSupplier))
+                .compose(state -> state.cruiseControlDeployment())
+                .compose(state -> state.cruiseControlService())
+                .compose(state -> state.cruiseControlReady())
+
                 .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
                 .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
@@ -406,6 +417,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
 
+        CruiseControl cruiseControl;
+        Deployment ccDeployment = null;
+        private ConfigMap cruiseControlMetricsAndLogsConfigMap;
+
         /* test */ KafkaExporter kafkaExporter;
         /* test */ Deployment exporterDeployment = null;
 
@@ -416,6 +431,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingKafkaCertsChanged = false;
         private boolean existingKafkaExporterCertsChanged = false;
         private boolean existingEntityOperatorCertsChanged = false;
+        private boolean existingCruiseControlCertsChanged = false;
 
         // Custom Listener certificates
         private String tlsListenerCustomCertificate;
@@ -3069,6 +3085,90 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, stsGeneration);
             return stsGeneration == podGeneration;
+        }
+
+        private final Future<ReconciliationState> getCruiseControlDescription() {
+            CruiseControl cruiseControl = CruiseControl.fromCrd(kafkaAssembly, versions);
+            if (cruiseControl != null) {
+                ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(
+                        cruiseControl.getLogging() instanceof ExternalLogging ?
+                                configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
+                                null);
+                Map<String, String> annotations = Collections.singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
+
+                this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
+                this.cruiseControl = cruiseControl;
+
+                this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
+        Future<ReconciliationState> cruiseControlServiceAccount() {
+            return withVoid(serviceAccountOperations.reconcile(namespace,
+                    CruiseControl.cruiseControlServiceAccountName(name),
+                    ccDeployment != null ? cruiseControl.generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> cruiseControlAncillaryCm() {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    ccDeployment != null && cruiseControl != null ?
+                            cruiseControl.getAncillaryConfigName() : CruiseControl.metricAndLogConfigsName(name),
+                    cruiseControlMetricsAndLogsConfigMap));
+        }
+
+        Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingCruiseControlCertsChanged = changed;
+                        return this;
+                    });
+        }
+
+        Future<ReconciliationState> cruiseControlDeployment() {
+            if (this.cruiseControl != null && ccDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
+                return future.compose(dep -> {
+                    return deploymentOperations.reconcile(namespace, this.cruiseControl.getName(), ccDeployment);
+                }).compose(recon -> {
+                    if (recon instanceof ReconcileResult.Noop)   {
+                        // Lets check if we need to roll the deployment manually
+                        if (existingCruiseControlCertsChanged) {
+                            return cruiseControlRollingUpdate();
+                        }
+                    }
+
+                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
+                    return Future.succeededFuture(this);
+                });
+            } else {
+                return withVoid(deploymentOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), null));
+            }
+        }
+
+        Future<ReconciliationState> cruiseControlRollingUpdate() {
+            return withVoid(deploymentOperations.rollingUpdate(namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> cruiseControlService() {
+            return withVoid(serviceOperations.reconcile(namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
+        }
+
+        Future<ReconciliationState> cruiseControlReady() {
+            if (this.cruiseControl != null && ccDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.waitForObserved(namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
+                }).map(i -> this);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
+        Future<ReconciliationState> cruiseControlNetPolicy() {
+            return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name),
+                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported()) : null));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
