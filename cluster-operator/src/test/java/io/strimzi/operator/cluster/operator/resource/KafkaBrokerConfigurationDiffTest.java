@@ -284,10 +284,21 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testListenerChanged() {
         ArrayList<ConfigEntry> ces = new ArrayList<>();
         ArrayList<ConfigEntry> ces2 = new ArrayList<>();
-        ces2.add(new ConfigEntry("listener", "REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT,TLS-9093:SSL,EXTERNAL-9094:SSL", false, true, false));
+        ces.add(new ConfigEntry("listener", "REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT,TLS-9093:SSL,EXTERNAL-9094:SSL", false, true, false));
         ces2.add(new ConfigEntry("listener", "REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT,TLS-9093:SSL", false, true, false));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getTestingCurrentConfiguration(ces), getTestingDesiredConfiguration(ces2), kafkaVersion, brokerId);
         assertThat(kcd.getDiff().asOrderedProperties().asMap().size(), is(1));
+        assertThat(kcd.cannotBeUpdatedDynamically(), is(true));
+    }
+
+    @Test
+    public void testChangedMoreProperties() {
+        ArrayList<ConfigEntry> ces = new ArrayList<>();
+        ces.add(new ConfigEntry("inter.broker.listener.name", "david", false, true, false));
+        ces.add(new ConfigEntry("inter.broker.listener.name2", "karel", false, true, false));
+        ces.add(new ConfigEntry("inter.broker.listener.name3", "honza", false, true, false));
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getTestingCurrentConfiguration(new ArrayList<>()), getTestingDesiredConfiguration(ces), kafkaVersion, brokerId);
+        assertThat(kcd.getDiff().asOrderedProperties().asMap().size(), is(3));
         assertThat(kcd.cannotBeUpdatedDynamically(), is(true));
     }
 

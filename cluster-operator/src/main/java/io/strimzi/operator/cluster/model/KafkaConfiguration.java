@@ -201,4 +201,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
         return asOrderedProperties().asMap().keySet().contains("listeners");
     }
 
+    public boolean isEmpty() {
+        return this.asOrderedProperties().asMap().size() == 0;
+    }
+
 }
