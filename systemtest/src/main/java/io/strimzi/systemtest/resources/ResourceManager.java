@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
@@ -379,11 +378,7 @@ public class ResourceManager {
             log.add("\tMessage: " + condition.getMessage() + "\n");
         }
 
-        if(kubeClient().listPodsByPrefixInName(name).size() != 0 || !(kind.equals("KafkaConnector"))) {
-            PodUtils.logCurrentPodStatus(name, log);
-        }
-
-        LOGGER.info("{}", String.join("", log));
+        PodUtils.logCurrentPodStatus(name, log);
     }
 
     /**
@@ -394,13 +389,20 @@ public class ResourceManager {
      * @return returns CR
      */
     public static <T extends HasMetadata & HasStatus> T waitForStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+        List<String> printWholeCr = new ArrayList<>(asList("KafkaConnector", "KafkaTopic", "KafkaUser"));
 
         TestUtils.waitFor("Wait for {}" + resource.getKind() + ":{} " + resource.getMetadata().getName() + "will have desired state {}" + status,
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getMetadata().getName())
-            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getStatus().equals(status)),
-            () -> logCurrentStatus(resource));
+            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
+            () -> {
+                if (printWholeCr.contains(resource.getKind())) {
+                    LOGGER.info(operation.inNamespace(kubeClient().getNamespace()).withName(resource.getMetadata().getName()).get());
+                } else {
+                    logCurrentStatus(resource);
+                }
+            });
 
         LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;

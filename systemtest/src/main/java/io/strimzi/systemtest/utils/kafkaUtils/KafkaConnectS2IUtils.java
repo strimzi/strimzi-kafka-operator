@@ -7,13 +7,10 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.ResourceManager.logCurrentStatus;
 import static io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource.kafkaConnectS2IClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 

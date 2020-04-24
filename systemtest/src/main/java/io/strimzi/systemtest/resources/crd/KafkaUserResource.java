@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +71,7 @@ public class KafkaUserResource {
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
         SecretUtils.waitForSecretReady(kafkaUser.getMetadata().getName(),
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser.getMetadata().getName()).get())
+            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser.getMetadata().getName()).get())
         );
         return ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, "Ready");
     }
