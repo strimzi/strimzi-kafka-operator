@@ -35,6 +35,8 @@ pipeline {
         ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
         KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
         TEST_CLUSTER_ADMIN = "admin"
+        OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
+        COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
     }
     stages {
         stage('Clean WS') {
