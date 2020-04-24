@@ -72,7 +72,7 @@ public class KafkaBrokerConfigurationHelper {
         Map<ConfigResource, Config> config = new HashMap<>();
 
         KafkaFuture<Map<ConfigResource, Config>> kafkaFuture = configs.all();
-        Util.waitFor(vertx, "KafkaFuture to complete", "fetched", 1_000, operationTimeoutMs, () -> kafkaFuture.isDone());
+        Util.waitFor(vertx, "current config for pod " + podId, "fetched", 1_000, operationTimeoutMs, () -> kafkaFuture.isDone());
 
         try {
             config.putAll(kafkaFuture.get());
