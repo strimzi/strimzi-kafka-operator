@@ -33,7 +33,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
-    private static String namespace = kubeClient().getNamespace();
 
     private KafkaUtils() {}
 
@@ -49,7 +48,7 @@ public class KafkaUtils {
         LOGGER.info("Wait until Kafka CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             List<Condition> conditions =
-                   kafkaClient().inNamespace(namespace).withName(clusterName)
+                   kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName)
                             .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
                             .collect(Collectors.toList());
 

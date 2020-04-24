@@ -26,7 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class KafkaBridgeUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeUtils.class);
-    private static String namespace = kubeClient().getNamespace();
 
     private KafkaBridgeUtils() {}
 
@@ -74,8 +73,8 @@ public class KafkaBridgeUtils {
     public static void waitForKafkaBridgeStatus(String clusterName, String state) {
         LOGGER.info("Wait until KafkaBridge {} will be in state: {}", clusterName, state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> StUtils.logCurrentStatus(kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get())
+            () -> kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get())
         );
         LOGGER.info("KafkaBridge {}} is in state: {}", clusterName, state);
     }

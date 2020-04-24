@@ -16,7 +16,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaConnectS2IUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IUtils.class);
-    private static String namespace = kubeClient().getNamespace();
 
     private KafkaConnectS2IUtils() {}
 
@@ -28,9 +27,9 @@ public class KafkaConnectS2IUtils {
     public static void waitForConnectS2IStatus(String clusterName, String status) {
         LOGGER.info("Wait until KafkaConnectS2I {} will be in state: {}", clusterName, status);
         TestUtils.waitFor("KafkaConnectS2I " + clusterName + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kafkaConnectS2IClient().inNamespace(namespace)
+            () -> kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace())
                     .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(status),
-            () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(namespace).withName(clusterName).get()));
+            () -> StUtils.logCurrentStatus(kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get()));
         LOGGER.info("KafkaConnectS2I {} is in desired state: {}", clusterName, status);
     }
 
