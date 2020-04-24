@@ -599,7 +599,7 @@ public class KafkaConnectCluster extends AbstractModel {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
             // Give CO access to the REST API
-            NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
+            NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                     .withNewPort(REST_API_PORT)
                     .endPort()
@@ -630,10 +630,10 @@ public class KafkaConnectCluster extends AbstractModel {
                         .build();
                 peers.add(clusterOperatorPeer);
 
-                replicationRule.setFrom(peers);
+                restApiRule.setFrom(peers);
             }
 
-            rules.add(replicationRule);
+            rules.add(restApiRule);
 
             // If metrics are enabled, we have to open them as well. Otherwise they will be blocked.
             if (isMetricsEnabled) {

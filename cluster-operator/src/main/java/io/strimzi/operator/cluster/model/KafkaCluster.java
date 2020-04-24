@@ -2038,7 +2038,7 @@ public class KafkaCluster extends AbstractModel {
                     .build();
 
             NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // cluster operator
+                    .withNewPodSelector() // kafka exporter
                         .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
                     .endPodSelector()
                     .build();
