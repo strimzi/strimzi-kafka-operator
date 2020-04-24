@@ -63,7 +63,7 @@ public class KafkaTopicResource {
         return new DoneableKafkaTopic(topic, kt -> {
             kafkaTopicClient().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(kt);
             LOGGER.info("Created KafkaTopic {}", kt.getMetadata().getName());
-            return waitForStatus(deleteLater(kt));
+            return waitFor(deleteLater(kt));
         });
     }
 
@@ -76,8 +76,8 @@ public class KafkaTopicResource {
         return TestUtils.configFromYaml(yamlPath, KafkaTopic.class);
     }
 
-    private static KafkaTopic waitForStatus(KafkaTopic kafkaTopic) {
-        return ResourceManager.waitForStatus(kafkaTopicClient(), kafkaTopic, "Ready");
+    private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
+        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), kafkaTopic, "Ready");
     }
 
     private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {

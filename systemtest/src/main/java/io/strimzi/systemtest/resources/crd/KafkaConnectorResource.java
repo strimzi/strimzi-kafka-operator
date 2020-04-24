@@ -87,7 +87,7 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForStatus(kafkaConnectorClient(), kafkaConnector, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, "Ready");
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {

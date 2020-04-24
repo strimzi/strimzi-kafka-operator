@@ -8,12 +8,12 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.crd.KafkaUserResource.kafkaUserClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
@@ -23,12 +23,12 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static void waitForKafkaUserCreation(String userName) {
-        KafkaUser kafkaUser = kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
 
         SecretUtils.waitForSecretReady(userName,
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, "Ready");
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, "Ready");
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -62,8 +62,8 @@ public class KafkaUserUtils {
      * @param state desired state
      */
     public static void waitForKafkaUserStatus(String userName, String state) {
-        KafkaUser kafkaUser = kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
-        ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, state);
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
     }
 
     public static void waitForKafkaUserReady(String userName) {

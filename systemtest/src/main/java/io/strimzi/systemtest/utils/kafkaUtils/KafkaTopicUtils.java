@@ -9,11 +9,11 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.crd.KafkaTopicResource.kafkaTopicClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaTopicUtils {
@@ -83,8 +83,8 @@ public class KafkaTopicUtils {
      * @param state desired state
      */
     public static void waitForKafkaTopicStatus(String topicName, String status) {
-        KafkaTopic kafkaTopic = kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
-        ResourceManager.waitForStatus(kafkaTopicClient(), kafkaTopic, status);
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
+        ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, status);
     }
 
     public static void waitForKafkaTopicReady(String topicName) {

@@ -116,7 +116,7 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        return ResourceManager.waitForStatus(kafkaConnectClient(), kafkaConnect, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectClient(), kafkaConnect, "Ready");
     }
 
     private static KafkaConnect deleteLater(KafkaConnect kafkaConnect) {

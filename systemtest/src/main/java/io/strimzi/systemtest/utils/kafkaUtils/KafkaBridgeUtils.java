@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
@@ -18,7 +19,6 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridgeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,8 +71,8 @@ public class KafkaBridgeUtils {
      * @param state desired state
      */
     public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
-        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForStatus(kafkaBridgeClient(), kafkaBridge, state);
+        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForResourceStatus(KafkaBridgeResource.kafkaBridgeClient(), kafkaBridge, state);
     }
 
     public static void waitForKafkaBridgeReady(String clusterName) {

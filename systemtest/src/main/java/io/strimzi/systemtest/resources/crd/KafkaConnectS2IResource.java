@@ -100,7 +100,7 @@ public class KafkaConnectS2IResource {
     }
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
-        return ResourceManager.waitForStatus(kafkaConnectS2IClient(), kafkaConnectS2I, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), kafkaConnectS2I, "Ready");
     }
 
     private static KafkaConnectS2I deleteLater(KafkaConnectS2I kafkaConnectS2I) {

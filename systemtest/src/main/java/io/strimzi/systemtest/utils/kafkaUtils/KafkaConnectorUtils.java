@@ -7,12 +7,11 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.ResourceManager.logCurrentStatus;
-import static io.strimzi.systemtest.resources.crd.KafkaConnectorResource.kafkaConnectorClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -42,7 +41,7 @@ public class KafkaConnectorUtils {
                 } else {
                     throw new RuntimeException("Connector" + connectorName + " is not stable!");
                 }
-            }, () -> logCurrentStatus(kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get())
+            }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get())
         );
     }
 
@@ -52,8 +51,8 @@ public class KafkaConnectorUtils {
      * @param state desired state
      */
     public static void waitForConnectorStatus(String name, String state) {
-        KafkaConnector kafkaConnector = kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
-        ResourceManager.waitForStatus(kafkaConnectorClient(), kafkaConnector, state);
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
+        ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
     public static void waitForConnectorReady(String connectorName) {
@@ -74,6 +73,6 @@ public class KafkaConnectorUtils {
         TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
-        }, () -> logCurrentStatus(kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
     }
 }

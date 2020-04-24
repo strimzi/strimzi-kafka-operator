@@ -12,14 +12,11 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
@@ -70,10 +67,7 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        SecretUtils.waitForSecretReady(kafkaUser.getMetadata().getName(),
-            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser.getMetadata().getName()).get())
-        );
-        return ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, "Ready");
     }
 
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {

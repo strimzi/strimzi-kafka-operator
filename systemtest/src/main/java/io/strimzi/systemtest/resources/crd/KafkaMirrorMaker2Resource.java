@@ -132,7 +132,7 @@ public class KafkaMirrorMaker2Resource {
     }
 
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        return ResourceManager.waitForStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, "Ready");
     }
 
     private static KafkaMirrorMaker2 deleteLater(KafkaMirrorMaker2 kafkaMirrorMaker2) {

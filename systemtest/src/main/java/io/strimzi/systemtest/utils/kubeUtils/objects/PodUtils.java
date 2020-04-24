@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -264,24 +263,5 @@ public class PodUtils {
                 }
                 return false;
             });
-    }
-
-    /**
-     * Log actual pod statuses list by prefix name
-     * @param name - custom resource / deployment name - used for prefix
-     * @param log - ArrayList - add statuses, pods and conditions for future display
-     */
-    public static void logCurrentPodStatus(String name, List<String> log) {
-        log.add("\nPods with conditions and messages:\n\n");
-        for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-            log.add(pod.getMetadata().getName() + ":");
-            for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                if (podCondition.getMessage() != null) {
-                    log.add("\n\tType: " + podCondition.getType() + "\n");
-                    log.add("\tMessage: " + podCondition.getMessage() + "\n");
-                }
-            }
-            log.add("\n\n");
-        }
     }
 }

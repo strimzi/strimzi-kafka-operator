@@ -6,8 +6,8 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 
-import static io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMaker2Utils {
@@ -20,8 +20,8 @@ public class KafkaMirrorMaker2Utils {
      * @param state desired state
      */
     public static void waitUntilKafkaMirrorMaker2Status(String clusterName, String state) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }
 
     public static void waitForKafkaMirrorMaker2Ready(String clusterName) {

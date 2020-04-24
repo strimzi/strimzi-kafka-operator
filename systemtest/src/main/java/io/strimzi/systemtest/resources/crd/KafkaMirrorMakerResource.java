@@ -109,7 +109,7 @@ public class KafkaMirrorMakerResource {
     }
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
-        return ResourceManager.waitForStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, "Ready");
     }
 
     private static KafkaMirrorMaker deleteLater(KafkaMirrorMaker kafkaMirrorMaker) {

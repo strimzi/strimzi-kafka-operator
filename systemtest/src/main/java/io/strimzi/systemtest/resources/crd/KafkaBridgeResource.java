@@ -85,7 +85,7 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        return ResourceManager.waitForStatus(kafkaBridgeClient(), kafkaBridge, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, "Ready");
     }
 
     private static KafkaBridge deleteLater(KafkaBridge kafkaBridge) {

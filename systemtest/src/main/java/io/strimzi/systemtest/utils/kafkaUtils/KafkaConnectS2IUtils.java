@@ -7,11 +7,11 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource.kafkaConnectS2IClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectS2IUtils {
@@ -26,8 +26,8 @@ public class KafkaConnectS2IUtils {
      * @param status desired status value
      */
     public static void waitForConnectS2IStatus(String name, String status) {
-        KafkaConnectS2I kafkaConnectS2I = kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
-        ResourceManager.waitForStatus(kafkaConnectS2IClient(), kafkaConnectS2I, status);
+        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
+        ResourceManager.waitForResourceStatus(KafkaConnectS2IResource.kafkaConnectS2IClient(), kafkaConnectS2I, status);
     }
 
     public static void waitForConnectS2IReady(String clusterName) {

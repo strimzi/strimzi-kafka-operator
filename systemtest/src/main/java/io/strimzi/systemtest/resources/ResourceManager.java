@@ -7,6 +7,8 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -20,12 +22,15 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.systemtest.Constants;
@@ -367,18 +372,36 @@ public class ResourceManager {
      * Log actual status of custom resource with pods.
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
-    public static <T extends HasMetadata & HasStatus> void logCurrentStatus(T customResource) {
+    public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
+        List<String> printWholeCr = new ArrayList<>(asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND));
+
         String kind = customResource.getKind();
         String name = customResource.getMetadata().getName();
 
-        List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+        if (printWholeCr.contains(kind)) {
+            LOGGER.info(customResource);
+        } else {
+            List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-        for (Condition condition : customResource.getStatus().getConditions()) {
-            log.add("\tType: " + condition.getType() + "\n");
-            log.add("\tMessage: " + condition.getMessage() + "\n");
+            for (Condition condition : customResource.getStatus().getConditions()) {
+                log.add("\tType: " + condition.getType() + "\n");
+                log.add("\tMessage: " + condition.getMessage() + "\n");
+            }
+
+            log.add("\nPods with conditions and messages:\n\n");
+
+            for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                log.add(pod.getMetadata().getName() + ":");
+                for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                    if (podCondition.getMessage() != null) {
+                        log.add("\n\tType: " + podCondition.getType() + "\n");
+                        log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                    }
+                }
+                log.add("\n\n");
+            }
+            LOGGER.info("{}", String.join("", log));
         }
-
-        PodUtils.logCurrentPodStatus(name, log);
     }
 
     /**
@@ -388,21 +411,15 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-    public static <T extends HasMetadata & HasStatus> T waitForStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
-        List<String> printWholeCr = new ArrayList<>(asList("KafkaConnector", "KafkaTopic", "KafkaUser"));
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+        LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
 
-        TestUtils.waitFor("Wait for {}" + resource.getKind() + ":{} " + resource.getMetadata().getName() + "will have desired state {}" + status,
+        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getMetadata().getName())
             .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
-            () -> {
-                if (printWholeCr.contains(resource.getKind())) {
-                    LOGGER.info(operation.inNamespace(kubeClient().getNamespace()).withName(resource.getMetadata().getName()).get());
-                } else {
-                    logCurrentStatus(resource);
-                }
-            });
+            () -> logCurrentResourceStatus(resource));
 
         LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
