@@ -262,7 +262,9 @@ public class DeploymentUtils {
             log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
         }
 
-        PodUtils.logCurrentPodStatus(kind, name, log);
+        if(kubeClient().listPodsByPrefixInName(name).size() != 0) {
+            PodUtils.logCurrentPodStatus(name, log);
+        }
 
         LOGGER.info("{}", String.join("", log));
     }

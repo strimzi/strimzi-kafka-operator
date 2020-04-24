@@ -5,10 +5,9 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
@@ -19,6 +18,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridgeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,13 +70,9 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static void waitForKafkaBridgeStatus(String clusterName, String state) {
-        LOGGER.info("Wait until KafkaBridge {} will be in state: {}", clusterName, state);
-        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> StUtils.logCurrentStatus(KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get())
-        );
-        LOGGER.info("KafkaBridge {}} is in state: {}", clusterName, state);
+    public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
+        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForStatus(kafkaBridgeClient(), kafkaBridge, state);
     }
 
     public static void waitForKafkaBridgeReady(String clusterName) {

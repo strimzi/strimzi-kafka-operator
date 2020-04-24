@@ -4,13 +4,15 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.resources.crd.KafkaConnectResource.kafkaConnectClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -25,12 +27,9 @@ public class KafkaConnectUtils {
      * @param clusterName name of KafkaConnect cluster
      * @param status desired state
      */
-    public static void waitForConnectStatus(String clusterName, String status) {
-        LOGGER.info("Waiting for Kafka Connect {} state: {}", clusterName, status);
-        TestUtils.waitFor("Kafka Connect " + clusterName + " state: " + status, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(status),
-            () -> StUtils.logCurrentStatus(KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get()));
-        LOGGER.info("Kafka Connect {} is in desired state: {}", clusterName, status);
+    public static void waitForConnectStatus(String name, String status) {
+        KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
+        ResourceManager.waitForStatus(kafkaConnectClient(), kafkaConnect, status);
     }
 
     public static void waitForConnectReady(String clusterName) {

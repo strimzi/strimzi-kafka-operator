@@ -114,13 +114,7 @@ public class KafkaMirrorMakerResource {
     }
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
-        String kafkaMirrorMakerCrName = kafkaMirrorMaker.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaMirrorMaker {}", kafkaMirrorMakerCrName);
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(kafkaMirrorMakerCrName);
-        LOGGER.info("KafkaMirrorMaker {} is ready", kafkaMirrorMakerCrName);
-
-        return kafkaMirrorMaker;
+        return ResourceManager.waitForStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, "Ready");
     }
 
     private static KafkaMirrorMaker deleteLater(KafkaMirrorMaker kafkaMirrorMaker) {

@@ -18,17 +18,12 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
 public class KafkaConnectS2IResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IResource.class);
-
     public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../examples/kafka-connect/kafka-connect-s2i.yaml";
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
@@ -105,13 +100,7 @@ public class KafkaConnectS2IResource {
     }
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
-        String kafkaConnectS2ICrName = kafkaConnectS2I.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaConnectS2I {}", kafkaConnectS2ICrName);
-        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2ICrName);
-        LOGGER.info("KafkaConnectS2I {} is ready", kafkaConnectS2ICrName);
-
-        return kafkaConnectS2I;
+        return ResourceManager.waitForStatus(kafkaConnectS2IClient(), kafkaConnectS2I, "Ready");
     }
 
     private static KafkaConnectS2I deleteLater(KafkaConnectS2I kafkaConnectS2I) {

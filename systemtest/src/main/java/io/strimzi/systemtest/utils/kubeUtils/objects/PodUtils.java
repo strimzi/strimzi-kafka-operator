@@ -272,19 +272,17 @@ public class PodUtils {
      * @param name - custom resource / deployment name - used for prefix
      * @param log - ArrayList - add statuses, pods and conditions for future display
      */
-    public static void logCurrentPodStatus(String kind, String name, List<String> log) {
-        if (!(kind.equals("KafkaConnector"))) {
-            log.add("\nPods with conditions and messages:\n\n");
-            for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                log.add(pod.getMetadata().getName() + ":");
-                for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                    if (podCondition.getMessage() != null) {
-                        log.add("\n\tType: " + podCondition.getType() + "\n");
-                        log.add("\tMessage: " + podCondition.getMessage() + "\n");
-                    }
+    public static void logCurrentPodStatus(String name, List<String> log) {
+        log.add("\nPods with conditions and messages:\n\n");
+        for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+            log.add(pod.getMetadata().getName() + ":");
+            for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                if (podCondition.getMessage() != null) {
+                    log.add("\n\tType: " + podCondition.getType() + "\n");
+                    log.add("\tMessage: " + podCondition.getMessage() + "\n");
                 }
-                log.add("\n\n");
             }
+            log.add("\n\n");
         }
     }
 }

@@ -4,13 +4,17 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.resources.crd.KafkaUserResource.kafkaUserClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
@@ -20,18 +24,12 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static void waitForKafkaUserCreation(String userName) {
-        LOGGER.info("Waiting for KafkaUser creation {}", userName);
+        KafkaUser kafkaUser = kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+
         SecretUtils.waitForSecretReady(userName,
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
+            () -> LOGGER.info(kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        TestUtils.waitFor("KafkaUser creation " + userName,
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace())
-                    .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
-        );
-
-        LOGGER.info("KafkaUser {} created", userName);
+        ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, "Ready");
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -46,9 +44,8 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
         TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
             Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
-            () -> observation < KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration(),
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
-        );
+            () -> observation < KafkaUserResource.kafkaUserClient()
+                .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
@@ -66,12 +63,8 @@ public class KafkaUserUtils {
      * @param state desired state
      */
     public static void waitForKafkaUserStatus(String userName, String state) {
-        LOGGER.info("Wait until KafkaUser {} is in desired state: {}", userName, state);
-        TestUtils.waitFor("KafkaUser " + userName + " to be in desired state " + state + " in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
-        );
-        LOGGER.info("KafkaUser {} is in desired state: {}", userName, state);
+        KafkaUser kafkaUser = kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+        ResourceManager.waitForStatus(kafkaUserClient(), kafkaUser, state);
     }
 
     public static void waitForKafkaUserReady(String userName) {

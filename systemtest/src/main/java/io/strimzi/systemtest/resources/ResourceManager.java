@@ -26,6 +26,10 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.HasStatus;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
@@ -40,6 +44,7 @@ import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
@@ -51,6 +56,7 @@ import static io.strimzi.systemtest.Constants.DEPLOYMENT;
 import static io.strimzi.systemtest.Constants.INGRESS;
 import static io.strimzi.systemtest.Constants.ROLE_BINDING;
 import static io.strimzi.systemtest.Constants.SERVICE;
+import static java.util.Arrays.asList;
 
 public class ResourceManager {
 
@@ -358,6 +364,48 @@ public class ResourceManager {
         }
         return "";
     }
+    /**
+     * Log actual status of custom resource with pods.
+     * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
+     */
+    public static <T extends HasMetadata & HasStatus> void logCurrentStatus(T customResource) {
+        String kind = customResource.getKind();
+        String name = customResource.getMetadata().getName();
+
+        List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+
+        for (Condition condition : customResource.getStatus().getConditions()) {
+            log.add("\tType: " + condition.getType() + "\n");
+            log.add("\tMessage: " + condition.getMessage() + "\n");
+        }
+
+        if(kubeClient().listPodsByPrefixInName(name).size() != 0 || !(kind.equals("KafkaConnector"))) {
+            PodUtils.logCurrentPodStatus(name, log);
+        }
+
+        LOGGER.info("{}", String.join("", log));
+    }
+
+    /**
+     * Wait until the CR is in desired state
+     * @param operation - client of CR - for example kafkaClient()
+     * @param resource - custom resource
+     * @param status - desired status
+     * @return returns CR
+     */
+    public static <T extends HasMetadata & HasStatus> T waitForStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+
+        TestUtils.waitFor("Wait for {}" + resource.getKind() + ":{} " + resource.getMetadata().getName() + "will have desired state {}" + status,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> operation.inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getMetadata().getName())
+            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getStatus().equals(status)),
+            () -> logCurrentStatus(resource));
+
+        LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
+        return resource;
+    }
+
 
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);

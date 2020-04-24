@@ -4,11 +4,12 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -21,10 +22,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.resources.crd.KafkaResource.kafkaClient;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -45,21 +46,8 @@ public class KafkaUtils {
     }
 
     public static void waitUntilKafkaStatus(String clusterName, String state) {
-        LOGGER.info("Wait until Kafka CR will be in state: {}", state);
-        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            List<Condition> conditions =
-                   KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName)
-                            .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
-                            .collect(Collectors.toList());
-
-            for (Condition condition : conditions) {
-                if (!condition.getType().matches(state))
-                    return false;
-            }
-
-            return true;
-        });
-        LOGGER.info("Kafka CR is in state: {}", state);
+        Kafka kafka = kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForStatus(kafkaClient(), kafka, state);
     }
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {

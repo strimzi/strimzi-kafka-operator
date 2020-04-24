@@ -18,17 +18,12 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
 public class KafkaConnectResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectResource.class);
-
     public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../examples/kafka-connect/kafka-connect.yaml";
     public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../examples/metrics/kafka-connect-metrics.yaml";
 
@@ -121,13 +116,7 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        String kafkaConnectCrName = kafkaConnect.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaConnect {}", kafkaConnectCrName);
-        KafkaConnectUtils.waitForConnectReady(kafkaConnectCrName);
-        LOGGER.info("KafkaConnect {} is ready", kafkaConnectCrName);
-
-        return kafkaConnect;
+        return ResourceManager.waitForStatus(kafkaConnectClient(), kafkaConnect, "Ready");
     }
 
     private static KafkaConnect deleteLater(KafkaConnect kafkaConnect) {

@@ -15,20 +15,16 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
 public class KafkaMirrorMaker2Resource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2Resource.class);
-
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = "../examples/kafka-mirror-maker-2/kafka-mirror-maker-2.yaml";
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = "../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
 
@@ -137,13 +133,7 @@ public class KafkaMirrorMaker2Resource {
     }
 
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        String kafkaMirrorMaker2CrName = kafkaMirrorMaker2.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaMirrorMaker2 {}", kafkaMirrorMaker2CrName);
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(kafkaMirrorMaker2CrName);
-        LOGGER.info("KafkaMirrorMaker2 {} is ready", kafkaMirrorMaker2CrName);
-
-        return kafkaMirrorMaker2;
+        return ResourceManager.waitForStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, "Ready");
     }
 
     private static KafkaMirrorMaker2 deleteLater(KafkaMirrorMaker2 kafkaMirrorMaker2) {

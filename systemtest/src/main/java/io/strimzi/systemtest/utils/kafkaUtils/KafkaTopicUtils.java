@@ -4,13 +4,19 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
+import jdk.internal.loader.Resource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.resources.crd.KafkaTopicResource.kafkaTopicClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaTopicUtils {
@@ -79,14 +85,9 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static void waitForKafkaTopicStatus(String topicName, String state) {
-        LOGGER.info("Wait until KafkaTopic {} is in desired state: {}", topicName, state);
-        TestUtils.waitFor("KafkaTopic " + topicName + " status is not in desired state: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
-                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
-        );
-        LOGGER.info("Kafka Topic {} is in desired state: {}", topicName, state);
+    public static void waitForKafkaTopicStatus(String topicName, String status) {
+        KafkaTopic kafkaTopic = kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
+        ResourceManager.waitForStatus(kafkaTopicClient(), kafkaTopic, status);
     }
 
     public static void waitForKafkaTopicReady(String topicName) {
