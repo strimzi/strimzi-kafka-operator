@@ -243,13 +243,16 @@ public class PodUtils {
 
         TestUtils.waitFor("Pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                for (Pod pod : pods) {
+                List<Pod> actualPods = pods.stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
+
+                for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals("Running")) {
                         LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
                             pod.getMetadata().getName(), pod.getStatus().getPhase(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
                     } else {
                         LOGGER.info("Pod {} is not stable with phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        stabilityCounter[0] = 0;
                         return false;
                     }
                 }
