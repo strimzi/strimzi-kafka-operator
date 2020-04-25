@@ -1234,17 +1234,20 @@ class TopicOperator {
                                 return Future.succeededFuture();
                             } else {
                                 LOGGER.debug("{}: Have private topic for topic {} in Kafka", logContext, topicName);
-                                Future<Void> map = reconcileWithPrivateTopic(logContext, topicName, topic, this)
+                                Promise<Void> map = Promise.promise();
+                                        reconcileWithPrivateTopic(logContext, topicName, topic, this)
                                         .<Void>map(ignored -> {
                                             LOGGER.debug("{} reconcile success -> succeeded", topicName);
                                             succeeded.add(topicName);
+                                            map.complete();
                                             return null;
                                         }).otherwise(error -> {
                                             LOGGER.debug("{} reconcile error -> failed", topicName);
                                             failed.put(topicName, error);
+                                            map.fail(error.getCause());
                                             return null;
                                         });
-                                return map;
+                                return map.future();
                             }
                         });
 
