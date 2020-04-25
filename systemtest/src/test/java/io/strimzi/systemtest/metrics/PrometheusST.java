@@ -76,7 +76,7 @@ public class PrometheusST extends BaseST {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
-        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNamespace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNamespace("https://raw.githubusercontent.com/coreos/prometheus-operator/v0.38.1/bundle.yaml", NAMESPACE));
 
         SecretUtils.createSecretFromFile("../examples/metrics/prometheus-additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
         SecretUtils.createSecretFromFile("../examples/metrics/prometheus-alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
