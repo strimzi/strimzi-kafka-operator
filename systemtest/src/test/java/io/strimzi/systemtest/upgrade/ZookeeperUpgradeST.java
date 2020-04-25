@@ -56,7 +56,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
         LOGGER.info("DEBUG: {}", sortedVersions.toString());
 
-        for (int x = sortedVersions.size() -1 ; x >= 0; x--) {
+        for (int x = sortedVersions.size() - 1; x >= 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
