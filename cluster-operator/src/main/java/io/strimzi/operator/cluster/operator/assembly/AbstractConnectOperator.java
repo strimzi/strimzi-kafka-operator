@@ -292,13 +292,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
 
-    private Throwable zeroReplicasError(T connect) {
-        return new Throwable(
-                "KafkaConnect cluster '" + connect.getMetadata().getName() + "' in namespace "
-                        + connect.getMetadata().getNamespace() + " has zero replicas."
-        );
-    }
-
     /**
      * Reconcile all the connectors selected by the given connect instance, updated each connectors status with the result.
      * @param reconciliation The reconciliation
