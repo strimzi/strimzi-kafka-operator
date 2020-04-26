@@ -41,7 +41,7 @@ public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/kafka/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 

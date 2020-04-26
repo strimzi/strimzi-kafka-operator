@@ -175,7 +175,7 @@ public class ClusterOperatorTest {
                     vertx.undeploy(deploymentId, context.succeeding());
                 }
 
-                int maximumExpectedNumberOfWatchers = (openShift ? 8 : 6) * namespaceList.size(); // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = (openShift ? 9 : 7) * namespaceList.size(); // we do not have connectS2I on k8s
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
                 async.flag();
@@ -243,7 +243,7 @@ public class ClusterOperatorTest {
                     vertx.undeploy(deploymentId, context.succeeding());
                 }
 
-                int maximumExpectedNumberOfWatchers = openShift ? 8 : 6; // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = openShift ? 9 : 7; // we do not have connectS2I on k8s
                 assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
                 async.flag();
             })));

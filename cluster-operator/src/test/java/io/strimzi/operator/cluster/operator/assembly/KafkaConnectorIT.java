@@ -167,7 +167,7 @@ public class KafkaConnectorIT {
                 new ResourceOperatorSupplier(
                         null, null, null, null, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null,
-                        null, connectCrdOperator, null, null, null, null, metrics),
+                        null, connectCrdOperator, null, null, null, null, null, metrics),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort() + 2
