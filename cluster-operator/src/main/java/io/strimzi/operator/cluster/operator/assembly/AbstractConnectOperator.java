@@ -19,6 +19,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
@@ -291,10 +292,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
 
+    private Throwable zeroReplicasError(T connect) {
+        return new Throwable(
+                "KafkaConnect cluster '" + connect.getMetadata().getName() + "' in namespace "
+                        + connect.getMetadata().getNamespace() + " has zero replicas."
+        );
+    }
+
     /**
      * Reconcile all the connectors selected by the given connect instance, updated each connectors status with the result.
      * @param reconciliation The reconciliation
      * @param connect The connector
+     * @param connectStatus Status of the KafkaConnect or KafkaConnectS2I resource (will be used to set the available
+     *                      connector plugins)
      * @return A future, failed if any of the connectors' statuses could not be updated.
      */
     protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect, S connectStatus) {
@@ -336,6 +346,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
 
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+        }).recover(error -> {
+            if (error instanceof ConnectTimeoutException) {
+                Promise<Void> connectorStatuses = Promise.promise();
+                log.warn("{}: Failed to connect to the REST API => trying to update the connector status", reconciliation);
+
+                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+                        .compose(connectors -> CompositeFuture.join(
+                                connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
+                                        .collect(Collectors.toList())
+                        ))
+                        .onComplete(ignore -> connectorStatuses.fail(error));
+
+                return connectorStatuses.future();
+            } else {
+                return Future.failedFuture(error);
+            }
         });
     }
 
