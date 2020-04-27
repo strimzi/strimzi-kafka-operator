@@ -224,18 +224,14 @@ public class Session extends AbstractVerticle {
                         if (!stopped) {
                             timerId = null;
                             boolean isInitialReconcile = oldTimerId == null;
-                            Timer.Sample reconciliationTimerSample = Timer.start(topicOperator.getMetrics().meterRegistry());
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
                                 topicOperator.getPeriodicReconciliationsCounter().increment();
                                 if (result.failed()) {
                                     topicOperator.incrementFailedReconciliationsCounter();
-                                    reconciliationTimerSample.stop(topicOperator.getReconciliationsTimer());
                                 } else {
                                     topicOperator.incrementSuccessfulReconciliationsCounter();
-                                    reconciliationTimerSample.stop(topicOperator.getReconciliationsTimer());
                                 }
                                 if (isInitialReconcile) {
-                                    topicOperator.incrementSuccessfulReconciliationsCounter();
                                     initReconcilePromise.complete();
                                 }
                                 if (!stopped) {

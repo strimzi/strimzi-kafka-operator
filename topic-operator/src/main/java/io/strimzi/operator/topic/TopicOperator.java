@@ -543,6 +543,7 @@ class TopicOperator {
                    final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic) {
         final Future<Void> reconciliationResultHandler;
         reconciliationsCounter.increment();
+        Timer.Sample reconciliationTimerSample = Timer.start(metrics.meterRegistry());
         {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
             LOGGER.info("{}: Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", logContext, topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
@@ -610,7 +611,15 @@ class TopicOperator {
                         k8sTopic, kafkaTopic, privateTopic);
             }
         }
-        return reconciliationResultHandler;
+        return reconciliationResultHandler.setHandler(res -> {
+            if (res.succeeded()) {
+                reconciliation.result
+                successfulReconciliationsCounter.increment();
+            } else {
+                failedReconciliationsCounter.increment();
+            }
+            reconciliationTimerSample.stop(reconciliationsTimer);
+        });
     }
 
     /**
@@ -922,6 +931,7 @@ class TopicOperator {
         public volatile KafkaTopic topic;
 
         public Reconciliation(String name) {
+            //something
             this.name = name;
         }
 

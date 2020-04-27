@@ -85,10 +85,8 @@ class ZkTopicsWatcher {
                     topicOperator.onTopicDeleted(logContext, new TopicName(topicName)).setHandler(ar -> {
                         if (ar.succeeded()) {
                             topicOperator.decrementTopicCounter();
-                            topicOperator.incrementSuccessfulReconciliationsCounter();
                             LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
                         } else {
-                            topicOperator.incrementFailedReconciliationsCounter();
                             LOGGER.warn("{}: Error responding to deletion of topic {}", logContext, topicName, ar.cause());
                         }
                     });
@@ -105,10 +103,8 @@ class ZkTopicsWatcher {
                         if (ar.succeeded()) {
                             LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
                             topicOperator.incrementTopicCounter();
-                            topicOperator.incrementSuccessfulReconciliationsCounter();
                         } else {
                             LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
-                            topicOperator.incrementFailedReconciliationsCounter();
                         }
                     });
                 }
