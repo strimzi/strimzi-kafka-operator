@@ -63,7 +63,6 @@ class UserST extends BaseST {
 
         // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
-        KafkaUserUtils.waitForKafkaUserCreation(saslUserWithLongName);
 
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
             .withNewSpec()

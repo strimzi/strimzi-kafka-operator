@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -64,11 +65,25 @@ public class KafkaBridgeUtils {
         }
     }
 
-    public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
+    /**
+     * Wait until KafkaBridge is in desired state
+     * @param clusterName name of KafkaBridge cluster
+     * @param state desired state
+     */
+    public static void waitForKafkaBridgeStatus(String clusterName, String state) {
         LOGGER.info("Wait until KafkaBridge {} will be in state: {}", clusterName, state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
+            () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get())
         );
         LOGGER.info("KafkaBridge {}} is in state: {}", clusterName, state);
+    }
+
+    public static void waitForKafkaBridgeReady(String clusterName) {
+        waitForKafkaBridgeStatus(clusterName, "Ready");
+    }
+
+    public static void waitForKafkaBridgeNotReady(String clusterName) {
+        waitForKafkaBridgeStatus(clusterName, "NotReady");
     }
 }

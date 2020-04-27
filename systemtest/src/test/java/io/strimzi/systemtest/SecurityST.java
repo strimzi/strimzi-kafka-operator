@@ -241,7 +241,7 @@ class SecurityST extends BaseST {
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         user = KafkaUserResource.tlsUser(CLUSTER_NAME, bobUserName).done();
-        SecretUtils.waitForSecretReady(bobUserName);
+
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         defaultKafkaClientsPodName =
@@ -315,12 +315,11 @@ class SecurityST extends BaseST {
 
         String aliceUserName = "alice";
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUserName).done();
+
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
-        SecretUtils.waitForSecretReady(aliceUserName);
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -524,9 +523,6 @@ class SecurityST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        // Check if user exists
-        SecretUtils.waitForSecretReady(userName);
-
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
@@ -626,7 +622,6 @@ class SecurityST extends BaseST {
 
         String userName = "user-example";
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
 
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -719,7 +714,6 @@ class SecurityST extends BaseST {
 
         String userName = "user-example";
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
 
         KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
@@ -808,7 +802,6 @@ class SecurityST extends BaseST {
 
         String userName = "user-example";
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
 
         KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
 
@@ -1020,8 +1013,6 @@ class SecurityST extends BaseST {
             .endSpec()
             .done();
 
-        SecretUtils.waitForSecretReady(kafkaUserWrite);
-
         LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
@@ -1062,9 +1053,6 @@ class SecurityST extends BaseST {
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
             .done();
-
-        SecretUtils.waitForSecretReady(kafkaUserRead);
-
 
         basicExternalKafkaClient.setConsumerGroup(consumerGroupName);
         basicExternalKafkaClient.setKafkaUsername(kafkaUserRead);
@@ -1183,8 +1171,6 @@ class SecurityST extends BaseST {
                     .withValidityDays(3)
                 .endClusterCa()
             .endSpec().done();
-
-        KafkaUtils.waitUntilKafkaStatus(CLUSTER_NAME, "Ready");
 
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);

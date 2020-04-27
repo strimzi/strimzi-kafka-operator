@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +19,24 @@ public class KafkaMirrorMaker2Utils {
 
     private KafkaMirrorMaker2Utils() {}
 
-    public static void waitUntilKafkaMirrorMaker2Status(String clusterName, String state) {
+    /**
+     * Wait until KafkaMirrorMaker2 will be in desired state
+     * @param clusterName name of KafkaMirrorMaker2 cluster
+     * @param state desired state
+     */
+    public static void waitForKafkaMirrorMaker2Status(String clusterName, String state) {
         LOGGER.info("Wait until KafkaMirrorMaker2 will be in state: {}", state);
         TestUtils.waitFor("KafkaMirrorMaker2 resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace())
-                .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
-        );
+            () -> KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get()));
         LOGGER.info("KafkaMirrorMaker2 is in state: {}", state);
+    }
+
+    public static void waitForKafkaMirrorMaker2Ready(String clusterName) {
+        waitForKafkaMirrorMaker2Status(clusterName, "Ready");
+    }
+
+    public static void waitForKafkaMirrorMaker2NotReady(String clusterName) {
+        waitForKafkaMirrorMaker2Status(clusterName, "NotReady");
     }
 }
