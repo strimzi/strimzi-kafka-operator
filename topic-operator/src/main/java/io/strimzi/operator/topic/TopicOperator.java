@@ -388,35 +388,37 @@ class TopicOperator {
     }
 
     public void initMetrics() {
-        Tags metricTags = Tags.of(Tag.of("kind", "KafkaTopic"));
+        if (metrics != null) {
+            Tags metricTags = Tags.of(Tag.of("kind", "KafkaTopic"));
 
-        periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
-                "Number of periodical reconciliations done by the operator",
-                metricTags);
+            periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
+                    "Number of periodical reconciliations done by the operator",
+                    metricTags);
 
-        reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
-                "Number of reconciliations done by the operator for individual topics",
-                metricTags);
+            reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
+                    "Number of reconciliations done by the operator for individual topics",
+                    metricTags);
 
-        failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
-                "Number of reconciliations done by the operator for individual topics which failed",
-                metricTags);
+            failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
+                    "Number of reconciliations done by the operator for individual topics which failed",
+                    metricTags);
 
-        successfulReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.successful",
-                "Number of reconciliations done by the operator for individual topics which were successful",
-                metricTags);
+            successfulReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.successful",
+                    "Number of reconciliations done by the operator for individual topics which were successful",
+                    metricTags);
 
-        topicCounter = metrics.gauge(METRICS_PREFIX + "resources",
-                "Number of topics the operator sees",
-                metricTags);
+            topicCounter = metrics.gauge(METRICS_PREFIX + "resources",
+                    "Number of topics the operator sees",
+                    metricTags);
 
-        reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
-                "The time the reconciliation takes to complete",
-                metricTags);
+            reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
+                    "The time the reconciliation takes to complete",
+                    metricTags);
 
-        lockedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.locked",
-                "Number of reconciliations skipped because another reconciliation for the same topic was still running",
-                metricTags);
+            lockedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.locked",
+                    "Number of reconciliations skipped because another reconciliation for the same topic was still running",
+                    metricTags);
+        }
     }
 
     public Counter getPeriodicReconciliationsCounter() {

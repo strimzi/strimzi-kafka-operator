@@ -56,6 +56,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -198,6 +199,7 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterEach
     public void teardown() throws InterruptedException, TimeoutException, ExecutionException {
+        CountDownLatch latch = new CountDownLatch(1);
         try {
             LOGGER.info("Tearing down test");
 
@@ -237,7 +239,9 @@ public abstract class TopicOperatorBaseIT {
             }
             Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
+            latch.countDown();
         }
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     protected void startTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
