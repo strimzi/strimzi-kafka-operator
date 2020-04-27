@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
@@ -49,7 +48,7 @@ public class KafkaUtils {
         LOGGER.info("Wait until Kafka CR will be in state: {}", state);
         TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             List<Condition> conditions =
-                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName)
+                   KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName)
                             .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
                             .collect(Collectors.toList());
 

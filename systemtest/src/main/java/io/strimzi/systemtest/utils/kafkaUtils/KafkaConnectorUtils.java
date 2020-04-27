@@ -44,15 +44,27 @@ public class KafkaConnectorUtils {
         );
     }
 
-    public static void waitForConnectorStatus(String name, String state) {
-        LOGGER.info("Wait until KafkaConnector {} will be in state: {}", name, state);
-        TestUtils.waitFor(" KafkaConnector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+    /**
+     * Wait until KafkaConnector is in desired state
+     * @param connectorName name of KafkaConnector
+     * @param state desired state
+     */
+    public static void waitForConnectorStatus(String connectorName, String state) {
+        LOGGER.info("Wait until KafkaConnector {} will be in state: {}", connectorName, state);
+        TestUtils.waitFor(" KafkaConnector " + connectorName + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
-                    .withName(name).get().getStatus().getConditions().get(0).getType().equals(state),
-            () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get()));
-        LOGGER.info("KafkaConnector {} is {}", name, state);
+                    .withName(connectorName).get().getStatus().getConditions().get(0).getType().equals(state),
+            () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+        LOGGER.info("KafkaConnector {} is {}", connectorName, state);
     }
 
+    public static void waitForConnectorReady(String connectorName) {
+        waitForConnectorStatus(connectorName, "Ready");
+    }
+
+    public static void waitForConnectorNotReady(String connectorName) {
+        waitForConnectorStatus(connectorName, "NotReady");
+    }
 
     public static String getCreatedConnectors(String connectPodName) {
         return cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c",
@@ -65,5 +77,14 @@ public class KafkaConnectorUtils {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
         }, () -> StUtils.logCurrentStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+    }
+
+    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
+        cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+                "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
+                        "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
+                        "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
+                        apiUrl + "/connectors"
+        );
     }
 }

@@ -63,7 +63,7 @@ public class OlmResource {
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {
         LOGGER.info("Waiting for deployment {} in namespace {}", deploymentName, namespace);
-        DeploymentUtils.waitForDeploymentReady(deploymentName, replicas);
+        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, replicas);
         LOGGER.info("Deployment {} in namespace {} is ready", deploymentName, namespace);
     }
 

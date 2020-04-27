@@ -200,9 +200,6 @@ public class TopicST extends BaseST {
 
         KafkaTopicResource.topic(isolatedKafkaCluster, topicName).done();
 
-        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
-        LOGGER.info("Topic {} was created", topicName);
-
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

@@ -12,11 +12,10 @@ import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -118,7 +117,7 @@ public class KafkaMirrorMakerResource {
         String kafkaMirrorMakerCrName = kafkaMirrorMaker.getMetadata().getName();
 
         LOGGER.info("Waiting for KafkaMirrorMaker {}", kafkaMirrorMakerCrName);
-        DeploymentUtils.waitForDeploymentReady(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMakerCrName), kafkaMirrorMaker.getSpec().getReplicas());
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(kafkaMirrorMakerCrName);
         LOGGER.info("KafkaMirrorMaker {} is ready", kafkaMirrorMakerCrName);
 
         return kafkaMirrorMaker;

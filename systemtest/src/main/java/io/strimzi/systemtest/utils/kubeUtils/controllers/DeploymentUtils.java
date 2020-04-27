@@ -163,8 +163,8 @@ public class DeploymentUtils {
      * @param name The name of the Deployment.
      * @param expectPods The expected number of pods.
      */
-    public static void waitForDeploymentReady(String name, int expectPods) {
-        LOGGER.info("Waiting for Deployment {}", name);
+    public static void waitForDeploymentAndPodsReady(String name, int expectPods) {
+        LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(name)));

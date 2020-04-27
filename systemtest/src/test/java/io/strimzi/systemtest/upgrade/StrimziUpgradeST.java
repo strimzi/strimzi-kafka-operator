@@ -224,7 +224,7 @@ public class StrimziUpgradeST extends BaseST {
         copyModifyApply(coDir);
 
         LOGGER.info("Waiting for CO deployment");
-        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady("strimzi-cluster-operator", 1);
         LOGGER.info("CO ready");
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
@@ -239,7 +239,7 @@ public class StrimziUpgradeST extends BaseST {
             LOGGER.info("Waiting for Kafka StatefulSet");
             StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
             LOGGER.info("Waiting for EO Deployment");
-            DeploymentUtils.waitForDeploymentReady(CLUSTER_NAME + "-entity-operator", 1);
+            DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {

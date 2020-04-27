@@ -47,7 +47,7 @@ class RecoveryST extends BaseST {
 
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
         DeploymentUtils.waitForDeploymentRecovery(entityOperatorDeploymentName, entityOperatorDeploymentUid);
-        DeploymentUtils.waitForDeploymentReady(entityOperatorDeploymentName, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(entityOperatorDeploymentName, 1);
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }

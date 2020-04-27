@@ -84,7 +84,7 @@ public class PrometheusST extends BaseST {
         SecretUtils.waitForSecretReady("additional-scrape-configs");
         SecretUtils.waitForSecretReady("alertmanager-alertmanager");
 
-        DeploymentUtils.waitForDeploymentReady("prometheus-operator", 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady("prometheus-operator", 1);
 
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-pod-monitor.yaml", NAMESPACE));
