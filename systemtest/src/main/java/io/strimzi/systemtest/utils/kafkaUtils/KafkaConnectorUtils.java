@@ -63,7 +63,7 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorNotReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "Ready");
+        waitForConnectorStatus(connectorName, "NotReady");
     }
 
     public static String getCreatedConnectors(String connectPodName) {

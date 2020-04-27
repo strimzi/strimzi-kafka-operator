@@ -37,6 +37,6 @@ public class KafkaMirrorMakerUtils {
     }
 
     public static void waitForKafkaMirrorMakerNotReady(String clusterName) {
-        waitForKafkaMirrorMakerStatus(clusterName, "Ready");
+        waitForKafkaMirrorMakerStatus(clusterName, "NotReady");
     }
 }
