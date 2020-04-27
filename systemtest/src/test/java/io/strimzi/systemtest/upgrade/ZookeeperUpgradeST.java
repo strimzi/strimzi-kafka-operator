@@ -71,7 +71,7 @@ public class ZookeeperUpgradeST extends BaseST {
             logMsgFormat = newVersion.messageVersion();
         }
 
-        boolean sameMajorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
+        boolean sameMinorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
 
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get() == null) {
             LOGGER.info("Deploying initial Kafka version (" + initialVersion.version() + ")");
@@ -88,7 +88,7 @@ public class ZookeeperUpgradeST extends BaseST {
             kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
             // Wait for log.message.format.version change
-            if (!sameMajorVersion) {
+            if (!sameMinorVersion) {
                 KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                     LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                     Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
@@ -168,7 +168,7 @@ public class ZookeeperUpgradeST extends BaseST {
                 " was expected", kafkaResult, is(newVersion.version()));
 
 
-        if (testInfo.getDisplayName().contains("Upgrade") && !sameMajorVersion) {
+        if (testInfo.getDisplayName().contains("Upgrade") && !sameMinorVersion) {
             LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
 
