@@ -17,7 +17,8 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 public class TopicScalabilityST extends TopicST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
-    private static final int NUMBER_OF_TOPICS = 2500;
+    private static final int NUMBER_OF_TOPICS = 1000;
+    private static final int SAMPLE_OFFSET = 50;
 
     @Test
     void testBigAmountOfTopicsCreatingViaK8s() {
@@ -29,6 +30,13 @@ public class TopicScalabilityST extends TopicST {
             LOGGER.debug("Creating {} topic", currentTopic);
             KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME,
                 currentTopic, 3, 1, 1).build());
+        }
+
+        for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
+            String currentTopic = topicName + i;
+            LOGGER.debug("Verifying that {} topic CR has Ready status", currentTopic);
+
+            KafkaTopicUtils.waitForKafkaTopicStatus(currentTopic, "Ready");
         }
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);

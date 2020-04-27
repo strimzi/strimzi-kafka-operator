@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
-    private static final String NAMESPACE = "topic-cluster-test";
+    static final String NAMESPACE = "topic-cluster-test";
 
     @Test
     void testMoreReplicasThanAvailableBrokers() {
