@@ -52,7 +52,7 @@ public class ZookeeperUpgradeST extends BaseST {
     void testKafkaClusterDowngrade(TestInfo testInfo) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
-        for (int x = sortedVersions.size() - 1; x >= 0; x--) {
+        for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
