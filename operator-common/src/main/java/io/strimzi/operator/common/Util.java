@@ -32,7 +32,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class Util {
-
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
 
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
@@ -222,5 +221,36 @@ public class Util {
             }
             throw e;
         }
+    }
+
+    /**
+     * Logs environment variables into the regular log file.
+     */
+    public static void printEnvInfo() {
+        Map<String, String> env = new HashMap<>(System.getenv());
+        StringBuilder sb = new StringBuilder();
+
+        for (Map.Entry<String, String> entry: env.entrySet()) {
+            sb.append("\t").append(entry.getKey()).append(": ").append(maskPassword(entry.getKey(), entry.getValue())).append("\n");
+        }
+
+        LOGGER.info("Using config:\n" + sb.toString());
+    }
+
+    /**
+     * Gets environment variable, checks if it contains a password and in case it does it masks the output. It expects
+     * environment variables with passwords to contain `PASSWORD` in their name.
+     *
+     * @param key   Name of the environment variable
+     * @param value Value of the environment variable
+     * @return      Value of the environment variable or masked text in case of password
+     */
+    public static String maskPassword(String key, String value)  {
+        if (key.contains("PASSWORD"))  {
+            return "********";
+        } else {
+            return value;
+        }
+
     }
 }

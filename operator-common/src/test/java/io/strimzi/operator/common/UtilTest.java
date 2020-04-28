@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
@@ -73,5 +74,16 @@ public class UtilTest {
         assertThat(m, aMapWithSize(2));
         assertThat(m, hasEntry("key1", "value1"));
         assertThat(m, hasEntry("key2", "value2=value3"));
+    }
+
+    @Test
+    public void testMaskedPasswords()   {
+        String noPassword = "SOME_VARIABLE";
+        String passwordAtTheEnd = "SOME_PASSWORD";
+        String passwordInTheMiddle = "SOME_PASSWORD_TO_THE_BIG_SECRET";
+
+        assertThat(Util.maskPassword(noPassword, "123456"), is("123456"));
+        assertThat(Util.maskPassword(passwordAtTheEnd, "123456"), is("********"));
+        assertThat(Util.maskPassword(passwordInTheMiddle, "123456"), is("********"));
     }
 }

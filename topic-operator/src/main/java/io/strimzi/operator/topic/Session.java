@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -65,7 +66,7 @@ public class Session extends AbstractVerticle {
         this.config = config;
         StringBuilder sb = new StringBuilder(System.lineSeparator());
         for (Config.Value<?> v: Config.keys()) {
-            sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
+            sb.append("\t").append(v.key).append(": ").append(Util.maskPassword(v.key, config.get(v).toString())).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
         setupMetrics();
