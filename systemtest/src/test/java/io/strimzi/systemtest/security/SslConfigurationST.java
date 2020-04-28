@@ -51,10 +51,12 @@ public class SslConfigurationST extends SecurityST {
 
         Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getConfig();
 
-        LOGGER.info("Verifying that Kafka cluster has the excepted configuration:\n" +
-                "" + SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG + " -> {}\n" +
-                "" + SslConfigs.SSL_PROTOCOL_CONFIG + " -> {}",
+        LOGGER.info("Verifying that Kafka cluster has the accepted configuration:\n" +
+                "{} -> {}\n" +
+                "{} -> {}",
+            SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG,
             configsFromKafkaCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG),
+            SslConfigs.SSL_PROTOCOL_CONFIG,
             configsFromKafkaCustomResource.get(SslConfigs.SSL_PROTOCOL_CONFIG));
 
         assertThat(configsFromKafkaCustomResource.get(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG), is(tlsVersion12));
@@ -81,9 +83,11 @@ public class SslConfigurationST extends SecurityST {
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls));
 
-        LOGGER.info("Verifying that Kafka Connect has the excepted configuration:\n" +
-            SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG + " -> {}\n" + SslConfigs.SSL_PROTOCOL_CONFIG + " -> {}",
-            tlsVersion12, SslConfigs.DEFAULT_SSL_PROTOCOL);
+        LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}\n {} -> {}",
+            SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG,
+            tlsVersion12,
+            SslConfigs.SSL_PROTOCOL_CONFIG,
+            SslConfigs.DEFAULT_SSL_PROTOCOL);
 
         KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, NAMESPACE, CLUSTER_NAME);
         KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, NAMESPACE, CLUSTER_NAME);
@@ -118,8 +122,8 @@ public class SslConfigurationST extends SecurityST {
 
         Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getConfig();
 
-        LOGGER.info("Verifying that Kafka cluster has the excepted configuration:\n" + SslConfigs.SSL_CIPHER_SUITES_CONFIG + " -> {}",
-            configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
+        LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}",
+            SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
         assertThat(configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG), is(cipherSuitesSha384));
 
@@ -143,8 +147,8 @@ public class SslConfigurationST extends SecurityST {
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384));
 
-        LOGGER.info("Verifying that Kafka Connect has the excepted configuration:\n" +
-            SslConfigs.SSL_CIPHER_SUITES_CONFIG + " -> {}", configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
+        LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}",
+            SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
         KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, NAMESPACE, CLUSTER_NAME);
 

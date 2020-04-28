@@ -11,6 +11,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Properties;
+
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -61,7 +63,7 @@ public class KafkaConnectUtils {
     }
 
     /**
-     *  Method waitForKafkaConnectConfigChange, which will wait until the kafka connect CR config will be changed
+     *  Waits until the kafka connect CR config has changed.
      * @param propertyKey property key in the Kafka Connect CR config
      * @param propertyValue property value in the Kafka Connect CR config
      * @param namespace namespace name
@@ -71,9 +73,10 @@ public class KafkaConnectUtils {
         LOGGER.info("Waiting for Kafka Connect property {} -> {} change", propertyKey, propertyValue);
         TestUtils.waitFor("Waiting for Kafka Connect config " + propertyKey + " -> " + propertyValue, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey));
-                LOGGER.debug(KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey) + " == " + propertyValue);
-                return KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey).equals(propertyValue);
+                String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
+                LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
+                LOGGER.debug(propertyValueFromKafkaConnect + " == " + propertyValue);
+                return propertyValueFromKafkaConnect.equals(propertyValue);
             });
         LOGGER.info("Kafka Connect property {} -> {} change", propertyKey, propertyValue);
     }

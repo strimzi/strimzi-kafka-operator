@@ -245,9 +245,7 @@ public class PodUtils {
     }
 
     /**
-     * Method waitForPodsStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
-     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
-     * pod is considered as a stable. Otherwise this procedure will be repeat.
+     * * Waits until all matching pods are {@linkplain #verifyThatPodsAreStable(Supplier, int[])} stable} in the "Running" phase.
      * @param pods all pods that will be verified
      */
     public static void waitUntilPodsStability(List<Pod> pods) {
