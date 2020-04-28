@@ -80,8 +80,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip";
-    private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
