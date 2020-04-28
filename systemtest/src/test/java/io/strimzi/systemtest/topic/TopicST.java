@@ -121,8 +121,9 @@ public class TopicST extends BaseST {
     @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
+        String clusterName = CLUSTER_NAME + "-external-name";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -135,7 +136,7 @@ public class TopicST extends BaseST {
             .done();
 
         Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME));
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, clusterName));
 
         try (AdminClient adminClient = AdminClient.create(properties)) {
 
