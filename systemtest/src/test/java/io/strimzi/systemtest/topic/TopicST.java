@@ -147,10 +147,15 @@ public class TopicST extends BaseST {
 
             LOGGER.info("Verify that in Kafka cluster contains {} topics", 1);
             assertThat(topics.size(), is(1));
+            assertThat(topics.contains(TOPIC_NAME), is(true));
         }
 
+        List<KafkaTopic> kafkaTopics = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+
         LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created", 1);
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(1));
+
+        assertThat(kafkaTopics.size(), is(1));
+        assertThat(kafkaTopics.get(0).getMetadata().getName(), is(TOPIC_NAME));
     }
 
     @Test
