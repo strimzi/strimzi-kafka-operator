@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -240,13 +241,7 @@ public class PodUtils {
      * @param podNamePrefix all pods that matched the prefix will be verified
      */
     public static void waitUntilPodsByNameStability(String podNamePrefix) {
-        int[] stabilityCounter = {0};
-
-        TestUtils.waitFor("Waiting for pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                List<Pod> pods = ResourceManager.kubeClient().listPodsByPrefixInName(podNamePrefix);
-                return verifyThatPodsAreStable(pods, stabilityCounter);
-            });
+        verifyThatPodsAreStable(() -> ResourceManager.kubeClient().listPodsByPrefixInName(podNamePrefix));
     }
 
     /**
@@ -256,11 +251,14 @@ public class PodUtils {
      * @param pods all pods that will be verified
      */
     public static void waitUntilPodsStability(List<Pod> pods) {
-        int[] stabilityCounter = {0};
+        verifyThatPodsAreStable(() -> pods);
+    }
 
+    private static void verifyThatPodsAreStable(Supplier<List<Pod>> pods) {
+        int[] stabilityCounter = {0};
         TestUtils.waitFor("Pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = pods.stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
+                List<Pod> actualPods = pods.get().stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals("Running")) {
@@ -268,7 +266,8 @@ public class PodUtils {
                             pod.getMetadata().getName(), pod.getStatus().getPhase(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
                     } else {
-                        LOGGER.info("Pod {} is not stable with phase {}", pod.getMetadata().getName(), pod.getStatus().getPhase());
+                        LOGGER.info("Pod {} is not stable in phase following phase {} reset the stability counter from {} to {}",
+                            pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
                         stabilityCounter[0] = 0;
                         return false;
                     }
@@ -276,33 +275,11 @@ public class PodUtils {
                 stabilityCounter[0]++;
 
                 if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
-                    LOGGER.info("All pods are stable {}", pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(" ,")));
+                    LOGGER.info("All pods are stable {}", actualPods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(" ,")));
                     return true;
                 }
                 return false;
             });
-    }
-
-    private static boolean verifyThatPodsAreStable(List<Pod> pods, int[] stabilityCounter) {
-        for (Pod pod : pods) {
-            if (pod.getStatus().getPhase().equals("Running")) {
-                LOGGER.info("Pod {} is in the {} state. Remaining seconds pod to be stable {}",
-                    pod.getMetadata().getName(), pod.getStatus().getPhase(),
-                    Constants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
-            } else {
-                LOGGER.info("Pod {} is not stable in phase following phase {} reset the stability counter from {} to {}",
-                    pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
-                stabilityCounter[0] = 0;
-                return false;
-            }
-        }
-        stabilityCounter[0]++;
-
-        if (stabilityCounter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
-            LOGGER.info("All pods are stable {}", pods.toString());
-            return true;
-        }
-        return false;
     }
 
     /**
