@@ -675,7 +675,7 @@ class TopicOperator {
             final String message = "KafkaTopic resource and Kafka topic both changed in a conflicting way: " + conflict;
             LOGGER.error("{}: {}", logContext, message);
             enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> { }));
-            reconciliationResultHandler = Future.failedFuture(new Exception(message));
+            reconciliationResultHandler = Future.failedFuture(new ConflictingChangesException(involvedObject, message));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
             LOGGER.debug("{}: Diffs do not conflict, merged diff: {}", logContext, merged);
@@ -690,10 +690,10 @@ class TopicOperator {
                     LOGGER.error("{}: {}", logContext, message);
                     enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
                     }));
-                    reconciliationResultHandler = Future.failedFuture(new Exception(message));
+                    reconciliationResultHandler = Future.failedFuture(new PartitionDecreaseException(involvedObject, message));
                 } else if (oursK8s.changesReplicationFactor()
                             && !oursKafka.changesReplicationFactor()) {
-                    reconciliationResultHandler = Future.failedFuture(new Exception(
+                    reconciliationResultHandler = Future.failedFuture(new ReplicationFactorChangeException(involvedObject,
                                     "Changing 'spec.replicas' is not supported. " +
                                             "This KafkaTopic's 'spec.replicas' should be reverted to " +
                                             kafkaTopic.getNumReplicas() +
@@ -1299,7 +1299,7 @@ class TopicOperator {
                     public Future<Void> execute() {
                         return getFromTopicStore(topicName).recover(error -> {
                             failed.put(topicName,
-                                    new OperatorException("Error getting KafkaTopic " + topicName + " during "
+                                    new OperatorException("Error getting topic " + topicName + " from topic store during "
                                             + reconciliationType + " reconciliation", error));
                             return Future.succeededFuture();
                         }).compose(topic -> {
@@ -1347,15 +1347,15 @@ class TopicOperator {
                                                    Topic privateTopic,
                                                    Reconciliation reconciliation) {
         return k8s.getFromName(privateTopic.getResourceName())
-            .compose(kafkaTopicResource -> {
-                reconciliation.observedTopicFuture(kafkaTopicResource);
-                return getKafkaAndReconcile(reconciliation, logContext, topicName, privateTopic, kafkaTopicResource);
-            })
             .recover(error -> {
                 LOGGER.error("{}: Error getting KafkaTopic {} for topic {}",
                         logContext,
                         topicName.asKubeName(), topicName, error);
-                return Future.failedFuture(new OperatorException("Error getting KafkaTopic " + topicName.asKubeName() + " during " + logContext.trigger() + " reconciliation", error));
+                return Future.failedFuture(new OperatorException("Error getting KafkaTopic " + topicName + " during " + logContext.trigger() + " reconciliation", error));
+            })
+            .compose(kafkaTopicResource -> {
+                reconciliation.observedTopicFuture(kafkaTopicResource);
+                return getKafkaAndReconcile(reconciliation, logContext, topicName, privateTopic, kafkaTopicResource);
             });
     }
 
