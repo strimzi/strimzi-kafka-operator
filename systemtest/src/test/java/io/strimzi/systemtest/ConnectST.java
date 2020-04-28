@@ -152,7 +152,6 @@ class ConnectST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -169,7 +168,7 @@ class ConnectST extends BaseST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaConnectWithPlainAndScramShaAuthentication() throws InterruptedException {
+    void testKafkaConnectWithPlainAndScramShaAuthentication() {
         // Use a Kafka with plain listener disabled
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -232,7 +231,6 @@ class ConnectST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -276,7 +274,6 @@ class ConnectST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int received = internalKafkaClient.receiveMessagesPlain();
@@ -510,7 +507,6 @@ class ConnectST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -731,7 +727,6 @@ class ConnectST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         String execConnectPod =  kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
@@ -868,7 +863,6 @@ class ConnectST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(securityProtocol)
             .withTopicName(topicName)
             .build();

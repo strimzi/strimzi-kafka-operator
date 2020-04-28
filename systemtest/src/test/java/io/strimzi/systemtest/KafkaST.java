@@ -50,6 +50,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -78,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -116,7 +116,6 @@ class KafkaST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
-    private static final String TOPIC_NAME = "test-topic";
 
     @Test
     @OpenShiftOnly
@@ -496,7 +495,7 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous() {
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -512,7 +511,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -534,9 +532,8 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated() {
-        String kafkaUser = "my-user";
-        int messagesCount = 200;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String kafkaUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         // Use a Kafka with plain listener disabled
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -565,8 +562,7 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUser)
-            .withMessageCount(messagesCount)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withMessageCount(MESSAGE_COUNT)
             .build();
 
         // Check brokers availability
@@ -590,8 +586,8 @@ class KafkaST extends BaseST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha() {
-        String kafkaUsername = "my-user";
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         // Use a Kafka with plain listener disabled
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -635,7 +631,6 @@ class KafkaST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         // Check brokers availability
@@ -658,9 +653,8 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha() {
-        String kafkaUsername = "my-user";
-        int messagesCount = 200;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
@@ -691,8 +685,7 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
-            .withMessageCount(messagesCount)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withMessageCount(MESSAGE_COUNT)
             .build();
 
         // Check brokers availability
@@ -846,7 +839,7 @@ class KafkaST extends BaseST {
     @Test
     void testForTopicOperator() throws InterruptedException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        String topicName = "my-topic";
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         //Creating topics for testing
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -1148,7 +1141,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1221,7 +1213,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1256,7 +1247,6 @@ class KafkaST extends BaseST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1289,7 +1279,6 @@ class KafkaST extends BaseST {
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1326,7 +1315,6 @@ class KafkaST extends BaseST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(USER_NAME)
                 .withSecurityProtocol(SecurityProtocol.SSL)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1731,7 +1719,7 @@ class KafkaST extends BaseST {
 
     @Test
     void testAppDomainLabels() {
-        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -1747,7 +1735,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         Map<String, String> labels;
@@ -1831,7 +1818,7 @@ class KafkaST extends BaseST {
     void testUOListeningOnlyUsersInSameCluster() {
         final String firstClusterName = "my-cluster-1";
         final String secondClusterName = "my-cluster-2";
-        final String userName = "user-example";
+        final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
         KafkaResource.kafkaEphemeral(firstClusterName, 3, 1).done();
 
@@ -1857,7 +1844,7 @@ class KafkaST extends BaseST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk() {
-        String topicName = TEST_TOPIC_NAME + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
@@ -1875,7 +1862,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         TestUtils.waitFor("KafkaTopic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1952,7 +1938,6 @@ class KafkaST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +

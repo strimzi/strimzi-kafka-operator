@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
+import java.util.Random;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -101,6 +102,10 @@ public abstract class AbstractKafkaClient {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            consumerGroup = generateRandomConsumerGroup();
+        }
 
         topicName = builder.topicName;
         namespaceName = builder.namespaceName;
@@ -165,6 +170,16 @@ public abstract class AbstractKafkaClient {
         } else {
             throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapServiceType + " for Kafka cluster " + clusterName);
         }
+    }
+
+    /**
+     * Generated random name for the KafkaUser resource
+     * @return random name with additional salt
+     */
+    public static String generateRandomConsumerGroup() {
+        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        return  "my-consumer-group-" + salt;
     }
 
     public KafkaClientProperties getClientProperties() {

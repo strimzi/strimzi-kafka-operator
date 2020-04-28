@@ -55,7 +55,6 @@ public class MirrorMakerST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);
 
     public static final String NAMESPACE = "mm-cluster-test";
-    private static final String TOPIC_NAME = "test-topic";
     private final int messagesCount = 200;
     private String kafkaClusterSourceName = CLUSTER_NAME + "-source";
     private String kafkaClusterTargetName = CLUSTER_NAME + "-target";

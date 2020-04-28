@@ -55,7 +55,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
-    private String userName = "bob";
 
     @Test
     void testSendSimpleMessageTlsScramSha() throws Exception {
@@ -72,9 +71,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(userName)
+            .withKafkaUsername(USER_NAME)
             .withMessageCount(messageCount)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .build();
 
@@ -91,9 +89,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(userName)
+            .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .build();
 
@@ -170,7 +167,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withKafkaUsername(weirdUserName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -207,12 +203,12 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             .endSpec().done();
 
         // Create Kafka user
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
+        SecretUtils.waitForSecretReady(USER_NAME);
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
-        passwordSecret.setSecretName(userName);
+        passwordSecret.setSecretName(USER_NAME);
         passwordSecret.setPassword("password");
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -224,7 +220,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
             .withNewKafkaClientAuthenticationScramSha512()
-                .withNewUsername(userName)
+                .withNewUsername(USER_NAME)
                 .withPasswordSecret(passwordSecret)
             .endKafkaClientAuthenticationScramSha512()
                 .withNewTls()

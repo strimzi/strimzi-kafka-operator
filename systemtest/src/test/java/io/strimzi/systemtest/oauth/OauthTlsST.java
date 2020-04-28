@@ -352,7 +352,6 @@ public class OauthTlsST extends OauthBaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withKafkaUsername(OAUTH_CLIENT_NAME)
             .withClientSecretName(OAUTH_CLIENT_SECRET)

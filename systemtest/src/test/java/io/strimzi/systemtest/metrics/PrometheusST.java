@@ -34,7 +34,6 @@ public class PrometheusST extends BaseST {
 
     public static final String NAMESPACE = "prometheus-test";
 
-    private static final String PROMETHEUS = "prometheus";
     private static final String PROMETHEUS_POD = "prometheus-prometheus-0";
     private static final String ALERTMANAGER = "alertmanager";
     private static final String ALERTMANAGER_POD = "alertmanager-alertmanager-0";

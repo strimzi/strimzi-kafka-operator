@@ -26,6 +26,8 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -85,12 +87,12 @@ class RollingUpdateST extends BaseST {
 
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
-        String userName = "alice";
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -104,7 +106,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -173,7 +174,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     void testRecoveryDuringKafkaRollingUpdate() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
@@ -183,7 +184,7 @@ class RollingUpdateST extends BaseST {
             .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3, 1).done();
 
-        String userName = "alice";
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -198,7 +199,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -267,7 +267,7 @@ class RollingUpdateST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
@@ -304,7 +304,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -387,7 +386,7 @@ class RollingUpdateST extends BaseST {
      */
     @Test
     void testKafkaWontRollUpBecauseTopic() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
@@ -438,13 +437,13 @@ class RollingUpdateST extends BaseST {
 
     @Test
     void testZookeeperScaleUpScaleDown() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        String userName = "alice";
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         // kafka cluster already deployed
@@ -464,7 +463,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -548,7 +546,7 @@ class RollingUpdateST extends BaseST {
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT).done();
         ResourceManager.setMethodResources();
 
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -559,7 +557,7 @@ class RollingUpdateST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        String userName = "alice";
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -574,7 +572,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -832,7 +829,7 @@ class RollingUpdateST extends BaseST {
     @Test
     void testClusterCaRemovedTriggersRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -848,7 +845,6 @@ class RollingUpdateST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
