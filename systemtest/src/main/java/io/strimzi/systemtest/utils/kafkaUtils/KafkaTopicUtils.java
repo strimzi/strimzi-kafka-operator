@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -82,9 +81,9 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static void waitForKafkaTopicStatus(String topicName, String status) {
+    public static void waitForKafkaTopicStatus(String topicName, String state) {
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
-        ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, status);
+        ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
     }
 
     public static void waitForKafkaTopicReady(String topicName) {

@@ -50,8 +50,8 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static void waitForConnectorStatus(String name, String state) {
-        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(name).get();
+    public static void waitForConnectorStatus(String connectorName, String state) {
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
@@ -74,5 +74,14 @@ public class KafkaConnectorUtils {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
         }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+    }
+
+    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
+        cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+            "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
+                "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
+                "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
+                apiUrl + "/connectors"
+        );
     }
 }
