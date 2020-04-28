@@ -235,8 +235,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.4.1",
-      "kafka": "strimzi/kafka:latest-kafka-2.4.1",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.5.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -245,12 +245,12 @@
       "logMessageVersion": ""
     },
     "proceduresAfter": {
-      "kafkaVersion": "2.4.1",
-      "logMessageVersion": ""
+      "kafkaVersion": "2.5.0",
+      "logMessageVersion": "2.5"
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
-      "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.4.1"
+      "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.5.0"
     },
     "environmentInfo": {
       "status": "stable",
