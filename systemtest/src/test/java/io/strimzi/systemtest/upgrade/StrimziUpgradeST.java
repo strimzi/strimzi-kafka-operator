@@ -179,7 +179,7 @@ public class StrimziUpgradeST extends BaseST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.17.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -188,7 +188,7 @@ public class StrimziUpgradeST extends BaseST {
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.3")
+                    .addToConfig("log.message.format.version", "2.4")
                 .endKafka()
             .endSpec().done();
 
