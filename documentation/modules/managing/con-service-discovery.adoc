@@ -80,4 +80,4 @@ You can find the services by specifying the discovery label when fetching servic
 kubectl get service -l strimzi.io/discovery=true
 ----
 
-The connection details are returned when retrieving the service label.
+The connection details are returned when retrieving the service discovery label.
