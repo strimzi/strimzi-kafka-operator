@@ -49,6 +49,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
@@ -373,12 +374,12 @@ public class ResourceManager {
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
-        List<String> printWholeCr = new ArrayList<>(asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND));
+        List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
 
         String kind = customResource.getKind();
         String name = customResource.getMetadata().getName();
 
-        if (printWholeCr.contains(kind)) {
+        if (printWholeCR.contains(kind)) {
             LOGGER.info(customResource);
         } else {
             List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
