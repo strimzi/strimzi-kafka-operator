@@ -3,6 +3,8 @@
 RESULTS_PATH=${1}
 TEST_CASE=${2}
 TEST_PROFILE=${3}
+BUILD_ID=${4:-0}
+OCP_VERSION=${5:-3}
 
 JSON_FILE_RESULTS=results.json
 
@@ -25,9 +27,15 @@ TEST_ERRORS_COUNT=$(get_test_count "errors")
 TEST_SKIPPED_COUNT=$(get_test_count "skipped")
 TEST_FAILURES_COUNT=$(get_test_count "failures")
 
+if [[ "${OCP_VERSION}" == "4" ]]; then
+  BUILD_ENV="crc"
+else
+  BUILD_ENV="oc cluster up"
+fi
+
 TEST_ALL_FAILED_COUNT=$((TEST_ERRORS_COUNT + TEST_FAILURES_COUNT))
 
-SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_NUMBER}\n"
+SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**BUILD_ENV:** ${BUILD_ENV}\n"
 
 
 FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>\)#\1#p" | awk -F '"' '{print "\\n- " $2 " in "  $4}')
