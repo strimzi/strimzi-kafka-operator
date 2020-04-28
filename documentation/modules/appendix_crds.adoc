@@ -1593,6 +1593,8 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |string
 |addresses     1.2+<.<|A list of the addresses for this listener.
 |xref:type-ListenerAddress-{context}[`ListenerAddress`] array
+|bootstrap     1.2+<.<|A concatenated list of the bootstrap addresses for this listener.
+|string
 |certificates  1.2+<.<|A list of TLS certificates which can be used to verify the identity of the server when connecting to the given listener. Set only for `tls` and `external` listeners.
 |string array
 |====

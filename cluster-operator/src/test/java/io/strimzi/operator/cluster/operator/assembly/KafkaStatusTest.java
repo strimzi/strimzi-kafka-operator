@@ -150,9 +150,11 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
+            assertThat(status.getListeners().get(0).getBootstrap(), is("my-service.my-namespace.svc:9092"));
             assertThat(status.getListeners().get(1).getType(), is("external"));
-            assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(),  is("my-route-address.domain.tld"));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(), is("my-route-address.domain.tld"));
             assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(new Integer(443)));
+            assertThat(status.getListeners().get(1).getBootstrap(), is("my-route-address.domain.tld:443"));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("Ready"));
@@ -258,6 +260,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
+            assertThat(status.getListeners().get(0).getBootstrap(), is("my-service.my-namespace.svc:9092"));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("NotReady"));
@@ -327,6 +330,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
+            assertThat(status.getListeners().get(0).getBootstrap(), is("my-service.my-namespace.svc:9092"));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("NotReady"));
@@ -887,6 +891,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("external"));
 
             assertThat(status.getListeners().get(0).getAddresses(), is(nullValue()));
+            assertThat(status.getListeners().get(0).getBootstrap(), is(nullValue()));
 
             async.flag();
         });
