@@ -105,7 +105,9 @@ public class KafkaAgent {
                 boolean ready = false;
                 Integer running = Integer.valueOf(3);
                 Object value = brokerState.value();
-                if (running.equals(value)) {
+
+                if ((value instanceof Integer && running.equals(value))
+                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
                     try {
                         LOGGER.info("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);
@@ -115,7 +117,7 @@ public class KafkaAgent {
                     ready = true;
 
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {}", brokerStateName, value);
+                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, value, value.getClass());
                 }
                 return ready;
             }

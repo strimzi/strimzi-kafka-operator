@@ -87,10 +87,10 @@
         <fasterxml.jackson-databind.version>2.10.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
-        <kafka.version>2.4.1</kafka.version>
+        <kafka.version>2.5.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.10</scala-library.version>
-        <zookeeper.version>3.5.6</zookeeper.version>
+        <zookeeper.version>3.5.7</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>

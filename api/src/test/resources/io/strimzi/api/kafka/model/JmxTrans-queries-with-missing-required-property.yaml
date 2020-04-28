@@ -4,7 +4,7 @@ metadata:
   name: strimzi-jmxtrans
 spec:
   kafka:
-    version: 2.3.1
+    version: 2.5.0
     replicas: 3
     storage:
       type: persistent-claim

@@ -80,8 +80,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip";
-    private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -179,7 +178,7 @@ public class StrimziUpgradeST extends BaseST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.17.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -188,7 +187,7 @@ public class StrimziUpgradeST extends BaseST {
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.3")
+                    .addToConfig("log.message.format.version", "2.4")
                 .endKafka()
             .endSpec().done();
 
@@ -208,7 +207,7 @@ public class StrimziUpgradeST extends BaseST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.1"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {

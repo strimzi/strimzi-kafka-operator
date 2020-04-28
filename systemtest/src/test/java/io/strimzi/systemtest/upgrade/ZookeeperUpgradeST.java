@@ -88,7 +88,7 @@ public class ZookeeperUpgradeST extends BaseST {
             kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
             // Wait for log.message.format.version change
-            if (!sameMinorVersion) {
+            if (!sameMinorVersion && testInfo.getDisplayName().contains("Downgrade"))   {
                 KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                     LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                     Map<String, Object> config = kafka.getSpec().getKafka().getConfig();

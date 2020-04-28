@@ -12,6 +12,7 @@
 * Add support for user configurable SecurityContext for each Strimzi container
 * Allow standalone User Operator to modify status on KafkaUser
 * Add support for Kafka 2.4.1
+* Add support for Kafka 2.5.0
 
 ## 0.17.0
 
