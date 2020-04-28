@@ -150,12 +150,9 @@ public class TopicST extends BaseST {
             assertThat(topics.contains(TOPIC_NAME), is(true));
         }
 
-        List<KafkaTopic> kafkaTopics = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
 
-        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created", 1);
-
-        assertThat(kafkaTopics.size(), is(1));
-        assertThat(kafkaTopics.get(0).getMetadata().getName(), is(TOPIC_NAME));
+        KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, "Ready");
     }
 
     @Test
