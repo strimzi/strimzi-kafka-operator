@@ -51,7 +51,7 @@ public class ConfigMapUtils {
         }
     }
 
-    public static void waitForKafkaConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
+    public static void waitForConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Kafka ConfigMap label {} change to {}", labelKey, null);
             TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,

@@ -105,11 +105,11 @@ public class PodUtils {
     }
 
     /**
-     * The method to wait when all pods for Kafka cluster will be deleted.
+     * The method to wait when all pods of specific prefix will be deleted
      * To wait for the cluster to be updated, the following methods must be used: {@link StatefulSetUtils#ssHasRolled(String, Map)}, {@link StatefulSetUtils#waitTillSsHasRolled(String, int, Map)} )}
      * @param clusterName Cluster name where pods should be deleted
      */
-    public static void waitForKafkaClusterPodsDeletion(String clusterName) {
+    public static void waitForPodsWithPrefixDeletion(String clusterName) {
         LOGGER.info("Waiting when all Pods in Kafka cluster {} will be deleted", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))

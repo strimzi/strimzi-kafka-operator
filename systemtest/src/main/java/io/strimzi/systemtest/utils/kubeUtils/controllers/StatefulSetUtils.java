@@ -175,7 +175,7 @@ public class StatefulSetUtils {
         LOGGER.info("StatefulSet {} was recovered", name);
     }
 
-    public static void waitForKafkaStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+    public static void waitForStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -190,7 +190,7 @@ public class StatefulSetUtils {
         }
     }
 
-    public static void waitForKafkaStatefulSetLabelsDeletion(String statefulSet, String... labelKeys) {
+    public static void waitForStatefulSetLabelsDeletion(String statefulSet, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for Kafka statefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,

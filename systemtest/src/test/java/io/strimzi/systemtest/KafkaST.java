@@ -1624,7 +1624,7 @@ class KafkaST extends BaseST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StatefulSetUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
+        StatefulSetUtils.waitForStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
 
         LOGGER.info("Getting labels from stateful set resource");
         StatefulSet statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1654,7 +1654,7 @@ class KafkaST extends BaseST {
         labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        ServiceUtils.waitForKafkaServiceLabelsChange(brokerServiceName, labels);
+        ServiceUtils.waitForServiceLabelsChange(brokerServiceName, labels);
 
         LOGGER.info("Verifying kafka labels via services");
         Service service = kubeClient().getService(brokerServiceName);
@@ -1670,7 +1670,7 @@ class KafkaST extends BaseST {
         verifyPresentLabels(labels, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StatefulSetUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
+        StatefulSetUtils.waitForStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1699,7 +1699,7 @@ class KafkaST extends BaseST {
         labels.remove(labelKeys[2]);
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        ServiceUtils.waitForKafkaServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
         service = kubeClient().getService(brokerServiceName);
@@ -1707,7 +1707,7 @@ class KafkaST extends BaseST {
         verifyNullLabels(labelKeys, service);
 
         LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMapUtils.waitForKafkaConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ConfigMapUtils.waitForConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         configMap = kubeClient().getConfigMap(configMapName);
 
@@ -1715,7 +1715,7 @@ class KafkaST extends BaseST {
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         String statefulSetName = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getName();
-        StatefulSetUtils.waitForKafkaStatefulSetLabelsDeletion(statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        StatefulSetUtils.waitForStatefulSetLabelsDeletion(statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
