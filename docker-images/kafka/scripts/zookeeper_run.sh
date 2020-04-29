@@ -7,7 +7,7 @@ export ZOOKEEPER_DATA_BASE_NAME="data"
 export ZOOKEEPER_LOG_BASE_NAME="logs"
 
 export BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
-export BASE_FQDN=$(hostname -f | cut -d "." -f2-)
+export BASE_FQDN=$(hostname -f | cut -d "." -f2-4)
 
 # Detect the server ID based on the hostname.
 # StatefulSets are numbered from 0 so we have to always increment by 1
@@ -23,6 +23,14 @@ mkdir -p $ZOOKEEPER_DATA_DIR
 
 # Create myid file
 echo "$ZOOKEEPER_ID" > $ZOOKEEPER_DATA_DIR/myid
+
+# Generate temporary keystore password
+export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+
+mkdir -p /tmp/zookeeper
+
+# Import certificates into keystore and truststore
+./zookeeper_tls_prepare_certificates.sh
 
 # Generate and print the config file
 echo "Starting Zookeeper with configuration:"

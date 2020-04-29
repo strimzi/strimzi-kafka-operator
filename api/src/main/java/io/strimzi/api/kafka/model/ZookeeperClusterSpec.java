@@ -37,7 +37,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "tlsSidecar", "template"})
+         "metrics", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -53,7 +53,6 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     private Logging logging;
 
-    private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
     private ResourceRequirements resources;
@@ -94,16 +93,6 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     public void setLogging(Logging logging) {
         this.logging = logging;
-    }
-
-    @Description("TLS sidecar configuration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public TlsSidecar getTlsSidecar() {
-        return tlsSidecar;
-    }
-
-    public void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
     }
 
     @Description("The number of pods in the cluster.")

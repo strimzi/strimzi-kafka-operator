@@ -761,17 +761,6 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZookeeperClusterChangeStunnelImage(Params params, VertxTestContext context) {
-        Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly = new KafkaBuilder(kafkaAssembly)
-                .editSpec().editZookeeper()
-                    .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
-                    .endTlsSidecar().endZookeeper().endSpec().build();
-        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
     public void testUpdateKafkaClusterScaleUp(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);

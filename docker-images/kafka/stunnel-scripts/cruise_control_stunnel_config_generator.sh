@@ -9,6 +9,7 @@ cat /etc/tls-sidecar/cluster-ca-certs/*.crt > "$CA_CERTS"
 echo "pid = /usr/local/var/run/stunnel.pid"
 echo "foreground = yes"
 echo "debug = $TLS_SIDECAR_LOG_LEVEL"
+echo "sslVersion = TLSv1.2"
 
 cat <<-EOF
 [zookeeper-2181]
@@ -17,7 +18,7 @@ CAfile = ${CA_CERTS}
 cert = ${CC_CERTS_KEYS}/cruise-control.crt
 key = ${CC_CERTS_KEYS}/cruise-control.key
 accept = 127.0.0.1:2181
-connect = ${STRIMZI_ZOOKEEPER_CONNECT:-zookeeper-client:2181}
+connect = ${STRIMZI_ZOOKEEPER_CONNECT:-zookeeper-client:2281}
 delay = yes
 verify = 2
 

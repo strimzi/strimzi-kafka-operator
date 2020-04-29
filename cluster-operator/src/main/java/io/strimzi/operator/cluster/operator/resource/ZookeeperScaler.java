@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Class for scaling Zookeeper 3.5 using the ZookeeperAdmin client
@@ -37,6 +38,8 @@ public class ZookeeperScaler implements AutoCloseable {
 
     private final String zookeeperConnectionString;
 
+    private final Function<Integer, String> zkNodeAddress;
+
     private final long operationTimeoutMs;
 
     private final String trustStorePassword;
@@ -45,25 +48,25 @@ public class ZookeeperScaler implements AutoCloseable {
     private final String keyStorePassword;
     private final File keyStoreFile;
 
-    //private ZooKeeperAdmin zkAdmin;
-
     /**
      * ZookeeperScaler constructor
      *
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
+     * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
      * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
      * @param coKeySecret                   Secret with Cluster Operator public and private key
      * @param operationTimeoutMs            Operation timeout
      *
      * @return  ZookeeperScaler instance
      */
-    protected ZookeeperScaler(Vertx vertx, ZooKeeperAdminProvider zooAdminProvider, String zookeeperConnectionString, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+    protected ZookeeperScaler(Vertx vertx, ZooKeeperAdminProvider zooAdminProvider, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
         log.debug("Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
 
         this.vertx = vertx;
         this.zooAdminProvider = zooAdminProvider;
         this.zookeeperConnectionString = zookeeperConnectionString;
+        this.zkNodeAddress = zkNodeAddress;
         this.operationTimeoutMs = operationTimeoutMs;
 
         // Setup truststore from PEM file in cluster CA secret
@@ -173,7 +176,7 @@ public class ZookeeperScaler implements AutoCloseable {
      * @return                  Future indicating success or failure
      */
     private Future<Void> scaleTo(ZooKeeperAdmin zkAdmin, Map<String, String> currentServers, int scaleTo) {
-        Map<String, String> desiredServers = generateConfig(scaleTo);
+        Map<String, String> desiredServers = generateConfig(scaleTo, zkNodeAddress);
 
         if (isDifferent(currentServers, desiredServers))    {
             log.debug("The Zookeeper server configuration needs to be updated");
@@ -324,18 +327,13 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param scale     Number of nodes which the Zookeeper cluster should have
      * @return          Map with configuration
      */
-    /*test*/ static Map<String, String> generateConfig(int scale)   {
+    /*test*/ static Map<String, String> generateConfig(int scale, Function<Integer, String> zkNodeAddress)   {
         Map<String, String> servers = new HashMap<>(scale);
 
         for (int i = 0; i < scale; i++) {
-            // The Zookeeper server IDs starts with 1
+            // The Zookeeper server IDs starts with 1, but pod index starts from 0
             String key = String.format("server.%d", i + 1);
-
-            // The ports
-            int followerPort = (ZookeeperCluster.CLUSTERING_PORT * 10) + i;
-            int electionPort = (ZookeeperCluster.LEADER_ELECTION_PORT * 10) + i;
-            int clientPort = (ZookeeperCluster.CLIENT_PORT * 10) + i;
-            String value = String.format("127.0.0.1:%d:%d:participant;127.0.0.1:%d", followerPort, electionPort, clientPort);
+            String value = String.format("%s:%d:%d:participant;127.0.0.1:%d", zkNodeAddress.apply(i), ZookeeperCluster.CLUSTERING_PORT, ZookeeperCluster.LEADER_ELECTION_PORT, 2181);
 
             servers.put(key, value);
         }

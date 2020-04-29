@@ -1429,16 +1429,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @param connectToReplicas     Number of replicas from the ZK STS which should be used
          * @return                      The generated Zookeeper connection string
          */
-        String zkConnectionString(int connectToReplicas)  {
+        String zkConnectionString(int connectToReplicas, Function<Integer, String> zkNodeAddress)  {
             // Prepare Zoo connection string. We want to connect only to nodes which existed before
             // scaling and will exist after it is finished
             List<String> zooNodes = new ArrayList<>(connectToReplicas);
 
             for (int i = 0; i < connectToReplicas; i++)   {
-                zooNodes.add(String.format("%s.%s.%s.svc:%d",
-                        zkCluster.getPodName(i),
-                        KafkaResources.zookeeperHeadlessServiceName(name),
-                        namespace,
+                zooNodes.add(String.format("%s:%d",
+                        zkNodeAddress.apply(i),
                         ZookeeperCluster.CLIENT_PORT));
             }
 
@@ -1471,7 +1469,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas), clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+                        Function<Integer, String> zkNodeAddress = (Integer i) -> String.format("%s.%s.%s.svc",
+                                zkCluster.getPodName(i),
+                                KafkaResources.zookeeperHeadlessServiceName(name),
+                                namespace);
+
+                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
                         return Future.succeededFuture(zkScaler);
                     });

@@ -38,7 +38,6 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     private ResourceTemplate persistentVolumeClaim;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate zookeeperContainer;
-    private ContainerTemplate tlsSidecarContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for ZooKeeper `StatefulSet`.")
@@ -109,16 +108,6 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     public void setZookeeperContainer(ContainerTemplate zookeeperContainer) {
         this.zookeeperContainer = zookeeperContainer;
-    }
-
-    @Description("Template for the Kafka broker TLS sidecar container")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ContainerTemplate getTlsSidecarContainer() {
-        return tlsSidecarContainer;
-    }
-
-    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
-        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Override
