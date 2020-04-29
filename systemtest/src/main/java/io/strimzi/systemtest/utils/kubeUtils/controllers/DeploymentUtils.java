@@ -115,7 +115,7 @@ public class DeploymentUtils {
 
     /**
      * Method to wait when DeploymentConfig will be recreated after rolling update
-     * @param clusterName Kafka Connect S2I cluster name
+     * @param clusterName DeploymentConfig name
      * @param snapshot Snapshot of pods for DeploymentConfig before the rolling update
      * @return The snapshot of the DeploymentConfig after rolling update with Uid for every pod
      */

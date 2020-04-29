@@ -36,14 +36,14 @@ public class ConfigMapUtils {
         LOGGER.info("Config map {} was recovered", name);
     }
 
-    public static void waitForKafkaConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
+    public static void waitForConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
-                LOGGER.info("Waiting for Kafka ConfigMap label change {} -> {}", entry.getKey(), entry.getValue());
-                TestUtils.waitFor("Kafka ConfigMap label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                LOGGER.info("Waiting for ConfigMap {} label change {} -> {}", configMapName, entry.getKey(), entry.getValue());
+                TestUtils.waitFor("ConfigMap label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                         kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
@@ -51,14 +51,14 @@ public class ConfigMapUtils {
         }
     }
 
-    public static void waitForKafkaConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
+    public static void waitForConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
-            LOGGER.info("Waiting for Kafka ConfigMap label {} change to {}", labelKey, null);
+            LOGGER.info("Waiting for ConfigMap {} label {} change to {}", configMapName, labelKey, null);
             TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                     kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(labelKey) == null
             );
-            LOGGER.info("Kafka ConfigMap label {} change to {}", labelKey, null);
+            LOGGER.info("ConfigMap {} label {} change to {}", configMapName, labelKey, null);
         }
     }
 
