@@ -105,7 +105,7 @@ public class ZookeeperClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateMetricsAndLogConfigMap(null);
+        ConfigMap metricsCm = zc.generateConfigurationConfigMap(null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }
@@ -137,8 +137,8 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headful.getSpec().getPorts().size(), is(2));
 
-        assertThat(headful.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(ZookeeperCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.METRICS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.METRICS_PORT)));
@@ -163,8 +163,8 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getType(), is("ClusterIP"));
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headful.getSpec().getPorts().size(), is(1));
-        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"), is(false));
@@ -187,8 +187,8 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(3));
-        assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(ZookeeperCluster.CLUSTERING_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
@@ -1022,7 +1022,7 @@ public class ZookeeperClusterTest {
     @Test
     public void testZookeeperContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT;
+        String testEnvOneKey = ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED;
         String testEnvOneValue = "test.env.one";
         envVar1.setName(testEnvOneKey);
         envVar1.setValue(testEnvOneValue);
@@ -1053,7 +1053,6 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         List<EnvVar> zkEnvVars = zc.getEnvVars();
-
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));

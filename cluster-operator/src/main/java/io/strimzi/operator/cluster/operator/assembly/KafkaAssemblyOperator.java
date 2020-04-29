@@ -1323,8 +1323,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.succeededFuture(null);
                         }
                     }).compose(cm -> {
-                        ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(cm);
-                        this.zkMetricsAndLogsConfigMap = zkCluster.generateMetricsAndLogConfigMap(logAndMetricsConfigMap);
+                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(cm);
+                        this.zkMetricsAndLogsConfigMap = zkCluster.generateConfigurationConfigMap(logAndMetricsConfigMap);
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
                         this.zkLoggingHash = getStringHash(loggingConfiguration);
@@ -1431,7 +1431,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (int i = 0; i < connectToReplicas; i++)   {
                 zooNodes.add(String.format("%s:%d",
                         zkNodeAddress.apply(i),
-                        ZookeeperCluster.CLIENT_PORT));
+                        ZookeeperCluster.CLIENT_TLS_PORT));
             }
 
             return  String.join(",", zooNodes);
@@ -2432,7 +2432,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodsReady() {
-            if (zkCurrentReplicas != null)  {
+            if (zkCurrentReplicas != null && zkCurrentReplicas < zkCluster.getReplicas())  {
                 // When scaling up we wait only for old pods to be ready, the new ones were not created yet
                 return podsReady(zkCluster, zkCurrentReplicas);
             } else {

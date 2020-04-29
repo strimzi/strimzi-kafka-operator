@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -57,8 +58,9 @@ import java.util.Map;
 public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
 
-    public static final int CLIENT_PORT = 2281;
-    protected static final String CLIENT_PORT_NAME = "tcp-clients";
+    public static final int CLIENT_PLAINTEXT_PORT = 2181; // This port is internal only, not exposed => no need for name
+    public static final int CLIENT_TLS_PORT = 2281;
+    protected static final String CLIENT_TLS_PORT_NAME = "tcp-clients";
     public static final int CLUSTERING_PORT = 2888;
     protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";
     public static final int LEADER_ELECTION_PORT = 3888;
@@ -86,10 +88,12 @@ public class ZookeeperCluster extends AbstractModel {
     private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
     // Zookeeper configuration keys (EnvVariables)
-    public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
     public static final String ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = "ZOOKEEPER_SNAPSHOT_CHECK_ENABLED";
+
+    // Config map keys
+    public static final String CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT = "zookeeper.node-count";
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
@@ -351,7 +355,7 @@ public class ZookeeperCluster extends AbstractModel {
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
-        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
         return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
@@ -364,7 +368,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
-        clientsPort.setPort(new IntOrString(CLIENT_PORT));
+        clientsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
 
         NetworkPolicyPort clusteringPort = new NetworkPolicyPort();
         clusteringPort.setPort(new IntOrString(CLUSTERING_PORT));
@@ -546,7 +550,6 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
@@ -565,7 +568,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<ServicePort> getServicePortList() {
         List<ServicePort> portList = new ArrayList<>();
-        portList.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        portList.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
         portList.add(createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
 
@@ -577,7 +580,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
         portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"));
-        portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
+        portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
 
         if (isMetricsEnabled) {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
@@ -666,5 +669,18 @@ public class ZookeeperCluster extends AbstractModel {
 
     public String getVersion() {
         return this.version;
+    }
+
+    /**
+     * Generates a configuration ConfigMap with metrics and logging configurations and node count.
+     *
+     * @param cm    The ConfigMap with original logging configuration
+     *
+     * @return      The generated configuration ConfigMap.
+     */
+    public ConfigMap generateConfigurationConfigMap(ConfigMap cm) {
+        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(cm);
+        zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
+        return zkConfigMap;
     }
 }

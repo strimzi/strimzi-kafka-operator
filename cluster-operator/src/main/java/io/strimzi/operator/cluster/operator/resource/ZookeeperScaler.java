@@ -333,7 +333,7 @@ public class ZookeeperScaler implements AutoCloseable {
         for (int i = 0; i < scale; i++) {
             // The Zookeeper server IDs starts with 1, but pod index starts from 0
             String key = String.format("server.%d", i + 1);
-            String value = String.format("%s:%d:%d:participant;127.0.0.1:%d", zkNodeAddress.apply(i), ZookeeperCluster.CLUSTERING_PORT, ZookeeperCluster.LEADER_ELECTION_PORT, 2181);
+            String value = String.format("%s:%d:%d:participant;127.0.0.1:%d", zkNodeAddress.apply(i), ZookeeperCluster.CLUSTERING_PORT, ZookeeperCluster.LEADER_ELECTION_PORT, ZookeeperCluster.CLIENT_PLAINTEXT_PORT);
 
             servers.put(key, value);
         }

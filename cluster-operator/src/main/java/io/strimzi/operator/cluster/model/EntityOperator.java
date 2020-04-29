@@ -99,7 +99,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_PORT;
+        return ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     public void setZookeeperConnect(String zookeeperConnect) {
