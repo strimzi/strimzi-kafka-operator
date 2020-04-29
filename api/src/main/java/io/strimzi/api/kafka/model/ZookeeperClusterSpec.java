@@ -43,7 +43,11 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
+    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, " +
+            "quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, " +
+            "reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, " +
+            "ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites";
 
     public static final int DEFAULT_REPLICAS = 3;
 
