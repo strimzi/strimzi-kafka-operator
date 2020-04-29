@@ -91,14 +91,6 @@ public abstract class TopicOperatorBaseIT {
     protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
-    protected Thread kafkaHook = new Thread() {
-        @Override
-        public void run() {
-            if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
-            }
-        }
-    };
 
     protected volatile String deploymentId;
     protected Set<String> preExistingEvents;
@@ -133,6 +125,7 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterAll
     public static void teardownKubeCluster() {
+        CountDownLatch latch = new CountDownLatch(1);
         if (oldNamespace != null) {
             cmdKubeClient()
                     .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
@@ -141,14 +134,20 @@ public abstract class TopicOperatorBaseIT {
                     .deleteNamespace(NAMESPACE);
             cmdKubeClient().namespace(oldNamespace);
         }
-        vertx.close();
+        vertx.close(result -> {
+            latch.countDown();
+        });
+        try {
+            latch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error(e);
+        }
     }
 
     @BeforeEach
     public void setup() throws Exception {
         LOGGER.info("Setting up test");
         cluster.before();
-        Runtime.getRuntime().addShutdownHook(kafkaHook);
         int counts = 3;
         do {
             try {
@@ -241,7 +240,6 @@ public abstract class TopicOperatorBaseIT {
                     LOGGER.warn(e);
                 }
             }
-            Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
             latch.countDown();
         }
