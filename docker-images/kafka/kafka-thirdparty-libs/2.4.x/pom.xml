@@ -146,11 +146,6 @@
             <groupId>com.linkedin.cruisecontrol</groupId>
             <artifactId>cruise-control-metrics-reporter</artifactId>
             <version>${cruise-control.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.linkedin.cruisecontrol</groupId>
-            <artifactId>cruise-control-metrics-reporter</artifactId>
-            <version>${cruise-control.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
