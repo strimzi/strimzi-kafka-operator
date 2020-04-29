@@ -20,6 +20,13 @@
         <cruise-control.version>2.0.100</cruise-control.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jcenter</id>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/io.prometheus.jmx/jmx_prometheus_javaagent -->
         <dependency>
