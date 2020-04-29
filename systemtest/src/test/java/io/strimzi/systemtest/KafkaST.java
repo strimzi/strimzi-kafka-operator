@@ -1662,7 +1662,7 @@ class KafkaST extends BaseST {
         verifyPresentLabels(labels, service);
 
         LOGGER.info("Waiting for kafka config map labels changed {}", labels);
-        ConfigMapUtils.waitForKafkaConfigMapLabelsChange(configMapName, labels);
+        ConfigMapUtils.waitForConfigMapLabelsChange(configMapName, labels);
 
         LOGGER.info("Verifying kafka labels via config maps");
         ConfigMap configMap = kubeClient().getConfigMap(configMapName);
