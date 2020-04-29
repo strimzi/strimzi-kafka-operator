@@ -235,7 +235,11 @@ public abstract class TopicOperatorBaseIT {
 
             adminClient.close();
             if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
+                try {
+                    kafkaCluster.shutdown();
+                } catch (Exception e) {
+                    LOGGER.warn(e);
+                }
             }
             Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
