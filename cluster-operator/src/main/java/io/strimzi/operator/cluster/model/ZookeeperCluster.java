@@ -667,8 +667,4 @@ public class ZookeeperCluster extends AbstractModel {
     public String getVersion() {
         return this.version;
     }
-
-    public void disableSnapshotChecks() {
-        this.isSnapshotCheckEnabled = false;
-    }
 }
