@@ -9,6 +9,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -19,6 +20,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,14 +32,21 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -104,6 +116,44 @@ public class TopicST extends BaseST {
 
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, topicPartitions);
         verifyTopicViaKafka(TOPIC_NAME, topicPartitions);
+    }
+
+    @Tag(NODEPORT_SUPPORTED)
+    @Test
+    void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
+        String clusterName = CLUSTER_NAME + "-external-name";
+
+        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Properties properties = new Properties();
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, clusterName));
+
+        try (AdminClient adminClient = AdminClient.create(properties)) {
+
+            LOGGER.info("Creating async topic {} via Admin client", TOPIC_NAME);
+            CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(TOPIC_NAME, 1, (short) 1)));
+            crt.all().get();
+
+            Set<String> topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+
+            LOGGER.info("Verify that in Kafka cluster contains {} topics", 1);
+            assertThat(topics.size(), is(1));
+            assertThat(topics.contains(TOPIC_NAME), is(true));
+        }
+
+        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
+
+        KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, "Ready");
     }
 
     @Test
