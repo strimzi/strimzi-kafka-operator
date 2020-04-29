@@ -347,7 +347,9 @@ public abstract class BaseST implements TestSeparator {
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         // We need to delete all CRDs before install Strimzi via helm, otherwise install fail when some CRD is already created
+        cmdKubeClient().exec("get", "crds");
         cmdKubeClient().exec("delete", "crds", "-l", "app=strimzi");
+        cmdKubeClient().exec("get", "crds", "-o", "yaml");
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = cluster.setNamespace("kube-system");
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
