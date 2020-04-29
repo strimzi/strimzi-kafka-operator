@@ -32,4 +32,6 @@ include::assembly_metrics-prometheus-alertmanager.adoc[leveloffset=+1]
 
 include::assembly_metrics-grafana.adoc[leveloffset=+1]
 
+ifdef::InstallationAppendix[]
 include::modules/con_metrics-kafka-mini-kube-shift.adoc[leveloffset=+1]
+endif::InstallationAppendix[]
