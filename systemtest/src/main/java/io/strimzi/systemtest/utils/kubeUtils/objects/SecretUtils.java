@@ -36,11 +36,11 @@ public class SecretUtils {
     }
 
     public static void waitForSecretReady(String secretName, Runnable onTimeout) {
-        LOGGER.info("Waiting for KafkaUser secret {}", secretName);
+        LOGGER.info("Waiting for Secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> kubeClient().getSecret(secretName) != null,
             onTimeout);
-        LOGGER.info("KafkaUser secret {} created", secretName);
+        LOGGER.info("Secret {} created", secretName);
     }
 
     public static void createSecret(String secretName, String dataKey, String dataValue) {

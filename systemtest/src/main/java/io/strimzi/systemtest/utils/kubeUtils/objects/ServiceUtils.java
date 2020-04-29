@@ -22,7 +22,7 @@ public class ServiceUtils {
 
     private ServiceUtils() { }
 
-    public static void waitForKafkaServiceLabelsChange(String serviceName, Map<String, String> labels) {
+    public static void waitForServiceLabelsChange(String serviceName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -37,7 +37,7 @@ public class ServiceUtils {
         }
     }
 
-    public static void waitForKafkaServiceLabelsDeletion(String serviceName, String... labelKeys) {
+    public static void waitForServiceLabelsDeletion(String serviceName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Service label {} change to {}", labelKey, null);
             TestUtils.waitFor("Service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
