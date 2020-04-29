@@ -59,4 +59,23 @@ public class KafkaConnectUtils {
         waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName,
                 "\"Sending messages\": \"Hello-world - 99\"");
     }
+
+    /**
+     *  Waits until the kafka connect CR config has changed.
+     * @param propertyKey property key in the Kafka Connect CR config
+     * @param propertyValue property value in the Kafka Connect CR config
+     * @param namespace namespace name
+     * @param clusterName cluster name
+     */
+    public static void waitForKafkaConnectConfigChange(String propertyKey, String propertyValue, String namespace, String clusterName) {
+        LOGGER.info("Waiting for Kafka Connect property {} -> {} change", propertyKey, propertyValue);
+        TestUtils.waitFor("Waiting for Kafka Connect config " + propertyKey + " -> " + propertyValue, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
+                LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
+                LOGGER.debug(propertyValueFromKafkaConnect + " == " + propertyValue);
+                return propertyValueFromKafkaConnect.equals(propertyValue);
+            });
+        LOGGER.info("Kafka Connect property {} -> {} change", propertyKey, propertyValue);
+    }
 }
