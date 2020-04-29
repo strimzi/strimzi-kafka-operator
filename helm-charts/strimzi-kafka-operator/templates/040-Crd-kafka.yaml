@@ -6678,6 +6678,10 @@ spec:
                           type: integer
                           description: The port of the Kafka bootstrap service.
                     description: A list of the addresses for this listener.
+                  bootstrap:
+                    type: string
+                    description: A comma-separated list of hostname:‍port pairs for
+                      this listener.
                   certificates:
                     type: array
                     items:
