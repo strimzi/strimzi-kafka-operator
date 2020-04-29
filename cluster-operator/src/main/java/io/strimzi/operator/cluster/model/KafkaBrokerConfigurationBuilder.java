@@ -84,6 +84,9 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+            writer.println("cruise.control.metrics.topic.auto.create=true");
+            writer.println("cruise.control.metrics.topic.num.partitions=1");
+            writer.println("cruise.control.metrics.topic.replication.factor=1");
             writer.println();
         }
 

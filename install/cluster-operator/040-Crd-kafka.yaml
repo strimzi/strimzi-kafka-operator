@@ -921,7 +921,8 @@ spec:
                     zookeeper.set.acl, authorizer., super.usercruise.control.metrics.topic,
                     cruise.control.metrics.reporter.bootstrap.servers (with the exception
                     of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
-                    ssl.enabled.protocols).'
+                    ssl.enabled.protocols, cruise.control.metrics.topic.num.partitions,
+                    cruise.control.metrics.topic.replication.factor).'
                 rack:
                   type: object
                   properties:

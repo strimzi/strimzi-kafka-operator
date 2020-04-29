@@ -79,7 +79,10 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "cruise.control.metrics.reporter.ssl.keystore.password=${CERTS_STORE_PASSWORD}\n" +
                 "cruise.control.metrics.reporter.ssl.truststore.type=PKCS12\n" +
                 "cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12\n" +
-                "cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}"));
+                "cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "cruise.control.metrics.topic.auto.create=true\n" +
+                "cruise.control.metrics.topic.num.partitions=1\n" +
+                "cruise.control.metrics.topic.replication.factor=1"));
     }
 
     @Test
