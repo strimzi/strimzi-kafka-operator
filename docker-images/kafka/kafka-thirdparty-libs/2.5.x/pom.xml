@@ -17,7 +17,15 @@
 
     <properties>
         <strimzi-oauth.version>0.4.0</strimzi-oauth.version>
+        <cruise-control.version>2.0.100</cruise-control.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>jcenter</id>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/io.prometheus.jmx/jmx_prometheus_javaagent -->
@@ -131,6 +139,33 @@
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.linkedin.cruisecontrol</groupId>
+            <artifactId>cruise-control-metrics-reporter</artifactId>
+            <version>${cruise-control.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka_2.11</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-math3</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
