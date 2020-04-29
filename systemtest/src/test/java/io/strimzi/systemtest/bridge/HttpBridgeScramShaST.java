@@ -15,7 +15,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -204,7 +203,6 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
         // Create Kafka user
         KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
-        SecretUtils.waitForSecretReady(USER_NAME);
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();

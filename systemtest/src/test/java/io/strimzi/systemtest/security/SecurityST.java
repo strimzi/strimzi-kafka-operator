@@ -427,8 +427,6 @@ class SecurityST extends BaseST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        SecretUtils.waitForSecretReady(user.getMetadata().getName());
-
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
 

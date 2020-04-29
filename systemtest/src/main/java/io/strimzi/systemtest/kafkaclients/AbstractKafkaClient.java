@@ -173,7 +173,7 @@ public abstract class AbstractKafkaClient {
     }
 
     /**
-     * Generated random name for the KafkaUser resource
+     * Generated random name for a consumer group
      * @return random name with additional salt
      */
     public static String generateRandomConsumerGroup() {
