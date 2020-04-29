@@ -2255,7 +2255,11 @@ spec:
                   type: object
                   description: 'The ZooKeeper broker config. Properties with the following
                     prefixes cannot be set: server., dataDir, dataLogDir, clientPort,
-                    authProvider, quorum.auth, requireClientAuthScheme.'
+                    authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty,
+                    standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort,
+                    ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol,
+                    ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols,
+                    ssl.ciphersuites, ssl.quorum.ciphersuites).'
                 affinity:
                   type: object
                   properties:

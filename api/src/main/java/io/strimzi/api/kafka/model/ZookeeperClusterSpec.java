@@ -69,7 +69,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private ZookeeperClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
