@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -94,7 +95,7 @@ public class Main {
     }
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
-        printEnvInfo();
+        Util.printEnvInfo();
 
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
@@ -199,14 +200,5 @@ public class Main {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    static void printEnvInfo() {
-        Map<String, String> m = new HashMap<>(System.getenv());
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry: m.entrySet()) {
-            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-        }
-        log.info("Using config:\n" + sb.toString());
     }
 }
