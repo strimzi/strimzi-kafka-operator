@@ -245,7 +245,7 @@ public class PodUtils {
     }
 
     /**
-     * * Waits until all matching pods are {@linkplain #verifyThatPodsAreStable(Supplier, int[])} stable} in the "Running" phase.
+     * * Waits until all matching pods are {@linkplain #verifyThatPodsAreStable(Supplier)} stable} in the "Running" phase.
      * @param pods all pods that will be verified
      */
     public static void waitUntilPodsStability(List<Pod> pods) {
