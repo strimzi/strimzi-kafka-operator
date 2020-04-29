@@ -6,9 +6,9 @@
 
 |Kafka
 a|
-* {DockerOrg}/kafka:{DockerTag}-kafka-2.3.1
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.4.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.4.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.5.0
 
 a|
 {ProductName} image for running Kafka, including:
