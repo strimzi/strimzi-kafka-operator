@@ -131,7 +131,7 @@ public abstract class AbstractKafkaClient {
      * @param clusterName kafka cluster name
      * @return bootstrap url as string
      */
-    protected static String getExternalBootstrapConnect(String namespace, String clusterName) {
+    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
         if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
             Route route = kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
