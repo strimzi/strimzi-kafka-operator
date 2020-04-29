@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -111,7 +112,8 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .build());
     }
 
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
