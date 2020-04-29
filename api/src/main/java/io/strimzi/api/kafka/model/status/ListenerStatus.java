@@ -63,7 +63,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         }
     }
 
-    @Description("A concatenated list of the bootstrap addresses for this listener.")
+    @Description("A comma-separated list of hostname:‍port pairs for this listener.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getBootstrap() {
         return bootstrap;
