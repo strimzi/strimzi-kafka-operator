@@ -69,7 +69,7 @@ public class KafkaUtils {
 
         for (int podIndex : podIndexes) {
             String zookeeperPod = KafkaResources.zookeeperPodName(clusterName, podIndex);
-            String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
+            String zookeeperPort = String.valueOf(2181);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                     try {
                         String output = cmdKubeClient().execInPod(zookeeperPod,
