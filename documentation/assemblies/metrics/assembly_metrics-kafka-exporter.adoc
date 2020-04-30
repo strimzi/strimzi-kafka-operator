@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// deploying/master.adoc
+// metrics/assembly-metrics.adoc
 
 [id='assembly-kafka-exporter-{context}']
 = Add Kafka Exporter
