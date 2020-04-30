@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -372,7 +373,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return securityProtocol;
     }
 
-    class ConnectorsComparator implements Comparator<Map<String, Object>> {
+    static class ConnectorsComparator implements Comparator<Map<String, Object>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compare(Map<String, Object> m1, Map<String, Object> m2) {
             String name1 = m1.get("name") == null ? "" : m1.get("name").toString();
