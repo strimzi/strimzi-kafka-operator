@@ -13,7 +13,7 @@
 * Allow standalone User Operator to modify status on KafkaUser
 * Add support for Kafka 2.4.1
 * Add support for Kafka 2.5.0
-* Remove ZooKeeper TLS sidecars and use native ZooKeeper TLS support instead
+* Remove TLS sidecars from ZooKeeper pods, using native ZooKeeper TLS support instead
     * _NOTE: The ZooKeeper port on the `<cluster-name>-zookeeper-clients` service is now using port 2281 which is the designated port for ZooKeeper TLS client connections._
 
 ## 0.17.0

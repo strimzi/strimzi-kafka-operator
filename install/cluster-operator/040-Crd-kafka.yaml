@@ -3093,9 +3093,158 @@ spec:
                                   type: string
                           description: Security context for the container.
                       description: Template for the ZooKeeper container.
+                    tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The environment variable key.
+                              value:
+                                type: string
+                                description: The environment variable value.
+                          description: Environment variables which should be applied
+                            to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                          description: Security context for the container.
+                      description: Template for the Kafka broker TLS sidecar container.
+                        The TLS sidecar is not used anymore and this option will be
+                        ignored.
                   description: Template for ZooKeeper cluster resources. The template
                     allows users to specify how are the `StatefulSet`, `Pods` and
                     `Services` generated.
+                tlsSidecar:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                      description: The docker image for the container.
+                    livenessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod liveness checking.
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
+                      description: The log level for the TLS sidecar. Default value
+                        is `notice`.
+                    readinessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod readiness checking.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve.
+                  description: TLS sidecar configuration. The TLS sidecar is not used
+                    anymore and this option will be ignored.
               required:
               - replicas
               - storage

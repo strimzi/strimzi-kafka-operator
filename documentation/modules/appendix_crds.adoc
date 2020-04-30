@@ -905,7 +905,7 @@ It must have the value `external` for the type `ExternalLogging`.
 [id='type-TlsSidecar-{context}']
 ### `TlsSidecar` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -1145,6 +1145,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+|tlsSidecar      1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-ZookeeperClusterTemplate-{context}']
@@ -1169,6 +1171,8 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |podDisruptionBudget    1.2+<.<|Template for ZooKeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|tlsSidecarContainer    1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Kafka broker TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 

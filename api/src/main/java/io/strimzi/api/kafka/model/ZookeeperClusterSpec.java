@@ -57,6 +57,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     private Logging logging;
 
+    private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
     private ResourceRequirements resources;
@@ -97,6 +98,19 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     public void setLogging(Logging logging) {
         this.logging = logging;
+    }
+
+    @DeprecatedProperty
+    @Deprecated
+    @Description("TLS sidecar configuration. " +
+            "The TLS sidecar is not used anymore and this option will be ignored.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public TlsSidecar getTlsSidecar() {
+        return tlsSidecar;
+    }
+
+    public void setTlsSidecar(TlsSidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 
     @Description("The number of pods in the cluster.")
