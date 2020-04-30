@@ -1172,7 +1172,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer    1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Kafka broker TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
+|tlsSidecarContainer    1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Zookeeper server TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 

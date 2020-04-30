@@ -3161,7 +3161,7 @@ spec:
                                 gmsaCredentialSpecName:
                                   type: string
                           description: Security context for the container.
-                      description: Template for the Kafka broker TLS sidecar container.
+                      description: Template for the Zookeeper server TLS sidecar container.
                         The TLS sidecar is not used anymore and this option will be
                         ignored.
                   description: Template for ZooKeeper cluster resources. The template

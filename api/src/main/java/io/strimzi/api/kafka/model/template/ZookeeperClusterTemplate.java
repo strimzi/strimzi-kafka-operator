@@ -114,7 +114,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     @DeprecatedProperty
     @Deprecated
-    @Description("Template for the Kafka broker TLS sidecar container. " +
+    @Description("Template for the Zookeeper server TLS sidecar container. " +
             "The TLS sidecar is not used anymore and this option will be ignored.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {
