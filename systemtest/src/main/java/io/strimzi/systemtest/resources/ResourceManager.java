@@ -362,16 +362,4 @@ public class ResourceManager {
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
-
-    public static void deleteCRDs() {
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_BRIDGE);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_CONNECT);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_CONNECT_S2I);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_USER);
-        cmdKubeClient().delete(TestUtils.CRD_TOPIC);
-        cmdKubeClient().delete(TestUtils.CRD_KAFKA_CONNECTOR);
-    }
 }
