@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
@@ -83,6 +84,54 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @Test
     public void testTopicNumPartitionsChanged() throws Exception {
         createAndAlterNumPartitions("test-topic-partitions-changed");
+    }
+
+    @Test
+    public void testTopicNumPartitionsDecreased() throws Exception {
+        String topicName = "topic-partitions-decreased-in-kube";
+        String resourceName = createTopic(topicName, new NewTopic(topicName, 2, (short) 1));
+        KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
+                .editOrNewSpec().withPartitions(1).endSpec().build();
+        KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
+        assertStatusNotReady(topicName, PartitionDecreaseException.class,
+                "Number of partitions cannot be decreased");
+        Long generation = operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration();
+        // Now modify Kafka-side to cause another reconciliation: We want the same status.
+        //alterTopicConfigInKafkaAndAwaitReconciliation(topicName, resourceName);
+        String key = "compression.type";
+        final String changedValue = alterTopicConfigInKafka(topicName, key, value -> "snappy".equals(value) ? "lz4" : "snappy");
+        // Check we're seeing the the message from the Kafka-side change, and not the message from the original reconciliation
+//        waitFor(() -> {
+//            return !generation.equals(operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration());
+//        }, "Change to be picked up");
+        Thread.sleep(30_000);
+        assertStatusNotReady(topicName, PartitionDecreaseException.class,
+                "Number of partitions cannot be decreased");
+    }
+
+    @Test
+    public void testInvalidConfig() throws Exception {
+        String topicName = "topic-invalid-config";
+        String expectedMessage = "Invalid config value for resource ConfigResource(type=TOPIC, name='" + topicName + "'): Invalid value x for configuration min.insync.replicas: Not a number of type INT";
+
+        String resourceName = createTopic(topicName, new NewTopic(topicName, 2, (short) 1));
+        KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
+                .editOrNewSpec().addToConfig("min.insync.replicas", "x").endSpec().build();
+        KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
+        assertStatusNotReady(topicName, InvalidRequestException.class,
+                expectedMessage);
+        Long generation = operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration();
+        // Now modify Kafka-side to cause another reconciliation: We want the same status.
+        //alterTopicConfigInKafkaAndAwaitReconciliation(topicName, resourceName);
+        String key = "compression.type";
+        final String changedValue = alterTopicConfigInKafka(topicName, key, value -> "snappy".equals(value) ? "lz4" : "snappy");
+        // Check we're seeing the the message from the Kafka-side change, and not the message from the original reconciliation
+//        waitFor(() -> {
+//            return !generation.equals(operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration());
+//        }, "Change to be picked up");
+        Thread.sleep(30_000);
+        assertStatusNotReady(topicName, InvalidRequestException.class,
+                expectedMessage);
     }
 
     @Test

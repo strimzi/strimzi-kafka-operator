@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
@@ -72,6 +73,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -320,9 +322,11 @@ public abstract class TopicOperatorBaseIT {
         waitFor(() -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
-                if (kafkaTopic.getStatus() != null
-                        && kafkaTopic.getStatus().getConditions() != null) {
-                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                KafkaTopicStatus status = kafkaTopic.getStatus();
+                if (status != null
+                        && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
+                        && status.getConditions() != null) {
+                    List<Condition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
                     if (conditions.stream().anyMatch(condition ->
                             "Ready".equals(condition.getType()) &&
@@ -340,18 +344,28 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected void assertStatusNotReady(String topicName, String message) throws InterruptedException, ExecutionException, TimeoutException {
+        assertStatusNotReady(topicName, null, message);
+    }
+
+    protected void assertStatusNotReady(String topicName, Class<? extends Exception> reason, String message) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(() -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
-                if (kafkaTopic.getStatus() != null
-                        && kafkaTopic.getStatus().getConditions() != null) {
-                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                KafkaTopicStatus status = kafkaTopic.getStatus();
+                if (status != null
+                        && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
+                        && status.getConditions() != null) {
+                    List<Condition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
                     Optional<Condition> unreadyCondition = conditions.stream().filter(condition ->
                             "NotReady".equals(condition.getType()) &&
-                            "True".equals(condition.getStatus())).findFirst();
+                                    "True".equals(condition.getStatus())).findFirst();
                     if (unreadyCondition.isPresent()) {
-                        assertThat(unreadyCondition.get().getMessage(), is(message));
+                        if (reason != null) {
+                            assertThat(unreadyCondition.get().getReason() + ": " + unreadyCondition.get().getMessage(), is(reason.getSimpleName() + ": " + message));
+                        } else {
+                            assertThat(unreadyCondition.get().getMessage(), is(message));
+                        }
                         return true;
                     } else {
                         LOGGER.info(conditions);
@@ -393,7 +407,7 @@ public abstract class TopicOperatorBaseIT {
         return createTopic(topicName, new NewTopic(topicName, singletonMap(0, replicaAssignments)));
     }
 
-    private String createTopic(String topicName, NewTopic o) throws InterruptedException, ExecutionException, TimeoutException {
+    protected String createTopic(String topicName, NewTopic o) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
         String resourceName = new TopicName(topicName).asKubeName().toString();
@@ -444,7 +458,11 @@ public abstract class TopicOperatorBaseIT {
 
         Map<String, ConfigEntry> m = new HashMap<>();
         for (ConfigEntry entry: config.entries()) {
-            m.put(entry.name(), entry);
+            if (entry.name().equals(key)
+                || entry.source() != ConfigEntry.ConfigSource.DEFAULT_CONFIG
+                    && entry.source() != ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG) {
+                m.put(entry.name(), entry);
+            }
         }
         final String changedValue = mutator.apply(m.get(key).value());
         m.put(key, new ConfigEntry(key, changedValue));
