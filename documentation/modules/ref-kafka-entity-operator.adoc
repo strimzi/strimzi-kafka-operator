@@ -26,7 +26,7 @@ When this option is missing, the Entity Operator is deployed without the Topic O
 The `userOperator` property contains the configuration of the User Operator.
 When this option is missing, the Entity Operator is deployed without the User Operator.
 
-For more information on the properties to configure the Entity Operator, see the link:type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
+For more information on the properties to configure the Entity Operator, see the xref:type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference].
 
 .Example of basic configuration enabling both operators
 [source,yaml,subs=attributes+]
