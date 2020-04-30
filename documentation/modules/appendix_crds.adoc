@@ -1588,12 +1588,14 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 
 [options="header"]
 |====
-|Property             |Description
-|type          1.2+<.<|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
+|Property                 |Description
+|type              1.2+<.<|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
 |string
-|addresses     1.2+<.<|A list of the addresses for this listener.
+|addresses         1.2+<.<|A list of the addresses for this listener.
 |xref:type-ListenerAddress-{context}[`ListenerAddress`] array
-|certificates  1.2+<.<|A list of TLS certificates which can be used to verify the identity of the server when connecting to the given listener. Set only for `tls` and `external` listeners.
+|bootstrapServers  1.2+<.<|A comma-separated list of `host:port` pairs for connecting to the Kafka cluster using this listener.
+|string
+|certificates      1.2+<.<|A list of TLS certificates which can be used to verify the identity of the server when connecting to the given listener. Set only for `tls` and `external` listeners.
 |string array
 |====
 
@@ -1606,7 +1608,7 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 [options="header"]
 |====
 |Property     |Description
-|host  1.2+<.<|The DNS name or IP address of Kafka bootstrap service.
+|host  1.2+<.<|The DNS name or IP address of the Kafka bootstrap service.
 |string
 |port  1.2+<.<|The port of the Kafka bootstrap service.
 |integer
