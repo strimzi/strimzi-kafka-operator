@@ -11,7 +11,7 @@ The procedures in this section show:
 
 * How to deploy the Cluster Operator to _watch_:
 ** xref:deploying-cluster-operator-{context}[A single namespace]
-** xref:deploying-cluster-operator-to-watch-multiple-namespaces{context}[Multiple namespaces]
+** xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple namespaces]
 ** xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]
 * Alternative deployment options:
 ifdef::Helm[]
