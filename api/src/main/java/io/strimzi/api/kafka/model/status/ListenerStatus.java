@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
@@ -27,13 +28,14 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "addresses", "certificates" })
+@JsonPropertyOrder({ "type", "addresses", "bootstrapServers", "certificates" })
 @EqualsAndHashCode
 public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String type;
     private List<ListenerAddress> addresses;
+    private String bootstrapServers;
     private List<String> certificates;
     private Map<String, Object> additionalProperties;
 
@@ -54,6 +56,17 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
 
     public void setAddresses(List<ListenerAddress> addresses) {
         this.addresses = addresses;
+        if ((addresses == null) || addresses.isEmpty()) {
+            bootstrapServers = null;
+        } else {
+            bootstrapServers = addresses.stream().map(a -> a.getHost() + ":" + a.getPort()).collect(Collectors.joining(","));
+        }
+    }
+
+    @Description("A comma-separated list of `host:port` pairs for connecting to the Kafka cluster using this listener.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getBootstrapServers() {
+        return bootstrapServers;
     }
 
     @Description("A list of TLS certificates which can be used to verify the identity of the server when connecting " +
