@@ -57,15 +57,15 @@ spec:
               value: {{ .Values.operationTimeoutMs | quote }}
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: "{{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}"
+              value: {{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: "{{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}"
+              value: {{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: "{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}"
+              value: {{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: "{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}"
+              value: {{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-              value: "{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}"
+              value: {{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
             {{- if .Values.image.imagePullSecrets }}
