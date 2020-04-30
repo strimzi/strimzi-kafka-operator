@@ -36,6 +36,8 @@ spec:
     userOperator: {}
 ----
 . Configure the Topic Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
++
+Use an empty object (`{}`) if you want all properties to use their default value.
 . Create or update the resource:
 +
 Use `kubectl apply`:
