@@ -1,0 +1,74 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-implementing-rebalance-proposal-{context}']
+= Implementing a rebalance proposal
+
+If you are satisfied with a rebalance proposal, you can implement it by annotating the corresponding `KafkaClusterRebalance` resource. 
+
+At the next reconciliation, the Cluster Operator instructs Cruise Control to rebalance the Kafka cluster. 
+Cruise Control then reassigns partitions to brokers as summarized in the rebalance proposal.
+
+WARNING: This is not a dry run. 
+Review the rebalance proposal before you implement it.
+
+.Prerequisites
+
+* You have xref:proc-generating-rebalance-proposals-{context}[generated a rebalance proposal].
+
+* The rebalance proposal is ready to implement (the `KafkaClusterRebalance` custom resource status is `ProposalReady`).
+
+.Procedure
+
+. (Optional) Refresh the rebalance proposal that you want to implement:
+
+.. Annotate the `KafkaClusterRebalance` resource in Kubernetes:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance=refresh
+----
+
+.. Check the status of the `KafkaClusterRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+----
+
+.. Wait until the status changes to `ProposalReady`.
+
+. Approve the rebalance proposal that you want to implement.
++
+Annotate the `KafkaClusterRebalance` resource in Kubernetes:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance=approved
+----
+
+. Wait for the next reconciliation to occur (every two minutes by default).
++
+At the next reconciliation, the Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.
+
+. Check the status of the `KafkaClusterRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+----
+
+. Cruise Control returns one of three statuses:
+
+** Rebalancing: The cluster rebalance operation is in progress. 
+
+** Ready: The cluster rebalancing operation completed successfully.
+
+** NotReady: An error occurred. 
+
+//Is there a way to verify the rebalance?
+
+.Additional resources
+
+* xref:con-rebalance-goals-proposals-{context}[]

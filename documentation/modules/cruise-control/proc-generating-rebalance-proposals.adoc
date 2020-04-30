@@ -1,0 +1,98 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-generating-rebalance-proposals-{context}']
+= Generating rebalance proposals 
+
+When you create or update a `KafkaClusterRebalance` resource, Cruise Control generates a _rebalance proposal_ in JSON.
+This summarizes an optimal mapping of partitions to brokers for the Kafka cluster based on the rebalance goals that were used.
+
+.Prerequisites
+
+* You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
+
+.Procedure
+
+. Create a `KafkaClusterRebalance` resource:
+
+.. To use the default rebalance goals, leave the `spec` property empty:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaClusterRebalance
+metadata:
+  name: my-cluster-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec: {}
+----
+.. To use one or more custom rebalance goals instead of the default goals, edit the `spec.goals` property.
+In the following example, rack awareness and replica capacity are set as custom goals:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaClusterRebalance
+metadata:
+  name: my-cluster-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec:    
+    goals: >
+      com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+      com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+----
+
+. Create or update the resource:
++
+[source,shell,subs="+quotes"]
+----
+oc apply -f _your-file_
+----
++
+The Cluster Operator requests the rebalance proposal from the Cruise Control server.
+This might take a few minutes depending on the size of the Kafka cluster. 
+
+. Check the status of the `KafkaClusterRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+----
+Cruise Control returns one of two statuses:
+
+** `PendingProposal`: The rebalance proposal is not yet ready; try again after a few minutes.
+
+** `ProposalReady`: The rebalance proposal is ready for you to review and implement, if desired.
+The status is followed by the JSON rebalance proposal.
+
+. Review the rebalance proposal, which is an optimal mapping of partitions to brokers. 
+For example:
++
+[source,shell,subs="+quotes"]
+----
+"summary": {
+  "numIntraBrokerReplicaMovements":0,
+  "excludedBrokersForLeadership":[],
+  "numReplicaMovements":31,
+  "onDemandBalancednessScoreAfter":84.08179174145127,
+  "onDemandBalancednessScoreBefore":79.74705957325753,
+  "intraBrokerDataToMoveMB":0,
+  "recentWindows":1,
+  "dataToMoveMB":0,
+  "monitoredPartitionsPercentage":100.0,
+  "excludedTopics":[],
+  "numLeaderMovements":12,
+  "excludedBrokersForReplicaMove":[]
+}
+----
+
+.What to do next
+
+xref:proc-implementing-rebalance-proposal-{context}[] 
+
+.Additional resources
+
+* xref:con-rebalance-goals-proposals-{context}[]

@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='con-rebalance-goals-proposals-{context}']
+= Rebalance goals and proposals
+
+A rebalance goal is...
+
+A rebalance proposal is...
+
+All rebalance proposals are dry runs. You cannot implement a cluster rebalance without first generating a rebalance proposal.
+
+By default, rebalance proposals are generated based on the _default rebalance goals_. If you want to use a subset of the default rebalance goals (for example, the distribute leader replicas goal only), you can set one or more _custom rebalance goals_ for a rebalance proposal.
+
+* The default rebalance goals are set in the `spec.cruiseControl` section of the `Kafka` custom resource. They are set when Cruise Control is deployed to your {ProductName} cluster. 
+
+* Custom rebalance goals are set, per rebalance proposal, in the `spec.goals` property of the `KafkaClusterRebalance` custom resource. They must always be a subset of the default rebalance goals.
+// they refine the default goals
+
+.Additional resources
+
+* One (CC docs?)
+
+* Two

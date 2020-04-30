@@ -11,4 +11,10 @@ include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffs
 
 include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
 
+include::../../modules/cruise-control/con-rebalance-goals-proposals.adoc[leveloffset=+1]
+
 include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-generating-rebalance-proposals.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-implementing-rebalance-proposal.adoc[leveloffset=+1]
