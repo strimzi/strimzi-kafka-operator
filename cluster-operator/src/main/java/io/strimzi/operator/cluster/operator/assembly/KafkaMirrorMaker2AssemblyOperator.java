@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -371,11 +372,21 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return securityProtocol;
     }
 
+    class ConnectorsComparator implements Comparator<Map<String, Object>> {
+        @Override
+        public int compare(Map<String, Object> m1, Map<String, Object> m2) {
+            String name1 = m1.get("name") == null ? "" : m1.get("name").toString();
+            String name2 = m2.get("name") == null ? "" : m2.get("name").toString();
+            return name1.compareTo(name2);
+        }
+    }
+
     private Future<Map<String, Object>> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                 .setHandler(result -> {
                     if (result.succeeded()) {
                         mirrorMaker2Status.getConnectors().add(result.result());
+                        mirrorMaker2Status.getConnectors().sort(new ConnectorsComparator());
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }

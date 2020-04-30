@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
@@ -24,7 +25,7 @@ public class StatusDiff extends AbstractResourceDiff {
     private final boolean isEmpty;
 
     public StatusDiff(Status current, Status desired) {
-        JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
+        JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(current == null ? "{}" : current);
         JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
 
@@ -53,7 +54,7 @@ public class StatusDiff extends AbstractResourceDiff {
     /**
      * Returns whether the Diff is empty or not
      *
-     * @return true when the storage configurations are the same
+     * @return true when the statuses are the same
      */
     @Override
     public boolean isEmpty() {
