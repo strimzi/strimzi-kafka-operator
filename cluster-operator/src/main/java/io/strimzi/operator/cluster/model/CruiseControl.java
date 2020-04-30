@@ -162,6 +162,7 @@ public class CruiseControl extends AbstractModel {
     public static CruiseControl fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         CruiseControl cruiseControl = null;
         CruiseControlSpec spec  = kafkaAssembly.getSpec().getCruiseControl();
+        KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
 
         if (spec != null) {
             cruiseControl = new CruiseControl(kafkaAssembly);
@@ -170,7 +171,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setReplicas(DEFAULT_REPLICAS);
             String image = spec.getImage();
             if (image == null) {
-                image = System.getenv().get(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE);
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             cruiseControl.setImage(image);
 
@@ -181,7 +182,6 @@ public class CruiseControl extends AbstractModel {
 
             String tlsSideCarImage = tlsSidecar.getImage();
             if (tlsSideCarImage == null) {
-                KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
                 tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
 
@@ -191,7 +191,6 @@ public class CruiseControl extends AbstractModel {
 
             cruiseControl = updateConfiguration(spec, cruiseControl);
 
-            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
                 cruiseControl.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
