@@ -13,7 +13,7 @@ At startup, the {ProductName} version of Kafka Connect loads any third-party con
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-str[Deploying the Cluster Operator]
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
 
 .Procedure
 

@@ -7,7 +7,7 @@
 
 {ProductName} provides custom resources for configuration of your deployment.
 By default, permission to view, create, edit, and delete these resources is limited to Kubernetes cluster administrators.
-{ProductName} provides two cluster roles which you can use to assign these rights also to other users:
+{ProductName} provides two cluster roles that you can use to assign these rights to other users:
 
 * `strimzi-view` allows users to view and list {ProductName} resources.
 * `strimzi-admin` allows users to also create, edit or delete {ProductName} resources.

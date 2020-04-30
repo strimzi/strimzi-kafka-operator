@@ -118,7 +118,7 @@ For example, for broker _kafka-0_:
 +
 [source,shell,subs="+quotes"]
 ----
-`_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc._cluster.local_`
+_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc._cluster.local_
 ----
 +
 The DNS domain name is added to the Kafka broker certificates used for hostname verification.
