@@ -331,11 +331,12 @@ public abstract class BaseST implements TestSeparator {
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
     public void deployClusterOperatorViaHelmChart() {
+        String dockerReg = Environment.STRIMZI_REGISTRY;
         String dockerOrg = Environment.STRIMZI_ORG;
         String dockerTag = Environment.STRIMZI_TAG;
 
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-            entry("imageRepositoryOverride", dockerOrg),
+            entry("imageRepositoryOverride", dockerReg + "/" + dockerOrg),
             entry("imageTagOverride", dockerTag),
             entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
             entry("resources.requests.memory", REQUESTS_MEMORY),
@@ -347,9 +348,7 @@ public abstract class BaseST implements TestSeparator {
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         // We need to delete all CRDs before install Strimzi via helm, otherwise install fail when some CRD is already created
-        cmdKubeClient().exec("get", "crds");
         cmdKubeClient().delete(KubeClusterResource.CO_INSTALL_DIR);
-        cmdKubeClient().exec("get", "crds", "-o", "yaml");
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = cluster.setNamespace("kube-system");
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
