@@ -705,18 +705,7 @@ class TopicOperator {
                     // depending on what the diffs are.
                     LOGGER.debug("{}: Updating KafkaTopic, kafka topic and topicStore", logContext);
                     TopicDiff kubeDiff = TopicDiff.diff(k8sTopic, result);
-                    Future<KafkaTopic> resourceFuture;
-                    if (!kubeDiff.isEmpty()) {
-                        LOGGER.debug("{}: Updating KafkaTopic with {}", logContext, kubeDiff);
-                        resourceFuture = updateResource(logContext, result).map(updatedKafkaTopic -> {
-                            reconciliation.observedTopicFuture(updatedKafkaTopic);
-                            return updatedKafkaTopic;
-                        });
-                    } else {
-                        LOGGER.debug("{}: No need to update KafkaTopic {}", logContext, kubeDiff);
-                        resourceFuture = Future.succeededFuture();
-                    }
-                    reconciliationResultHandler = resourceFuture
+                    reconciliationResultHandler = Future.succeededFuture()
                         .compose(updatedKafkaTopic -> {
                             Future<Void> configFuture;
                             TopicDiff kafkaDiff = TopicDiff.diff(kafkaTopic, result);
@@ -731,6 +720,19 @@ class TopicOperator {
                                 configFuture = Future.succeededFuture();
                             }
                             return configFuture;
+                        }).compose(ignored -> {
+                            Future<KafkaTopic> resourceFuture;
+                            if (!kubeDiff.isEmpty()) {
+                                LOGGER.debug("{}: Updating KafkaTopic with {}", logContext, kubeDiff);
+                                resourceFuture = updateResource(logContext, result).map(updatedKafkaTopic -> {
+                                    reconciliation.observedTopicFuture(updatedKafkaTopic);
+                                    return updatedKafkaTopic;
+                                });
+                            } else {
+                                LOGGER.debug("{}: No need to update KafkaTopic {}", logContext, kubeDiff);
+                                resourceFuture = Future.succeededFuture();
+                            }
+                            return resourceFuture;
                         })
                         .compose(ignored -> {
                             if (partitionsDelta > 0

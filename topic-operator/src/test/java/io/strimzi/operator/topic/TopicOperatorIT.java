@@ -97,13 +97,8 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
                 "Number of partitions cannot be decreased");
         Long generation = operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration();
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
-        //alterTopicConfigInKafkaAndAwaitReconciliation(topicName, resourceName);
-        String key = "compression.type";
-        final String changedValue = alterTopicConfigInKafka(topicName, key, value -> "snappy".equals(value) ? "lz4" : "snappy");
-        // Check we're seeing the the message from the Kafka-side change, and not the message from the original reconciliation
-//        waitFor(() -> {
-//            return !generation.equals(operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration());
-//        }, "Change to be picked up");
+        alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
+        // Wait for a periodic reconciliation
         Thread.sleep(30_000);
         assertStatusNotReady(topicName, PartitionDecreaseException.class,
                 "Number of partitions cannot be decreased");
@@ -120,15 +115,9 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
         assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
-        Long generation = operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration();
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
-        //alterTopicConfigInKafkaAndAwaitReconciliation(topicName, resourceName);
-        String key = "compression.type";
-        final String changedValue = alterTopicConfigInKafka(topicName, key, value -> "snappy".equals(value) ? "lz4" : "snappy");
-        // Check we're seeing the the message from the Kafka-side change, and not the message from the original reconciliation
-//        waitFor(() -> {
-//            return !generation.equals(operation().inNamespace(NAMESPACE).withName(resourceName).get().getMetadata().getGeneration());
-//        }, "Change to be picked up");
+        alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
+        // Wait for a periodic reconciliation
         Thread.sleep(30_000);
         assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
