@@ -37,7 +37,7 @@ public class ListenerAddress implements UnknownPropertyPreserving, Serializable 
     private Integer port;
     private Map<String, Object> additionalProperties;
 
-    @Description("The DNS name or IP address of Kafka bootstrap service")
+    @Description("The DNS name or IP address of the Kafka bootstrap service")
     public String getHost() {
         return host;
     }

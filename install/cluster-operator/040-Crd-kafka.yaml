@@ -6667,16 +6667,16 @@ spec:
                       properties:
                         host:
                           type: string
-                          description: The DNS name or IP address of Kafka bootstrap
+                          description: The DNS name or IP address of the Kafka bootstrap
                             service.
                         port:
                           type: integer
                           description: The port of the Kafka bootstrap service.
                     description: A list of the addresses for this listener.
-                  bootstrap:
+                  bootstrapServers:
                     type: string
-                    description: A comma-separated list of hostname:‍port pairs for
-                      this listener.
+                    description: A comma-separated list of `host:port` pairs for connecting
+                      to the Kafka cluster using this listener.
                   certificates:
                     type: array
                     items:

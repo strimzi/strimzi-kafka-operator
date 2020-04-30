@@ -1240,7 +1240,7 @@ public class KafkaCluster extends AbstractModel {
                 host = listener.getConfiguration().getBootstrap().getHost();
                 dnsAnnotations = listener.getConfiguration().getBootstrap().getDnsAnnotations();
             } else {
-                throw new InvalidResourceException("Boostrap hostname is required for exposing Kafka cluster using Ingress");
+                throw new InvalidResourceException("Bootstrap hostname is required for exposing Kafka cluster using Ingress");
             }
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
