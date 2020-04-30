@@ -20,13 +20,13 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.4.1
-:KafkaVersionLower: 2.3.1
-:KafkaVersionHigher: 2.4.1
+:DefaultKafkaVersion: 2.5.0
+:KafkaVersionLower: 2.4.1
+:KafkaVersionHigher: 2.5.0
 
 //log message format version
-:LogMsgVersLower: 2.3
-:LogMsgVersHigher: 2.4
+:LogMsgVersLower: 2.4
+:LogMsgVersHigher: 2.5
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -141,8 +141,8 @@
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Tracing versions
-:JaegerClientVersion: 1.0.0
-:OpenTracingKafkaClient: 0.1.4
+:JaegerClientVersion: 1.1.0
+:OpenTracingKafkaClient: 0.1.12
 
 // Section enablers
 :Helm:
