@@ -16,14 +16,14 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 . Edit the {ProductName} installation files to use the namespace the Cluster Operator is going to be installed to.
 +
-For example, in this procedure the Cluster Operator is installed to the namespace `_my-namespace_`.
+For example, in this procedure the Cluster Operator is installed to the namespace `_my-cluster-operator-namespace_`.
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
 . Deploy the Cluster Operator:
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _my-cluster-operator-namespace_
 
 . Verify that the Cluster Operator was successfully deployed:
 +

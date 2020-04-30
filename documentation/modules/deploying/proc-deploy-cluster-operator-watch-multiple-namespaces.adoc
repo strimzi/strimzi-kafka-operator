@@ -2,7 +2,7 @@
 //
 // deploying/assembly_deploy-cluster-operator.adoc
 
-[id='deploying-cluster-operator-to-watch-multiple-namespaces{context}']
+[id='deploying-cluster-operator-to-watch-multiple-namespaces-{context}']
 = Deploying the Cluster Operator to watch multiple namespaces
 
 This procedure shows how to deploy the Cluster Operator to watch {ProductName} resources across multiple namespaces in your Kubernetes cluster.
@@ -16,7 +16,7 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 . Edit the {ProductName} installation files to use the namespace the Cluster Operator is going to be installed to.
 +
-For example, in this procedure the Cluster Operator is installed to the namespace `_my-namespace_`.
+For example, in this procedure the Cluster Operator is installed to the namespace `_my-cluster-operator-namespace_`.
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
@@ -56,7 +56,7 @@ kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operat
 . Deploy the Cluster Operator
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _my-cluster-operator-namespace_
 
 . Verify that the Cluster Operator was successfully deployed:
 +

@@ -41,16 +41,16 @@ spec:
 . Create `ClusterRoleBindings` that grant cluster-wide access for all namespaces to the Cluster Operator.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount _my-namespace_:strimzi-cluster-operator
-kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _my-namespace_:strimzi-cluster-operator
-kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount _my-namespace_:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
 +
-Replace `_my-namespace_` with the namespace you want to install the Cluster Operator to.
+Replace `_my-cluster-operator-namespace_` with the namespace you want to install the Cluster Operator to.
 
 . Deploy the Cluster Operator to your Kubernetes cluster.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _my-cluster-operator-namespace_
 
 . Verify that the Cluster Operator was successfully deployed:
 +
