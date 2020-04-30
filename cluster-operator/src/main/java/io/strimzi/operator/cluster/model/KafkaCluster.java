@@ -1888,6 +1888,11 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
         }
 
+        if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured", listener);
+            throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured");
+        }
+
         if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
             log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
             throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
@@ -1918,6 +1923,12 @@ public class KafkaCluster extends AbstractModel {
         if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
             log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
             throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
+        }
+
+        if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: validTokenType can only be used with introspectionEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": validTokenType can only be used with introspectionEndpointUri");
+
         }
     }
 

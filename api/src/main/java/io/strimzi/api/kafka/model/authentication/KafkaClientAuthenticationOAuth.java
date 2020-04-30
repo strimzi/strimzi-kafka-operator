@@ -31,6 +31,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     public static final String TYPE_OAUTH = "oauth";
 
     private String clientId;
+    private String scope;
     private String tokenEndpointUri;
     private GenericSecretSource clientSecret;
     private GenericSecretSource accessToken;
@@ -54,6 +55,16 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    @Description("OAuth scope to use when authenticating against the authorization server. No default value.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     @Description("Authorization server token endpoint URI.")

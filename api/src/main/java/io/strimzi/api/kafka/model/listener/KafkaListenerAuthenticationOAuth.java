@@ -34,13 +34,19 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     private String clientId;
     private GenericSecretSource clientSecret;
+    private String scope;
     private String validIssuerUri;
+    private boolean checkIssuer;
     private String jwksEndpointUri;
     private Integer jwksRefreshSeconds;
     private Integer jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
+    private String fallbackUserNameClaim;
+    private String fallbackUserNamePrefix;
+    private String userInfoEndpointUri;
     private boolean checkAccessTokenType = true;
+    private String validTokenType;
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
@@ -72,6 +78,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.clientSecret = clientSecret;
     }
 
+    @Description("OAuth scope to use when authenticating against the authorization server. No default value.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
     @Description("URI of the token issuer used for authentication.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getValidIssuerUri() {
@@ -80,6 +96,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setValidIssuerUri(String validIssuerUri) {
         this.validIssuerUri = validIssuerUri;
+    }
+
+    @Description("Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. " +
+            "Default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isCheckIssuer() {
+        return checkIssuer;
+    }
+
+    public void setCheckIssuer(boolean checkIssuer) {
+        this.checkIssuer = checkIssuer;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")
@@ -130,8 +157,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.introspectionEndpointUri = introspectionEndpointUri;
     }
 
-    @Description("Name of the claim from the authentication token which will be used as the user principal. " +
-            "Defaults to `sub`.")
+    @Description("Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response " +
+            "which will be used to extract the user id. Defaults to `sub`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getUserNameClaim() {
         return userNameClaim;
@@ -139,6 +166,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserNameClaim(String userNameClaim) {
         this.userNameClaim = userNameClaim;
+    }
+
+    @Description("The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. " +
+            "It only takes effect if `userNameClaim` is set.")
+    public String getFallbackUserNameClaim() {
+        return fallbackUserNameClaim;
+    }
+
+    public void setFallbackUserNameClaim(String fallbackUserNameClaim) {
+        this.fallbackUserNameClaim = fallbackUserNameClaim;
+    }
+
+    @Description("The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. " +
+            "It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim.")
+    public String getFallbackUserNamePrefix() {
+        return fallbackUserNamePrefix;
+    }
+
+    public void setFallbackUserNamePrefix(String fallbackUserNamePrefix) {
+        this.fallbackUserNamePrefix = fallbackUserNamePrefix;
     }
 
     @Description("Configure whether the access token type check should be performed or not. This should be set to `false` " +
@@ -150,6 +197,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCheckAccessTokenType(boolean checkAccessTokenType) {
         this.checkAccessTokenType = checkAccessTokenType;
+    }
+
+    @Description("Valid value for `token_type` attribute returned by Introspection Endpoint. No default value, and not checked by default.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getValidTokenType() {
+        return validTokenType;
+    }
+
+    public void setValidTokenType(String validTokenType) {
+        this.validTokenType = validTokenType;
     }
 
     @Description("Configure whether the access token should be treated as JWT. This should be set to `false` if " +
@@ -193,5 +250,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setEnableECDSA(boolean enableECDSA) {
         this.enableECDSA = enableECDSA;
+    }
+
+    @Description("URI of the User Info Endpoint to use as a fallback to obtaining user id when Introspection Endpoint " +
+            "does not return information that could be used for user id. ")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getUserInfoEndpointUri() {
+        return userInfoEndpointUri;
+    }
+
+    public void setUserInfoEndpointUri(String userInfoEndpointUri) {
+        this.userInfoEndpointUri = userInfoEndpointUri;
     }
 }
