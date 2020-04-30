@@ -1209,10 +1209,7 @@ class TopicOperator {
 
     Future<?> reconcileAllTopics(String reconciliationType) {
         LOGGER.info("Starting {} reconciliation", reconciliationType);
-        Promise<Set<String>> promise = Promise.promise();
-        Future<Set<String>> listFut = promise.future();
-        kafka.listTopics().setHandler(listFut);
-        return listFut.recover(ex -> Future.failedFuture(
+        return kafka.listTopics().recover(ex -> Future.failedFuture(
                 new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", ex)
         )).compose(topicNamesFromKafka ->
                 // Reconcile the topic found in Kafka
@@ -1309,17 +1306,16 @@ class TopicOperator {
                                 return Future.succeededFuture();
                             } else {
                                 LOGGER.debug("{}: Have private topic for topic {} in Kafka", logContext, topicName);
-                                Future<Void> map = reconcileWithPrivateTopic(logContext, topicName, topic, this)
+                                return reconcileWithPrivateTopic(logContext, topicName, topic, this)
                                         .<Void>map(ignored -> {
                                             LOGGER.debug("{} reconcile success -> succeeded", topicName);
                                             succeeded.add(topicName);
                                             return null;
-                                        }).otherwise(error -> {
+                                        }).recover(error -> {
                                             LOGGER.debug("{} reconcile error -> failed", topicName);
                                             failed.put(topicName, error);
-                                            return null;
+                                            return Future.failedFuture(error);
                                         });
-                                return map;
                             }
                         });
 
@@ -1351,7 +1347,7 @@ class TopicOperator {
                 LOGGER.error("{}: Error getting KafkaTopic {} for topic {}",
                         logContext,
                         topicName.asKubeName(), topicName, error);
-                return Future.failedFuture(new OperatorException("Error getting KafkaTopic " + topicName + " during " + logContext.trigger() + " reconciliation", error));
+                return Future.failedFuture(new OperatorException("Error getting KafkaTopic " + topicName.asKubeName() + " during " + logContext.trigger() + " reconciliation", error));
             })
             .compose(kafkaTopicResource -> {
                 reconciliation.observedTopicFuture(kafkaTopicResource);
