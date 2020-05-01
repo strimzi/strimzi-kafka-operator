@@ -5,14 +5,14 @@
 [id='proc-add-service-discovery-{context}']
 = Discovering services using labels and annotations
 
-Service discovery makes it easier for client applications running in the same cluster as {ProductName} to interact with a Kafka cluster.
+Service discovery makes it easier for client applications running in the same Kubernetes cluster as {ProductName} to interact with a Kafka cluster.
 
 A _service discovery_ label and annotation is generated for services used to access the Kafka cluster:
 
 * Internal Kafka bootstrap service
 * HTTP Bridge service
 
-The label helps find the service, and the annotation provides connection details that a client application can use to make the connection.
+The label helps to make the service discoverable, and the annotation provides connection details that a client application can use to make the connection.
 
 The service discovery label, `strimzi.io/discovery`, is set as `true` for the `Service` resources.
 The service discovery annotation has the same key, providing connection details in JSON format for each service.
