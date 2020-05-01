@@ -5,7 +5,97 @@
 [id='con-rebalance-goals-proposals-{context}']
 = Rebalance goals and proposals
 
-A rebalance goal is...
+To rebalance a Kafka cluster, Cruise Control uses _rebalance goals_ to generate _rebalance proposals_. 
+
+[discrete]
+== Rebalance goals
+
+Rebalance goals specify targets for resource distribution and utilization across a Kafka cluster. They are organized in a customizable hierarchy, from high priority to low priority, and a subset of goals can be designated as _hard goals_ that must be met in a rebalance proposal. 
+
+In {ProductName}, cluster rebalancing with Cruise Control supports most of the goals (referred to as "optimization goals") in the Kafka Cruise Control project. The supported goals are as follows, in descending priority order:
+
+. Rack-awareness
+
+. Replica capacity
+
+. Capacity
+
+.. Disk capacity
+.. Network inbound capacity
+.. Network outbound capacity
+.. CPU capacity
+
+. Replica distribution
+
+. Potential Network output
+
+. Resource distribution
+
+.. Disk utilization distribution
+
+.. Network inbound utilization distribution
+
+.. Network outbound utilization distribution
+
+.. CPU utilization distribution
+
+. Leader bytes-in rate distribution
+
+. Topic replica distribution
+
+. Leader replica distribution
+
+. Preferred leader election
+
+. Intra-broker disk capacity
+
+. Intra-broker disk usage distribution    
+
+NOTE: "Write your own" goals and Kafka assigner goals are not supported in {ProductName}.
+
+For detailed information on each rebalance goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals] in the Cruise Control Wiki. 
+
+.Soft goals and hard goals
+
+Rebalance goals are treated as soft goals, unless you designate them as hard goals in the Cruise Control configuration. The following table explains the differences between soft and hard rebalance goals:
+
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Rebalance goal type
+¦Description
+¦Example
+¦Configuration
+
+¦Soft rebalance goal
+¦Also known as "best effort" goals, soft rebalance goals do _not_ need to be satisfied by any rebalance proposals generated. However, they are included in rebalance calculations. A rebalance proposal that satisfies _all_ hard goals but violates one or more soft goals is valid.   
+¦Attempt to distribute a topic's replicas evenly across the cluster (topic replica distribution goal).
+¦To specify soft rebalance goals as _default goals_, edit `spec.cruiseControl.config.goals` in the `Kafka` resource.
+
+To specify soft rebalance goals as _custom goals_, edit `spec.goals` in a `KafkaClusterRebalance` resource.
+
+¦Hard rebalance goal
+¦Hard rebalance goals must be satisfied by any rebalance proposals generated. In other words, a rebalance proposal that does _not_ satisfy all the designated hard goals is rejected by Cruise Control and not sent to the user.
+
+ Designating hard rebalance goals is optional.
+¦All the brokers in the cluster _must_ have less than 3 replicas (replica capacity goal).
+¦To specify hard rebalance goals as _default goals_, edit `spec.cruiseControl.config.hard.goals` in the `Kafka` resource.
+
+To specify hard rebalance goals as _custom goals_, edit `spec.hard.goals` in a `KafkaClusterRebalance` resource.
+
+|===
+
+.Default goals and custom goals
+
+When interacting with Cruise Control, you can either use the _default rebalance goals_ 
+
+The _default rebalance goals_ are set in the when Cruise Control is deployed to the {ProductName} cluster
+
+custom goals
+
+table
+
+
 
 A rebalance proposal is...
 
