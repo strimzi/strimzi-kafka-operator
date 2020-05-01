@@ -14,17 +14,12 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
 public class KafkaConnectorResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectorResource.class);
-
     public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connector/source-connector.yaml";
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorClient() {
@@ -92,13 +87,7 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        String kafkaConnectorCrName = kafkaConnector.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaConnector {}", kafkaConnectorCrName);
-        KafkaConnectorUtils.waitForConnectorReady(kafkaConnectorCrName);
-        LOGGER.info("KafkaConnector {} is ready", kafkaConnectorCrName);
-
-        return kafkaConnector;
+        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, "Ready");
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {
