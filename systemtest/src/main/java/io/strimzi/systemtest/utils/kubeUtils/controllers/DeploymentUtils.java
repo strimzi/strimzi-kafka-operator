@@ -6,6 +6,8 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
@@ -262,7 +264,21 @@ public class DeploymentUtils {
             log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
         }
 
-        PodUtils.logCurrentPodStatus(kind, name, log);
+        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
+            log.add("\nPods with conditions and messages:\n\n");
+
+            for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                log.add(pod.getMetadata().getName() + ":");
+                for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                    if (podCondition.getMessage() != null) {
+                        log.add("\n\tType: " + podCondition.getType() + "\n");
+                        log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                    }
+                }
+                log.add("\n\n");
+            }
+            LOGGER.info("{}", String.join("", log));
+        }
 
         LOGGER.info("{}", String.join("", log));
     }

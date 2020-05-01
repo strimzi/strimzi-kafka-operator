@@ -13,16 +13,12 @@ import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
 public class KafkaBridgeResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeResource.class);
 
     public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/kafka-bridge/kafka-bridge.yaml";
 
@@ -89,13 +85,7 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        String kafkaBridgeCrName = kafkaBridge.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaBridge {}", kafkaBridgeCrName);
-        KafkaBridgeUtils.waitForKafkaBridgeReady(kafkaBridgeCrName);
-        LOGGER.info("KafkaBridge {} is ready", kafkaBridgeCrName);
-
-        return kafkaBridge;
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, "Ready");
     }
 
     private static KafkaBridge deleteLater(KafkaBridge kafkaBridge) {

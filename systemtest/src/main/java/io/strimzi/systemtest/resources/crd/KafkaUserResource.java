@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -68,13 +67,7 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        String kafkaUserCrName = kafkaUser.getMetadata().getName();
-
-        LOGGER.info("Waiting for KafkaUser {}", kafkaUserCrName);
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUserCrName);
-        LOGGER.info("KafkaUser {} is ready", kafkaUserCrName);
-
-        return kafkaUser;
+        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, "Ready");
     }
 
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {
