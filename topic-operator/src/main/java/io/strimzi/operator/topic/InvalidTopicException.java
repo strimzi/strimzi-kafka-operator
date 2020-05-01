@@ -7,7 +7,7 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
- * Used when an invalid topic is detected
+ * Thrown when an invalid topic is detected
  * (e.g. one with a negative number of partitions, etc.).
  */
 public class InvalidTopicException extends OperatorException {
