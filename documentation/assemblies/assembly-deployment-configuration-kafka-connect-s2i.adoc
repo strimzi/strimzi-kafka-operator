@@ -29,6 +29,8 @@ include::assembly-kafka-connect-authentication.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-configuration.adoc[leveloffset=+1]
 
+include::assembly-kafka-connect-authorization.adoc[leveloffset=+1]
+
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
 include::../modules/con-kafka-connect-s2i-logging.adoc[leveloffset=+1]
