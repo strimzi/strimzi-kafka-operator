@@ -956,15 +956,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 // Get the image currently set in the Kafka CR or, if that is not set, the image from the version we are changing to.
                                 String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), versionChange.to().version());
 
-
-                                String tlsSidecarImage = kafkaCluster.getTls;
-
-                                String tlsSidecarImage = getImage();
-                                if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-                                    tlsSidecarImage = tlsSidecar.getImage();
-                                }
-
-
                                 Future<StatefulSet> f = Future.succeededFuture(sts);
                                 Future<?> result;
 
@@ -1057,11 +1048,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .editSpec()
                         .editTemplate()
                             .editSpec()
-                                .editContainer(0)
+                                .editFirstContainer()
                                     .withImage(upgradedImage)
-                                .endContainer()
-                                .editContainer(1)
-                                    .withImage("")
                                 .endContainer()
                             .endSpec()
                         .endTemplate()
