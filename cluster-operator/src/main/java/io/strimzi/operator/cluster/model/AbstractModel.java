@@ -1050,7 +1050,9 @@ public abstract class AbstractModel {
      * When ImagePullPolicy is not specified by the user, Kubernetes will automatically set it based on the image
      *    :latest results in Always
      *    anything else results in IfNotPresent
-     * This causes issues in diffing. So we emulate here the Kubernetes defaults and set the policy accoridngly already on our side.
+     * This causes issues in diffing. So we emulate here the Kubernetes defaults and set the policy accordingly
+     * already on our side. This is applied also to our Kafka images which use the tag :latest-kafka-x.y.z but have
+     * the same function as if they were :latest and should behave the same.
      *
      * @param requestedImagePullPolicy  The imagePullPolicy requested by the user (is always preferred when set, ignored when null)
      * @param image The image used for the container. From its tag we determine the default policy
