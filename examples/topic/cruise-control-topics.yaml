@@ -1,0 +1,37 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: strimzi.cruisecontrol.partitionmetricsamples
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 32
+  replicas: 2
+  config:
+    cleanup.policy: delete
+    retention.ms: "3600000"
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: strimzi.cruisecontrol.modeltrainingsamples
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 32
+  replicas: 2
+  config:
+    cleanup.policy: delete
+    retention.ms: "12000000"
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: strimzi.cruisecontrol.metrics
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    cleanup.policy: delete

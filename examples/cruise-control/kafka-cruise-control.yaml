@@ -10,7 +10,6 @@ spec:
       plain: {}
       tls: {}
     config:
-      auto.create.topics.enable: false
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
