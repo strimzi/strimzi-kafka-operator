@@ -18,7 +18,7 @@ CAfile = ${CA_CERTS}
 cert = ${CC_CERTS_KEYS}/cruise-control.crt
 key = ${CC_CERTS_KEYS}/cruise-control.key
 accept = 127.0.0.1:2181
-connect = ${STRIMZI_ZOOKEEPER_CONNECT:-zookeeper-client:2281}
+connect = ${STRIMZI_ZOOKEEPER_CONNECT:-zookeeper-client:2181}
 delay = yes
 verify = 2
 

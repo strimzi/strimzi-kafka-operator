@@ -58,8 +58,8 @@ import java.util.Map;
 public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
 
-    public static final int CLIENT_PLAINTEXT_PORT = 2181; // This port is internal only, not exposed => no need for name
-    public static final int CLIENT_TLS_PORT = 2281;
+    public static final int CLIENT_PLAINTEXT_PORT = 12181; // This port is internal only, not exposed => no need for name
+    public static final int CLIENT_TLS_PORT = 2181;
     protected static final String CLIENT_TLS_PORT_NAME = "tcp-clients";
     public static final int CLUSTERING_PORT = 2888;
     protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";

@@ -2495,4 +2495,8 @@ public class KafkaCluster extends AbstractModel {
 
         return cm;
     }
+
+    public TlsSidecar getTlsSidecar()  {
+        return tlsSidecar;
+    }
 }

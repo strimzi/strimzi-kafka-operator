@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-OK=$(echo ruok | nc 127.0.0.1 2181)
+OK=$(echo ruok | nc 127.0.0.1 12181)
 if [ "$OK" == "imok" ]; then
     exit 0
 else

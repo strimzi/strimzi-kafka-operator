@@ -78,21 +78,21 @@ public class ZookeeperScalerTest {
     @Test
     public void testIsNotDifferent()   {
         Map<String, String> current = new HashMap<>(3);
-        current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        current.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        current.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        current.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        current.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         Map<String, String> desired = new HashMap<>(3);
-        desired.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        desired.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.isDifferent(current, desired), is(false));
 
         Map<String, String> desired2 = new HashMap<>(3);
-        desired2.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired2.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired2.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        desired2.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired2.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired2.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.isDifferent(current, desired2), is(false));
     }
@@ -100,27 +100,27 @@ public class ZookeeperScalerTest {
     @Test
     public void testIsDifferent()   {
         Map<String, String> current = new HashMap<>(3);
-        current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        current.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        current.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        current.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        current.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         Map<String, String> desired = new HashMap<>(3);
-        desired.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired.put("server.4", "my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        desired.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired.put("server.4", "my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.isDifferent(current, desired), is(true));
 
         Map<String, String> desired2 = new HashMap<>(3);
-        desired2.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired2.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        desired2.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired2.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.isDifferent(current, desired2), is(true));
 
         Map<String, String> desired3 = new HashMap<>(3);
-        desired3.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        desired3.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        desired3.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        desired3.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.isDifferent(current, desired3), is(true));
     }
@@ -128,7 +128,7 @@ public class ZookeeperScalerTest {
     @Test
     public void testGenerateConfigOneNode() {
         Map<String, String> expected = new HashMap<>(3);
-        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.generateConfig(1, zkNodeAddress), is(expected));
     }
@@ -136,24 +136,24 @@ public class ZookeeperScalerTest {
     @Test
     public void testGenerateConfigThreeNodes() {
         Map<String, String> expected = new HashMap<>(3);
-        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.generateConfig(3, zkNodeAddress), is(expected));
     }
 
     @Test
     public void testParseConfig() {
-        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
-                        "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
-                        "server.3=my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
+        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
+                        "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
+                        "server.3=my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                         "version=100000000b";
 
         Map<String, String> expected = new HashMap<>(3);
-        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.parseConfig(config.getBytes(StandardCharsets.US_ASCII)), is(expected));
     }
@@ -161,14 +161,14 @@ public class ZookeeperScalerTest {
     @Test
     public void testMapToList() {
         Map<String, String> servers = new HashMap<>(3);
-        servers.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        servers.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        servers.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        servers.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        servers.put("server.2", "my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        servers.put("server.3", "my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         List<String> expected = new ArrayList<>(3);
-        expected.add("server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.add("server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
-        expected.add("server.3=my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181");
+        expected.add("server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.add("server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
+        expected.add("server.3=my-cluster-zookeeper-2.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
 
         assertThat(ZookeeperScaler.serversMapToList(servers), containsInAnyOrder(expected.toArray()));
     }
@@ -196,7 +196,7 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testNoChange(VertxTestContext context) throws KeeperException, InterruptedException {
-        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
+        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
@@ -222,11 +222,11 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testWithChange(VertxTestContext context) throws KeeperException, InterruptedException {
-        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
-                "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
+        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
+                "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
 
-        String updated = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
+        String updated = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
@@ -253,8 +253,8 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testWhenThrows(VertxTestContext context) throws KeeperException, InterruptedException {
-        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
-                "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:2181\n" +
+        String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
+                "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
 
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);

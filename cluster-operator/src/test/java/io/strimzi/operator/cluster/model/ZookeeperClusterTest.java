@@ -655,10 +655,10 @@ public class ZookeeperClusterTest {
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
         assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
-        // Port 2281
+        // Port 2181
         NetworkPolicyIngressRule clientsRule = rules.get(1);
         assertThat(clientsRule.getPorts().size(), is(1));
-        assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(2281)));
+        assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(clientsRule.getFrom().size(), is(0));
 
         // Port 9404
@@ -696,10 +696,10 @@ public class ZookeeperClusterTest {
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
         assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
-        // Port 2281
+        // Port 2181
         NetworkPolicyIngressRule clientsRule = rules.get(1);
         assertThat(clientsRule.getPorts().size(), is(1));
-        assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(2281)));
+        assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(ZookeeperCluster.CLIENT_TLS_PORT)));
 
         assertThat(clientsRule.getFrom().size(), is(5));
 
