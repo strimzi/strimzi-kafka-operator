@@ -13,12 +13,23 @@ For an overview of the `Kafka` resource, see the xref:ref-sample-kafka-resource-
 You can configure `cruiseControl` properties as part of a deployment or redeployment of a Kafka cluster.
 Deploy one instance of Cruise Control per Kafka cluster.
 
+In this procedure, we use the example file provided with {ProductName}:
+
+* `examples/topic/cruise-control-topics.yaml`
+
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
+
+. Create Cruise Control topics in your Kubernetes cluster:
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/topic/cruise-control-topics.yaml
+----
 
 . Edit the `cruiseControl` property of the `Kafka` resource.
 +
