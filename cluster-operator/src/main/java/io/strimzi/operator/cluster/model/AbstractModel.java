@@ -1061,7 +1061,7 @@ public abstract class AbstractModel {
             return requestedImagePullPolicy.toString();
         }
 
-        if (image.toLowerCase(Locale.ENGLISH).endsWith(":latest"))  {
+        if (image.toLowerCase(Locale.ENGLISH).contains(":latest"))  {
             return ImagePullPolicy.ALWAYS.toString();
         } else {
             return ImagePullPolicy.IFNOTPRESENT.toString();
