@@ -155,7 +155,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         }))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
-                    kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
+
+                    if (connect.getReplicas() > 0) {
+                        kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
+                    }
 
                     this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation, kafkaConnectStatus,
                         (connect1, status) -> new KafkaConnectBuilder(connect1).withStatus(status).build()).setHandler(statusResult -> {
