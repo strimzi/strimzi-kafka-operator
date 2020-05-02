@@ -1317,6 +1317,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkService = zkCluster.generateService();
                         this.zkHeadlessService = zkCluster.generateHeadlessService();
 
+                        // We are upgrading from previous Strimzi version which has a sidecars
+                        if (sts != null
+                                && sts.getSpec() != null
+                                && sts.getSpec().getTemplate().getSpec().getContainers().size() > 1)   {
+                            zkCluster.getConfiguration().setConfigOption("ssl.protocol", "TLS");
+                            zkCluster.getConfiguration().setConfigOption("ssl.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
+                            zkCluster.getConfiguration().setConfigOption("ssl.quorum.protocol", "TLS");
+                            zkCluster.getConfiguration().setConfigOption("ssl.quorum.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
+                        }
+
                         if (zkCluster.getLogging() instanceof  ExternalLogging) {
                             return configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName());
                         } else {
