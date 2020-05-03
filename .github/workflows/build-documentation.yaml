@@ -1,0 +1,25 @@
+name: Build Documentation
+on: [pull_request]
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '2.7'
+      - name: Install asciidoctor
+        run: gem install asciidoctor
+      - name: Check docs
+        run: ./travis/check_docs.sh
+      - name: Build documentation
+        run: make docu_html
+      - name: Upload documentation
+        uses: actions/upload-artifact@v1
+        with:
+          name: docu_html
+          path: documentation/html
