@@ -1317,14 +1317,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkService = zkCluster.generateService();
                         this.zkHeadlessService = zkCluster.generateHeadlessService();
 
-                        // We are upgrading from previous Strimzi version which has a sidecars
+                        // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
+                        // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
+                        // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
+                        // upgrade hard since Kakfa will be unable to connect. So in the first roll, we enable also
+                        // older TLS versions in Zookeeper so that we can configure the KAfka sidecars to enable
+                        // TLSv1.2 as well. Thsi will be removed again in the next rolling update of Zookeeper -> done
+                        // only when Kafka is ready for it.
                         if (sts != null
                                 && sts.getSpec() != null
                                 && sts.getSpec().getTemplate().getSpec().getContainers().size() > 1)   {
                             zkCluster.getConfiguration().setConfigOption("ssl.protocol", "TLS");
                             zkCluster.getConfiguration().setConfigOption("ssl.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
-                            zkCluster.getConfiguration().setConfigOption("ssl.quorum.protocol", "TLS");
-                            zkCluster.getConfiguration().setConfigOption("ssl.quorum.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
                         }
 
                         if (zkCluster.getLogging() instanceof  ExternalLogging) {
