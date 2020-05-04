@@ -1,0 +1,68 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-user-operator.adoc
+
+[id='proc-configuring-kafka-user-{context}']
+= Configuring a Kafka user
+
+Use the properties of the `KafkaUser` resource to configure a Kafka user.
+
+You can use `kubectl apply` to create or modify users, and `kubectl delete` to delete existing users.
+
+* `kubectl apply -f _<user-config-file>_`
+* `kubectl delete KafkaUser _<user-name>_`
+
+When you create a user, you must configure the authentication and authorization mechanisms required when connecting to Kafka brokers using a listener.
+
+This procedure shows how a user is created with TLS authentication.
+The authentication required depends on the xref:assembly-kafka-broker-listener-authentication-deployment-configuration-kafka[type of authentication configured for the Kafka broker listener].
+
+.Prerequisites
+
+* A running Kafka cluster xref:con-mutual-tls-authentication-deployment-configuration-kafka[configured with a Kafka broker listener using TLS authentication and encryption].
+* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
+
+.Procedure
+
+. Prepare a YAML file containing the `KafkaUser` to be created.
++
+.An example `KafkaUser`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication: <1>
+    type: tls
+  authorization:
+    type: simple <2>
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operation: Read
+----
+<1> User authentication mechanism, defined as mutual `tls` or `scram-sha-512`.
+<2> Simple authorization, which requires an accompanying list of ACL rules.
+
+. Create the `KafkaUser` resource in Kubernetes.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _<user-config-file>_
+
+. Use the credentials from the secret `my-user` in your client application.

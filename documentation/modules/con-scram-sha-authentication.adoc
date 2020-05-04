@@ -1,6 +1,5 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-user-operator.adoc
 // assembly-configuring-kafka-listeners.adoc
 
 [id='con-scram-sha-authentication-{context}']

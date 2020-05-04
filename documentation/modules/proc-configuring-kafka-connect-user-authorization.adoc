@@ -13,7 +13,7 @@ and the internal topics of Kafka Connect.
 This procedure shows how access is provided when `simple` authorization is being used.
 
 Simple authorization uses ACL rules, handled by the Kafka `SimpleAclAuthorizer` plugin, to provide the right level of access.
-For more information on configuring a `KafkaUser` resource to use simple authorization, see xref:ref-kafka-user-using-uo[Kafka User resource].
+For more information on configuring a `KafkaUser` resource to use simple authorization, see xref:ref-kafka-user-str[Kafka User resource].
 
 NOTE: The default values for the consumer group and topics will differ when xref:con-kafka-connect-multiple-instances-{context}[running multiple instances].
 
