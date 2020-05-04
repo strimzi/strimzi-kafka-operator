@@ -13,7 +13,7 @@ Java 11 should also have faster TLS implementation compared to Java 8.
 That should be more and more important as we remove the TLS sidecars which were dealing with part of the TLS load and use Java's native TLS support for Zookeeper communication.
 
 We have also increased effort with maintaining the CI builds for both Java 8 and 11.
-So moving to Java 11 should allow us to move 
+So moving to Java 11 should allow us to simplify the CI and have less builds as well.
 
 ## Proposal
 
