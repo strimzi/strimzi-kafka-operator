@@ -51,7 +51,7 @@ With a few exceptions, cluster rebalancing in {ProductName} supports the same go
 
 . Intra-broker disk usage distribution    
 
-NOTE: "Write your own" goals and Kafka assigner goals are not supported in {ProductName}.
+NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported in {ProductName}.
 
 For detailed information on each rebalance goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki. 
 
@@ -113,11 +113,76 @@ Custom rebalance goals often return a rebalance proposal faster than the default
 [discrete]
 == Rebalance proposals
 
-A rebalance proposal is...
+A _rebalance proposal_ is a summary of proposed changes from Cruise Control that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. Each rebalance proposal is based on the set of rebalance goals (either default goals or custom goals) that were used to generate it.
 
-All rebalance proposals are dry runs. You cannot implement a cluster rebalance without first generating a rebalance proposal.
+A rebalance proposal provides the following information in JSON:
 
-By default, rebalance proposals are generated based on the _default rebalance goals_. If you want to use a subset of the default rebalance goals (for example, the distribute leader replicas goal only), you can set one or more _custom rebalance goals_ for a rebalance proposal.
+* An optimal mapping of partitions to brokers
+
+* Statistics on the cluster rebalance (before and after)
+
+You can use the information to decide whether to implement the cluster rebalance, or change the rebalance goals. 
+
+All rebalance proposals are dry runs. You cannot implement a cluster rebalance without first generating a rebalance proposal. There is no limit to the number of rebalance proposals that can be generated.
+
+The following table lists the properties contained in a rebalance proposal:
+
+[cols="3*",options="header",stripes="none",separator=¦]
+|===
+
+¦Statistic
+m¦JSON property
+¦Description
+
+¦Statistic
+m¦numIntraBrokerReplicaMovements
+¦Description
+
+¦Statistic
+m¦excludedBrokersForLeadership
+¦Description
+
+¦Statistic
+m¦numReplicaMovements
+¦Description
+
+¦Statistic
+m¦onDemandBalancednessScoreAfter
+¦Description
+
+¦Statistic
+m¦onDemandBalancednessScoreBefore
+¦Description
+
+¦Statistic
+m¦intraBrokerDataToMoveMB
+¦Description
+
+¦Statistic
+m¦recentWindows
+¦Description
+
+¦Statistic
+m¦dataToMoveMB
+¦Description
+
+¦Statistic
+m¦monitoredPartitionsPercentage
+¦Description
+
+¦Statistic
+m¦excludedTopics
+¦Description
+
+¦Statistic
+m¦numLeaderMovements
+¦Description
+
+¦Statistic
+m¦excludedBrokersForReplicaMove
+¦Description
+
+|===
 
 .Additional resources
 
