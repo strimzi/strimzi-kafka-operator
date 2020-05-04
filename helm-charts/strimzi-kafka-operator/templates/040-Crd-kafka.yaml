@@ -196,6 +196,11 @@ spec:
                                 check should be performed or not. This should be set
                                 to `false` if the authorization server does not include
                                 'typ' claim in JWT token. Defaults to `true`.
+                            checkIssuer:
+                              type: boolean
+                              description: Enable or disable issuer checking. By default
+                                issuer is checked using the value configured by `validIssuerUri`.
+                                Default value is `true`.
                             clientId:
                               type: string
                               description: OAuth Client ID which the Kafka broker
@@ -227,6 +232,18 @@ spec:
                               type: boolean
                               description: Enable or disable ECDSA support by installing
                                 BouncyCastle crypto provider. Default value is `false`.
+                            fallbackUserNameClaim:
+                              type: string
+                              description: The fallback username claim to be used
+                                for user id if the claim specified by `userNameClaim`
+                                is not present. It only takes effect if `userNameClaim`
+                                is set.
+                            fallbackUserNamePrefix:
+                              type: string
+                              description: The prefix to use with the value of `fallbackUserNameClaim`
+                                to construct the user id. It only takes effect if
+                                `fallbackUserNameClaim` is set, and the value is present
+                                for the claim.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -250,6 +267,10 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            scope:
+                              type: string
+                              description: OAuth scope to use when authenticating
+                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -279,14 +300,26 @@ spec:
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
                                 only on TLS listeners.
+                            userInfoEndpointUri:
+                              type: string
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining user id when Introspection
+                                Endpoint does not return information that could be
+                                used for user id. '
                             userNameClaim:
                               type: string
-                              description: Name of the claim from the authentication
-                                token which will be used as the user principal. Defaults
-                                to `sub`.
+                              description: Name of the claim from the JWT authentication
+                                token, Introspection Endpoint response or User Info
+                                Endpoint response which will be used to extract the
+                                user id. Defaults to `sub`.
                             validIssuerUri:
                               type: string
                               description: URI of the token issuer used for authentication.
+                            validTokenType:
+                              type: string
+                              description: Valid value for `token_type` attribute
+                                returned by Introspection Endpoint. No default value,
+                                and not checked by default.
                           required:
                           - type
                           description: 'Authentication configuration for this listener.
@@ -368,6 +401,11 @@ spec:
                                 check should be performed or not. This should be set
                                 to `false` if the authorization server does not include
                                 'typ' claim in JWT token. Defaults to `true`.
+                            checkIssuer:
+                              type: boolean
+                              description: Enable or disable issuer checking. By default
+                                issuer is checked using the value configured by `validIssuerUri`.
+                                Default value is `true`.
                             clientId:
                               type: string
                               description: OAuth Client ID which the Kafka broker
@@ -399,6 +437,18 @@ spec:
                               type: boolean
                               description: Enable or disable ECDSA support by installing
                                 BouncyCastle crypto provider. Default value is `false`.
+                            fallbackUserNameClaim:
+                              type: string
+                              description: The fallback username claim to be used
+                                for user id if the claim specified by `userNameClaim`
+                                is not present. It only takes effect if `userNameClaim`
+                                is set.
+                            fallbackUserNamePrefix:
+                              type: string
+                              description: The prefix to use with the value of `fallbackUserNameClaim`
+                                to construct the user id. It only takes effect if
+                                `fallbackUserNameClaim` is set, and the value is present
+                                for the claim.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -422,6 +472,10 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            scope:
+                              type: string
+                              description: OAuth scope to use when authenticating
+                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -451,14 +505,26 @@ spec:
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
                                 only on TLS listeners.
+                            userInfoEndpointUri:
+                              type: string
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining user id when Introspection
+                                Endpoint does not return information that could be
+                                used for user id. '
                             userNameClaim:
                               type: string
-                              description: Name of the claim from the authentication
-                                token which will be used as the user principal. Defaults
-                                to `sub`.
+                              description: Name of the claim from the JWT authentication
+                                token, Introspection Endpoint response or User Info
+                                Endpoint response which will be used to extract the
+                                user id. Defaults to `sub`.
                             validIssuerUri:
                               type: string
                               description: URI of the token issuer used for authentication.
+                            validTokenType:
+                              type: string
+                              description: Valid value for `token_type` attribute
+                                returned by Introspection Endpoint. No default value,
+                                and not checked by default.
                           required:
                           - type
                           description: Authentication configuration for this listener.
@@ -564,6 +630,11 @@ spec:
                                 check should be performed or not. This should be set
                                 to `false` if the authorization server does not include
                                 'typ' claim in JWT token. Defaults to `true`.
+                            checkIssuer:
+                              type: boolean
+                              description: Enable or disable issuer checking. By default
+                                issuer is checked using the value configured by `validIssuerUri`.
+                                Default value is `true`.
                             clientId:
                               type: string
                               description: OAuth Client ID which the Kafka broker
@@ -595,6 +666,18 @@ spec:
                               type: boolean
                               description: Enable or disable ECDSA support by installing
                                 BouncyCastle crypto provider. Default value is `false`.
+                            fallbackUserNameClaim:
+                              type: string
+                              description: The fallback username claim to be used
+                                for user id if the claim specified by `userNameClaim`
+                                is not present. It only takes effect if `userNameClaim`
+                                is set.
+                            fallbackUserNamePrefix:
+                              type: string
+                              description: The prefix to use with the value of `fallbackUserNameClaim`
+                                to construct the user id. It only takes effect if
+                                `fallbackUserNameClaim` is set, and the value is present
+                                for the claim.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -618,6 +701,10 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            scope:
+                              type: string
+                              description: OAuth scope to use when authenticating
+                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -647,14 +734,26 @@ spec:
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
                                 only on TLS listeners.
+                            userInfoEndpointUri:
+                              type: string
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining user id when Introspection
+                                Endpoint does not return information that could be
+                                used for user id. '
                             userNameClaim:
                               type: string
-                              description: Name of the claim from the authentication
-                                token which will be used as the user principal. Defaults
-                                to `sub`.
+                              description: Name of the claim from the JWT authentication
+                                token, Introspection Endpoint response or User Info
+                                Endpoint response which will be used to extract the
+                                user id. Defaults to `sub`.
                             validIssuerUri:
                               type: string
                               description: URI of the token issuer used for authentication.
+                            validTokenType:
+                              type: string
+                              description: Valid value for `token_type` attribute
+                                returned by Introspection Endpoint. No default value,
+                                and not checked by default.
                           required:
                           - type
                           description: Authentication configuration for Kafka brokers.
