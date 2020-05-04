@@ -7,7 +7,7 @@
 
 If you are satisfied with a rebalance proposal, you can implement it by annotating the corresponding `KafkaClusterRebalance` resource. 
 
-At the next reconciliation, the Cluster Operator instructs Cruise Control to rebalance the Kafka cluster. 
+At the next reconciliation, the Cluster Operator will instruct Cruise Control to rebalance the Kafka cluster. 
 Cruise Control then reassigns partitions to brokers as summarized in the rebalance proposal.
 
 WARNING: This is not a dry run. 
