@@ -26,7 +26,7 @@ public class StatusDiff extends AbstractResourceDiff {
 
     public StatusDiff(Status current, Status desired) {
         JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(current == null ? "{}" : current);
-        JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
+        JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
 
         int num = 0;
@@ -54,7 +54,7 @@ public class StatusDiff extends AbstractResourceDiff {
     /**
      * Returns whether the Diff is empty or not
      *
-     * @return true when the statuses are the same
+     * @return true when the diffed statuses match
      */
     @Override
     public boolean isEmpty() {
