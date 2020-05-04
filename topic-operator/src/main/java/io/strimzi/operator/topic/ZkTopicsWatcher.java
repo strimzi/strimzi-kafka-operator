@@ -75,7 +75,6 @@ class ZkTopicsWatcher {
             Set<String> created = new HashSet<>(result);
             created.removeAll(this.children);
             this.children = result;
-            topicOperator.setTopicCount(this.children.size());
 
             if (!deleted.isEmpty()) {
                 LOGGER.info("Deleted topics: {}", deleted);

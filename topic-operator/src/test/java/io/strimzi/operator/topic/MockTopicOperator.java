@@ -95,11 +95,6 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void setTopicCount(int topics) {
-        return;
-    }
-
-    @Override
     public Future<Void> onTopicCreated(LogContext logContext, TopicName topicName) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, topicName));
         return topicCreatedResult;

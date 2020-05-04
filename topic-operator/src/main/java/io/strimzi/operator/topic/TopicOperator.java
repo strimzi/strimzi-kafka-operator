@@ -1217,7 +1217,6 @@ class TopicOperator {
         )).compose(topicNamesFromKafka ->
                 // Reconcile the topic found in Kafka
                 reconcileFromKafka(reconciliationType, topicNamesFromKafka.stream().map(TopicName::new).collect(Collectors.toList()))
-
         ).compose(reconcileState -> {
             Future<List<KafkaTopic>> ktFut = k8s.listResources();
             return ktFut.recover(ex -> Future.failedFuture(
@@ -1228,6 +1227,7 @@ class TopicOperator {
             });
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
+            topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
