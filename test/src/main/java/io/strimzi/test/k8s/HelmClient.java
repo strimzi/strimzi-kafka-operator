@@ -22,7 +22,7 @@ public class HelmClient {
     private static final Logger LOGGER = LogManager.getLogger(HelmClient.class);
 
     private static final String HELM_CMD = "helm";
-    private static final String INSTALL_TIMEOUT_SECONDS = "60";
+    private static final String INSTALL_TIMEOUT_SECONDS = "90";
 
     private boolean initialized;
     private String namespace;
