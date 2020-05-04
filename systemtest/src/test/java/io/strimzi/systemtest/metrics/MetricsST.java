@@ -252,6 +252,7 @@ public class MetricsST extends BaseST {
 
     @Test
     void testTopicOperatorMetrics() {
+        assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic");
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaTopic");
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaTopic");
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", "KafkaTopic");
@@ -262,6 +263,9 @@ public class MetricsST extends BaseST {
 
         Pattern topicPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaTopic\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPattern, topicOperatorMetricsData);
+        cmdKubeClient().list("KafkaTopic").stream().forEach(topicName -> {
+            LOGGER.info("KafkaTopic: {}", topicName);
+        });
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) getExpectedTopics().size()));
     }
 
@@ -347,6 +351,7 @@ public class MetricsST extends BaseST {
         list.add("my-cluster-connect-status");
         list.add("second-kafka-cluster.checkpoints.internal");
         list.add("test-topic");
+        list.add("heartbeats");
         return list;
     }
 }
