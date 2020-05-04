@@ -95,22 +95,7 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void incrementFailedReconciliationsCounter() {
-        return;
-    }
-
-    @Override
-    public void incrementSuccessfulReconciliationsCounter() {
-        return;
-    }
-
-    @Override
-    public void incrementTopicCounter() {
-        return;
-    }
-
-    @Override
-    public void decrementTopicCounter() {
+    public void setTopicCount(int topics) {
         return;
     }
 

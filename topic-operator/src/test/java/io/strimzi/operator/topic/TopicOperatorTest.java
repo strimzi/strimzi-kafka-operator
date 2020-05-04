@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
@@ -587,7 +586,7 @@ public class TopicOperatorTest {
     }
 
     TopicOperator.Reconciliation reconciliation() {
-        return topicOperator.new Reconciliation("test", Timer.start(metrics.meterRegistry())) {
+        return topicOperator.new Reconciliation("test") {
             @Override
             public Future<Void> execute() {
                 return null;

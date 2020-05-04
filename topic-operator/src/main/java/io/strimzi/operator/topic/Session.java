@@ -225,11 +225,6 @@ public class Session extends AbstractVerticle {
                             boolean isInitialReconcile = oldTimerId == null;
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
                                 topicOperator.getPeriodicReconciliationsCounter().increment();
-                                if (result.failed()) {
-                                    topicOperator.incrementFailedReconciliationsCounter();
-                                } else {
-                                    topicOperator.incrementSuccessfulReconciliationsCounter();
-                                }
                                 if (isInitialReconcile) {
                                     initReconcilePromise.complete();
                                 }

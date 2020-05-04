@@ -425,20 +425,8 @@ class TopicOperator {
         return this.periodicReconciliationsCounter;
     }
 
-    public void incrementFailedReconciliationsCounter() {
-        this.failedReconciliationsCounter.increment();
-    }
-
-    public void incrementSuccessfulReconciliationsCounter() {
-        this.successfulReconciliationsCounter.increment();
-    }
-
-    public void incrementTopicCounter() {
-        this.topicCounter.getAndIncrement();
-    }
-
-    public void decrementTopicCounter() {
-        this.topicCounter.getAndDecrement();
+    public void setTopicCount(int topics) {
+        this.topicCounter.set(topics);
     }
 
     /**
@@ -774,7 +762,7 @@ class TopicOperator {
     /** Called when a topic znode is deleted in ZK */
     Future<Void> onTopicDeleted(LogContext logContext, TopicName topicName) {
         return executeWithTopicLockHeld(logContext, topicName,
-            new Reconciliation("onTopicDeleted", Timer.start(metrics.meterRegistry())) {
+            new Reconciliation("onTopicDeleted") {
                 @Override
                 public Future<Void> execute() {
                     return reconcileOnTopicChange(logContext, topicName, null, this);
@@ -789,7 +777,7 @@ class TopicOperator {
      */
     Future<Void> onTopicConfigChanged(LogContext logContext, TopicName topicName) {
         return executeWithTopicLockHeld(logContext, topicName,
-                new Reconciliation("onTopicConfigChanged", Timer.start(metrics.meterRegistry())) {
+                new Reconciliation("onTopicConfigChanged") {
                     @Override
                     public Future<Void> execute() {
                         return kafka.topicMetadata(topicName)
@@ -805,7 +793,7 @@ class TopicOperator {
      * Called when ZK watch notifies of a change to the topic's partitions
      */
     Future<Void> onTopicPartitionsChanged(LogContext logContext, TopicName topicName) {
-        Reconciliation action = new Reconciliation("onTopicPartitionsChanged", Timer.start(metrics.meterRegistry())) {
+        Reconciliation action = new Reconciliation("onTopicPartitionsChanged") {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
@@ -875,7 +863,7 @@ class TopicOperator {
     Future<Void> onTopicCreated(LogContext logContext, TopicName topicName) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
-        Reconciliation action = new Reconciliation("onTopicCreated", Timer.start(metrics.meterRegistry())) {
+        Reconciliation action = new Reconciliation("onTopicCreated") {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
@@ -921,9 +909,9 @@ class TopicOperator {
         public volatile KafkaTopic topic;
         Timer.Sample reconciliationTimerSample;
 
-        public Reconciliation(String name, Timer.Sample reconciliationTimerSample) {
+        public Reconciliation(String name) {
             this.name = name;
-            this.reconciliationTimerSample = reconciliationTimerSample;
+            this.reconciliationTimerSample = Timer.start(metrics.meterRegistry());
             reconciliationsCounter.increment();
         }
 
@@ -999,7 +987,7 @@ class TopicOperator {
     /** Called when a resource is isModify in k8s */
     Future<Void> onResourceEvent(LogContext logContext, KafkaTopic modifiedTopic, Watcher.Action action) {
         return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic),
-                new Reconciliation("onResourceEvent", Timer.start(metrics.meterRegistry())) {
+                new Reconciliation("onResourceEvent") {
                     @Override
                     public Future<Void> execute() {
                         return k8s.getFromName(new ResourceName(modifiedTopic))
@@ -1277,7 +1265,7 @@ class TopicOperator {
                 // anything left in undetermined doesn't exist in topic store nor kube
                 for (TopicName tn : reconcileState.undetermined) {
                     LogContext logContext = LogContext.periodic(reconciliationType + "-" + tn);
-                    futs2.add(executeWithTopicLockHeld(logContext, tn, new Reconciliation("delete-remaining", Timer.start(metrics.meterRegistry())) {
+                    futs2.add(executeWithTopicLockHeld(logContext, tn, new Reconciliation("delete-remaining") {
                         @Override
                         public Future<Void> execute() {
                             observedTopicFuture(null);
@@ -1306,7 +1294,7 @@ class TopicOperator {
             List<Future<Void>> futures = new ArrayList<>();
             for (TopicName topicName : topicsFromKafka) {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kafka " + topicName);
-                futures.add(executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-from-kafka", Timer.start(metrics.meterRegistry())) {
+                futures.add(executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-from-kafka") {
                     @Override
                     public Future<Void> execute() {
                         return getFromTopicStore(topicName).recover(error -> {
@@ -1414,7 +1402,7 @@ class TopicOperator {
 
     private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject,
                                                 String reconciliationType, ResourceName kubeName, TopicName topicName) {
-        return executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube", Timer.start(metrics.meterRegistry())) {
+        return executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube") {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;

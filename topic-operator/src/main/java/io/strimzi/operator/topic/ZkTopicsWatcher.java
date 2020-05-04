@@ -75,6 +75,7 @@ class ZkTopicsWatcher {
             Set<String> created = new HashSet<>(result);
             created.removeAll(this.children);
             this.children = result;
+            topicOperator.setTopicCount(this.children.size());
 
             if (!deleted.isEmpty()) {
                 LOGGER.info("Deleted topics: {}", deleted);
@@ -84,7 +85,6 @@ class ZkTopicsWatcher {
                     LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "-" + topicName);
                     topicOperator.onTopicDeleted(logContext, new TopicName(topicName)).setHandler(ar -> {
                         if (ar.succeeded()) {
-                            topicOperator.decrementTopicCounter();
                             LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
                         } else {
                             LOGGER.warn("{}: Error responding to deletion of topic {}", logContext, topicName, ar.cause());
@@ -102,7 +102,6 @@ class ZkTopicsWatcher {
                     topicOperator.onTopicCreated(logContext, new TopicName(topicName)).setHandler(ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
-                            topicOperator.incrementTopicCounter();
                         } else {
                             LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
                         }
@@ -123,7 +122,6 @@ class ZkTopicsWatcher {
                 for (String child : result) {
                     tcw.addChild(child);
                     tw.addChild(child);
-                    topicOperator.incrementTopicCounter();
                 }
                 this.state = 1;
             });
