@@ -55,7 +55,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testNoCruiseControl()  {
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withCruiseControl("my-cluster", null)
+                .withCruiseControl("my-cluster", null, "1", "1")
                 .build();
 
         assertThat(configuration, isEquivalent(""));
@@ -66,7 +66,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withCruiseControl("my-cluster", cruiseControlSpec)
+                .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1")
                 .build();
 
         assertThat(configuration, isEquivalent(

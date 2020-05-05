@@ -173,7 +173,9 @@ public class KafkaCluster extends AbstractModel {
     private static final String NAME_SUFFIX = "-kafka";
 
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
-    
+    private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
+    private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
+
     protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
     protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
@@ -221,6 +223,8 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
     private CruiseControlSpec cruiseControlSpec;
+    private String defaultNumPatitions = "1";
+    private String defaultReplicationFactor = "1";
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
@@ -457,6 +461,12 @@ public class KafkaCluster extends AbstractModel {
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
+        if (configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD) != null) {
+            result.defaultNumPatitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD);
+        }
+        if (configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD) != null) {
+            result.defaultReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD);
+        }
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
         if (metricReporters != null) {
@@ -2476,7 +2486,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec)
+                .withCruiseControl(cluster, cruiseControlSpec, defaultNumPatitions, defaultReplicationFactor)
                 .withUserConfiguration(configuration)
                 .build().trim();
     }
