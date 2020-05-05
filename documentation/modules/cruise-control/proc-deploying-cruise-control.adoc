@@ -100,8 +100,8 @@ kubectl apply -f _kafka.yaml_
 kubectl get deployments -l app.kubernetes.io/name=strimzi
 ----
 
-//.What to do next
-//After configuring and deploying Cruise Control, you can xref:proc-interacting-with-cruise-control-api-{context}[interact with the Cruise Control API]
+.What to do next
+After configuring and deploying Cruise Control, you can xref:proc-generating-rebalance-proposals-{context}[generate rebalance proposals]. 
 
 .Additional resources
 
