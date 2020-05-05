@@ -13,6 +13,7 @@
 * Allow standalone User Operator to modify status on KafkaUser
 * Add support for Kafka 2.4.1
 * Add support for Kafka 2.5.0
+* Add metrics for Topic Operator
 
 ## 0.17.0
 
