@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -52,6 +54,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     void collectLogs(String testClass, String testMethod) {
+        // Stop test execution time counter
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         // Get current date to create a unique folder
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
