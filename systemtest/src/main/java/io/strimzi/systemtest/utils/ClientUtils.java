@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,18 +23,21 @@ public class ClientUtils {
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
 
-    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations kafkaClient, int exceptedMessages) {
-        TestUtils.waitFor("Kafka " + kafkaClient.toString() + " client received messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                int receivedMessages = 0;
-                try {
-                    receivedMessages = kafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
-                    return receivedMessages == exceptedMessages;
-                } catch (Exception e) {
-                    LOGGER.warn("Client not received excepted messages {}, instead received only {}!", exceptedMessages, receivedMessages);
-                    return false;
-                }
-            });
+    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations kafkaClient, int exceptedMessages) throws Throwable {
+        int receivedMessages;
+        int tries = 3;
+
+        for (; tries > 0; tries--) {
+            receivedMessages = kafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
+
+            if (receivedMessages == exceptedMessages) {
+                LOGGER.info("Consumer successfully consumed {} messages", exceptedMessages);
+                break;
+            }
+        }
+        if (tries == 0) {
+            throw new Throwable(String.format("Consumer wasn't able to consume %s messages for 3 times", exceptedMessages));
+        }
     }
 }
 
