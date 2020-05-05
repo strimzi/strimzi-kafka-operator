@@ -299,7 +299,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
         return new RuntimeException(
-                "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' in namespace " + connectNamespace + " has 0 replicas.");
+                "Kafka Connect cluster '" + connectName + "' in namespace " + connectNamespace + " has 0 replicas.");
     }
 
     /**

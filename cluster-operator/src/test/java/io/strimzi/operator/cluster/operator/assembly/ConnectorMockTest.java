@@ -432,6 +432,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -458,6 +459,7 @@ public class ConnectorMockTest {
                     //.addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -487,6 +489,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
             .done();
         waitForConnectReady(connectName);
@@ -567,6 +570,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -605,6 +609,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -686,6 +691,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -730,6 +736,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(oldConnectClusterName);
@@ -741,6 +748,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(newConnectClusterName);
@@ -822,6 +830,7 @@ public class ConnectorMockTest {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -863,11 +872,12 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(connectName)
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -948,9 +958,9 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(connectName)
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
@@ -969,13 +979,13 @@ public class ConnectorMockTest {
         // Create KafkaConnector and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .withNamespace(NAMESPACE)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
-                .withTasksMax(1)
-                .withClassName("Dummy")
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
                 .endSpec()
                 .done();
         waitForConnectorReady(connectorName);
@@ -1000,7 +1010,7 @@ public class ConnectorMockTest {
                 .done();
 
         waitForConnectReady(connectName);
-        waitForConnectorNotReady(connectorName, "ConnectTimeoutException", "connection timed out");
+        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace ns has 0 replicas.");
     }
 
     /** Create connect, create connector, break the REST API */
@@ -1012,12 +1022,12 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(connectName)
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
-                .withReplicas(1)
+                    .withReplicas(1)
                 .endSpec()
                 .done();
         waitForConnectReady(connectName);
@@ -1033,13 +1043,13 @@ public class ConnectorMockTest {
         // Create KafkaConnector and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .withNamespace(NAMESPACE)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
-                .withTasksMax(1)
-                .withClassName("Dummy")
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
                 .endSpec()
                 .done();
         waitForConnectorReady(connectorName);
