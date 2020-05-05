@@ -192,7 +192,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {

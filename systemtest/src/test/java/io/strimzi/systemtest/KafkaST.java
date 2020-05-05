@@ -258,22 +258,6 @@ class KafkaST extends BaseST {
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
-                    .withNewTlsSidecar()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endReadinessProbe()
-                        .withNewLivenessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endLivenessProbe()
-                    .endTlsSidecar()
                     .withReplicas(2)
                     .withNewReadinessProbe()
                        .withInitialDelaySeconds(initialDelaySeconds)
@@ -288,9 +272,6 @@ class KafkaST extends BaseST {
                         .withNewZookeeperContainer()
                             .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
                         .endZookeeperContainer()
-                        .withNewTlsSidecarContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endTlsSidecarContainer()
                     .endTemplate()
                 .endZookeeper()
                 .editEntityOperator()
@@ -432,16 +413,7 @@ class KafkaST extends BaseST {
             zookeeperClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.setConfig(updatedZookeeperConfig);
-            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.getTemplate().getZookeeperContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            zookeeperClusterSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
             entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);

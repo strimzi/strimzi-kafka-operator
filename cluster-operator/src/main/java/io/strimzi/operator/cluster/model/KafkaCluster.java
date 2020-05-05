@@ -287,7 +287,7 @@ public class KafkaCluster extends AbstractModel {
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
-        setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
+        setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT);
 
         this.mountPath = "/var/lib/kafka";
 

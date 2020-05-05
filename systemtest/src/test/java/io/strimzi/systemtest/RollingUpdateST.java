@@ -470,8 +470,6 @@ class RollingUpdateST extends BaseST {
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
 
-        Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-
         final int scaleZkTo = initialZkReplicas + 4;
         final List<String> newZkPodNames = new ArrayList<String>() {{
                 for (int i = initialZkReplicas; i < scaleZkTo; i++) {
@@ -484,7 +482,7 @@ class RollingUpdateST extends BaseST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
-        zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo);
         // check the new node is either in leader or follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
 
@@ -515,7 +513,7 @@ class RollingUpdateST extends BaseST {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas, zkSnapshot);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas);
 
         internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
 
@@ -535,7 +533,6 @@ class RollingUpdateST extends BaseST {
         assertThat(sent, is(MESSAGE_COUNT));
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
-
 
         //Test that the second pod has event 'Killing'
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
