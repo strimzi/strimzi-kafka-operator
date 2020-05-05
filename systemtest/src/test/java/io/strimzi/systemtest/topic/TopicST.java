@@ -27,7 +27,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -152,7 +151,7 @@ public class TopicST extends BaseST {
         }
 
         LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
-
+        KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
         KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, "Ready");
     }
 
@@ -233,7 +232,6 @@ public class TopicST extends BaseST {
     }
 
     @Test
-    @Order(5)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
         String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";
@@ -312,6 +310,17 @@ public class TopicST extends BaseST {
         assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
     }
 
+    void deployTestSpecificResources() {
+        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
@@ -321,7 +330,6 @@ public class TopicST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
 
-        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        deployTestSpecificResources();
     }
 }
