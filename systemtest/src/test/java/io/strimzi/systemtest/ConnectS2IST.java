@@ -52,6 +52,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -593,7 +594,8 @@ class ConnectS2IST extends BaseST {
         assertThat(actualVersion, is(TestKafkaVersion.getKafkaVersions().get(1).version()));
 
         LOGGER.info("===== CONNECTS2I CERT CHANGE =====");
-        String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
+        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/cluster-ca.crt");
+        String clusterCaCert = TestUtils.readResource(secretInputStream);
         SecretUtils.createSecret("my-secret", "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
         CertSecretSource certSecretSource = new CertSecretSourceBuilder()
