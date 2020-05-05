@@ -5,6 +5,7 @@
 package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -18,6 +19,8 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.sundr.builder.annotations.Buildable;
+//import io.sundr.builder.annotations.Buildable;
 
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,11 @@ public class TestCrds {
             ))
     @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
     @JsonPropertyOrder({})
+//    @Buildable(
+//        editableEnabled = false,
+//        builderPackage = "io.fabric8.kubernetes.api.builder"
+//    )
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ExampleCrd<T, U extends ValidCrdNumber, V extends U> extends CustomResource {
 
         private String ignored;
@@ -121,6 +129,10 @@ public class TestCrds {
 
 
         @JsonPropertyOrder({})
+        @Buildable(
+            editableEnabled = false,
+            builderPackage = "io.fabric8.kubernetes.api.builder"
+        )
         @Description("Example of complex type.")
         public static class ObjectProperty {
             private String foo;

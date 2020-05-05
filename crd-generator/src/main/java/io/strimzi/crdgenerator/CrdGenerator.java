@@ -35,6 +35,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -160,24 +161,30 @@ public class CrdGenerator {
         System.err.println("CrdGenerator: error: " + s);
     }
 
+    /**
+     * Add a new error to the list of errors
+     * If errors is non empty an InvalidCrdException will be thrown
+     * @param s the string of the error to add
+     */
     private void err(String s) {
-        System.err.println("CrdGenerator: error: " + s);
-        numErrors++;
+        errors.add("CrdGenerator: error: " + s);
     }
 
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
     private final Map<String, String> labels;
-    private int numErrors;
+    private List<String> errors;
 
     CrdGenerator(ObjectMapper mapper) {
         this(mapper, emptyMap());
+
     }
 
     CrdGenerator(ObjectMapper mapper, Map<String, String> labels) {
         this.mapper = mapper;
         this.nf = mapper.getNodeFactory();
         this.labels = labels;
+        this.errors = new ArrayList<>();
     }
 
     void generate(Class<? extends CustomResource> crdClass, Writer out) throws IOException {
@@ -215,6 +222,9 @@ public class CrdGenerator {
             node.set("spec", buildSpec(crd.spec(), crdClass));
         }
         mapper.writeValue(out, node);
+        if (!errors.isEmpty()) {
+            throw new InvalidCrdException("There were " + errors.size() + " errors\n" + String.join("\n", errors));
+        }
     }
 
     private ObjectNode buildSpec(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
@@ -427,14 +437,24 @@ public class CrdGenerator {
         }
         result.putAll(properties(crdClass));
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
-        if (order == null && !isExemptClass(crdClass)) {
-            throw new InvalidCrdException(crdClass.getName() + " missing @JsonPropertyOrder annotation");
+        if (order == null && requiresJsonPropertyOrderAnnotation(crdClass)) {
+            err(crdClass.getName() + " missing @JsonPropertyOrder annotation");
         }
         return sortedProperties(order != null ? order.value() : null, result).values();
     }
 
-    private boolean isExemptClass(Class<?> crdClass) {
-        return crdClass == Object.class;
+    /**
+     * The CrdGenerator walks all class and sub-class properties, at some point it may hit a java primitive or a
+     * java Object class, these classes do not have to have {@code JsonPropertyOrder} defined
+     *
+     * With these exceptions we expect all classes to have the {@code JsonPropertyOrder} annotation
+     *
+     * @param crdClass the class being checked
+     * @return a boolean of whether the JsonPropertyOrder is required
+     */
+    private boolean requiresJsonPropertyOrderAnnotation(Class<?> crdClass) {
+//        return crdClass != Object.class;
+        return true;
     }
 
     private ArrayNode buildSchemaRequired(Class<?> crdClass) {
@@ -649,6 +669,7 @@ public class CrdGenerator {
         CrdGenerator generator = new CrdGenerator(yaml ?
                 new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false) :
                 new ObjectMapper(), labels);
+
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()) {
@@ -658,16 +679,10 @@ public class CrdGenerator {
             } else if (!file.getParentFile().mkdirs()) {
                 generator.err(file.getParentFile() + " does not exist and could not be created");
             }
+
             try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
                 generator.generate(entry.getValue(), w);
             }
-        }
-
-        if (generator.numErrors > 0) {
-            System.err.println("There were " + generator.numErrors + " errors");
-            System.exit(1);
-        } else {
-            System.exit(0);
         }
     }
 }
