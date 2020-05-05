@@ -119,9 +119,6 @@ the documentation for more details.
 | `kafkaInit.image.repository`         | Init Kafka image repository               | `strimzi`                                            |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
 | `kafkaInit.image.tag`                | Init Kafka image tag                      | `latest`                                             |
-| `tlsSidecarZookeeper.image.repository` | TLS Sidecar for ZooKeeper image repository | `strimzi`                                         |
-| `tlsSidecarZookeeper.image.name`     | TLS Sidecar for ZooKeeper image name      | `kafka`                                              |
-| `tlsSidecarZookeeper.image.tag`      | TLS Sidecar for ZooKeeper image tag prefix | `latest`                                            |
 | `tlsSidecarKafka.image.repository`   | TLS Sidecar for Kafka image repository    | `strimzi`                                            |
 | `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka`                                              |
 | `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `latest`                                             |

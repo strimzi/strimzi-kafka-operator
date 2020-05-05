@@ -309,6 +309,6 @@ public class ZookeeperLeaderFinder {
 
     /** The port number for connecting to zookeeper in the given pod. */
     protected int port(Pod pod) {
-        return 2181;
+        return ZookeeperCluster.CLIENT_TLS_PORT;
     }
 }

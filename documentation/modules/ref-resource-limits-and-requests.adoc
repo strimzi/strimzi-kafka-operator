@@ -10,7 +10,6 @@ Resource limits and requests are configured using the `resources` property in th
 * `Kafka.spec.kafka`
 * `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
-* `Kafka.spec.zookeeper.tlsSidecar`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`

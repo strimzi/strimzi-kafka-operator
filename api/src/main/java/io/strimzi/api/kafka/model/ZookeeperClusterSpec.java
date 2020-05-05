@@ -37,13 +37,17 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "tlsSidecar", "template"})
+         "metrics", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
+    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, " +
+            "quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, " +
+            "reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, " +
+            "ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites";
 
     public static final int DEFAULT_REPLICAS = 3;
 
@@ -66,7 +70,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private ZookeeperClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
@@ -96,7 +100,10 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.logging = logging;
     }
 
-    @Description("TLS sidecar configuration")
+    @DeprecatedProperty
+    @Deprecated
+    @Description("TLS sidecar configuration. " +
+            "The TLS sidecar is not used anymore and this option will be ignored.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {
         return tlsSidecar;

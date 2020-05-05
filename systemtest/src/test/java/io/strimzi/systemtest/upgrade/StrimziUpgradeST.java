@@ -183,7 +183,7 @@ public class StrimziUpgradeST extends BaseST {
         // Modify + apply installation files
         copyModifyApply(coDir);
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
@@ -203,7 +203,7 @@ public class StrimziUpgradeST extends BaseST {
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
 
         DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()

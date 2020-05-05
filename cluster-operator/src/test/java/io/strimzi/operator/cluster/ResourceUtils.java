@@ -115,6 +115,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -645,7 +646,7 @@ public class ResourceUtils {
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
         return new ZookeeperScalerProvider() {
             @Override
-            public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+            public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
                 ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
                 when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
                 return mockZooScaler;

@@ -9,6 +9,7 @@ cat /etc/tls-sidecar/cluster-ca-certs/*.crt > "$CA_CERTS"
 echo "pid = /usr/local/var/run/stunnel.pid"
 echo "foreground = yes"
 echo "debug = $TLS_SIDECAR_LOG_LEVEL"
+echo "sslVersion = TLSv1.2"
 
 cat <<-EOF
 [zookeeper-2181]

@@ -1121,7 +1121,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |storage         1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
-|config          1.2+<.<|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme.
+|config          1.2+<.<|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites).
 |map
 |affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
@@ -1143,10 +1143,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging         1.2+<.<|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar      1.2+<.<|TLS sidecar configuration.
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+|tlsSidecar      1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-ZookeeperClusterTemplate-{context}']
@@ -1172,7 +1172,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer    1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|tlsSidecarContainer    1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Zookeeper server TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 

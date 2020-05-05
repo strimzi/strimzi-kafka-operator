@@ -75,17 +75,8 @@ public class ZookeeperSetOperatorTest {
 
     @Test
     public void testNeedsRollingUpdateImage() {
-        needsRollingUpdateImage(0);
-    }
-
-    @Test
-    public void testNeedsRollingUpdateStunnelImage() {
-        needsRollingUpdateImage(1);
-    }
-
-    private void needsRollingUpdateImage(int container) {
-        a.getSpec().getTemplate().getSpec().getContainers().get(container).setImage(
-                a.getSpec().getTemplate().getSpec().getContainers().get(container).getImage() + "-foo");
+        a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
+                a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
         assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
     }
 
