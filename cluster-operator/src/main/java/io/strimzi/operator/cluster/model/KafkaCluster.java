@@ -175,6 +175,8 @@ public class KafkaCluster extends AbstractModel {
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
     private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
     private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
+    private static final String CC_NUM_PARTITIONS_CONFIG_FIELD = "cruise.control.metrics.topic.num.partitions";
+    private static final String CC_REPLICATION_FACTOR_CONFIG_FIELD = "cruise.control.metrics.topic.replication.factor";
 
     protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
@@ -223,8 +225,10 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
     private CruiseControlSpec cruiseControlSpec;
-    private String defaultNumPatitions = "1";
-    private String defaultReplicationFactor = "1";
+    private String kafkaDefaultNumPartitions = "1";
+    private String kafkaDefaultReplicationFactor = "1";
+    private String ccDefaultNumPartitions = null;
+    private String ccDefaultReplicationFactor = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
@@ -461,11 +465,12 @@ public class KafkaCluster extends AbstractModel {
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
-        if (configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD) != null) {
-            result.defaultNumPatitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD);
+        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
+        if (configuration.getConfigOption(CC_NUM_PARTITIONS_CONFIG_FIELD) == null) {
+            result.ccDefaultNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, result.kafkaDefaultNumPartitions);
         }
-        if (configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD) != null) {
-            result.defaultReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD);
+        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
+            result.ccDefaultReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, result.kafkaDefaultReplicationFactor);
         }
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
@@ -2486,7 +2491,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec, defaultNumPatitions, defaultReplicationFactor)
+                .withCruiseControl(cluster, cruiseControlSpec, ccDefaultNumPartitions, ccDefaultReplicationFactor)
                 .withUserConfiguration(configuration)
                 .build().trim();
     }

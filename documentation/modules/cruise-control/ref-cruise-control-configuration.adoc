@@ -112,7 +112,7 @@ In this situation, the the strimzi.cruisecontrol.metrics` topic will need to be 
 To manually create the `strimzi.cruisecontrol.metrics` Cruise Control topic in your Kubernetes cluster:
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f examples/topic/cruise-control-topics.yaml
+kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
 ----
 
 Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must be configured with `cleanup.policy=delete` to disable log compaction.
