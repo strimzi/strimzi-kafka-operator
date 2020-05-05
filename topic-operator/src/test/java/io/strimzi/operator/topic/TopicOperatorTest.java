@@ -1048,7 +1048,7 @@ public class TopicOperatorTest {
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
 
         reconcileFuture.setHandler(context.failing(e -> {
-            context.verify(() -> assertThat(e.getMessage(), is("Error getting KafkaTopic my-topic during periodic reconciliation")));
+            context.verify(() -> assertThat(e.getMessage(), is("Error getting topic my-topic from topic store during periodic reconciliation")));
             context.verify(() -> assertThat(e.getCause(), is(error)));
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
