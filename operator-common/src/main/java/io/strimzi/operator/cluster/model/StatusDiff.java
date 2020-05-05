@@ -25,6 +25,7 @@ public class StatusDiff extends AbstractResourceDiff {
     private final boolean isEmpty;
 
     public StatusDiff(Status current, Status desired) {
+        // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
         JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(current == null ? "{}" : current);
         JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
