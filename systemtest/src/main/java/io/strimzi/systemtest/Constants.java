@@ -82,6 +82,7 @@ public interface Constants {
     int COMPONENTS_METRICS_PORT = 9404;
     int CLUSTER_OPERATOR_METRICS_PORT = 8080;
     int USER_OPERATOR_METRICS_PORT = 8081;
+    int TOPIC_OPERATOR_METRICS_PORT = 8080;
 
     String DEPLOYMENT = "Deployment";
     String SERVICE = "Service";

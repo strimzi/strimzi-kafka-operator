@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -182,7 +183,7 @@ public class Session extends AbstractVerticle {
 
                 LOGGER.debug("Using TopicStore {}", topicStore);
 
-                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config);
+                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
                 LOGGER.debug("Using Operator {}", topicOperator);
 
                 this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
@@ -223,6 +224,7 @@ public class Session extends AbstractVerticle {
                             timerId = null;
                             boolean isInitialReconcile = oldTimerId == null;
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
+                                topicOperator.getPeriodicReconciliationsCounter().increment();
                                 if (isInitialReconcile) {
                                     initReconcilePromise.complete();
                                 }

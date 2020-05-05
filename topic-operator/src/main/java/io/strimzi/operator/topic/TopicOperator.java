@@ -8,12 +8,17 @@ import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.Watcher;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -35,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -45,6 +51,7 @@ class TopicOperator {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
     private final static Logger EVENT_LOGGER = LogManager.getLogger("Event");
+    public static final String METRICS_PREFIX = "strimzi.";
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
@@ -53,6 +60,15 @@ class TopicOperator {
     private TopicStore topicStore;
     private final Config config;
     private final ConcurrentHashMap<TopicName, Integer> inflight = new ConcurrentHashMap<>();
+
+    protected final MetricsProvider metrics;
+    private Counter periodicReconciliationsCounter;
+    private Counter reconciliationsCounter;
+    private Counter failedReconciliationsCounter;
+    private Counter successfulReconciliationsCounter;
+    private Counter lockedReconciliationsCounter;
+    private AtomicInteger topicCounter;
+    private Timer reconciliationsTimer;
 
     enum EventType {
         INFO("Info"),
@@ -357,7 +373,8 @@ class TopicOperator {
                          TopicStore topicStore,
                          Labels labels,
                          String namespace,
-                         Config config) {
+                         Config config,
+                         MetricsProvider metrics) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
@@ -365,8 +382,52 @@ class TopicOperator {
         this.topicStore = topicStore;
         this.namespace = namespace;
         this.config = config;
+        this.metrics = metrics;
+
+        initMetrics();
     }
 
+    public void initMetrics() {
+        if (metrics != null) {
+            Tags metricTags = Tags.of(Tag.of("kind", "KafkaTopic"));
+
+            periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
+                    "Number of periodical reconciliations done by the operator",
+                    metricTags);
+
+            reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
+                    "Number of reconciliations done by the operator for individual topics",
+                    metricTags);
+
+            failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
+                    "Number of reconciliations done by the operator for individual topics which failed",
+                    metricTags);
+
+            successfulReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.successful",
+                    "Number of reconciliations done by the operator for individual topics which were successful",
+                    metricTags);
+
+            topicCounter = metrics.gauge(METRICS_PREFIX + "resources",
+                    "Number of topics the operator sees",
+                    metricTags);
+
+            reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
+                    "The time the reconciliation takes to complete",
+                    metricTags);
+
+            lockedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.locked",
+                    "Number of reconciliations skipped because another reconciliation for the same topic was still running",
+                    metricTags);
+        }
+    }
+
+    public Counter getPeriodicReconciliationsCounter() {
+        return this.periodicReconciliationsCounter;
+    }
+
+    public void setTopicCount(int topics) {
+        this.topicCounter.set(topics);
+    }
 
     /**
      * Run the given {@code action} on the context thread,
@@ -431,6 +492,7 @@ class TopicOperator {
                     });
                 });
             } else {
+                lockedReconciliationsCounter.increment();
                 LOGGER.warn("{}: Lock not acquired within {}ms: action {} will not be run", logContext, timeoutMs, action);
                 try {
                     result.handle(Future.failedFuture("Failed to acquire lock for topic " + lockName + " after " + timeoutMs + "ms. Not executing action " + action));
@@ -845,9 +907,22 @@ class TopicOperator {
         private final String name;
         public AsyncResult<Void> result;
         public volatile KafkaTopic topic;
+        Timer.Sample reconciliationTimerSample;
 
         public Reconciliation(String name) {
             this.name = name;
+            this.reconciliationTimerSample = Timer.start(metrics.meterRegistry());
+            reconciliationsCounter.increment();
+        }
+
+        public void failed() {
+            reconciliationTimerSample.stop(reconciliationsTimer);
+            failedReconciliationsCounter.increment();
+        }
+
+        public void succeeded() {
+            reconciliationTimerSample.stop(reconciliationsTimer);
+            successfulReconciliationsCounter.increment();
         }
 
         @Override
@@ -1142,7 +1217,6 @@ class TopicOperator {
         )).compose(topicNamesFromKafka ->
                 // Reconcile the topic found in Kafka
                 reconcileFromKafka(reconciliationType, topicNamesFromKafka.stream().map(TopicName::new).collect(Collectors.toList()))
-
         ).compose(reconcileState -> {
             Future<List<KafkaTopic>> ktFut = k8s.listResources();
             return ktFut.recover(ex -> Future.failedFuture(
@@ -1153,6 +1227,7 @@ class TopicOperator {
             });
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
+            topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
@@ -1297,16 +1372,20 @@ class TopicOperator {
                 })
                 .setHandler(ar -> {
                     if (ar.failed()) {
+                        reconciliation.failed();
                         LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());
                     } else {
+                        reconciliation.succeeded();
                         LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
                     }
                     topicPromise.handle(ar);
                 });
         } catch (InvalidTopicException e) {
+            reconciliation.failed();
             LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
             topicPromise.fail(e);
         } catch (OperatorException e) {
+            reconciliation.failed();
             LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
             topicPromise.fail(e);
         }

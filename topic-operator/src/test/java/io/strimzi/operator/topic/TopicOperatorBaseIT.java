@@ -56,6 +56,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -90,14 +91,6 @@ public abstract class TopicOperatorBaseIT {
     protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
-    protected Thread kafkaHook = new Thread() {
-        @Override
-        public void run() {
-            if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
-            }
-        }
-    };
 
     protected volatile String deploymentId;
     protected Set<String> preExistingEvents;
@@ -132,6 +125,7 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterAll
     public static void teardownKubeCluster() {
+        CountDownLatch latch = new CountDownLatch(1);
         if (oldNamespace != null) {
             cmdKubeClient()
                     .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
@@ -140,14 +134,20 @@ public abstract class TopicOperatorBaseIT {
                     .deleteNamespace(NAMESPACE);
             cmdKubeClient().namespace(oldNamespace);
         }
-        vertx.close();
+        vertx.close(result -> {
+            latch.countDown();
+        });
+        try {
+            latch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error(e);
+        }
     }
 
     @BeforeEach
     public void setup() throws Exception {
         LOGGER.info("Setting up test");
         cluster.before();
-        Runtime.getRuntime().addShutdownHook(kafkaHook);
         int counts = 3;
         do {
             try {
@@ -198,6 +198,7 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterEach
     public void teardown() throws InterruptedException, TimeoutException, ExecutionException {
+        CountDownLatch latch = new CountDownLatch(1);
         try {
             LOGGER.info("Tearing down test");
 
@@ -233,11 +234,16 @@ public abstract class TopicOperatorBaseIT {
 
             adminClient.close();
             if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
+                try {
+                    kafkaCluster.shutdown();
+                } catch (Exception e) {
+                    LOGGER.warn(e);
+                }
             }
-            Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
+            latch.countDown();
         }
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     protected void startTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
