@@ -3,7 +3,7 @@
 // assembly-kafka-entity-operator.adoc
 
 [id='proc-configuring-kafka-entity-operator-{context}']
-= Configuring Entity Operator
+= Configuring the Entity Operator
 
 .Prerequisites
 

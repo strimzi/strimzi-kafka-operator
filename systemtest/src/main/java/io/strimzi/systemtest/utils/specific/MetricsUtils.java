@@ -37,7 +37,7 @@ public class MetricsUtils {
     /**
      * Collect metrics from specific pod
      * @param podName pod name
-     * @param metricsPath enpoint where metrics should be available
+     * @param metricsPath endpoint where metrics should be available
      * @return collected metrics
      */
     public static String collectMetrics(String podName, int port, String metricsPath) throws InterruptedException, ExecutionException, IOException {
@@ -85,6 +85,11 @@ public class MetricsUtils {
         return collectMetricsFromPods(uoSelector, Constants.USER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
+    public static HashMap<String, String> collectTopicOperatorPodMetrics(String clusterName) {
+        LabelSelector toSelector = kubeClient().getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(clusterName));
+        return collectMetricsFromPods(toSelector, Constants.TOPIC_OPERATOR_METRICS_PORT, "/metrics");
+    }
+
     public static HashMap<String, String> collectClusterOperatorPodMetrics() {
         LabelSelector coSelector = kubeClient().getDeploymentSelectors(Constants.STRIMZI_DEPLOYMENT_NAME);
         return collectMetricsFromPods(coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
@@ -93,7 +98,7 @@ public class MetricsUtils {
 
     /**
      * Parse out specific metric from whole metrics file
-     * @param pattern regex patern for specific metric
+     * @param pattern regex pattern for specific metric
      * @param data all metrics data
      * @return list of parsed values
      */

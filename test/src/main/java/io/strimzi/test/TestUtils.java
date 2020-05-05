@@ -79,6 +79,8 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_MIRROR_MAKER_2 = "../install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
 
+    public static final String CRD_KAFKA_CONNECTOR = "../install/cluster-operator/047-Crd-kafkaconnector.yaml";
+
     private TestUtils() {
         // All static methods
     }

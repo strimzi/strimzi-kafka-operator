@@ -43,7 +43,7 @@ public class KubeClusterResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
-    private static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
