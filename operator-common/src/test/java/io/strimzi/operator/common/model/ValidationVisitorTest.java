@@ -39,7 +39,7 @@ public class ValidationVisitorTest {
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOerator.topicOperator.").equals(lm.formattedMessage()));
+                "This feature should now be configured at path spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
         logger.assertNotLogged(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property tolerations at path spec.zookeeper.tolerations has been deprecated. " +
@@ -78,7 +78,7 @@ public class ValidationVisitorTest {
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOerator.topicOperator.").equals(lm.formattedMessage()));
+                "This feature should now be configured at path spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
     }
 
 
