@@ -18,6 +18,8 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
+import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -43,6 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 public class CruiseControlST extends BaseST {
@@ -52,19 +57,15 @@ public class CruiseControlST extends BaseST {
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
     private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
-    private static final String CRUISE_CONTROL_ENDPOINT = "/kafkacruisecontrol/state";
+    private static final String CRUISE_CONTROL_STATE_ENDPOINT = "/kafkacruisecontrol/state";
     private static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
 
     private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 
-    private static final String CRUISE_CONTROL_METRICS_TOPIC = "strimzi.cruisecontrol.metrics"; // partitions 1 , rf - 1
-    private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
-    private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
-
     @Test
     void testCruiseControlDeployment()  {
-        String ccStatusCommand = "curl -X GET localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_ENDPOINT;
+        String ccStatusCommand = "curl -X GET localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_STATE_ENDPOINT;
 
         String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
 
@@ -76,11 +77,11 @@ public class CruiseControlST extends BaseST {
         assertThat(result, not(containsString("404")));
         assertThat(result, containsString("RUNNING"));
 
-        verifyThatCruiseControlTopicsArePresent();
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
     @Test
-    void testUninstallingAndInstallationCruiseControl() {
+    void testUninstallingAndInstallationCruiseControl() throws IOException {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -97,8 +98,11 @@ public class CruiseControlST extends BaseST {
         LOGGER.info("Verifying that {} pod is not present", CRUISE_CONTROL_NAME);
         assertThat(kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).size(), is(0));
 
-        // TODO: should topic be deleted ? CURRENTLY CC let the topics in the kafka
-//        verifyThatCruiseControlTopicsAreNotPresent();
+        LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
+        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME));
+
+        LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
 
         kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -107,15 +111,14 @@ public class CruiseControlST extends BaseST {
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         });
 
+        LOGGER.info("Verifying that in Kafka config map there is configuration to cruise control metric reporter");
+        CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME));
+
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Verifying that {} topics are created after CC is instantiated.", CRUISE_CONTROL_NAME);
 
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-
-        verifyThatCruiseControlTopicsArePresent();
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
     @Test
@@ -136,11 +139,7 @@ public class CruiseControlST extends BaseST {
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-
-        verifyThatCruiseControlTopicsArePresent();
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
     @Test
@@ -227,30 +226,6 @@ public class CruiseControlST extends BaseST {
         String cruiseControlConfigurationFileContent = cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
 
         assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
-    }
-
-    private void verifyThatCruiseControlTopicsArePresent() {
-        KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
-        KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
-        KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
-
-        assertThat(metrics.getSpec().getPartitions(), is(1));
-        assertThat(modelTrainingSamples.getSpec().getPartitions(), is(32));
-        assertThat(partitionsMetricsSamples.getSpec().getPartitions(), is(32));
-
-        assertThat(metrics.getSpec().getReplicas(), is(1));
-        assertThat(modelTrainingSamples.getSpec().getReplicas(), is(2));
-        assertThat(partitionsMetricsSamples.getSpec().getReplicas(), is(2));
-    }
-
-    private void verifyThatCruiseControlTopicsAreNotPresent() {
-        KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
-        KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
-        KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
-
-        assertThat(metrics, nullValue());
-        assertThat(modelTrainingSamples, nullValue());
-        assertThat(partitionsMetricsSamples, nullValue());
     }
 
     @BeforeAll

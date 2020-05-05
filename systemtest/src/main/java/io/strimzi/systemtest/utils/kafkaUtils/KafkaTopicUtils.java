@@ -114,4 +114,12 @@ public class KafkaTopicUtils {
             () -> KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).size() == topicCount);
         LOGGER.info("{} KafkaTopics were created", topicCount);
     }
+
+    public static void waitForKafkaTopicIsNotPresent(String topicName) {
+        LOGGER.info("Waiting for KafkaTopic {} is not present ", topicName);
+        TestUtils.waitFor("KafkaTopic " + topicName + "is still present.", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
+                .withName(topicName).get() == null);
+    }
+
 }

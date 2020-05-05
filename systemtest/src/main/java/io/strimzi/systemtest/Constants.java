@@ -47,6 +47,8 @@ public interface Constants {
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofSeconds(10).toMillis();
+
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
     long GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT = Duration.ofSeconds(10).toMillis();

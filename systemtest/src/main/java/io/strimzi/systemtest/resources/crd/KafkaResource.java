@@ -111,8 +111,7 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
-            .build());
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
