@@ -54,7 +54,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     void collectLogs(String testClass, String testMethod) {
-        // Stop test execution time counter
+        // Stop test execution time counter in case of failures
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         // Get current date to create a unique folder
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");

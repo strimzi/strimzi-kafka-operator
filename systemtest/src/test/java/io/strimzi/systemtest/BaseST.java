@@ -738,9 +738,10 @@ public abstract class BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         AssertionError assertionError = null;
         try {
-            long testDuration = timeMeasuringSystem.getDuration(context.getTestClass().get().getName(), context.getTestMethod().get().getName(), Operation.TEST_EXECUTION.name());
+            long testDuration = timeMeasuringSystem.getDurationInSeconds(context.getTestClass().get().getName(), context.getTestMethod().get().getName(), Operation.TEST_EXECUTION.name());
             assertNoCoErrorsLogged(testDuration);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
