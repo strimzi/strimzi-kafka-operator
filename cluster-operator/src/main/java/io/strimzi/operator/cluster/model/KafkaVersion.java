@@ -155,12 +155,12 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 if (crVersion == null) {
                     image = images.get(defaultVersion().version());
                     if (image == null) {
-                        throw new NoImageException("No image for default version " + defaultVersion());
+                        throw new NoImageException("No image for default version " + defaultVersion() + " in " + images.toString());
                     }
                 } else {
                     image = images.get(crVersion);
                     if (image == null) {
-                        throw new NoImageException("No image for version " + crVersion);
+                        throw new NoImageException("No image for version " + crVersion + " in " + images.toString());
                     }
                 }
             } else {
