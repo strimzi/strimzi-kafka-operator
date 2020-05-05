@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -145,14 +144,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connect.getReplicas() > 0 ? deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs) : Future.succeededFuture())
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus)
-                        .recover(error -> {
-                            if (error instanceof ConnectTimeoutException && connect.getReplicas() == 0)   {
-                                return Future.succeededFuture();
-                            } else {
-                                return Future.failedFuture(error);
-                            }
-                        }))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connect.getReplicas() == 0))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 
