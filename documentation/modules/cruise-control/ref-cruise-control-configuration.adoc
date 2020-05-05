@@ -104,7 +104,6 @@ Cruise Control requires the following three topics to be created in order to fun
 * `strimzi.cruisecontrol.modeltrainingsamples`
 * `strimzi.cruisecontrol.metrics`
 
-
 Cruise Control will create the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics after the Cruise Control metric reporters create the `strimzi.cruisecontrol.metrics` topic.
 However, if automatic topic creation is disabled in Kafka with a configuration of `auto.create.topics.enable: false` in `spec.kafka.config` when starting a new Kafka cluster, the Cruise Control metric reporters will be unable to create the `strimzi.cruisecontrol.metrics` topic.
 In this situation, the the strimzi.cruisecontrol.metrics` topic will need to be created manually using the `example/topic/cruise-control-topics.yaml` file.
