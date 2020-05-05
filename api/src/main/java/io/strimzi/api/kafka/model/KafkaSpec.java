@@ -70,7 +70,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
 
     @Deprecated
     @DeprecatedProperty(
-            movedToPath = "spec.entityOerator.topicOperator"
+            movedToPath = "spec.entityOperator.topicOperator"
     )
     @Description("Configuration of the Topic Operator")
     public TopicOperatorSpec getTopicOperator() {

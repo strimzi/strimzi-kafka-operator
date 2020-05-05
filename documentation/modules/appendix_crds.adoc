@@ -27,7 +27,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |zookeeper               1.2+<.<|Configuration of the ZooKeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator           1.2+<.<|*The property `topicOperator` has been deprecated. This feature should now be configured at path `spec.entityOerator.topicOperator`.* Configuration of the Topic Operator.
+|topicOperator           1.2+<.<|*The property `topicOperator` has been deprecated. This feature should now be configured at path `spec.entityOperator.topicOperator`.* Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
 |entityOperator          1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
