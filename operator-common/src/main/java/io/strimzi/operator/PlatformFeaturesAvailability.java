@@ -121,7 +121,7 @@ public class PlatformFeaturesAvailability {
             try {
                 request.complete(client.getVersion());
             } catch (Exception e) {
-                log.error("Detection of Kuberetes version failed.", e);
+                log.error("Detection of Kubernetes version failed.", e);
                 request.fail(e);
             }
         }, promise);
