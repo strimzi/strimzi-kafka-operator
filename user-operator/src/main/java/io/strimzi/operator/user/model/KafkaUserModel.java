@@ -60,6 +60,8 @@ public class KafkaUserModel {
 
     public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-user-operator";
 
+    public static final String K8S_SECRET_PREFIX = System.getenv("K8S_SECRET_PREFIX");
+
     // Owner Reference information
     private String ownerApiVersion;
     private String ownerKind;
@@ -374,7 +376,7 @@ public class KafkaUserModel {
      * @return The name of the user.
      */
     public static String getSecretName(String username)    {
-        return username;
+        return K8S_SECRET_PREFIX + username;
     }
 
     /**
