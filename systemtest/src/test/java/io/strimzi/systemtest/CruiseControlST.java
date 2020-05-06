@@ -194,8 +194,6 @@ public class CruiseControlST extends BaseST {
         assertThat(containerConfiguration.getProperty("default.goals"), is(fileConfiguration.getProperty("default.goals")));
         assertThat(containerConfiguration.getProperty("partition.metrics.window.ms"), is(fileConfiguration.getProperty("partition.metrics.window.ms")));
         assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
-
-        // TODO: is there some way to fetch the configuration in the Kafka CR?? (it is default) -> but where i can find it
     }
 
     @Test
