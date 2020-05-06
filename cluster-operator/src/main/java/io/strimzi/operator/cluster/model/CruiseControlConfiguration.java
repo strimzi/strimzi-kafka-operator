@@ -45,8 +45,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     */
     private static final Map<String, String> CC_DEFAULT_PROPERTIES_MAP;
 
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
         CC_DEFAULT_PROPERTIES_MAP = new HashMap<>();
@@ -58,8 +58,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         CC_DEFAULT_PROPERTIES_MAP.put("default.goals", DEFAULT_GOALS);
         CC_DEFAULT_PROPERTIES_MAP.put("goals", DEFAULT_GOALS);
 
-        FORBIDDEN_OPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", *"));
-        EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", *"));
+        FORBIDDEN_PREFIXES = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", *"));
+        FORBIDDEN_PREFIX_EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", *"));
     }
 
     /**
@@ -69,7 +69,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public CruiseControlConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
     private CruiseControlConfiguration(String configuration, List<String> forbiddenOptions) {
