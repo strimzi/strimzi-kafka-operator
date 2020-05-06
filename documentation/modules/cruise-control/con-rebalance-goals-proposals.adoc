@@ -14,6 +14,7 @@ Rebalance goals specify targets for resource distribution and utilization across
 They are organized in a customizable hierarchy, from high priority goals to low priority goals. 
 You can designate certain rebalance goals as _hard goals_ that must be satisfied--for more information, see link:#soft-hard-goals[Soft goals and hard goals].
 
+//ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420563078
 With a few exceptions, cluster rebalancing in {ProductName} supports the same goals as the Kafka Cruise Control project (where the term "optimization goals" is used). 
 Following are the supported goals, which you can reorder in priority, enable, or disable:
 
@@ -38,9 +39,9 @@ Following are the supported goals, which you can reorder in priority, enable, or
 . Intra-broker disk capacity
 . Intra-broker disk usage distribution    
 
-NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported in {ProductName}.
+For detailed information on each rebalance goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
-For detailed information on each rebalance goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki. 
+NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported in {ProductName}.
 
 [id="soft-hard-goals"]
 [discrete]
@@ -58,8 +59,8 @@ The following table explains the differences between soft and hard goals in clus
 ¦Soft goals
 
 ¦Also known as "best effort" goals, soft goals do _not_ need to be satisfied in rebalance proposals. 
-However, they are included in rebalance calculations. 
-A rebalance proposal that satisfies _all_ hard goals but violates one or more soft goals is valid.
+However, they are included in rebalance calculations.
+A rebalance proposal that violates one or more soft goals but satisfies all hard goals is valid.
 
 Rebalance goals are treated as soft goals, unless designated as hard goals
 
@@ -68,7 +69,7 @@ Ignore this goal if doing so will enable all hard goals to be met.
 
 ¦Hard goals
 
-¦Hard goals _must_ be satisfied in rebalance proposals. 
+¦Hard goals _must_ be satisfied in rebalance proposals. *ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420564399*
 In other words, a rebalance proposal that does _not_ satisfy all the designated hard goals is rejected by Cruise Control and not sent to the user.
 
 Designating hard goals is optional.
@@ -79,7 +80,7 @@ Designating hard goals is optional.
 [discrete]
 === Default and custom rebalance goals
 
-When interacting with Cruise Control to generate rebalance proposals, you can use the _default rebalance goals_, which are defined on deployment, or set ad hoc _custom rebalance goals_. 
+When interacting with Cruise Control to generate rebalance proposals, you can use the _default rebalance goals_, which are defined in the Cruise Control deployment configuration, or set ad hoc _custom rebalance goals_. 
 Both types of rebalance goal can be configured to include hard goals as well as soft goals.  
 
 *Default rebalance goals and cached proposal*
@@ -96,12 +97,12 @@ For more information on setting the default rebalance goals, see xref:ref-cruise
 
 *Custom rebalance goals* 
 
-Custom rebalance goals are set in the `spec.goals` section of a `KafkaClusterRebalance` resource and override the default rebalance goals. 
+Custom rebalance goals are set in the `spec.goals` section of a `KafkaRebalance` resource and override the default rebalance goals. 
 If no custom rebalance goals are set, the default rebalance goals are used.
 
 Use custom rebalance goals to generate a rebalance proposal that addresses a particular optimization scenario. 
 For example, you might want to optimize leader replica distribution across the Kafka cluster without considering other goals, such as disk or CPU usage. 
-So, you create a `KafkaClusterRebalance` resource containing a custom rebalance goal for leader replica distribution only.
+So, you create a `KafkaRebalance` resource containing a custom rebalance goal for leader replica distribution only.
 
 Using custom rebalance goals often returns a rebalance proposal faster than the default rebalance goals. 
 They must always be a subset of the default rebalance goals.
@@ -114,7 +115,7 @@ For more information on setting custom rebalance goals, see xref:proc-generating
 A _rebalance proposal_ is a summary of proposed changes from Cruise Control that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. 
 Each rebalance proposal is based on the set of rebalance goals (either default goals or custom goals) that were used to generate it.
 
-Rebalance proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals.
+Rebalance proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals. *ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420565280*
 
 A rebalance proposal provides the following information in JSON:
 

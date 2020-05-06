@@ -5,7 +5,7 @@
 [id='proc-generating-rebalance-proposals-{context}']
 = Generating rebalance proposals 
 
-When you create or update a `KafkaClusterRebalance` resource, Cruise Control generates a _rebalance proposal_ in JSON.
+When you create or update a `KafkaRebalance` resource, Cruise Control generates a _rebalance proposal_ in JSON.
 This summarizes an optimal mapping of partitions to brokers for the Kafka cluster based on the rebalance goals that were used along with statistics on the cluster rebalance.
 
 .Prerequisites
@@ -14,20 +14,21 @@ This summarizes an optimal mapping of partitions to brokers for the Kafka cluste
 
 .Procedure
 
-. Create a `KafkaClusterRebalance` resource:
+. Create a `KafkaRebalance` resource:
 
 .. To use the default rebalance goals defined in the `Kafka` resource, leave the `spec` property empty:
 +
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
-kind: KafkaClusterRebalance
+kind: KafkaRebalance
 metadata:
   name: my-cluster-rebalance
   labels: 
     strimzi.io/cluster: my-cluster
 spec: {}
 ----
+
 .. To use one or more custom rebalance goals instead of the default goals, edit the `spec.goals` property.
 In the following example, rack awareness and replica capacity are set as custom goals:
 +
@@ -41,8 +42,8 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:    
     goals: >
-      com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-      com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+      RackAwareGoal,
+      ReplicaCapacityGoal
 ----
 
 . Create or update the resource:
@@ -55,38 +56,53 @@ oc apply -f _your-file_
 The Cluster Operator requests the rebalance proposal from the Cruise Control server.
 This might take a few minutes depending on the size of the Kafka cluster. 
 
-. Check the status of the `KafkaClusterRebalance` resource:
+. Check the status of the `KafkaRebalance` resource:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 ----
 Cruise Control returns one of two statuses:
 
-** `PendingProposal`: The rebalance proposal is not yet ready; try again after a few minutes.
+** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the rebalance proposal is ready.
 
 ** `ProposalReady`: The rebalance proposal is ready for you to review and implement, if desired.
 The status is followed by the JSON rebalance proposal.
 
-. Review the rebalance proposal. 
-For example:
+. Review the details of the rebalance proposal in the `status.summary` property of the `KafkaRebalance` resource.
++
+Here is an example proposal:
 +
 [source,shell,subs="+quotes"]
 ----
-"summary": {
-  "numIntraBrokerReplicaMovements":0,
-  "excludedBrokersForLeadership":[],
-  "numReplicaMovements":31,
-  "onDemandBalancednessScoreAfter":84.08179174145127,
-  "onDemandBalancednessScoreBefore":79.74705957325753,
-  "intraBrokerDataToMoveMB":0,
-  "recentWindows":1,
-  "dataToMoveMB":0,
-  "monitoredPartitionsPercentage":100.0,
-  "excludedTopics":[],
-  "numLeaderMovements":12,
-  "excludedBrokersForReplicaMove":[]
-}
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaRebalance
+metadata:
+  name: my-cluster-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+status:
+  conditions:
+  - lastTransitionTime: 2020-05-23T23:46:57+0000
+    status: "True"
+    type: Ready
+  observedGeneration: 4
+  summary: CHECK THE FORMATTING IS CORRECT
+  - numIntraBrokerReplicaMovements:0,
+  - excludedBrokersForLeadership:[],
+  - numReplicaMovements:31,
+  - onDemandBalancednessScoreAfter:84.08179174145127,
+  - onDemandBalancednessScoreBefore:79.74705957325753,
+  - intraBrokerDataToMoveMB:0,
+  - recentWindows:1,
+  - dataToMoveMB:0,
+  - monitoredPartitionsPercentage:100.0,
+  - excludedTopics:[],
+  - numLeaderMovements:12,
+  - excludedBrokersForReplicaMove:[]
+# ...
 ----
 
 .What to do next

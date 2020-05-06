@@ -5,10 +5,8 @@
 [id='proc-implementing-rebalance-proposal-{context}']
 = Implementing a rebalance proposal
 
-If you are satisfied with a rebalance proposal, you can implement it by annotating the corresponding `KafkaClusterRebalance` resource. 
-
-At the next reconciliation, the Cluster Operator will instruct Cruise Control to rebalance the Kafka cluster. 
-Cruise Control then reassigns partitions to brokers as summarized in the rebalance proposal.
+You can implement a rebalance proposal with a status of `ProposalReady`.
+Cruise Control will then reassign partitions to brokers as summarized in the rebalance proposal.
 
 WARNING: This is not a dry run. 
 Review the rebalance proposal before you implement it.
@@ -17,20 +15,20 @@ Review the rebalance proposal before you implement it.
 
 * You have xref:proc-generating-rebalance-proposals-{context}[generated a rebalance proposal].
 
-* The rebalance proposal is ready to implement (the `KafkaClusterRebalance` custom resource status is `ProposalReady`).
+* The rebalance proposal is ready to implement (the `KafkaRebalance` custom resource status is `ProposalReady`).
 
 .Procedure
 
 . (Optional) Refresh the rebalance proposal that you want to implement:
 
-.. Annotate the `KafkaClusterRebalance` resource in Kubernetes:
+.. Annotate the `KafkaRebalance` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance=refresh
 ----
 
-.. Check the status of the `KafkaClusterRebalance` resource:
+.. Check the status of the `KafkaRebalance` resource:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -41,7 +39,7 @@ kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
 
 . Approve the rebalance proposal that you want to implement.
 +
-Annotate the `KafkaClusterRebalance` resource in Kubernetes:
+Annotate the `KafkaRebalance` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -52,7 +50,7 @@ kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance
 +
 At the next reconciliation, the Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.
 
-. Check the status of the `KafkaClusterRebalance` resource:
+. Check the status of the `KafkaRebalance` resource:
 +
 [source,shell,subs="+quotes"]
 ----
