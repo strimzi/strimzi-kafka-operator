@@ -15,9 +15,9 @@ Deploy one instance of Cruise Control per Kafka cluster.
 
 This procedure uses the following example file provided with {ProductName}:
 
-* `examples/cruise-control/cruise-control-topic.yaml`
+* `examples/kafka-rebalance/cruise-control-topic.yaml`
 
-This creates a strimzi.cruisecontrol.metrics topic in your Kafka cluster, which collects information from the Cruise Control Metrics Reporter for use in generating rebalance proposals.
+This creates a `strimzi.cruisecontrol.metrics` topic in your Kafka cluster, which collects information from the Cruise Control Metrics Reporter for use in generating rebalance proposals.
 You do not need to interact with this topic after Cruise Control is deployed.
 
 .Prerequisites
@@ -31,7 +31,7 @@ You do not need to interact with this topic after Cruise Control is deployed.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
+kubectl apply -f examples/kafka-rebalance/cruise-control-topic.yaml
 ----
 
 . Edit the `cruiseControl` property of the `Kafka` resource.
