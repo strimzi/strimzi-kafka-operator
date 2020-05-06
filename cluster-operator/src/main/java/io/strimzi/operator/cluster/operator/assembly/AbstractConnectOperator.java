@@ -223,7 +223,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                     log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
 
                                                     return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                            () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
+                                                        () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
                                                                     KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                                     isUseResources(connect),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
@@ -246,7 +246,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                     log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
 
                                                     return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                            () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
+                                                        () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
                                                                     KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                                     isUseResources(connectS2i),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
