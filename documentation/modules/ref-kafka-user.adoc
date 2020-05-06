@@ -3,7 +3,7 @@
 // assembly-using-the-user-operator.adoc
 
 [id='ref-kafka-user-{context}']
-= Securing user access to Kafka
+= Kafka user resource
 
 The `KafkaUser` resource is used to configure the authentication mechanism, authorization mechanism, and access rights for a user.
 
@@ -45,10 +45,14 @@ spec:
   # ...
 ----
 
-When the user is created by the User Operator, it creates a new secret with the same name as the `KafkaUser` resource.
-The secret contains a public and private key to use for TLS client authentication.
-Bundled with the keys is the public key of the client Certificate Authority (CA) used to sign the user certificate.
+When the user is created by the User Operator, it creates a new Secret with the same name as the `KafkaUser` resource.
+The Secret contains a private and public key for TLS client authentication.
+The public key is contained in a user certificate, which is signed by the client Certificate Authority (CA).
+
 All keys are in X.509 format.
+
+Secrets provide private keys and certificates in PEM and PKCS #12 formats.
+For more information on securing Kafka communication with Secrets, see xref:security-{context}[].
 
 .An example `Secret` with user credentials
 [source,yaml,subs="attributes+"]
@@ -62,9 +66,11 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: # Public key of the Clients CA
-  user.crt: # Public key of the user
+  ca.crt: # Public key of the client CA
+  user.crt: # User certificate that contains the public key of the user
   user.key: # Private key of the user
+  user.p12: # PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the PKCS #12 archive file
 ----
 
 === SCRAM-SHA-512 Authentication
