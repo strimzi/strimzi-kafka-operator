@@ -659,7 +659,7 @@ class SecurityST extends BaseST {
             kubeClient().deleteSecret(s.getMetadata().getName());
         }
 
-        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         for (Secret s : secrets) {
@@ -1340,7 +1340,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Verifying that Kafka Connect is stable");
 
-        PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
@@ -1400,7 +1400,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Verifying that Kafka Connect is stable");
 
-        PodUtils.waitUntilPodsByNameStability(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 

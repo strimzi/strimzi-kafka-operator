@@ -149,7 +149,7 @@ public class ZookeeperUpgradeST extends BaseST {
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
-        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         // Extract the zookeeper version number from the jars in the lib directory
         zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0),
