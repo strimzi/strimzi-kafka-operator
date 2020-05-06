@@ -108,7 +108,6 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
                     sendNext(producer, topic);
                 }
             });
-
         }
     }
 
