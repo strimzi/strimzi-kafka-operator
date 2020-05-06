@@ -209,43 +209,52 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 log.info("{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 return Future.succeededFuture();
-                                            } else if ((connect != null && connect.getSpec() != null && connect.getSpec().getReplicas() == 0)
-                                                    || (connectS2i != null && connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0))    {
-                                                log.info("{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
-                                                return Future.succeededFuture();
                                             } else if (connect != null && isOlderOrAlone(connect.getMetadata().getCreationTimestamp(), connectS2i)) {
                                                 // grab the lock and call reconcileConnectors()
                                                 // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
-                                                log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
 
-                                                return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                    () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
-                                                                KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
-                                                                isUseResources(connect),
-                                                                kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
-                                                            .compose(reconcileResult -> {
-                                                                log.info("{}: reconciled", reconciliation);
-                                                                return Future.succeededFuture(reconcileResult);
-                                                            }));
+                                                if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
+                                                    log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    return Future.succeededFuture();
+                                                } else {
+                                                    log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
+
+                                                    return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
+                                                            () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
+                                                                    KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
+                                                                    isUseResources(connect),
+                                                                    kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
+                                                                    .compose(reconcileResult -> {
+                                                                        log.info("{}: reconciled", reconciliation);
+                                                                        return Future.succeededFuture(reconcileResult);
+                                                                    }));
+                                                }
                                             } else {
                                                 // grab the lock and call reconcileConnectors()
                                                 // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectS2IOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
-                                                log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
 
-                                                return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                    () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
-                                                                KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
-                                                                isUseResources(connectS2i),
-                                                                kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
-                                                            .compose(reconcileResult -> {
-                                                                log.info("{}: reconciled", reconciliation);
-                                                                return Future.succeededFuture(reconcileResult);
-                                                            }));
+                                                if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
+                                                    log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    return Future.succeededFuture();
+                                                } else {
+                                                    log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
+
+                                                    return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
+                                                            () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
+                                                                    KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
+                                                                    isUseResources(connectS2i),
+                                                                    kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
+                                                                    .compose(reconcileResult -> {
+                                                                        log.info("{}: reconciled", reconciliation);
+                                                                        return Future.succeededFuture(reconcileResult);
+                                                                    }));
+                                                }
                                             }
                                         });
                             } else {
