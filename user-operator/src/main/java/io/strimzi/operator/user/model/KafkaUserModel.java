@@ -376,7 +376,13 @@ public class KafkaUserModel {
      * @return The name of the user.
      */
     public static String getSecretName(String username)    {
-        return K8S_SECRET_PREFIX + username;
+        if (K8S_SECRET_PREFIX == null) {
+            return username;
+        }
+        else {
+            return K8S_SECRET_PREFIX + username;
+        }
+        
     }
 
     /**
