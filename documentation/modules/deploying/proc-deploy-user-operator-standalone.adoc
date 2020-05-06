@@ -22,7 +22,7 @@ a standalone deployment is more flexible as the User Operator can operate with _
 The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
 .. `STRIMZI_CA_KEY_NAME` to point to a Kubernetes `Secret` that contains the private key of the Certificate Authority for signing new user certificates for TLS client authentication.
 The `Secret` must contain the private key of the Certificate Authority under the key `ca.key`.
-.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using.
+.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using. Connecting to ZooKeeper nodes with TLS encryption is not supported. 
 .. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for `KafkaUser` resources.
 .. `STRIMZI_JAVA_OPTS` to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
 .. `STRIMZI_JAVA_SYSTEM_PROPERTIES` to list the `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
