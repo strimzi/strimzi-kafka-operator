@@ -24,6 +24,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
+import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -737,9 +738,11 @@ public abstract class BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         AssertionError assertionError = null;
         try {
-            assertNoCoErrorsLogged(0);
+            long testDuration = timeMeasuringSystem.getDurationInSeconds(context.getTestClass().get().getName(), context.getTestMethod().get().getName(), Operation.TEST_EXECUTION.name());
+            assertNoCoErrorsLogged(testDuration);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
             assertionError = new AssertionError(e);
