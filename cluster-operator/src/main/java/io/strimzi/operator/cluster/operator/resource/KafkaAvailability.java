@@ -103,7 +103,11 @@ class KafkaAvailability {
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
-                if (isr.size() < minIsr
+                if (pi.replicas().size() <= minIsr) {
+                    log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                            pi.replicas().size());
+                } else if (isr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
                     logIsrReplicas(td, pi, isr);
                     log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
@@ -118,7 +122,7 @@ class KafkaAvailability {
                                 td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         return true;
                     } else {
-                        log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} relicas.",
+                        log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
                                 td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                 pi.replicas().size());
                     }
