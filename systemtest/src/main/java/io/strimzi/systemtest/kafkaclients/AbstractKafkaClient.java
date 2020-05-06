@@ -104,7 +104,7 @@ public abstract class AbstractKafkaClient {
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
-            consumerGroup = generateRandomConsumerGroup();
+            builder.consumerGroup = generateRandomConsumerGroup();
         }
 
         topicName = builder.topicName;
