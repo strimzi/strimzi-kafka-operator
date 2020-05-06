@@ -126,7 +126,11 @@ Here we see an example of log compaction being disabled in a Cruise Control Kafk
 ----
 apiVersion: kafka.strimzi.io/v1beta1
 kind: KafkaTopic
+metadata:
+  name: strimzi.cruisecontrol.metrics
 spec:
+  partitions: 1
+  replicas: 1
   config:
     cleanup.policy: delete
 ----
@@ -151,6 +155,7 @@ Here we see examples of `inline` and `external` logging.
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+# ...
 spec:
   cruiseControl:
     # ...
@@ -166,6 +171,7 @@ spec:
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+# ...
 spec:
   cruiseControl:
     # ...
