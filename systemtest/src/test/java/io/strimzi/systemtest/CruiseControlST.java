@@ -234,61 +234,7 @@ public class CruiseControlST extends BaseST {
 
         assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
     }
-
-    // TODO: make an functional test with more producers...
-    @Test
-    void testTriggerClusterRebalance() throws ExecutionException, InterruptedException {
-
-        KafkaTopic kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 3, 3).done();
-
-        Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME));
-
-        List<BasicExternalKafkaClient> clients = new ArrayList<>(3);
-
-        try (AdminClient adminClient = AdminClient.create(properties)) {
-            DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(kafkaTopic.getMetadata().getName()));
-            Map<String, TopicDescription> topicDescriptionMap = describeTopicsResult.all().get();
-
-            for (Map.Entry<String, TopicDescription> entry : topicDescriptionMap.entrySet()) {
-                LOGGER.info("Key {} -> Value {}", entry.getKey(), entry.getValue());
-
-                for (TopicPartitionInfo topicPartitionInfo : entry.getValue().partitions()) {
-
-                    String externalBootstrapConfig = topicPartitionInfo.leader().host() + ":" + topicPartitionInfo.leader().port();
-
-                    BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                        .withTopicName(TOPIC_NAME)
-                        .withPartition(topicPartitionInfo.leader().id())
-                        .withNamespaceName(NAMESPACE)
-                        .withClusterName(CLUSTER_NAME)
-                        .withMessageCount(30_000)
-                        .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
-                        .withKafkaClientProperties(
-                            new KafkaClientProperties.KafkaClientPropertiesBuilder()
-                                .withNamespaceName(NAMESPACE)
-                                .withClusterName(CLUSTER_NAME)
-                                .withBootstrapServerConfig(externalBootstrapConfig)
-                                .withKeySerializerConfig(StringSerializer.class)
-                                .withValueSerializerConfig(StringSerializer.class)
-                                .withClientIdConfig("kafka-user-producer-" + rng.nextInt(Integer.MAX_VALUE))
-                                .build()
-                        ).build();
-
-                    clients.add(basicExternalKafkaClient);
-                }
-            }
-        }
-
-        for (BasicExternalKafkaClient client : clients) {
-            LOGGER.info("Client sending messages with the following configuration {} ", client.toString());
-            int sent = client.sendMessagePlainWithHugeTimeout();
-            assertThat(sent, is(30_000));
-        }
-    }
-
-    // TODO: curl -X POST 127.0.0.1:9090/kafkacruisecontrol/rebalance?json=true
-
+    
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
@@ -298,33 +244,13 @@ public class CruiseControlST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
     }
 }
