@@ -247,9 +247,4 @@ class RecoveryST extends BaseST {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
-
-    @Override
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
-        LOGGER.info("No search in strimzi-cluster-operator log for errors");
-    }
 }

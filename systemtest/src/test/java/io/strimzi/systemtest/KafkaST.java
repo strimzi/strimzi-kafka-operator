@@ -983,7 +983,7 @@ class KafkaST extends BaseST {
         });
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
     }
 
     @Test
@@ -1026,7 +1026,7 @@ class KafkaST extends BaseST {
         });
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
     }
 
     @Test
@@ -1043,7 +1043,7 @@ class KafkaST extends BaseST {
             .done();
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
         //Checking that TO was not deployed
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -1067,7 +1067,7 @@ class KafkaST extends BaseST {
             .done();
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
         //Checking that UO was not deployed
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -1089,7 +1089,7 @@ class KafkaST extends BaseST {
             .done();
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
 
         //Checking that EO was not deployed
         assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
