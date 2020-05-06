@@ -288,10 +288,6 @@ class ConnectST extends BaseST {
 
         LOGGER.info("Deleting connector {} CR", connectorName);
         cmdKubeClient().deleteByName("kafkaconnector", connectorName);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
     }
 
 
