@@ -733,6 +733,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> rollDeploymentIfExists(io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), reasons))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reasons))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reasons))
+                        .compose(i -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reasons))
                         .map(i -> this);
             } else {
                 return Future.succeededFuture(this);
