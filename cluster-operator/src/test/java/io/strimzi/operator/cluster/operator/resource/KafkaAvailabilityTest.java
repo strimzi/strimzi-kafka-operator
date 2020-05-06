@@ -276,7 +276,7 @@ public class KafkaAvailabilityTest {
             .addNewTopic("A", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
-                    .replicaOn(0, 1)
+                    .replicaOn(0, 1, 3)
                     .leader(0)
                     .isr(0, 1)
                 .endPartition()
@@ -284,20 +284,20 @@ public class KafkaAvailabilityTest {
             .addNewTopic("B", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
-                    .replicaOn(0, 1)
+                    .replicaOn(0, 1, 3)
                     .leader(1)
                     .isr(1)
                 .endPartition()
             .endTopic()
 
-            .addBroker(3);
+            .addBroker(4);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
-                if (brokerId == 3) {
+                if (brokerId == 4) {
                     assertTrue(canRoll,
                             "broker " + brokerId + " should be rollable, having no partitions");
                 } else {
@@ -403,6 +403,59 @@ public class KafkaAvailabilityTest {
             kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
+
+                a.flag();
+            })));
+        }
+    }
+
+    @Test
+    public void testMinIsrEqualsReplicasWithOfflineReplicas(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
+                .addNewPartition(0)
+                .replicaOn(0, 1, 2)
+                .leader(0)
+                .isr(0, 1)
+                .endPartition()
+                .endTopic()
+
+                .addBroker(3);
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
+
+                a.flag();
+            })));
+        }
+    }
+
+    @Test
+    public void testMinIsrMoreThanReplicas(VertxTestContext context) {
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0)
+                        .leader(0)
+                        .isr(0)
+                    .endPartition()
+                .endTopic()
+                .addBroker(3);
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        Checkpoint a = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
 
                 a.flag();
             })));
