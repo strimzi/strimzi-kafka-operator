@@ -119,6 +119,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         HashMap<String, String> annotations = new HashMap<>();
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
+        boolean connectHasZeroReplicas = connect.getReplicas() == 0;
+
         log.debug("{}: Updating Kafka Connect S2I cluster", reconciliation);
 
         connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
@@ -152,12 +154,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                 .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> connect.getReplicas() > 0 ? deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs) : Future.succeededFuture())
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus, connect.getReplicas() == 0))
+                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus, connectHasZeroReplicas))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
 
-                    if (connect.getReplicas() > 0) {
+                    if (!connectHasZeroReplicas) {
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
                         kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
                     }

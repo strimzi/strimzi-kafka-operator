@@ -210,7 +210,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 return Future.succeededFuture();
                                             } else if ((connect != null && connect.getSpec() != null && connect.getSpec().getReplicas() == 0)
-                                                    || (connect != null && connect.getSpec() != null && connect.getSpec().getReplicas() == 0))    {
+                                                    || (connectS2i != null && connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0))    {
                                                 log.info("{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 return Future.succeededFuture();

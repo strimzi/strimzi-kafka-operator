@@ -123,6 +123,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             connectS2ICheck = Future.succeededFuture(null);
         }
 
+        boolean connectHasZeroReplicas = connect.getReplicas() == 0;
+
         connectS2ICheck
                 .compose(otherConnect -> {
                     if (otherConnect != null
@@ -143,12 +145,12 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> connect.getReplicas() > 0 ? deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs) : Future.succeededFuture())
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connect.getReplicas() == 0))
+                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 
-                    if (connect.getReplicas() > 0) {
+                    if (!connectHasZeroReplicas) {
                         kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
                     }
 
