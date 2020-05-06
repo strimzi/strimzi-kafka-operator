@@ -160,6 +160,25 @@ public class PodUtils {
         LOGGER.info("Pod {} deleted", name);
     }
 
+    public static void waitForPodDeletionByPrefix(String podPrefix) {
+        LOGGER.info("Waiting for Pods with prefix {} will be deleted", podPrefix);
+
+        TestUtils.waitFor("Pods with prefix" + podPrefix + "will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                List<Pod> pods = kubeClient().listPodsByPrefixInName(podPrefix);
+                if (pods.size() != 0) {
+                    for (Pod pod : pods) {
+                        LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                        cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                    }
+                    return false;
+                } else {
+                    return !kubeClient().listPodsByPrefixInName(podPrefix).stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Terminating"));
+                }
+            });
+        LOGGER.info("All pods with prefix {} deleted", podPrefix);
+    }
+
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
         LOGGER.info("Wait until {} Pods with prefix {} are present", numberOfPods, podNamePrefix);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,

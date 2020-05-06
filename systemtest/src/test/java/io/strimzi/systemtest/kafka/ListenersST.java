@@ -14,7 +14,6 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -28,7 +27,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -170,7 +168,6 @@ public class ListenersST extends BaseST {
 
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
@@ -180,16 +177,7 @@ public class ListenersST extends BaseST {
             .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withKafkaClientProperties(
-                new KafkaClientProperties.KafkaClientPropertiesBuilder()
-                    .withNamespaceName(NAMESPACE)
-                    .withClusterName(CLUSTER_NAME)
-                    .withBootstrapServerConfig(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                    .withKeySerializerConfig(StringSerializer.class)
-                    .withValueSerializerConfig(StringSerializer.class)
-                    .withClientIdConfig("kafka-user-producer")
-                    .build()
-            ).build();
+            .build();
 
         LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
 

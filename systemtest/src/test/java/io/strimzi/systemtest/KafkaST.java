@@ -1021,7 +1021,6 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(null);
@@ -1031,7 +1030,7 @@ class KafkaST extends BaseST {
         //Waiting when EO pod will be deleted
         DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
         ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.waitForPodDeletion(eoPodName);
+        PodUtils.waitForPodDeletionByPrefix(eoDeploymentName);
 
         //Checking that EO was removed
         assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
