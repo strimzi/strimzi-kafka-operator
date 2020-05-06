@@ -11,16 +11,24 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
+import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,12 +39,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -99,7 +108,7 @@ public class CruiseControlST extends BaseST {
         assertThat(kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).size(), is(0));
 
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
-        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME));
+        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME)));
 
         LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
@@ -111,10 +120,10 @@ public class CruiseControlST extends BaseST {
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         });
 
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
         LOGGER.info("Verifying that in Kafka config map there is configuration to cruise control metric reporter");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME));
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Verifying that {} topics are created after CC is instantiated.", CRUISE_CONTROL_NAME);
 
@@ -197,7 +206,7 @@ public class CruiseControlST extends BaseST {
         JsonObject cruiseControlCapacityFileContent =
             new JsonObject(cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
 
-        assertThat(cruiseControlCapacityFileContent.getJsonObject("brokerCapacities"), not(nullValue()));
+        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities"), not(nullValue()));
 
         LOGGER.info("We got only one configuration of broker-capacities");
         assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").size(), is(1));
@@ -228,6 +237,60 @@ public class CruiseControlST extends BaseST {
         assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
     }
 
+    // TODO: make an functional test with more producers...
+    @Test
+    void testTriggerClusterRebalance() throws ExecutionException, InterruptedException {
+
+        KafkaTopic kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 3, 3).done();
+
+        Properties properties = new Properties();
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME));
+
+        List<BasicExternalKafkaClient> clients = new ArrayList<>(3);
+
+        try (AdminClient adminClient = AdminClient.create(properties)) {
+            DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(kafkaTopic.getMetadata().getName()));
+            Map<String, TopicDescription> topicDescriptionMap = describeTopicsResult.all().get();
+
+            for (Map.Entry<String, TopicDescription> entry : topicDescriptionMap.entrySet()) {
+                LOGGER.info("Key {} -> Value {}", entry.getKey(), entry.getValue());
+
+                for (TopicPartitionInfo topicPartitionInfo : entry.getValue().partitions()) {
+
+                    String externalBootstrapConfig = topicPartitionInfo.leader().host() + ":" + topicPartitionInfo.leader().port();
+
+                    BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                        .withTopicName(TOPIC_NAME)
+                        .withPartition(topicPartitionInfo.leader().id())
+                        .withNamespaceName(NAMESPACE)
+                        .withClusterName(CLUSTER_NAME)
+                        .withMessageCount(30_000)
+                        .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                        .withKafkaClientProperties(
+                            new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                                .withNamespaceName(NAMESPACE)
+                                .withClusterName(CLUSTER_NAME)
+                                .withBootstrapServerConfig(externalBootstrapConfig)
+                                .withKeySerializerConfig(StringSerializer.class)
+                                .withValueSerializerConfig(StringSerializer.class)
+                                .withClientIdConfig("kafka-user-producer-" + rng.nextInt(Integer.MAX_VALUE))
+                                .build()
+                        ).build();
+
+                    clients.add(basicExternalKafkaClient);
+                }
+            }
+        }
+
+        for (BasicExternalKafkaClient client : clients) {
+            LOGGER.info("Client sending messages with the following configuration {} ", client.toString());
+            int sent = client.sendMessagePlainWithHugeTimeout();
+            assertThat(sent, is(30_000));
+        }
+    }
+
+    // TODO: curl -X POST 127.0.0.1:9090/kafkacruisecontrol/rebalance?json=true
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
@@ -237,13 +300,33 @@ public class CruiseControlST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
     }
 }

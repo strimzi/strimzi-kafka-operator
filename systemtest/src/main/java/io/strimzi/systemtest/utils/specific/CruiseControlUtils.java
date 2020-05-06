@@ -32,6 +32,7 @@ public class CruiseControlUtils {
 
     private CruiseControlUtils() { }
 
+    @SuppressWarnings("BooleanExpressionComplexity")
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
         TestUtils.waitFor("Verify that kafka configuration " + kafkaProperties.toString() + " has correct cruise control metric reporter properties",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->

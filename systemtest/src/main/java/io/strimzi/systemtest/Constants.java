@@ -51,6 +51,7 @@ public interface Constants {
 
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
+    long HUGE_CLIENTS_TIMEOUT = Duration.ofMinutes(30).toMillis();
     long GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT = Duration.ofSeconds(10).toMillis();
 
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
