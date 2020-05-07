@@ -6,7 +6,7 @@
 = Generating rebalance proposals 
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates a _rebalance proposal_ in JSON.
-This summarizes an optimal mapping of partitions to brokers for the Kafka cluster based on the rebalance goals that were used along with statistics on the cluster rebalance.
+This summarizes an optimal mapping of partitions to brokers for the Kafka cluster based on the optimization goals that were used along with statistics on the cluster rebalance.
 
 .Prerequisites
 
@@ -16,7 +16,7 @@ This summarizes an optimal mapping of partitions to brokers for the Kafka cluste
 
 . Create a `KafkaRebalance` resource:
 
-.. To use the default rebalance goals defined in the `Kafka` resource, leave the `spec` property empty:
+.. To use the default optimization goals defined in the `Kafka` resource, leave the `spec` property empty:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -29,7 +29,7 @@ metadata:
 spec: {}
 ----
 
-.. To use one or more custom rebalance goals instead of the default goals, edit the `spec.goals` property.
+.. To use one or more custom optimization goals instead of the default goals, edit the `spec.goals` property.
 In the following example, rack awareness and replica capacity are set as custom goals:
 +
 [source,yaml,subs="attributes+"]
@@ -62,6 +62,7 @@ This might take a few minutes depending on the size of the Kafka cluster.
 ----
 kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 ----
++
 Cruise Control returns one of two statuses:
 
 ** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the rebalance proposal is ready.
