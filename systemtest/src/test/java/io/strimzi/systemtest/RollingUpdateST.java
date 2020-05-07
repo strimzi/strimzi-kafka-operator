@@ -86,7 +86,7 @@ class RollingUpdateST extends BaseST {
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
-    void testRecoveryDuringZookeeperRollingUpdate() throws Throwable {
+    void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
@@ -173,7 +173,7 @@ class RollingUpdateST extends BaseST {
     }
 
     @Test
-    void testRecoveryDuringKafkaRollingUpdate() throws Throwable {
+    void testRecoveryDuringKafkaRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
