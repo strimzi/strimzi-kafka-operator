@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -151,6 +152,9 @@ public class CruiseControlST extends BaseST {
     @Test
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
+        Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(KafkaResources.cruiseControlDeploymentName(CLUSTER_NAME));
+
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
 
             LOGGER.info("Changing the broker capacity of the cruise control");
@@ -165,15 +169,15 @@ public class CruiseControlST extends BaseST {
         });
 
         LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
-        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-cruise-control-"));
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.cruiseControlDeploymentName(CLUSTER_NAME), 1, cruiseControlSnapShot);
+
+        LOGGER.info("Verifying that Kafka pods did not roll");
+        StatefulSetUtils.waitForNoRollingUpdate(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaSnapShot);
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
 
         assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec()
             .getCruiseControl().getBrokerCapacity().getDisk(), is("2000M"));
-
-        LOGGER.info("Kafka pods are stable are Rolling Update is not triggered!");
-        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
