@@ -36,7 +36,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private GenericSecretSource clientSecret;
     private String scope;
     private String validIssuerUri;
-    private boolean checkIssuer;
+    private boolean checkIssuer = true;
     private String jwksEndpointUri;
     private Integer jwksRefreshSeconds;
     private Integer jwksExpirySeconds;
