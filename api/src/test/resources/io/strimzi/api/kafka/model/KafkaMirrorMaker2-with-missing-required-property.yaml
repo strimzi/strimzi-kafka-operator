@@ -35,8 +35,8 @@ spec:
         tasksMax: 2
         config:
           checkpoints.topic.replication.factor: 1
-      # topics is missing
-      groups: my-group
+      # topicsPattern is missing
+      groupsPattern: my-group
     - sourceConnector:
         config:
           replication.factor: 1
