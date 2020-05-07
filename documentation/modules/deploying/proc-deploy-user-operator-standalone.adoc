@@ -31,8 +31,8 @@ This environment variable is optional and should be set only if the communicatio
 .. `STRIMZI_EO_KEY_SECRET_NAME` to point to a Kubernetes `Secret` containing the private key and related certificate for TLS client authentication against the Kafka cluster.
 The `Secret` must contain the keystore with the private key and certificate under the key `entity-operator.p12`, and the related password under the key `entity-operator.password`.
 This environment variable is optional and should be set only if TLS client authentication is needed when the communication with the Kafka cluster is TLS based.
-.. `STRIMZI_JAVA_OPTS` to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
-.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` to list the `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+.. `STRIMZI_JAVA_OPTS` _(optional)_ to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
+.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` _(optional)_ to list the `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
 
 . Deploy the User Operator:
 +
