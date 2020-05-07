@@ -3,10 +3,10 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='proc-generating-rebalance-proposals-{context}']
-= Generating rebalance proposals 
+= Generating optimization proposals 
 
-When you create or update a `KafkaRebalance` resource, Cruise Control generates a _rebalance proposal_ in JSON.
-This summarizes an optimal mapping of partitions to brokers for the Kafka cluster based on the optimization goals that were used along with statistics on the cluster rebalance.
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an _optimization proposal_ in JSON.
+This summarizes an optimal mapping of partitions to brokers for the Kafka cluster, based on the optimization goals that were used, along with statistics on the cluster rebalance.
 
 .Prerequisites
 
@@ -29,7 +29,7 @@ metadata:
 spec: {}
 ----
 
-.. To use one or more custom optimization goals instead of the default goals, edit the `spec.goals` property.
+.. To use one or more user-provided optimization goals instead of the default goals, edit the `spec.goals` property.
 In the following example, rack awareness and replica capacity are set as custom goals:
 +
 [source,yaml,subs="attributes+"]
@@ -53,7 +53,7 @@ spec:
 oc apply -f _your-file_
 ----
 +
-The Cluster Operator requests the rebalance proposal from the Cruise Control server.
+The Cluster Operator requests the optimization proposal from the Cruise Control server.
 This might take a few minutes depending on the size of the Kafka cluster. 
 
 . Check the status of the `KafkaRebalance` resource:
@@ -65,12 +65,12 @@ kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 +
 Cruise Control returns one of two statuses:
 
-** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the rebalance proposal is ready.
+** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
 
-** `ProposalReady`: The rebalance proposal is ready for you to review and implement, if desired.
-The status is followed by the JSON rebalance proposal.
+** `ProposalReady`: The optimization proposal is ready for you to review and implement, if desired.
+The status is followed by the JSON optimization proposal.
 
-. Review the details of the rebalance proposal in the `status.summary` property of the `KafkaRebalance` resource.
+. Review the details of the optimization proposal in the `status.summary` property of the `KafkaRebalance` resource.
 +
 Here is an example proposal:
 +

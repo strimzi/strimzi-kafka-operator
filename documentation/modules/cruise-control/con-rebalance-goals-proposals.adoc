@@ -5,18 +5,25 @@
 [id='con-rebalance-goals-proposals-{context}']
 = Optimization goals and proposals
 
-To rebalance a Kafka cluster, Cruise Control uses _rebalance goals_ to generate _rebalance proposals_. 
+To rebalance a Kafka cluster, Cruise Control uses _optimization goals_ to generate _optimization proposals_. 
 
 [discrete]
 == Optimization goals
 
-Optimization goals specify targets for resource distribution and utilization across a Kafka cluster. 
-They are organized in a customizable hierarchy, from high priority goals to low priority goals. 
-You can designate certain optimization goals as _hard goals_ that must be satisfied--for more information, see link:#soft-hard-goals[Soft goals and hard goals].
+Optimization goals specify targets for workload redistribution and resource utilization across a Kafka cluster.
+There are two basic types:
 
-//ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420563078
-With a few exceptions, cluster rebalancing in {ProductName} supports the same goals as the Kafka Cruise Control project. 
-Following are the supported optimization goals, which you can reorder in priority, enable, or disable:
+* _Default optimization goals_, set in the `Kafka` resource on deployment and updated as needed. These goals are required.
+
+* _User-provided optimization goals_, set in `KafkaRebalance` resources on an ad hoc basis. These goals are optional.
+
+For both types of optimization goals, you can define a subset as _hard goals_ that must be satisfied in optimization proposals. Goals not designated as hard goals are treated as _soft goals_.
+
+[discrete]
+=== Supported optimization goals
+
+With a few exceptions, all optimization goals in the Kafka Cruise Control project are supported.
+These are as follows, in descending priority order:
 
 . Rack-awareness
 . Replica capacity
@@ -24,24 +31,54 @@ Following are the supported optimization goals, which you can reorder in priorit
 .. Disk capacity
 .. Network inbound capacity
 .. Network outbound capacity
-.. CPU capacity
+//.. CPU capacity
 . Replica distribution
 . Potential network output
 . Resource distribution
 .. Disk utilization distribution
 .. Network inbound utilization distribution
 .. Network outbound utilization distribution
-.. CPU utilization distribution
+//.. CPU utilization distribution
 . Leader bytes-in rate distribution
 . Topic replica distribution
 . Leader replica distribution
 . Preferred leader election
-. Intra-broker disk capacity
-. Intra-broker disk usage distribution    
+//. Intra-broker disk capacity
+//. Intra-broker disk usage distribution   
 
-For detailed information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
+For information on the purpose of each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
-NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported in {ProductName}.
+NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported.
+
+You can customize the optimization goals by reordering them in terms of priority, and disabling goals to exclude from optimization proposal calculations.
+
+[id="default-custom-goals"]
+[discrete]
+=== Default and user-provided optimization goals
+
+When interacting with Cruise Control, you can use the _default optimization goals_, which are defined in the Cruise Control deployment configuration, or set ad hoc _user-provided optimization goals_. 
+
+The *default optimization goals* are set in the `Kafka` custom resource. 
+You specify a list of goals in `spec.cruiseControl.config.default.goals`.
+
+Unless you set user-provided optimization goals, the default optimization goals are used by Cruise Control to return the _cached optimization proposal_. 
+The cached proposal reflects the current state of the Kafka cluster and is updated every 15 minutes by default. 
+
+To review the list of default goals, see link:https://github.com/linkedin/cruise-control/wiki/Configurations#analyzer-configurations[Analyzer Configurations^] in the Cruise Control Wiki.
+
+For more information on setting the default optimization goals, see xref:ref-cruise-control-configuration-{context}[]. 
+
+*User-provided optimization goals* are set in the `spec.goals` section of a `KafkaRebalance` resource and override the default optimization goals. 
+If no user-provided optimization goals are set, the default optimization goals are used.
+
+User-provided optimization goals can generate an optimization proposal that addresses a particular scenario.
+For example, you might want to optimize leader replica distribution across the Kafka cluster without considering other goals, such as disk or CPU usage. 
+So, you create a `KafkaRebalance` resource containing a custom optimization goal for leader replica distribution only.
+
+It is often faster to generate optimization proposals based on user-provided rather than default optimization goals.
+User-provided optimization goals must always be a subset of the default optimization goals.
+
+For more information on setting user-provided optimization goals, see xref:proc-generating-rebalance-proposals-{context}[].
 
 [id="soft-hard-goals"]
 [discrete]
@@ -52,25 +89,25 @@ The following table explains the differences between soft and hard goals in clus
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
 
-¦optimization goal type
+¦Optimization goal type
 ¦Description
 ¦Example
 
 ¦Soft goals
 
-¦Also known as "best effort" goals, soft goals do _not_ need to be satisfied in rebalance proposals. 
-However, they are included in rebalance calculations.
-A rebalance proposal that violates one or more soft goals but satisfies all hard goals is valid.
+¦Also known as _best effort_ goals, soft goals do _not_ need to be satisfied in optimization proposals. 
+However, they are included in optimization calculations.
+An optimization proposal that violates one or more soft goals but satisfies all hard goals is valid.
 
-Optimization goals are treated as soft goals, unless designated as hard goals
+Optimization goals are treated as soft goals unless they are designated as hard goals
 
 ¦Attempt to distribute a topic's replicas evenly across the cluster (topic replica distribution goal). 
 Ignore this goal if doing so will enable all hard goals to be met.
 
 ¦Hard goals
 
-¦Hard goals _must_ be satisfied in rebalance proposals. *ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420564399*
-In other words, a rebalance proposal that does _not_ satisfy all the designated hard goals is rejected by Cruise Control and not sent to the user.
+¦Hard goals _must_ be satisfied in optimization proposals (unless the `skip_hard_goal_check` option is specified).
+In other words, an optimization proposal that does _not_ satisfy all the designated hard goals is rejected by Cruise Control and not sent to the user.
 
 Designating hard goals is optional.
 ¦All brokers in the cluster must have fewer than 3 replicas (replica capacity goal).
@@ -78,46 +115,14 @@ Designating hard goals is optional.
 |===
 
 [discrete]
-=== Default and custom optimization goals
+== Optimization proposals
 
-When interacting with Cruise Control to generate rebalance proposals, you can use the _default optimization goals_, which are defined in the Cruise Control deployment configuration, or set ad hoc _custom optimization goals_. 
-Both types of optimization goal can be configured to include hard goals as well as soft goals.  
+An _optimization proposal_ is a summary of proposed changes from Cruise Control that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. 
+Each optimization proposal is based on the set of optimization goals (either default goals or user-provided goals) that were used to generate it.
 
-*Default optimization goals and cached proposal*
+Optimization proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals. Hard goals are ignored if the `skip_hard_goal_check` option is specified.
 
-The default optimization goals are set in the `Kafka` custom resource. 
-You specify a list of goals in `spec.cruiseControl.config.default.goals`.
-
-Unless you set custom optimization goals, the default optimization goals are used by Cruise Control to return a _cached rebalance proposal_. 
-The cached proposal reflects the current state of the Kafka cluster and is updated every 15 minutes by default. 
-
-To review the list of default goals, see link:https://github.com/linkedin/cruise-control/wiki/Configurations#analyzer-configurations[Analyzer Configurations^] in the Cruise Control Wiki.
-
-For more information on setting the default optimization goals, see xref:ref-cruise-control-configuration-{context}[]. 
-
-*Custom optimization goals* 
-
-Custom optimization goals are set in the `spec.goals` section of a `KafkaRebalance` resource and override the default optimization goals. 
-If no custom optimization goals are set, the default optimization goals are used.
-
-Use custom optimization goals to generate a rebalance proposal that addresses a particular optimization scenario. 
-For example, you might want to optimize leader replica distribution across the Kafka cluster without considering other goals, such as disk or CPU usage. 
-So, you create a `KafkaRebalance` resource containing a custom optimization goal for leader replica distribution only.
-
-Using custom optimization goals often returns a rebalance proposal faster than the default optimization goals. 
-They must always be a subset of the default optimization goals.
-
-For more information on setting custom optimization goals, see xref:proc-generating-rebalance-proposals-{context}[].
-
-[discrete]
-== Rebalance proposals
-
-A _rebalance proposal_ is a summary of proposed changes from Cruise Control that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. 
-Each rebalance proposal is based on the set of optimization goals (either default goals or custom goals) that were used to generate it.
-
-Rebalance proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals. *ADDRESS PP COMMENT: https://github.com/strimzi/strimzi-kafka-operator/pull/2956#discussion_r420565280*
-
-A rebalance proposal provides the following information in JSON:
+An optimization proposal provides the following information in JSON:
 
 * An optimal mapping of partitions to brokers, generated by the Analyzer component of Cruise Control
 
@@ -125,10 +130,10 @@ A rebalance proposal provides the following information in JSON:
 
 You can use the information to decide whether to implement the cluster rebalance, or change the optimization goals. 
 
-All rebalance proposals are dry runs. You cannot implement a cluster rebalance without first generating a rebalance proposal. 
-There is no limit to the number of rebalance proposals that can be generated.
+All optimization proposals are dry runs: you cannot implement a cluster rebalance without first generating an optimization proposal. 
+There is no limit to the number of optimization proposals that can be generated.
 
-The following table lists the properties contained in a rebalance proposal:
+The following table explains the properties contained in an optimization proposal:
 
 [cols="2*",options="header",stripes="none",separator=¦]
 |===

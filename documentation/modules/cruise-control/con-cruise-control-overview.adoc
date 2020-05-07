@@ -14,10 +14,10 @@ For example, partitions that handle large amounts of message traffic can be unev
 Monitoring this broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to the overhead of managing a Kafka cluster.
 
 Cruise Control helps to automate the monitoring and rebalancing of partitions across a Kafka cluster.
-When deployed alongside a Kafka cluster, Cruise Control can perform the following cluster balancing tasks:
+When deployed to a Kubernetes cluster that contains a Kafka cluster, Cruise Control performs the following cluster balancing tasks:
 
 * Monitoring the CPU, disk, and network load of Kafka brokers.
-* Making optimization proposals: balanced partition assignments based on configurable optimization goals.
+* Generating optimization proposals: balanced partition assignments based on configurable optimization goals.
 * Executing partition reassignments based on optimization proposals.
 
 .What to do next
