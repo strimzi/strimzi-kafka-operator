@@ -37,6 +37,8 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -182,7 +184,7 @@ class ConnectS2IST extends BaseST {
             .endSpec()
             .done();
 
-        final String userName = "user-example-" + rng.nextInt(Integer.MAX_VALUE);
+        final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
@@ -380,7 +382,7 @@ class ConnectS2IST extends BaseST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(ACCEPTANCE)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String connectClusterName = "connect-cluster";
         String connectS2IClusterName = "connect-s2i-cluster";
 
@@ -459,7 +461,7 @@ class ConnectS2IST extends BaseST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     void testMultiNodeKafkaConnectS2IWithConnectorCreation() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String connectS2IClusterName = "connect-s2i-cluster";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();

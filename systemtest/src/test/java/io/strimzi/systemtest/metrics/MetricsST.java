@@ -11,6 +11,8 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.executor.Exec;
@@ -323,10 +325,10 @@ public class MetricsST extends BaseST {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, "test-topic", 7, 2).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, KafkaTopicUtils.generateRandomNameOfTopic(), 7, 2).done();
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, "arnost").done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, "josef").done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
 
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);

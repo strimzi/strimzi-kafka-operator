@@ -12,6 +12,8 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
@@ -57,24 +59,22 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
     @Test
     void testSendSimpleMessage() throws Exception {
-        int messageCount = 50;
-        String topicName = "topic-simple-send";
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+        JsonObject records = HttpUtils.generateHttpMessages(MESSAGE_COUNT);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        KafkaBridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
         BasicExternalKafkaClient basicKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
-                .withMessageCount(messageCount)
-                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .withMessageCount(MESSAGE_COUNT)
                 .build();
 
-        assertThat(basicKafkaClient.receiveMessagesPlain(), is(messageCount));
+        assertThat(basicKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
@@ -87,7 +87,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        String name = "my-kafka-consumer";
+        String name = KafkaUserUtils.generateRandomNameOfKafkaUser();
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();

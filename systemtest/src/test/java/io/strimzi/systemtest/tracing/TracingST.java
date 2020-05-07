@@ -93,7 +93,6 @@ public class TracingST extends BaseST {
     private static final String JAEGER_SAMPLER_TYPE = "const";
     private static final String JAEGER_SAMPLER_PARAM = "1";
 
-    private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
 
     private Stack<String> jaegerConfigs = new Stack<>();
@@ -214,7 +213,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -624,7 +622,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterTargetName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -727,7 +724,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -811,7 +807,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));

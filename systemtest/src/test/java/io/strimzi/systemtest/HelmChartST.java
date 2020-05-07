@@ -25,7 +25,6 @@ class HelmChartST extends BaseST {
 
     static final String NAMESPACE = "helm-chart-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
-    private static final String TOPIC_NAME = "test-topic";
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
