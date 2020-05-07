@@ -19,9 +19,6 @@ When you configure the `KafkaUser` authentication and authorization mechanisms, 
 * `KafkaUser.spec.authentication` matches `Kafka.spec.kafka.listeners.*.authentication`
 * `KafkaUser.spec.authorization` matches `Kafka.spec.kafka.authorization`
 
-
-a `KafkaUser`, you use the `spec` property to define the `authentication` and `authorization` mechanisms required for the Kafka user to be able to connect to Kafka brokers.
-
 This procedure shows how a user is created with TLS authentication.
 You can also create a user with SCRAM-SHA authentication.
 
@@ -80,4 +77,4 @@ spec:
 [source,shell,subs=+quotes]
 kubectl apply -f _<user-config-file>_
 
-. Use the credentials from the secret `my-user` in your client application.
+. Use the credentials from the `my-user` secret in your client application.
