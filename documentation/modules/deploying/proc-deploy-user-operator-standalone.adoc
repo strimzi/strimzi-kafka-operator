@@ -19,7 +19,7 @@ a standalone deployment is more flexible as the User Operator can operate with _
 . Edit the following `Deployment.spec.template.spec.containers[0].env` properties in the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` file by setting:
 +
 .. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the Kafka brokers, given as a comma-separated list of `_hostname_:‍_port_` pairs.
-.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using.
+.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using. Connecting to ZooKeeper nodes with TLS encryption is not supported.
 .. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for `KafkaUser` resources.
 .. `STRIMZI_CA_CERT_NAME` to point to a Kubernetes `Secret` that contains the public key of the Certificate Authority for signing new user certificates for TLS client authentication.
 The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
