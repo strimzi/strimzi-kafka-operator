@@ -22,8 +22,11 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -48,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CruiseControlST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlST.class);
@@ -61,6 +65,7 @@ public class CruiseControlST extends BaseST {
     private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 
+    @Order(1)
     @Test
     void testCruiseControlDeployment()  {
         String ccStatusCommand = "curl -X GET localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_STATE_ENDPOINT;
@@ -78,6 +83,7 @@ public class CruiseControlST extends BaseST {
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
+    @Order(2)
     @Test
     void testCapacityFile() {
 
@@ -108,6 +114,7 @@ public class CruiseControlST extends BaseST {
         assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
     }
 
+    @Order(3)
     @Test
     void testUninstallingAndInstallationCruiseControl() throws IOException {
 
@@ -149,6 +156,7 @@ public class CruiseControlST extends BaseST {
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
+    @Order(4)
     @Test
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
@@ -177,11 +185,12 @@ public class CruiseControlST extends BaseST {
         LOGGER.info("Verifying new configuration in the Kafka CR");
 
         assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec()
-            .getCruiseControl().getBrokerCapacity().getDisk(), is("2000M"));
+            .getCruiseControl().getBrokerCapacity().getDisk(), is("200M"));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
+    @Order(5)
     @Test
     void testConfigurationReflection() throws IOException {
 
@@ -228,6 +237,7 @@ public class CruiseControlST extends BaseST {
         assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
     }
 
+    @Order(6)
     @Test
     void testConfigurationFileIsCreated() {
         String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
