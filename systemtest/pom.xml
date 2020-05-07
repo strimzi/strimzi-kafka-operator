@@ -356,5 +356,12 @@
                 <groups>oauth</groups>
             </properties>
         </profile>
+        <profile>
+            <id>cruisecontrol</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>cruisecontrol</groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

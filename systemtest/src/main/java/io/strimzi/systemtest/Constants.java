@@ -240,4 +240,9 @@ public interface Constants {
      * Tag for tests where metrics are used
      */
     String METRICS = "metrics";
+
+    /**
+     * Tag for tests where cruise control used
+     */
+    String CRUISE_CONTROL = "cruisecontrol";
 }

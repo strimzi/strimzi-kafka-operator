@@ -8,27 +8,16 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.TopicPartitionInfo;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,15 +28,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -59,6 +46,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
+@Tag(CRUISE_CONTROL)
 public class CruiseControlST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlST.class);
@@ -87,6 +75,36 @@ public class CruiseControlST extends BaseST {
         assertThat(result, containsString("RUNNING"));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
+    }
+
+    @Test
+    void testCapacityFile() {
+
+        String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
+
+        JsonObject cruiseControlCapacityFileContent =
+            new JsonObject(cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
+
+        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities"), not(nullValue()));
+
+        LOGGER.info("We got only one configuration of broker-capacities");
+        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").size(), is(1));
+
+        LOGGER.info("Verifying cruise control configuration.");
+
+        JsonObject cruiseControlFirstConfiguration = cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").getJsonObject(0);
+
+        assertThat(cruiseControlFirstConfiguration.getString("brokerId"), is("-1"));
+        assertThat(cruiseControlFirstConfiguration.getString("doc"), not(nullValue()));
+
+        JsonObject cruiseControlConfigurationOfBrokerCapacity = cruiseControlFirstConfiguration.getJsonObject("capacity");
+
+        LOGGER.info("Verifying default cruise control capacities");
+
+        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("DISK"), is("100000.0"));
+        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("CPU"), is("100"));
+        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_IN"), is("10000.0"));
+        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
     }
 
     @Test
@@ -131,28 +149,38 @@ public class CruiseControlST extends BaseST {
     }
 
     @Test
-    void testConfigurationChangeTriggersRollingUpdate() {
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+    void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            LOGGER.info("Adding Cruise Control to the classic Kafka.");
-            BrokerCapacity brokerCapacity = kafka.getSpec().getCruiseControl().getBrokerCapacity();
 
-            // TODO: this doesn't work because in the Kafka CR there is nothing using `kafka.getSpec().getCruiseControl()` only object,
-            // TODO: which has some default values by they are not propagated to other fields...
-            brokerCapacity.setDisk("20Gi");
+            LOGGER.info("Changing the broker capacity of the cruise control");
 
-            kafka.getSpec().getCruiseControl().setBrokerCapacity(brokerCapacity);
+            CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
+                .withNewBrokerCapacity()
+                    .withNewDisk("200M")
+                .endBrokerCapacity()
+                .build();
+
+            kafka.getSpec().setCruiseControl(cruiseControl);
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-cruise-control-"));
+
+        LOGGER.info("Verifying new configuration in the Kafka CR");
+
+        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec()
+            .getCruiseControl().getBrokerCapacity().getDisk(), is("2000M"));
+
+        LOGGER.info("Kafka pods are stable are Rolling Update is not triggered!");
+        PodUtils.waitUntilPodsStability(kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
     @Test
     void testConfigurationReflection() throws IOException {
+
         Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
 
         String cruiseControlPodName = cruiseControlPod.getMetadata().getName();
@@ -194,36 +222,6 @@ public class CruiseControlST extends BaseST {
         assertThat(containerConfiguration.getProperty("default.goals"), is(fileConfiguration.getProperty("default.goals")));
         assertThat(containerConfiguration.getProperty("partition.metrics.window.ms"), is(fileConfiguration.getProperty("partition.metrics.window.ms")));
         assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
-    }
-
-    @Test
-    void testCapacityFile() {
-
-        String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
-
-        JsonObject cruiseControlCapacityFileContent =
-            new JsonObject(cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
-
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities"), not(nullValue()));
-
-        LOGGER.info("We got only one configuration of broker-capacities");
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").size(), is(1));
-
-        LOGGER.info("Verifying cruise control configuration.");
-
-        JsonObject cruiseControlFirstConfiguration = cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").getJsonObject(0);
-
-        assertThat(cruiseControlFirstConfiguration.getString("brokerId"), is("-1"));
-        assertThat(cruiseControlFirstConfiguration.getString("doc"), not(nullValue()));
-
-        JsonObject cruiseControlConfigurationOfBrokerCapacity = cruiseControlFirstConfiguration.getJsonObject("capacity");
-
-        LOGGER.info("Verifying default cruise control capacities");
-
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("DISK"), is("100000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("CPU"), is("100"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_IN"), is("10000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
     }
 
     @Test
