@@ -144,28 +144,9 @@ public class PodUtils {
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
-            TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
-                () -> {
-                    Pod pod = kubeClient().getPod(name);
-                    if (pod == null) {
-                        return true;
-                    } else {
-                        LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
-                        cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
-                        return false;
-                    }
-                });
-        }
-        LOGGER.info("Pod {} deleted", name);
-    }
-
-    public static void waitForPodDeletionByPrefix(String podPrefix) {
-        LOGGER.info("Waiting for Pods with prefix {} will be deleted", podPrefix);
-
-        TestUtils.waitFor("Pods with prefix" + podPrefix + "will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
             () -> {
-                List<Pod> pods = kubeClient().listPodsByPrefixInName(podPrefix);
+                List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
                 if (pods.size() != 0) {
                     for (Pod pod : pods) {
                         LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
@@ -173,10 +154,10 @@ public class PodUtils {
                     }
                     return false;
                 } else {
-                    return !kubeClient().listPodsByPrefixInName(podPrefix).stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Terminating"));
+                    return true;
                 }
             });
-        LOGGER.info("All pods with prefix {} deleted", podPrefix);
+        LOGGER.info("Pod {} deleted", name);
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
