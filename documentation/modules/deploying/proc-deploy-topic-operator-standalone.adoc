@@ -23,8 +23,8 @@ For more information about the environment variables used to configure the Topic
 .. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_hostname_:‍_port_` pairs.
 .. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same ZooKeeper cluster that your Kafka cluster is using.
 .. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for  `KafkaTopic` resources.
-.. `STRIMZI_JAVA_OPTS` to the Java options used for the JVM running Topic Operator. An example is `-Xmx=512M -Xms=256M`.
-.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` to list the `-D` options which are set to the Topic Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+.. `STRIMZI_JAVA_OPTS` _(optional)_ to the Java options used for the JVM running Topic Operator. An example is `-Xmx=512M -Xms=256M`.
+.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` _(optional)_ to list the `-D` options which are set to the Topic Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
 
 . Deploy the Topic Operator:
 +
