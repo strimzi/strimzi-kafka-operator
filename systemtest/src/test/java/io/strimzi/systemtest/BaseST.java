@@ -17,6 +17,8 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -104,8 +106,8 @@ public abstract class BaseST implements TestSeparator {
     protected Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
-    public static final String TOPIC_NAME = "my-topic";
-    public static final String USER_NAME = "user-name-example";
+    public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
+    public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());

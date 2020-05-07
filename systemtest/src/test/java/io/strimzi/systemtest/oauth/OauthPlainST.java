@@ -411,7 +411,6 @@ public class OauthPlainST extends OauthBaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withClientSecretName(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(oauthTokenEndpointUri)

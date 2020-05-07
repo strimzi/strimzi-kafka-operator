@@ -13,13 +13,26 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
+    private static final String KAFKA_USER_NAME_PREFIX = "my-user-";
 
     private KafkaUserUtils() {}
+
+    /**
+     * Generated random name for the KafkaUser resource
+     * @return random name with additional salt
+     */
+    public static String generateRandomNameOfKafkaUser() {
+        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        return  KAFKA_USER_NAME_PREFIX + salt;
+    }
 
     public static void waitForKafkaUserCreation(String userName) {
         KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();

@@ -84,12 +84,11 @@ import static org.hamcrest.core.StringContains.containsString;
 class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
-    private static final String TOPIC_NAME = "status-topic";
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testKafkaStatus() throws Exception {
+    void testKafkaStatus() {
         LOGGER.info("Checking status of deployed kafka cluster");
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
@@ -98,7 +97,6 @@ class CustomResourceStatusST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(

@@ -33,6 +33,8 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -93,7 +95,6 @@ class SecurityST extends BaseST {
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
-    private static final String TOPIC_NAME = "test-topic";
 
     @Test
     void testCertificates() {
@@ -317,10 +318,9 @@ class SecurityST extends BaseST {
                                             boolean eoShouldRoll) {
         createKafkaCluster();
 
-        String aliceUserName = "alice";
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUserName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
 
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -334,7 +334,6 @@ class SecurityST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -411,8 +410,7 @@ class SecurityST extends BaseST {
         );
 
         // Finally check a new client (signed by new client key) can consume
-        String bobUserName = "bob";
-        user = KafkaUserResource.tlsUser(CLUSTER_NAME, bobUserName).done();
+        user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         defaultKafkaClientsPodName =
@@ -427,8 +425,6 @@ class SecurityST extends BaseST {
             MESSAGE_COUNT,
             internalKafkaClient.receiveMessagesPlain()
         );
-
-        SecretUtils.waitForSecretReady(bobUserName);
 
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
@@ -509,8 +505,7 @@ class SecurityST extends BaseST {
 
         // 2. Now create a cluster
         createKafkaCluster();
-        String userName = "alice";
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -564,9 +559,8 @@ class SecurityST extends BaseST {
                     .addNewMaintenanceTimeWindow(maintenanceWindowCron)
                 .endSpec().done();
 
-        String aliceUserName = "alice";
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUserName).done();
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -581,7 +575,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(user.getMetadata().getName())
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
@@ -624,10 +617,10 @@ class SecurityST extends BaseST {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
-        String userName = "user-example";
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
@@ -642,7 +635,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         List<Secret> secrets = kubeClient().listSecrets().stream()
@@ -735,7 +727,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -820,7 +811,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -971,10 +961,10 @@ class SecurityST extends BaseST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testAclRuleReadAndWrite() throws Exception {
+    void testAclRuleReadAndWrite() {
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
-        final String topicName = "my-topic-name-1";
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
 
@@ -1026,7 +1016,6 @@ class SecurityST extends BaseST {
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
@@ -1120,7 +1109,6 @@ class SecurityST extends BaseST {
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -1192,7 +1180,6 @@ class SecurityST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
@@ -1262,7 +1249,7 @@ class SecurityST extends BaseST {
         assertThat(received, is(MESSAGE_COUNT));
 
         // Try to send and receive messages with new certificates
-        topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));

@@ -57,7 +57,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     @Test
     void testSendSimpleMessageTls() throws Exception {
-        String topicName = "topic-simple-send";
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
@@ -80,7 +80,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     @Test
     void testReceiveSimpleMessageTls() throws Exception {
-        String topicName = "topic-simple-receive";
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
@@ -127,7 +127,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
     @Test
     void testTlsAuthWithWeirdNamedUser() throws Exception {
-        String topicName = "topic" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String groupId = "my-group-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Create weird named user with . and maximum of 64 chars -> TLS
