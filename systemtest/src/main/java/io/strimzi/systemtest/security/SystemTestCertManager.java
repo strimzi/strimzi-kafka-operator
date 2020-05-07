@@ -13,14 +13,14 @@ import static java.util.Arrays.asList;
 public class SystemTestCertManager {
 
     private static final String KAFKA_CERT_FILE_PATH = "/opt/kafka/broker-certs/";
-    private static final String ZK_CERT_FILE_PATH = "/etc/tls-sidecar/zookeeper-nodes/";
+    private static final String ZK_CERT_FILE_PATH = "/opt/kafka/zookeeper-node-certs/";
     private static final String KAFKA_CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
-    private static final String ZK_CA_FILE_PATH = "/etc/tls-sidecar/cluster-ca-certs/ca.crt";
+    private static final String ZK_CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
 
     public SystemTestCertManager() {}
 
     private static List<String> generateBaseSSLCommand(String server, String caFilePath, String hostname) {
-        return new ArrayList<>(asList("openssl",
+        return new ArrayList<>(asList("echo -n | openssl",
                 "s_client",
                 "-connect", server,
                 "-showcerts",
@@ -52,7 +52,7 @@ public class SystemTestCertManager {
         if (component.equals("kafka")) {
             return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
         } else {
-            return cmdKubeClient().execInPodContainer(podName, "tls-sidecar",  "/bin/bash", "-c",
+            return cmdKubeClient().execInPod(podName,  "/bin/bash", "-c",
                     String.join(" ", cmd)).out();
         }
     }
