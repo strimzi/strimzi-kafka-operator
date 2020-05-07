@@ -31,7 +31,7 @@ import lombok.ToString;
 public class KafkaMirrorMaker2Status extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
 
-    private List<Map<String, Object>> connectors = new ArrayList<>();
+    private List<Map<String, Object>> connectors = new ArrayList<>(3);
 
     @Description("List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -172,7 +172,7 @@ public class VolumeUtils {
      * @return The PVC created
      */
     public static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
+        Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
         LabelSelector selector = null;

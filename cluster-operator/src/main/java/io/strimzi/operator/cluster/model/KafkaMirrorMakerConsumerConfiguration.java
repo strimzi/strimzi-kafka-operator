@@ -24,7 +24,7 @@ public class KafkaMirrorMakerConsumerConfiguration extends AbstractConfiguration
     static {
         FORBIDDEN_PREFIXES = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(0);
     }
 
     /**

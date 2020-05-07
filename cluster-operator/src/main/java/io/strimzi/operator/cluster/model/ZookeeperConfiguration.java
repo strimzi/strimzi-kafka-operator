@@ -27,7 +27,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
-        Map<String, String> config = new HashMap<>();
+        Map<String, String> config = new HashMap<>(4);
         config.put("tickTime", "2000");
         config.put("initLimit", "5");
         config.put("syncLimit", "2");

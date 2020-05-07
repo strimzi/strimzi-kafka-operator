@@ -587,7 +587,7 @@ public abstract class AbstractModel {
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
+        Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
         LabelSelector selector = null;
@@ -1092,7 +1092,6 @@ public abstract class AbstractModel {
 
     @SafeVarargs
     protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
-        
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {

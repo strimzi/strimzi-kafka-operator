@@ -218,7 +218,7 @@ public class KafkaExporter extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
                 .withName(name)
