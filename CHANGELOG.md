@@ -13,6 +13,7 @@
 * Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
 * Use Java 11 as the Java runtime
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
+* Migration to Helm 3
 
 ### Deprecations and removals
 

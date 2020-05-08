@@ -29,7 +29,8 @@ documentation/htmlnoheader/**
 documentation/**/build/**
 master.html
 
-helm-charts/strimzi-kafka-operator-*.*.*.tgz
+helm-charts/helm2/strimzi-kafka-operator-*.*.*.tgz
+helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
 docker-images/kafka/.*.tmp
 docker-images/kafka/tmp/**
