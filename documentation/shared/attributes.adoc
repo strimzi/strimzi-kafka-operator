@@ -86,7 +86,7 @@
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka configuration documentation for producers^]
 :ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]
 :ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
-:CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control]
+:CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control^]
 :CruiseControlConfigDocs: link:https://github.com/linkedin/cruise-control/wiki/Configurations[Cruise Control documentation]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]

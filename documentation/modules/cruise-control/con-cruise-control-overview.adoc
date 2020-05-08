@@ -9,16 +9,17 @@
 [id='con-cruise-control-overview-{context}']
 = Cruise Control overview
 
-Brokers in a Kafka cluster can become unevenly loaded for many reasons.
-For example, partitions that handle large amounts of message traffic can be unevenly distributed across the available brokers.
-Monitoring this broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to the overhead of managing a Kafka cluster.
+Brokers in a typical Kafka cluster can become unevenly loaded over time.
+For example, partitions that handle large amounts of message traffic might be unevenly distributed across the available brokers.
+Monitoring broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to management overhead. Cruise Control reduces this overhead and helps you to run Kafka more efficiently.
 
-Cruise Control helps to automate the monitoring and rebalancing of partitions across a Kafka cluster.
-When deployed to a Kubernetes cluster that contains a Kafka cluster, Cruise Control performs the following cluster balancing tasks:
+When running alongside Kafka, Cruise Control helps to automate the monitoring and rebalancing of partitions.
+It continuously monitors the CPU, disk, and network load of Kafka brokers to construct a model of resource utilization.
+You can use information from this model to:
 
-* Monitoring the CPU, disk, and network load of Kafka brokers.
-* Generating optimization proposals: balanced partition assignments based on configurable optimization goals.
-* Executing partition reassignments based on optimization proposals.
+* Generate _optimization proposals_: balanced partition assignments based on configurable _optimization goals_.
+
+* Implement partition reassignments based on optimization proposals.
 
 .What to do next
 

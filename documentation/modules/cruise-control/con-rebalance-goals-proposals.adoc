@@ -8,16 +8,20 @@
 To rebalance a Kafka cluster, Cruise Control uses _optimization goals_ to generate _optimization proposals_. 
 
 [discrete]
-== Optimization goals
+== Optimization goals summary
 
 Optimization goals specify targets for workload redistribution and resource utilization across a Kafka cluster.
 There are two basic types:
 
-* _Default optimization goals_, set in the `Kafka` resource on deployment and updated as needed. These goals are required.
+* Default optimization goals
 
-* _User-provided optimization goals_, set in `KafkaRebalance` resources on an ad hoc basis. These goals are optional.
+* User-provided optimization goals
 
-For both types of optimization goals, you can define a subset as _hard goals_ that must be satisfied in optimization proposals. Goals not designated as hard goals are treated as _soft goals_.
+For both types of optimization goals, you can define a subset as _hard goals_ that must be satisfied in optimization proposals (unless the `skip_hard_goal_check` option is specified). Goals not designated as hard goals are treated as _soft goals_.
+
+Default and user-provided optimization goals must be included in the _permitted goals_ for the Kafka cluster (specified in `Kafka.spec.cruiseControl.config.goals`).
+
+For more information, see link:#default-custom-goals[Default and user-provided optimization goals] and link:#soft-hard-goals[Soft goals and hard goals].
 
 [discrete]
 === Supported optimization goals
@@ -48,7 +52,7 @@ These are as follows, in descending priority order:
 
 For information on the purpose of each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
-NOTE: "Write your own" goals, Kafka assigner goals, and Anomaly Detector are not supported.
+NOTE: CPU goals, intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not supported.
 
 You can customize the optimization goals by reordering them in terms of priority, and disabling goals to exclude from optimization proposal calculations.
 
@@ -56,27 +60,33 @@ You can customize the optimization goals by reordering them in terms of priority
 [discrete]
 === Default and user-provided optimization goals
 
-When interacting with Cruise Control, you can use the _default optimization goals_, which are defined in the Cruise Control deployment configuration, or set ad hoc _user-provided optimization goals_. 
+When interacting with Cruise Control, you can use the _default optimization goals_, which are defined in the Cruise Control deployment configuration, or set ad hoc _user-provided optimization goals_.
 
-The *default optimization goals* are set in the `Kafka` custom resource. 
-You specify a list of goals in `spec.cruiseControl.config.default.goals`.
+*Default optimization goals*
 
-Unless you set user-provided optimization goals, the default optimization goals are used by Cruise Control to return the _cached optimization proposal_. 
+The default optimization goals are set in the `Kafka` custom resource, in `spec.cruiseControl.config.default.goals`.
+
+Unless you set user-provided optimization goals, in a `KafkaRebalance` custom resource, the default optimization goals are used by Cruise Control to return the _cached optimization proposal_. 
 The cached proposal reflects the current state of the Kafka cluster and is updated every 15 minutes by default. 
+
+NOTE: If no default optimization goals are specified, the cached proposal is generated using the permitted goals (specified in `Kafka.spec.cruiseControl.config.goals`).
 
 To review the list of default goals, see link:https://github.com/linkedin/cruise-control/wiki/Configurations#analyzer-configurations[Analyzer Configurations^] in the Cruise Control Wiki.
 
+The default optimization goals must always be a subset of the permitted goals (specified in `Kafka.spec.cruiseControl.config.goals`).
+
 For more information on setting the default optimization goals, see xref:ref-cruise-control-configuration-{context}[]. 
 
-*User-provided optimization goals* are set in the `spec.goals` section of a `KafkaRebalance` resource and override the default optimization goals. 
+*User-provided optimization goals*
+
+User-provided optimization goals are set in the `spec.goals` section of a `KafkaRebalance` custom resource and override the default optimization goals. 
 If no user-provided optimization goals are set, the default optimization goals are used.
 
 User-provided optimization goals can generate an optimization proposal that addresses a particular scenario.
 For example, you might want to optimize leader replica distribution across the Kafka cluster without considering other goals, such as disk or CPU usage. 
 So, you create a `KafkaRebalance` resource containing a custom optimization goal for leader replica distribution only.
 
-It is often faster to generate optimization proposals based on user-provided rather than default optimization goals.
-User-provided optimization goals must always be a subset of the default optimization goals.
+User-provided optimization goals must always be a subset of the permitted goals (specified in `Kafka.spec.cruiseControl.config.goals`).
 
 For more information on setting user-provided optimization goals, see xref:proc-generating-rebalance-proposals-{context}[].
 

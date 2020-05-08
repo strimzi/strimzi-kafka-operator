@@ -5,8 +5,16 @@
 [id='proc-generating-rebalance-proposals-{context}']
 = Generating optimization proposals 
 
-When you create or update a `KafkaRebalance` resource, Cruise Control generates an _optimization proposal_ in JSON.
-This summarizes an optimal mapping of partitions to brokers for the Kafka cluster, based on the optimization goals that were used, along with statistics on the cluster rebalance.
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an _optimization proposal_ for the Kafka cluster based on the optimization goals that were used.
+The proposal summarizes the following information, in JSON:
+
+* An optimal mapping of partitions to brokers
+
+* Changes to the partition leaders
+
+* Statistics on the pending cluster rebalance
+
+You can analyze the summary and decide whether to implement the optimization proposal. 
 
 .Prerequisites
 
