@@ -49,8 +49,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
         super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    private KafkaConfiguration(String configuration, List<String> forbiddenOptions) {
-        super(configuration, forbiddenOptions);
+    private KafkaConfiguration(String configuration, List<String> forbiddenPrefixes) {
+        super(configuration, forbiddenPrefixes);
     }
 
 

@@ -72,8 +72,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    private CruiseControlConfiguration(String configuration, List<String> forbiddenOptions) {
-        super(configuration, forbiddenOptions);
+    private CruiseControlConfiguration(String configuration, List<String> forbiddenPrefixes) {
+        super(configuration, forbiddenPrefixes);
     }
 
     /**
