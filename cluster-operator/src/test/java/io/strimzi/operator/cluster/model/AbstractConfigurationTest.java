@@ -292,11 +292,11 @@ public class AbstractConfigurationTest {
 }
 
 class TestConfiguration extends AbstractConfiguration {
-    private static final List<String> FORBIDDEN_OPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
+        FORBIDDEN_PREFIXES = asList(
                 "forbidden.option");
 
         DEFAULTS = new HashMap<>();
@@ -311,7 +311,7 @@ class TestConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
+        super(configuration, FORBIDDEN_PREFIXES, DEFAULTS);
     }
 
     /**
@@ -321,15 +321,15 @@ class TestConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfiguration(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, DEFAULTS);
     }
 }
 
 class TestConfigurationWithoutDefaults extends AbstractConfiguration {
-    private static final List<String> FORBIDDEN_OPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
+        FORBIDDEN_PREFIXES = asList(
                 "forbidden.option");
     }
 
@@ -341,7 +341,7 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfigurationWithoutDefaults(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS);
+        super(configuration, FORBIDDEN_PREFIXES);
     }
 
     /**
@@ -351,6 +351,6 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfigurationWithoutDefaults(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS);
+        super(jsonOptions, FORBIDDEN_PREFIXES);
     }
 }
