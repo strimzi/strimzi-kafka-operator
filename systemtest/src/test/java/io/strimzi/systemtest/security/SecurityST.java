@@ -43,7 +43,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import kafka.tools.MirrorMaker;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -54,6 +53,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -118,7 +118,7 @@ class SecurityST extends BaseST {
         verifyCerts(outputCertificate, "zookeeper");
 
         List<String> kafkaPorts = new ArrayList<>(asList("9091", "9093"));
-        List<String> zkPorts = new ArrayList<>(asList("2181", "2888", "3888"));
+        List<String> zkPorts = new ArrayList<>(asList("2181", "3888"));
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
             String output;
@@ -132,18 +132,10 @@ class SecurityST extends BaseST {
             }
 
             for (String zkPort : zkPorts) {
-                try {
-                    LOGGER.info("Check zookeeper certificate for port {}", zkPort);
-                    output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId),
-                            KafkaResources.zookeeperHeadlessServiceName(CLUSTER_NAME), zkPort, "zookeeper", NAMESPACE);
-                    verifyCerts(output, "zookeeper");
-                } catch (KubeClusterException e) {
-                    if (e.result != null && e.result.returnCode() == 104) {
-                        LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                }
+                LOGGER.info("Check zookeeper certificate for port {}", zkPort);
+                output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId),
+                        KafkaResources.zookeeperHeadlessServiceName(CLUSTER_NAME), zkPort, "zookeeper", NAMESPACE);
+                verifyCerts(output, "zookeeper");
             }
         });
     }
@@ -499,7 +491,8 @@ class SecurityST extends BaseST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         // 1. Create the Secrets already, and a certificate that's already expired
-        String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
+        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/cluster-ca.crt");
+        String clusterCaCert = TestUtils.readResource(secretInputStream);
         SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -1193,7 +1186,8 @@ class SecurityST extends BaseST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
-        String clusterCaCert = TestUtils.readResource(getClass(), "cluster-ca.crt");
+        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/cluster-ca.crt");
+        String clusterCaCert = TestUtils.readResource(secretInputStream);
         SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
