@@ -17,13 +17,13 @@ import static java.util.Arrays.asList;
  * Class for handling Kafka Mirror Maker consumer configuration passed by the user
  */
 public class KafkaMirrorMakerConsumerConfiguration extends AbstractConfiguration {
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
+        FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
         DEFAULTS = new HashMap<>();
     }
 
@@ -34,6 +34,6 @@ public class KafkaMirrorMakerConsumerConfiguration extends AbstractConfiguration
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaMirrorMakerConsumerConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }
