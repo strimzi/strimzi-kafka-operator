@@ -869,7 +869,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                             .withNewSecretName("my-secret")
                             .withKey("client-secret")
                         .endClientSecret()
-                        .withScope("any")
                     .endKafkaListenerAuthenticationOAuth()
                 .endPlain()
                 .build();
@@ -893,7 +892,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.scope=\"any\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
     }
 
@@ -913,7 +912,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withFallbackUserNamePrefix("client-account-")
                 .withCheckAccessTokenType(false)
                 .withClientId("my-kafka-id")
-                .withScope("any")
                 .withAccessTokenIsJwt(false)
                 .withValidTokenType("access_token")
                 .withDisableTlsHostnameVerification(true)
@@ -921,7 +919,6 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         List<String> expectedOptions = new ArrayList<>(5);
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SCOPE, "any"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ISSUER, false));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint"));

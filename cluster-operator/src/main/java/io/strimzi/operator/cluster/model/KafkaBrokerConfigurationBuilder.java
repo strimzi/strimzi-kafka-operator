@@ -383,7 +383,6 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> options = new ArrayList<>(5);
 
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getScope() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SCOPE, oauth.getScope()));
         if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
         if (!oauth.isCheckIssuer()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ISSUER, false));
         if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));

@@ -78,16 +78,6 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.clientSecret = clientSecret;
     }
 
-    @Description("OAuth scope to use when authenticating against the authorization server. No default value.")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public String getScope() {
-        return scope;
-    }
-
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
-
     @Description("URI of the token issuer used for authentication.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getValidIssuerUri() {
@@ -169,6 +159,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. " +
+            "Useful when `client_credentials` authentication only results in client id being provided in another claim. " +
             "It only takes effect if `userNameClaim` is set.")
     public String getFallbackUserNameClaim() {
         return fallbackUserNameClaim;
@@ -179,7 +170,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. " +
-            "It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim.")
+            "It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. " +
+            "Useful to be able to map usernames and client ids into the same user id space, preventing name collisions.")
     public String getFallbackUserNamePrefix() {
         return fallbackUserNamePrefix;
     }

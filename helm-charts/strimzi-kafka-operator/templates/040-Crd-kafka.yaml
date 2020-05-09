@@ -236,14 +236,18 @@ spec:
                               type: string
                               description: The fallback username claim to be used
                                 for user id if the claim specified by `userNameClaim`
-                                is not present. It only takes effect if `userNameClaim`
-                                is set.
+                                is not present. Useful when `client_credentials` authentication
+                                only results in client id being provided in another
+                                claim. It only takes effect if `userNameClaim` is
+                                set.
                             fallbackUserNamePrefix:
                               type: string
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim.
+                                for the claim. Useful to be able to map usernames
+                                and client ids into the same user id space, preventing
+                                name collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -267,10 +271,6 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
-                            scope:
-                              type: string
-                              description: OAuth scope to use when authenticating
-                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -441,14 +441,18 @@ spec:
                               type: string
                               description: The fallback username claim to be used
                                 for user id if the claim specified by `userNameClaim`
-                                is not present. It only takes effect if `userNameClaim`
-                                is set.
+                                is not present. Useful when `client_credentials` authentication
+                                only results in client id being provided in another
+                                claim. It only takes effect if `userNameClaim` is
+                                set.
                             fallbackUserNamePrefix:
                               type: string
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim.
+                                for the claim. Useful to be able to map usernames
+                                and client ids into the same user id space, preventing
+                                name collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -472,10 +476,6 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
-                            scope:
-                              type: string
-                              description: OAuth scope to use when authenticating
-                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -670,14 +670,18 @@ spec:
                               type: string
                               description: The fallback username claim to be used
                                 for user id if the claim specified by `userNameClaim`
-                                is not present. It only takes effect if `userNameClaim`
-                                is set.
+                                is not present. Useful when `client_credentials` authentication
+                                only results in client id being provided in another
+                                claim. It only takes effect if `userNameClaim` is
+                                set.
                             fallbackUserNamePrefix:
                               type: string
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim.
+                                for the claim. Useful to be able to map usernames
+                                and client ids into the same user id space, preventing
+                                name collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -701,10 +705,6 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
-                            scope:
-                              type: string
-                              description: OAuth scope to use when authenticating
-                                against the authorization server. No default value.
                             tlsTrustedCertificates:
                               type: array
                               items:

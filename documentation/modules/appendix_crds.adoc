@@ -267,9 +267,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. It only takes effect if `userNameClaim` is set.
+|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. Useful when `client_credentials` authentication only results in client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
-|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim.
+|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. Useful to be able to map usernames and client ids into the same user id space, preventing name collisions.
 |string
 |introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
@@ -279,8 +279,6 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
 |integer
-|scope                           1.2+<.<|OAuth scope to use when authenticating against the authorization server. No default value.
-|string
 |tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |type                            1.2+<.<|Must be `oauth`.
