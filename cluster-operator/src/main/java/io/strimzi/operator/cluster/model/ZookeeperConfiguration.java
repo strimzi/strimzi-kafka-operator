@@ -19,13 +19,13 @@ import static java.util.Arrays.asList;
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
 
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(", "));
+        FORBIDDEN_PREFIX_EXCEPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
         Map<String, String> config = new HashMap<>();
         config.put("tickTime", "2000");
@@ -42,6 +42,6 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }
