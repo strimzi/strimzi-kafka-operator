@@ -164,3 +164,7 @@
 
 //Latest Strimzi version
 :ProductVersion: 0.17.x
+
+// Links to other Strimzi documentation books
+:BookURLDeploying: ./deploying.html
+:BookURLUsing: ./using.html
