@@ -27,7 +27,7 @@ public class InlineLogging extends Logging {
 
     public static final String TYPE_INLINE = "inline";
 
-    private Map<String, String> loggers = new HashMap<>(0);
+    private Map<String, String> loggers = null;
 
     @Description("Must be `" + TYPE_INLINE + "`")
     @Override

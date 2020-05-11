@@ -351,8 +351,14 @@ public abstract class AbstractModel {
      */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
+            InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
-            newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
+
+            if (inlineLogging.getLoggers() != null) {
+                // Inline logging as specified and some loggers are configured
+                newSettings.addMapPairs(inlineLogging.getLoggers());
+            }
+
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {

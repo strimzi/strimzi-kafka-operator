@@ -352,12 +352,12 @@ public abstract class Ca {
         File brokerCertFile = File.createTempFile("tls", "broker-cert");
         File brokerKeyStoreFile = File.createTempFile("tls", "broker-p12");
 
-        int replicasInMewSecret = Math.min(replicasInSecret, replicas);
-        Map<String, CertAndKey> certs = new HashMap<>(replicasInMewSecret);
+        int replicasInNewSecret = Math.min(replicasInSecret, replicas);
+        Map<String, CertAndKey> certs = new HashMap<>(replicasInNewSecret);
         // copying the minimum number of certificates already existing in the secret
         // scale up -> it will copy all certificates
         // scale down -> it will copy just the requested number of replicas
-        for (int i = 0; i < replicasInMewSecret; i++) {
+        for (int i = 0; i < replicasInNewSecret; i++) {
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} already exists", podName);
             Subject subject = subjectFn.apply(i);
