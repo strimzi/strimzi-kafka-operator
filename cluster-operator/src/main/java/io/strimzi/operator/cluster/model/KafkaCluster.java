@@ -1349,7 +1349,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Secret generateBrokersSecret() {
 
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
@@ -1366,7 +1366,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(2);
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
         for (String key : keys) {
@@ -1695,7 +1695,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> initContainers = new ArrayList<>();
+        List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null || isExposedWithNodePort()) {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
@@ -1725,7 +1725,7 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(2);
 
         Container container = new ContainerBuilder()
                 .withName(KAFKA_NAME)

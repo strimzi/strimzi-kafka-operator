@@ -242,7 +242,7 @@ public class AuthenticationUtils {
      * @return Map of name/value pairs
      */
     public static Map<String, String> getClientAuthenticationProperties(KafkaClientAuthentication authentication) {
-        Map<String, String> properties = new HashMap<>();
+        Map<String, String> properties = new HashMap<>(3);
         
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {

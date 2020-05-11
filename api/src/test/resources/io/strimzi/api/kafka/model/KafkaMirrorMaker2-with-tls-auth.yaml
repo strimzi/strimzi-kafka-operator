@@ -39,7 +39,7 @@ spec:
   - sourceCluster: source
     targetCluster: target
     sourceConnector: {}
-    topics: my-topic
+    topicsPattern: my-topic
   tolerations:
     - key: "key1"
       operator: "Equal"

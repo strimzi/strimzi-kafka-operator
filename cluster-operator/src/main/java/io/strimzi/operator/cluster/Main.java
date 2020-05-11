@@ -127,7 +127,7 @@ public class Main {
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
                 new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
-        List<Future> futures = new ArrayList<>();
+        List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
             futures.add(prom.future());

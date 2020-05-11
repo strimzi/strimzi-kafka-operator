@@ -25,7 +25,7 @@ public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
     static {
         FORBIDDEN_PREFIXES = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(0);
     }
 
     /**

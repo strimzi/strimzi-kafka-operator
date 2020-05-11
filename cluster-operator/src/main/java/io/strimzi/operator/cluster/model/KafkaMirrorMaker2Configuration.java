@@ -25,7 +25,7 @@ public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(8);
         DEFAULTS.put("group.id", "mirrormaker2-cluster");
         DEFAULTS.put("offset.storage.topic", "mirrormaker2-cluster-offsets");
         DEFAULTS.put("config.storage.topic", "mirrormaker2-cluster-configs");

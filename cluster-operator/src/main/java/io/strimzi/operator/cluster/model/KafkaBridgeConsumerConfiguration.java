@@ -25,7 +25,7 @@ public class KafkaBridgeConsumerConfiguration extends AbstractConfiguration {
     static {
         FORBIDDEN_PREFIXES = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(0);
     }
 
     /**
