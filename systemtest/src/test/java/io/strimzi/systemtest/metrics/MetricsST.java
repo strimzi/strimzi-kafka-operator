@@ -167,7 +167,7 @@ public class MetricsST extends BaseST {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TEST_TOPIC_NAME + "\"} 7"));
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TEST_TOPIC_NAME + "\"}"));
         });
     }
 
