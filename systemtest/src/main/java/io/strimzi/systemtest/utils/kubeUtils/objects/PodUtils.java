@@ -142,19 +142,19 @@ public class PodUtils {
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
-            TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
-                () -> {
-                    Pod pod = kubeClient().getPod(name);
-                    if (pod == null) {
-                        return true;
-                    } else {
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
+                if (pods.size() != 0) {
+                    for (Pod pod : pods) {
                         LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
                         cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
-                        return false;
                     }
-                });
-        }
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         LOGGER.info("Pod {} deleted", name);
     }
 
