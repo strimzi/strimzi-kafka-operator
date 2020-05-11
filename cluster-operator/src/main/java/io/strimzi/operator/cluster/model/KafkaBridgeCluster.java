@@ -155,7 +155,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
         }
         kafkaBridgeCluster.setImage(image);
-        kafkaBridgeCluster.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaBridgeCluster.setReplicas(spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaBridgeCluster.setBootstrapServers(spec.getBootstrapServers());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
         kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
