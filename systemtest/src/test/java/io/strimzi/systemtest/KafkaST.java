@@ -841,12 +841,10 @@ class KafkaST extends BaseST {
 
         //Creating topics for testing
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        TestUtils.waitFor("wait for " + topicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-            return topics.contains(topicName);
-        });
 
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItem(topicName));
+        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getName(), is(topicName));
 
         KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
         assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems(topicName, "topic-from-cli"));
