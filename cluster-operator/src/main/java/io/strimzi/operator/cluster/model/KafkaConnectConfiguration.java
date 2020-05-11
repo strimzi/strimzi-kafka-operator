@@ -25,7 +25,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(6);
         DEFAULTS.put("group.id", "connect-cluster");
         DEFAULTS.put("offset.storage.topic", "connect-cluster-offsets");
         DEFAULTS.put("config.storage.topic", "connect-cluster-configs");

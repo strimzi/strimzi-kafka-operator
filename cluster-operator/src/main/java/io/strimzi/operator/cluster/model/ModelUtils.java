@@ -225,7 +225,7 @@ public class ModelUtils {
 
     public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
             String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(4);
         CertAndKey certAndKey = null;
         boolean shouldBeRegenerated = false;
         List<String> reasons = new ArrayList<>(2);
@@ -428,7 +428,7 @@ public class ModelUtils {
         if (javaSystemProperties == null) {
             return null;
         }
-        List<String> javaSystemPropertiesList = new ArrayList<>();
+        List<String> javaSystemPropertiesList = new ArrayList<>(javaSystemProperties.size());
         for (SystemProperty property: javaSystemProperties) {
             javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
         }

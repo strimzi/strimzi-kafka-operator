@@ -2579,7 +2579,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                                     .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
                                                     .collect(Collectors.toList());
                                         } else {
-                                            deletePvcs = new ArrayList<>();
+                                            deletePvcs = new ArrayList<>(0);
                                         }
 
                                         List<PersistentVolumeClaim> createPvcs = desiredPvcs
@@ -2906,7 +2906,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 configAnnotation += this.userOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
                             }
 
-                            Map<String, String> annotations = new HashMap<>();
+                            Map<String, String> annotations = new HashMap<>(1);
                             annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, configAnnotation);
 
                             this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);

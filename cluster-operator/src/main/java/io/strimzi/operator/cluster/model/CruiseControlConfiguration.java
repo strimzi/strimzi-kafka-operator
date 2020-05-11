@@ -49,7 +49,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        CC_DEFAULT_PROPERTIES_MAP = new HashMap<>();
+        CC_DEFAULT_PROPERTIES_MAP = new HashMap<>(7);
         CC_DEFAULT_PROPERTIES_MAP.put("partition.metrics.window.ms", Integer.toString(300_000));
         CC_DEFAULT_PROPERTIES_MAP.put("num.partition.metrics.windows", "1");
         CC_DEFAULT_PROPERTIES_MAP.put("broker.metrics.window.ms", Integer.toString(300_000));

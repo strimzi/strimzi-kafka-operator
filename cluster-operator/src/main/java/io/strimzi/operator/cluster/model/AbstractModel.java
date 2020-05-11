@@ -351,8 +351,14 @@ public abstract class AbstractModel {
      */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
+            InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
-            newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
+
+            if (inlineLogging.getLoggers() != null) {
+                // Inline logging as specified and some loggers are configured
+                newSettings.addMapPairs(inlineLogging.getLoggers());
+            }
+
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
@@ -587,7 +593,7 @@ public abstract class AbstractModel {
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
+        Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
         LabelSelector selector = null;
@@ -1092,7 +1098,6 @@ public abstract class AbstractModel {
 
     @SafeVarargs
     protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
-        
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {

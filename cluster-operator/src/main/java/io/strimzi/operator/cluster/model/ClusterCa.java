@@ -126,7 +126,7 @@ public class ClusterCa extends Ca {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
         Function<Integer, Subject> subjectFn = i -> {
-            Map<String, String> sbjAltNames = new HashMap<>();
+            Map<String, String> sbjAltNames = new HashMap<>(6);
             sbjAltNames.put("DNS.1", ZookeeperCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", ZookeeperCluster.serviceName(cluster), namespace));
             sbjAltNames.put("DNS.3", String.format("%s.%s.svc", ZookeeperCluster.serviceName(cluster), namespace));

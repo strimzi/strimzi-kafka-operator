@@ -358,7 +358,7 @@ public class CruiseControl extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(2);
         Container container = new ContainerBuilder()
                 .withName(CRUISE_CONTROL_CONTAINER_NAME)
                 .withImage(getImage())
