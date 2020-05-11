@@ -367,7 +367,6 @@ class KafkaST extends BaseST {
         checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarGeneral);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Checking configuration of TO and UO");
         checkReadinessLivenessProbe(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
@@ -475,7 +474,6 @@ class KafkaST extends BaseST {
         checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarUpdated);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
         checkReadinessLivenessProbe(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -843,25 +841,25 @@ class KafkaST extends BaseST {
 
         //Creating topics for testing
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for " + topicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-            return topics.contains("my-topic");
+            return topics.contains(topicName);
         });
 
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItem("my-topic"));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItem(topicName));
 
         KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
-        assertThat(cmdKubeClient().list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems(topicName, "topic-from-cli"));
+        assertThat(cmdKubeClient().list("kafkatopic"), hasItems(topicName, "topic-from-cli", topicName));
 
         //Updating first topic using pod CLI
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, "my-topic", 2);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, topicName, 2);
 
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic"),
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
+        KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", topicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
@@ -884,13 +882,13 @@ class KafkaST extends BaseST {
         cmdKubeClient().deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
-        KafkaCmdClient.deleteTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic");
-        KafkaTopicUtils.waitForKafkaTopicDeletion("my-topic");
+        KafkaCmdClient.deleteTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
 
         //Checking all topics were deleted
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems("my-topic")));
+        assertThat(topics, not(hasItems(topicName)));
         assertThat(topics, not(hasItems("topic-from-cli")));
     }
 
