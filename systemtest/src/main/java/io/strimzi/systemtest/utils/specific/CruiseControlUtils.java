@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,13 +47,12 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.truststore.password").equals("${CERTS_STORE_PASSWORD}"));
     }
 
-    public static void verifyThatCruiseControlTopicsAreNotPresent() {
-        KafkaTopicUtils.waitForKafkaTopicIsNotPresent(CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicIsNotPresent(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicIsNotPresent(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-    }
-
     public static void verifyThatCruiseControlTopicsArePresent() {
+        final int numberOfPartitionsMetricTopic = 1;
+        final int numberOfPartitionsSamplesTopic = 32;
+        final int numberOfReplicasMetricTopic = 1;
+        final int numberOfReplicasSamplesTopic = 2;
+
         KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
         KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
         KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
@@ -63,14 +61,14 @@ public class CruiseControlUtils {
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () -> {
 
                 boolean hasTopicCorrectPartitionsCount =
-                    metrics.getSpec().getPartitions() == 1 &&
-                    modelTrainingSamples.getSpec().getPartitions() == 32 &&
-                    partitionsMetricsSamples.getSpec().getPartitions() == 32;
+                    metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic &&
+                    modelTrainingSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic &&
+                    partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
 
                 boolean hasTopicCorrectReplicasCount =
-                    metrics.getSpec().getReplicas() == 1 &&
-                    modelTrainingSamples.getSpec().getReplicas() == 2 &&
-                    partitionsMetricsSamples.getSpec().getReplicas() == 2;
+                    metrics.getSpec().getReplicas() == numberOfReplicasMetricTopic &&
+                    modelTrainingSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic &&
+                    partitionsMetricsSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic;
 
                 return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
             });

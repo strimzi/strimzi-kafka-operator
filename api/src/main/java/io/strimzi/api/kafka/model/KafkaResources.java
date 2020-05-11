@@ -72,17 +72,6 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the Cruise Control {@code Deployment} for a {@code Kafka} cluster of the given name.
-     * This {@code Deployment} will only exist if {@code Kafka.spec.cruiseControl} is configured in the
-     * {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Entity Operator {@code Deployment}.
-     */
-    public static String cruiseControlDeploymentName(String clusterName) {
-        return clusterName + "-cruise-control";
-    }
-
-    /**
      * Returns the name of the Cluster CA certificate {@code Secret} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cluster CA certificate {@code Secret}.

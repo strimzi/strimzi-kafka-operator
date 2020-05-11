@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -38,6 +39,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -66,6 +68,7 @@ public class CruiseControlST extends BaseST {
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 
     @Order(1)
+    @Tag(ACCEPTANCE)
     @Test
     void testCruiseControlDeployment()  {
         String ccStatusCommand = "curl -X GET localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_STATE_ENDPOINT;
@@ -116,7 +119,7 @@ public class CruiseControlST extends BaseST {
 
     @Order(3)
     @Test
-    void testUninstallingAndInstallationCruiseControl() throws IOException {
+    void testDeployAndUnDeployCruiseControl() throws IOException {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -161,7 +164,7 @@ public class CruiseControlST extends BaseST {
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
         Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(KafkaResources.cruiseControlDeploymentName(CLUSTER_NAME));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
 
@@ -177,7 +180,7 @@ public class CruiseControlST extends BaseST {
         });
 
         LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.cruiseControlDeploymentName(CLUSTER_NAME), 1, cruiseControlSnapShot);
+        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, cruiseControlSnapShot);
 
         LOGGER.info("Verifying that Kafka pods did not roll");
         StatefulSetUtils.waitForNoRollingUpdate(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaSnapShot);
@@ -256,13 +259,16 @@ public class CruiseControlST extends BaseST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        deployTestResources();
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestResources();
+    }
 
+    private void deployTestResources() {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
     }
 }
