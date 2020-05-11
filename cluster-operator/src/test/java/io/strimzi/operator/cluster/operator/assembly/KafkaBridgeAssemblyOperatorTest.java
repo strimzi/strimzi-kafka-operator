@@ -720,7 +720,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             // Replica is 0 so readiness shouldn't get called.
-            verify(mockDcOps, times((0))).readiness(anyString(), anyString(), anyLong(), anyLong());
+            verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
 
             async.flag();
         });
