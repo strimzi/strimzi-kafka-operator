@@ -379,6 +379,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param oauth     OAuth type authentication object
      * @return  Returns the builder instance
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     /*test*/ static List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
