@@ -15,6 +15,7 @@
 * Add support for Kafka 2.5.0
 * Remove TLS sidecars from ZooKeeper pods, using native ZooKeeper TLS support instead
 * Add metrics for Topic Operator
+* Add support for CORS in the HTTP Kafka Bridge
 
 ## 0.17.0
 
