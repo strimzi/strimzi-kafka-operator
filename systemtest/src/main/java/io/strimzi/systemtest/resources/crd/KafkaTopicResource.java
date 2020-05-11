@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,6 +71,11 @@ public class KafkaTopicResource {
     public static KafkaTopic topicWithoutWait(KafkaTopic kafkaTopic) {
         kafkaTopicClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaTopic);
         return kafkaTopic;
+    }
+
+    public static void deleteKafkaTopicWithoutWait(KafkaTopic kafkaTopic) {
+        kafkaTopicClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaTopic);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaTopic.getMetadata().getName());
     }
 
     private static KafkaTopic getKafkaTopicFromYaml(String yamlPath) {

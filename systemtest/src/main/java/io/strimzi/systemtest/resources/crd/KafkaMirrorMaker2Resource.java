@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -125,6 +126,7 @@ public class KafkaMirrorMaker2Resource {
 
     public static void deleteKafkaMirrorMaker2WithoutWait(KafkaMirrorMaker2 kafkaMirrorMaker2) {
         kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaMirrorMaker2);
+        ResourceManager.waitForResourceDeletion(kafkaMirrorMaker2, KafkaMirrorMaker2Resources.deploymentName(kafkaMirrorMaker2.getMetadata().getName()));
     }
 
     private static KafkaMirrorMaker2 getKafkaMirrorMaker2FromYaml(String yamlPath) {

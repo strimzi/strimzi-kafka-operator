@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -102,6 +103,7 @@ public class KafkaMirrorMakerResource {
 
     public static void deleteKafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
         kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaMirrorMaker);
+        ResourceManager.waitForResourceDeletion(kafkaMirrorMaker, KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
     }
 
     private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {

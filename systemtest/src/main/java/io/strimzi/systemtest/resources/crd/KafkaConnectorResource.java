@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -59,7 +60,6 @@ public class KafkaConnectorResource {
     public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
         return kafkaConnector;
-
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {

@@ -204,6 +204,7 @@ public class KafkaResource {
      */
     public static void deleteKafkaWithoutWait(Kafka kafka) {
         kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafka);
+        ResourceManager.waitForKafkaDeletion(kafka);
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {

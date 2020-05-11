@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -64,6 +65,11 @@ public class KafkaUserResource {
     public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
         kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
         return user;
+    }
+
+    public static void deleteKafkaUserWithoutWait(KafkaUser user) {
+        kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(user);
+        KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
