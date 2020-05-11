@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -178,7 +177,16 @@ public class ListenersST extends BaseST {
             .withMessageCount(MESSAGE_COUNT)
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .build();
+            .withKafkaClientProperties(
+                new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                    .withNamespaceName(NAMESPACE)
+                    .withClusterName(CLUSTER_NAME)
+                    .withBootstrapServerConfig(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                    .withKeySerializerConfig(StringSerializer.class)
+                    .withValueSerializerConfig(StringSerializer.class)
+                    .withClientIdConfig("kafka-user-producer")
+                    .build()
+            ).build();
 
         LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
 

@@ -6,7 +6,6 @@ package io.strimzi.systemtest.cli;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 
-import javax.sound.sampled.Port;
 import java.util.Arrays;
 import java.util.List;
 
