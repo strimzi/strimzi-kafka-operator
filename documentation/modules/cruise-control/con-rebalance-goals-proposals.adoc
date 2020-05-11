@@ -3,30 +3,12 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='con-rebalance-goals-proposals-{context}']
-= Optimization goals and proposals
+= Optimization goals
 
 To rebalance a Kafka cluster, Cruise Control uses _optimization goals_ to generate _optimization proposals_. 
 
-[discrete]
-== Optimization goals summary
-
 Optimization goals specify targets for workload redistribution and resource utilization across a Kafka cluster.
-There are two basic types:
-
-* Default optimization goals
-
-* User-provided optimization goals
-
-For both types of optimization goals, you can define a subset as _hard goals_ that must be satisfied in optimization proposals (unless the `skip_hard_goal_check` option is specified). Goals not designated as hard goals are treated as _soft goals_.
-
-Default and user-provided optimization goals must be included in the _permitted goals_ for the Kafka cluster (specified in `Kafka.spec.cruiseControl.config.goals`).
-
-For more information, see link:#default-custom-goals[Default and user-provided optimization goals] and link:#soft-hard-goals[Soft goals and hard goals].
-
-[discrete]
-=== Supported optimization goals
-
-With a few exceptions, all optimization goals in the Kafka Cruise Control project are supported.
+With a few exceptions, {ProductName} supports all the optimization goals in the Cruise Control project.
 These are as follows, in descending priority order:
 
 . Rack-awareness
@@ -50,11 +32,31 @@ These are as follows, in descending priority order:
 //. Intra-broker disk capacity
 //. Intra-broker disk usage distribution   
 
-For information on the purpose of each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
+For more information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
 NOTE: CPU goals, intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not supported.
 
 You can customize the optimization goals by reordering them in terms of priority, and disabling goals to exclude from optimization proposal calculations.
+
+== Goal configuration in {ProductName}
+
+You configure optimization goals through {ProductName} custom resources.
+
+The list of _master optimization goals_ defines the goals that are available to use for generating optimization proposals for the Kafka cluster.
+They are set in `Kafka.spec.cruiseControl.config.goals`.
+
+When interacting with Cruise Control, you can specify the master optimization goals as either _default optimization goals_ or _user-provided optimization_ goals.  
+
+* Default optimization goals are set in `Kafka.spec.cruiseControl.config.default.goals`
+
+* User-provided optimization goals are set in `KafkaRebalance.spec.goals`
+
+For both types of optimization goals, you can define a subset as _hard goals_ that must be satisfied in optimization proposals (unless the `skip_hard_goal_check` option is specified). Goals not designated as hard goals are treated as _soft goals_.
+
+Default and user-provided optimization goals must be included in the _permitted goals_ for the Kafka cluster (specified in `Kafka.spec.cruiseControl.config.goals`).
+
+For more information, see link:#default-custom-goals[Default and user-provided optimization goals] and link:#soft-hard-goals[Soft goals and hard goals].
+
 
 [id="default-custom-goals"]
 [discrete]

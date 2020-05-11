@@ -5,7 +5,7 @@
 [id='cruise-control-concepts-{context}']
 = Cruise Control
 
-You can deploy {CruiseControlProject} and access its Kafka cluster rebalancing features through {ProductName} custom resources.
+You can deploy {CruiseControlProject} and access a subset of its features through {ProductName} custom resources.
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 

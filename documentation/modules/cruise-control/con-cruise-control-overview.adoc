@@ -7,14 +7,17 @@
 // See also the complementary step on the last line of this file.
 
 [id='con-cruise-control-overview-{context}']
-= Cruise Control overview
+= Why use Cruise Control?
 
-Brokers in a typical Kafka cluster can become unevenly loaded over time.
-For example, partitions that handle large amounts of message traffic might be unevenly distributed across the available brokers.
-Monitoring broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to management overhead. Cruise Control reduces this overhead and helps you to run Kafka more efficiently.
+A typical Kafka cluster can become unevenly loaded over time.
+Partitions that handle large amounts of message traffic might be unevenly distributed across the available brokers.
+To rebalance the cluster, administrators must monitor the load on brokers and manually reassign busy partitions to brokers with spare capacity.
 
-When running alongside Kafka, Cruise Control helps to automate the monitoring and rebalancing of partitions.
-It continuously monitors the CPU, disk, and network load of Kafka brokers to construct a model of resource utilization.
+Cruise Control automates the monitoring and reassignment of partitions, therefore reducing the time and effort involved in running an efficient, balanced Kafka cluster.
+It constructs a model of resource utilization for the cluster--based on CPU, disk, and network load--and uses this to generate _optimization proposals_ for balanced partition assignments. These are based on a set of configurable _optimization goals_.
+You can choose to implement optimization proposals and reassign partitions to brokers to achieve a more balanced Kafka cluster.  
+
+By continuously monitoring the CPU, disk, and network load of Kafka brokers, Cruise Control constructs a model of resource utilization in the cluster.
 You can use information from this model to:
 
 * Generate _optimization proposals_: balanced partition assignments based on configurable _optimization goals_.
