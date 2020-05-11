@@ -110,7 +110,7 @@ public class PodUtils {
         LOGGER.info("Waiting when all Pods with prefix {} will be deleted", podsNamePrefix);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(podsNamePrefix))
-            .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+            .forEach(p -> deletePodWithWait(p.getMetadata().getName()));
     }
 
     public static String getPodNameByPrefix(String prefix) {
@@ -139,7 +139,7 @@ public class PodUtils {
         LOGGER.info("Pod {} is ready", name);
     }
 
-    public static void waitForPodDeletion(String name) {
+    public static void deletePodWithWait(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
@@ -147,8 +147,10 @@ public class PodUtils {
                 List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
                 if (pods.size() != 0) {
                     for (Pod pod : pods) {
-                        LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
-                        cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                        if (pod.getStatus().getPhase().equals("Terminating")) {
+                            LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                            cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                        }
                     }
                     return false;
                 } else {
