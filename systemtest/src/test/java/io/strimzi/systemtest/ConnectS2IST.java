@@ -11,11 +11,11 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectTlsBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
@@ -376,7 +376,6 @@ class ConnectS2IST extends BaseST {
         });
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2I);
-        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
     }
 
     @Test
@@ -402,7 +401,7 @@ class ConnectS2IST extends BaseST {
             .endSpec().done();
 
         // Create connect cluster with default connect image
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -455,7 +454,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectS2IPodName);
         KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
-        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
     }
 
     @Test

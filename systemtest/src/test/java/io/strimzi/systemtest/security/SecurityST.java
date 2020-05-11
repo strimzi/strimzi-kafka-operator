@@ -1296,7 +1296,7 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(KAFKA_CLIENTS_NAME).done();
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editSpec()
                 .withConfig(configWithLowestVersionOfTls)
                 .endSpec()
@@ -1308,7 +1308,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
 
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls));
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnectReplace -> kafkaConnectReplace.getSpec().setConfig(configWithNewestVersionOfTls));
 
         LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}\n {} -> {}",
                 SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG,
@@ -1326,6 +1326,7 @@ class SecurityST extends BaseST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
     }
 
     @Test
@@ -1360,7 +1361,7 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(KAFKA_CLIENTS_NAME).done();
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editSpec()
                 .withConfig(configWithCipherSuitesSha256)
                 .endSpec()
@@ -1372,7 +1373,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
 
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384));
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnectReplace -> kafkaConnectReplace.getSpec().setConfig(configWithCipherSuitesSha384));
 
         LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
@@ -1386,6 +1387,7 @@ class SecurityST extends BaseST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
     }
 
     @BeforeAll

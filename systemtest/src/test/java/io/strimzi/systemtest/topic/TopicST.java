@@ -93,6 +93,8 @@ public class TopicST extends BaseST {
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
+
+        KafkaTopicResource.deleteKafkaTopicWithoutWait(kafkaTopic);
     }
 
     @Test

@@ -1093,7 +1093,7 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Creating topic without any label
-        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, "topic-without-labels", 1, 1, 1)
+        KafkaTopic kafkaTopic = KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, "topic-without-labels", 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
@@ -1116,6 +1116,8 @@ class KafkaST extends BaseST {
         //Checking all topics were deleted
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("topic-without-labels")));
+
+        KafkaTopicResource.deleteKafkaTopicWithoutWait(kafkaTopic);
     }
 
     @Test
@@ -2085,7 +2087,7 @@ class KafkaST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
                 "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).delete(kafka);
+        KafkaResource.deleteKafkaWithoutWait(kafka);
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {

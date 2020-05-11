@@ -64,7 +64,7 @@ class UserST extends BaseST {
         // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
 
-        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
@@ -80,6 +80,8 @@ class UserST extends BaseST {
                 "InvalidResourceException",
                 "True",
                 "NotReady");
+
+        KafkaUserResource.deleteKafkaUserWithoutWait(kafkaUser);
     }
 
     @Test

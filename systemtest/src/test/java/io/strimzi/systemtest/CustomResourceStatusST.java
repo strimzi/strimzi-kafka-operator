@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -142,7 +144,7 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaUserStatusNotReady() {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
-        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
         KafkaUserUtils.waitForKafkaUserNotReady(userName);
 
@@ -155,7 +157,7 @@ class CustomResourceStatusST extends BaseST {
         assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is("NotReady"));
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
-        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
+        KafkaUserResource.deleteKafkaUserWithoutWait(kafkaUser);
     }
 
     @Test
@@ -317,9 +319,10 @@ class CustomResourceStatusST extends BaseST {
     @Test
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
-        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
+        KafkaTopic kafkaTopic = KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
         assertKafkaTopicStatus(1, topicName);
+        KafkaTopicResource.deleteKafkaTopicWithoutWait(kafkaTopic);
     }
 
     @Test

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
@@ -1065,7 +1066,7 @@ public class ListenersST extends BaseST {
         String nonExistingCertName = "non-existing-certificate";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1085,6 +1086,7 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
+        KafkaResource.deleteKafkaWithoutWait(kafka);
     }
 
     @Test
@@ -1092,7 +1094,7 @@ public class ListenersST extends BaseST {
         String nonExistingCertName = "non-existing-crt";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1113,6 +1115,7 @@ public class ListenersST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
+        KafkaResource.deleteKafkaWithoutWait(kafka);
     }
 
     @Test
@@ -1120,7 +1123,7 @@ public class ListenersST extends BaseST {
         String nonExistingCertKey = "non-existing-key";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1141,6 +1144,7 @@ public class ListenersST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
+        KafkaResource.deleteKafkaWithoutWait(kafka);
     }
 
     @BeforeEach

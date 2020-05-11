@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
@@ -164,7 +165,7 @@ public class SpecificST extends BaseST {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are.*";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(nonExistingVersion)
@@ -175,6 +176,7 @@ public class SpecificST extends BaseST {
 
         KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
+        KafkaResource.deleteKafkaWithoutWait(kafka);
     }
 
     @Test

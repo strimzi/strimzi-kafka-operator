@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
@@ -630,7 +631,7 @@ class ConnectST extends BaseST {
             .endSpec().done();
 
         // Create different connect cluster via S2I resources
-        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -683,7 +684,7 @@ class ConnectST extends BaseST {
         KafkaConnectorUtils.waitForConnectorCreation(connectPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectPodName);
         KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
-        KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2I);
     }
 
     @Test
