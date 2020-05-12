@@ -75,11 +75,9 @@ public class ModelUtils {
      * @return              Full DNS name
      */
     public static String podDnsName(String namespace, String serviceName, String podName) {
-        return String.format("%s.%s.%s.svc.%s",
+        return String.format("%s.%s",
                 podName,
-                serviceName,
-                namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+                ModelUtils.serviceDnsName(serviceName, namespace));
     }
 
     /**
@@ -94,11 +92,48 @@ public class ModelUtils {
      * @return              Full DNS name
      */
     public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
-        return String.format("%s.%s.%s.svc",
+        return String.format("%s.%s",
                 podName,
+                ModelUtils.serviceDnsNameWithoutClusterDomain(serviceName, namespace));
+
+    }
+
+    /**
+     * Generates the full DNS name of the service including the cluster suffix
+     * (i.e. usually with the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-service.svc.cluster.local
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the cluster
+     *
+     * @return              Full DNS name
+     */
+    public static String serviceDnsName(String namespace, String serviceName) {
+        return String.format("%s.%s.svc.%s",
+                serviceName,
+                namespace,
+                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+    }
+
+    /**
+     * Generates the full DNS name of the service without the cluster domain suffix
+     * (i.e. usually without the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-service.svc
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the service
+     *
+     * @return              Full DNS name
+     */
+    public static String serviceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
+        return String.format("%s.%s.svc",
                 serviceName,
                 namespace);
     }
+
+
+
+
 
     /**
      * @param certificateAuthority The CA configuration.
