@@ -66,6 +66,29 @@ public class CrdOperator<C extends KubernetesClient,
         return client.customResources(crd, cls, listCls, doneableCls);
     }
 
+    public Future<T> patchAsync(T resource) {
+        return patchAsync(resource, true);
+    }
+
+    public Future<T> patchAsync(T resource, boolean cascading) {
+        Promise<T> blockingPromise = Promise.promise();
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
+            String namespace = resource.getMetadata().getNamespace();
+            String name = resource.getMetadata().getName();
+            try {
+                T result = operation().inNamespace(namespace).withName(name).cascading(cascading).patch(resource);
+                log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                future.complete(result);
+            } catch (Exception e) {
+                log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                future.fail(e);
+            }
+        }, true, blockingPromise);
+
+        return blockingPromise.future();
+    }
+
     public Future<T> updateStatusAsync(T resource) {
         Promise<T> blockingPromise = Promise.promise();
 

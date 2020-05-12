@@ -17,6 +17,7 @@ crd_install:
 	$(CP) ./cluster-operator/046-Crd-kafkabridge.yaml ../helm-charts/strimzi-kafka-operator/templates/046-Crd-kafkabridge.yaml
 	$(CP) ./cluster-operator/047-Crd-kafkaconnector.yaml ../helm-charts/strimzi-kafka-operator/templates/047-Crd-kafkaconnector.yaml
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/strimzi-kafka-operator/templates/048-Crd-kafkamirrormaker2.yaml
+	$(CP) ./cluster-operator/049-Crd-kafkarebalance.yaml ../helm-charts/strimzi-kafka-operator/templates/049-Crd-kafkarebalance.yaml
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.app "{{ template \"strimzi.name\" . }}" \; && cd $$oldpath
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.chart "{{ template \"strimzi.chart\" . }}" \; && cd $$oldpath
 	yq write -i ../helm-charts/strimzi-kafka-operator/templates/040-Crd-kafka.yaml metadata.labels.component "kafkas.kafka.strimzi.io-crd"
@@ -28,6 +29,7 @@ crd_install:
 	yq write -i ../helm-charts/strimzi-kafka-operator/templates/046-Crd-kafkabridge.yaml metadata.labels.component "kafkabridges.kafka.strimzi.io-crd"
 	yq write -i ../helm-charts/strimzi-kafka-operator/templates/047-Crd-kafkaconnector.yaml metadata.labels.component "kafkaconnectors.kafka.strimzi.io-crd"
 	yq write -i ../helm-charts/strimzi-kafka-operator/templates/048-Crd-kafkamirrormaker2.yaml metadata.labels.component "kafkamirrormaker2.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/049-Crd-kafkarebalance.yaml metadata.labels.component "kafkarebalances.kafka.strimzi.io-crd"
 
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.release "{{ .Release.Name }}" \; && cd $$oldpath
 	oldpath=`pwd` && cd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.heritage "{{ .Release.Service }}" \; && cd $$oldpath

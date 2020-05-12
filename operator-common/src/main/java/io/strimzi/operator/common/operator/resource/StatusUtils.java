@@ -28,19 +28,23 @@ public class StatusUtils {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
     }
 
-    public static Condition buildConditionFromException(Throwable error) {
+    public static Condition buildConditionFromException(String type, String status, Throwable error) {
+        return buildCondition(type, status, error);
+    }
+
+    public static Condition buildCondition(String type, String status, Throwable error) {
         Condition readyCondition;
         if (error == null) {
             readyCondition = new ConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
-                    .withType("Ready")
-                    .withStatus("True")
+                    .withType(type)
+                    .withStatus(status)
                     .build();
         } else {
             readyCondition = new ConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
-                    .withType("NotReady")
-                    .withStatus("True")
+                    .withType(type)
+                    .withStatus(status)
                     .withReason(error.getClass().getSimpleName())
                     .withMessage(error.getMessage())
                     .build();
@@ -63,11 +67,23 @@ public class StatusUtils {
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
+        setStatusConditionAndObservedGeneration(resource, status, error == null ? "Ready" : "NotReady", "True", error);
+    }
+
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition readyCondition = StatusUtils.buildConditionFromException(error);
+        Condition readyCondition = StatusUtils.buildConditionFromException(type, conditionStatus, error);
         status.setConditions(Collections.singletonList(readyCondition));
+    }
+
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus) {
+        if (resource.getMetadata().getGeneration() != null)    {
+            status.setObservedGeneration(resource.getMetadata().getGeneration());
+        }
+        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
+        status.setConditions(Collections.singletonList(condition));
     }
 
     public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
