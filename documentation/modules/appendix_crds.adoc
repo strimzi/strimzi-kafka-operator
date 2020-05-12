@@ -1352,7 +1352,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Property               |Description
 |image           1.2+<.<|The docker image for the pods.
 |string
-|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., ssl.
+|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.
 |map
 |livenessProbe   1.2+<.<|Pod liveness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
@@ -1562,7 +1562,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -2791,5 +2791,52 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
+|====
+
+[id='type-KafkaRebalance-{context}']
+### `KafkaRebalance` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka rebalance.
+|xref:type-KafkaRebalanceSpec-{context}[`KafkaRebalanceSpec`]
+|status  1.2+<.<|The status of the Kafka rebalance.
+|xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`]
+|====
+
+[id='type-KafkaRebalanceSpec-{context}']
+### `KafkaRebalanceSpec` schema reference
+
+Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
+
+
+[options="header"]
+|====
+|Property                  |Description
+|goals              1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
+|string array
+|skipHardGoalCheck  1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
+|boolean
+|====
+
+[id='type-KafkaRebalanceStatus-{context}']
+### `KafkaRebalanceStatus` schema reference
+
+Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|sessionId           1.2+<.<|The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. This is used by the Kafka Rebalance operator to track the status of ongoing rebalancing operations.
+|string
+|optimizationResult  1.2+<.<|A JSON object describing the optimization result.
+|map
 |====
 

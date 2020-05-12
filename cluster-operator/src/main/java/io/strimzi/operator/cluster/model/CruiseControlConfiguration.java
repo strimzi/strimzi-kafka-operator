@@ -6,13 +6,15 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 
 /**
  * Class for handling Cruise Control configuration passed by the user
@@ -23,40 +25,62 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * A list of case insensitive goals that Cruise Control supports in the order of priority.
      * The high priority goals will be executed first.
      */
-    private static final String DEFAULT_GOALS = "com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuCapacityGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.PotentialNwOutGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskUsageDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundUsageDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundUsageDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuUsageDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.TopicReplicaDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderReplicaDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal," +
-        "com.linkedin.kafka.cruisecontrol.analyzer.goals.PreferredLeaderElectionGoal";
+    protected static final List<String> CRUISE_CONTROL_GOALS_LIST = Collections.unmodifiableList(
+        Arrays.asList(
+                CruiseControl.RACK_AWARENESS_GOAL,
+                CruiseControl.REPLICA_CAPACITY_GOAL,
+                CruiseControl.DISK_CAPACITY_GOAL,
+                CruiseControl.NETWORK_INBOUND_CAPACITY_GOAL,
+                CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL,
+                CruiseControl.CPU_CAPACITY_GOAL,
+                CruiseControl.REPLICA_DISTRIBUTION_GOAL,
+                CruiseControl.POTENTIAL_NETWORK_OUTAGE_GOAL,
+                CruiseControl.DISK_USAGE_DISTRIBUTION_GOAL,
+                CruiseControl.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL,
+                CruiseControl.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL,
+                CruiseControl.CPU_USAGE_DISTRIBUTION_GOAL,
+                CruiseControl.TOPIC_REPLICA_DISTRIBUTION_GOAL,
+                CruiseControl.LEADER_REPLICA_DISTRIBUTION_GOAL,
+                CruiseControl.LEADER_BYTES_IN_DISTRIBUTION_GOAL,
+                CruiseControl.PREFERRED_LEADER_ELECTION_GOAL
+        )
+     );
+
+    public static final String CRUISE_CONTROL_GOALS = String.join(",", CRUISE_CONTROL_GOALS_LIST);
+
+    protected static final List<String> CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST = Collections.unmodifiableList(
+        Arrays.asList(
+                CruiseControl.RACK_AWARENESS_GOAL,
+                CruiseControl.REPLICA_CAPACITY_GOAL,
+                CruiseControl.DISK_CAPACITY_GOAL
+        )
+    );
+
+    public static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
+            String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
+
+    public static final String CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY = "default.goals";
+    public static final String CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY = "self.healing.goals";
+    public static final String CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY = "anomaly.detection.goals";
 
    /*
     * Map containing default values for required configuration properties
     */
-    private static final Map<String, String> CC_DEFAULT_PROPERTIES_MAP;
+    private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        CC_DEFAULT_PROPERTIES_MAP = new HashMap<>(7);
-        CC_DEFAULT_PROPERTIES_MAP.put("partition.metrics.window.ms", Integer.toString(300_000));
-        CC_DEFAULT_PROPERTIES_MAP.put("num.partition.metrics.windows", "1");
-        CC_DEFAULT_PROPERTIES_MAP.put("broker.metrics.window.ms", Integer.toString(300_000));
-        CC_DEFAULT_PROPERTIES_MAP.put("num.broker.metrics.windows", "20");
-        CC_DEFAULT_PROPERTIES_MAP.put("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
-        CC_DEFAULT_PROPERTIES_MAP.put("default.goals", DEFAULT_GOALS);
-        CC_DEFAULT_PROPERTIES_MAP.put("goals", DEFAULT_GOALS);
+        Map<String, String> config = new HashMap<>(7);
+        config.put("partition.metrics.window.ms", Integer.toString(300_000));
+        config.put("num.partition.metrics.windows", "1");
+        config.put("broker.metrics.window.ms", Integer.toString(300_000));
+        config.put("num.broker.metrics.windows", "20");
+        config.put("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
+        config.put("default.goals", CRUISE_CONTROL_GOALS);
+        config.put("goals", CRUISE_CONTROL_GOALS);
+        CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableMap(config);
 
         FORBIDDEN_PREFIXES = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", *"));
         FORBIDDEN_PREFIX_EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", *"));
@@ -76,16 +100,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         super(configuration, forbiddenPrefixes);
     }
 
-    /**
-     * Returns a CruiseControlConfiguration created without forbidden option filtering.
-     * @param string A string representation of the Properties
-     * @return The CruiseControlConfiguration
-     */
-    public static CruiseControlConfiguration unvalidated(String string) {
-        return new CruiseControlConfiguration(string, emptyList());
-    }
-
     public static Map<String, String> getCruiseControlDefaultPropertiesMap() {
-        return CC_DEFAULT_PROPERTIES_MAP;
+        return CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
     }
 }

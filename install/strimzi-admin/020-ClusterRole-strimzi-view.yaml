@@ -19,6 +19,7 @@ rules:
   - kafkabridges
   - kafkaconnectors
   - kafkamirrormaker2s
+  - kafkarebalances
   verbs:
   - get
   - list

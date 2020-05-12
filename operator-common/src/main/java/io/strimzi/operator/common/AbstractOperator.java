@@ -221,6 +221,7 @@ public abstract class AbstractOperator<
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         final String lockName = getLockName(namespace, name);
+        log.debug("{}: Try to acquire lock {}", reconciliation, lockName);
         vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs, res -> {
             if (res.succeeded()) {
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);

@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperato
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
@@ -127,6 +128,9 @@ public class Main {
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
                 new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
+        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
+                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier);
+
         List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
@@ -140,6 +144,7 @@ public class Main {
                     kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
+                    kafkaRebalanceAssemblyOperator,
                     resourceOperatorSupplier.metricsProvider);
             vertx.deployVerticle(operator,
                 res -> {

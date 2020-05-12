@@ -61,6 +61,9 @@ rules:
   # The cluster operator runs the KafkaMirrorMaker2AssemblyOperator, which needs to access KafkaMirrorMaker2 resources
   - kafkamirrormaker2s
   - kafkamirrormaker2s/status
+  # The cluster operator runs the KafkaRebalanceAssemblyOperator, which needs to access KafkaRebalance resources
+  - kafkarebalances
+  - kafkarebalances/status
   verbs:
   - get
   - list
