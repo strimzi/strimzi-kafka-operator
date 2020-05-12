@@ -212,7 +212,7 @@ public class KafkaRoller {
         singleExecutor.schedule(() -> {
             log.debug("Considering restart of pod {} after delay of {} {}", podId, delay, unit);
             try {
-                restartIfNecessary(podId, ctx.backOff.done(), ctx);
+                restartIfNecessary(podId, ctx);
                 ctx.promise.complete();
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
@@ -247,13 +247,12 @@ public class KafkaRoller {
      * Restart the given pod now if necessary according to {@link #podNeedsRestart}.
      * This method blocks.
      * @param podId The id of the pod to roll.
-     * @param finalAttempt True if this is the last attempt to roll this pod.
      * @param restartContext
      * @throws InterruptedException Interrupted while waiting.
      * @throws ForceableProblem Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem Some error, still thrown when finalAttempt==true.
      */
-    private void restartIfNecessary(int podId, boolean finalAttempt, RestartContext restartContext)
+    private void restartIfNecessary(int podId, RestartContext restartContext)
             throws InterruptedException, ForceableProblem, UnforceableProblem, FatalProblem {
         Pod pod;
         try {
@@ -288,7 +287,7 @@ public class KafkaRoller {
                     closeLoggingAnyError(adminClient);
                 }
             } catch (ForceableProblem e) {
-                if (finalAttempt || e.forceNow) {
+                if (restartContext.backOff.done() || e.forceNow) {
                     log.warn("Pod {} will be force-rolled", podName(podId));
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
@@ -455,10 +454,8 @@ public class KafkaRoller {
             KafkaFuture<Node> controller = describeClusterResult.controller();
             controllerNode = controller.get(timeout, unit);
             restartContext.clearConnectionError();
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | TimeoutException e) {
             maybeTcpProbe(podId, e, restartContext);
-        } catch (TimeoutException e) {
-            throw new ForceableProblem("lala Error while trying to determine the cluster controller from pod " + podName(podId), e);
         }
         int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
         log.debug("controller is {}", id);
@@ -470,23 +467,18 @@ public class KafkaRoller {
      * open on the broker; if it's not then maybe throw a ForceableProblem to immediately force a restart.
      * This is an optimization for brokers which don't seem to be running.
      */
-    private void maybeTcpProbe(int podId, ExecutionException executionException, RestartContext restartContext) throws ForceableProblem {
-        log.info("debuug1 {} {}", restartContext.connectionError(), System.currentTimeMillis());
-        if (restartContext.connectionError() + 120_000 >= System.currentTimeMillis()) {
-            log.info("debuug2");
+    private void maybeTcpProbe(int podId, Exception executionException, RestartContext restartContext) throws ForceableProblem {
+        if (restartContext.connectionError() + numPods * 120_000 >= System.currentTimeMillis()) {
             try {
-                log.info("debuug3");
                 log.debug("Probing TCP port due to previous problems connecting to pod {}", podId);
                 // do a tcp connect and close (with a short connect timeout)
                 tcpProbe(podName(podId), KafkaCluster.REPLICATION_PORT);
             } catch (IOException connectionException) {
-                log.info("debuug4");
                 throw new ForceableProblem("Unable to connect to " + podName(podId) + ":" + KafkaCluster.REPLICATION_PORT, executionException.getCause(), true);
             }
         } else {
-            log.info("debuug5");
             restartContext.noteConnectionError();
-            throw new ForceableProblem("lele Error while trying to determine the cluster controller from pod " + podName(podId), executionException.getCause());
+            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), executionException.getCause());
         }
     }
     /**
@@ -496,11 +488,9 @@ public class KafkaRoller {
      * @throws IOException if anything went wrong.
      */
     void tcpProbe(String hostname, int port) throws IOException {
-        log.info("debuug6");
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(hostname, port), 5_000);
-            log.info("debuug7");
         } finally {
             socket.close();
         }
