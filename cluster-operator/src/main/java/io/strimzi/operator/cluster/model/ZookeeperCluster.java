@@ -127,11 +127,10 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              Full DNS name
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc.%s",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
-                ZookeeperCluster.headlessServiceName(cluster),
+        return ModelUtils.podDnsName(
                 namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+                ZookeeperCluster.headlessServiceName(cluster),
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     /**
@@ -146,10 +145,10 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              Full DNS name
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
+        return ModelUtils.podDnsNameWithoutClusterDomain(
+                namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
-                namespace);
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     public static String zookeeperPodName(String cluster, int pod) {

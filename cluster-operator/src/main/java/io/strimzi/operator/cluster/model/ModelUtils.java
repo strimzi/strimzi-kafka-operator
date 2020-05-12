@@ -45,6 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * ModelUtils is a utility class that holds generic static helper functions
+ * These are generally to be used within the classes that extend the AbstractModel class
+ */
 public class ModelUtils {
 
     public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
@@ -58,6 +62,43 @@ public class ModelUtils {
 
     public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
             System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
+
+    /**
+     * Generates the full DNS name of the pod including the cluster suffix
+     * (i.e. usually with the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-pod-1.my-cluster-service.svc.cluster.local
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the cluster
+     * @param podName       Name of the pod within the STS
+     *
+     * @return              Full DNS name
+     */
+    public static String podDnsName(String namespace, String serviceName, String podName) {
+        return String.format("%s.%s.%s.svc.%s",
+                podName,
+                serviceName,
+                namespace,
+                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+    }
+
+    /**
+     * Generates the full DNS name of the pod without the cluster domain suffix
+     * (i.e. usually without the cluster.local - but can be different on different clusters)
+     * Example: my-cluster-pod-1.my-cluster-service.svc
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the service
+     * @param podName       Name of the pod within the STS
+     *
+     * @return              Full DNS name
+     */
+    public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
+        return String.format("%s.%s.%s.svc",
+                podName,
+                serviceName,
+                namespace);
+    }
 
     /**
      * @param certificateAuthority The CA configuration.
