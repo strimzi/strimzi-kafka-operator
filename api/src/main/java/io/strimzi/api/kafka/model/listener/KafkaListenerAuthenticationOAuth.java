@@ -157,8 +157,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.userNameClaim = userNameClaim;
     }
 
-    @Description("The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. " +
-            "Useful when `client_credentials` authentication only results in client id being provided in another claim. " +
+    @Description("The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. " +
+            "Useful when `client_credentials` authentication only results in the client id being provided in another claim. " +
             "It only takes effect if `userNameClaim` is set.")
     public String getFallbackUserNameClaim() {
         return fallbackUserNameClaim;
@@ -170,7 +170,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. " +
             "It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. " +
-            "Useful to be able to map usernames and client ids into the same user id space, preventing name collisions.")
+            "Mapping usernames and client ids into the same user id space is useful in preventing name collisions.")
     public String getFallbackUserNamePrefix() {
         return fallbackUserNamePrefix;
     }
@@ -179,7 +179,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.fallbackUserNamePrefix = fallbackUserNamePrefix;
     }
 
-    @Description("Configure whether the access token type check should be performed or not. This should be set to `false` " +
+    @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +
             "if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isCheckAccessTokenType() {
@@ -190,7 +190,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.checkAccessTokenType = checkAccessTokenType;
     }
 
-    @Description("Valid value for `token_type` attribute returned by Introspection Endpoint. No default value, and not checked by default.")
+    @Description("Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getValidTokenType() {
         return validTokenType;
@@ -200,7 +200,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.validTokenType = validTokenType;
     }
 
-    @Description("Configure whether the access token should be treated as JWT. This should be set to `false` if " +
+    @Description("Configure whether the access token is treated as JWT. This must be set to `false` if " +
             "the authorization server returns opaque tokens. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isAccessTokenIsJwt() {
@@ -243,8 +243,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.enableECDSA = enableECDSA;
     }
 
-    @Description("URI of the User Info Endpoint to use as a fallback to obtaining user id when Introspection Endpoint " +
-            "does not return information that could be used for user id. ")
+    @Description("URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint " +
+            "does not return information that can be used for the user id. ")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getUserInfoEndpointUri() {
         return userInfoEndpointUri;

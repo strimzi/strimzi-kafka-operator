@@ -1890,7 +1890,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
             log.error("{}: User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured", listener);
-            throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured");
+            throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if the Introspection Endpoint URI is also configured");
         }
 
         if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {

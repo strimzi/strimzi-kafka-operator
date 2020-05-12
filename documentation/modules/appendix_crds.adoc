@@ -255,9 +255,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |Property                               |Description
 |accessTokenIsJwt                1.2+<.<|Configure whether the access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
-|checkAccessTokenType            1.2+<.<|Configure whether the access token type check should be performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+|checkAccessTokenType            1.2+<.<|Configure whether the access token type check is performed or not. This must be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
 |boolean
-|checkIssuer                     1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+|checkIssuer                     1.2+<.<|Enable or disable issuer checking. By default, the issuer is checked using the value configured for `validIssuerUri`. Default value is `true`.
 |boolean
 |clientId                        1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |string
@@ -267,9 +267,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for user id if the claim specified by `userNameClaim` is not present. Useful when `client_credentials` authentication only results in client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+|fallbackUserNameClaim           1.2+<.<|The fallback username claim used for the user id if the claim specified by `userNameClaim` is not present. Useful when `client_credentials` authentication only results in a client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
-|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. Useful to be able to map usernames and client ids into the same user id space, preventing name collisions.
+|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
 |string
 |introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
@@ -283,13 +283,13 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |type                            1.2+<.<|Must be `oauth`.
 |string
-|userInfoEndpointUri             1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining user id when Introspection Endpoint does not return information that could be used for user id. 
+|userInfoEndpointUri             1.2+<.<|URI of the User Info Endpoint to use as a fallback when obtaining a user id and the Introspection Endpoint has not returned information that can be used. 
 |string
-|userNameClaim                   1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
+|userNameClaim                   1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response used to extract the user id. Defaults to `sub`.
 |string
 |validIssuerUri                  1.2+<.<|URI of the token issuer used for authentication.
 |string
-|validTokenType                  1.2+<.<|Valid value for `token_type` attribute returned by Introspection Endpoint. No default value, and not checked by default.
+|validTokenType                  1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
 |string
 |====
 

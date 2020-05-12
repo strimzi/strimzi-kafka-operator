@@ -510,7 +510,7 @@ spec:
                               description: 'URI of the User Info Endpoint to use as
                                 a fallback to obtaining user id when Introspection
                                 Endpoint does not return information that could be
-                                used for user id. '
+                                used for user id. 
                             userNameClaim:
                               type: string
                               description: Name of the claim from the JWT authentication
@@ -739,7 +739,7 @@ spec:
                               description: 'URI of the User Info Endpoint to use as
                                 a fallback to obtaining user id when Introspection
                                 Endpoint does not return information that could be
-                                used for user id. '
+                                used for user id. 
                             userNameClaim:
                               type: string
                               description: Name of the claim from the JWT authentication
