@@ -68,12 +68,12 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName Name of the cluster
      * @param cruiseControl The Cruise Control configuration from the Kafka CR
-     * @param defaultNumPartitions The default number of partitions specified in the Kafka config
-     * @param defaultReplicationFactor The default replication factor specified in the Kafka config
+     * @param numPartitions The number of partitions specified in the Kafka config
+     * @param replicationFactor The replication factor specified in the Kafka config
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseControl, String defaultNumPartitions, String defaultReplicationFactor)   {
+    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseControl, String numPartitions, String replicationFactor)   {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
@@ -87,11 +87,11 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
             writer.println("cruise.control.metrics.topic.auto.create=true");
-            if (defaultNumPartitions != null) {
-                writer.println("cruise.control.metrics.topic.num.partitions=" + defaultNumPartitions);
+            if (numPartitions != null) {
+                writer.println("cruise.control.metrics.topic.num.partitions=" + numPartitions);
             }
-            if (defaultReplicationFactor != null) {
-                writer.println("cruise.control.metrics.topic.replication.factor=" + defaultReplicationFactor);
+            if (replicationFactor != null) {
+                writer.println("cruise.control.metrics.topic.replication.factor=" + replicationFactor);
             }
             writer.println();
         }

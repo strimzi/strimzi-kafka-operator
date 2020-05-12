@@ -227,8 +227,8 @@ public class KafkaCluster extends AbstractModel {
     private CruiseControlSpec cruiseControlSpec;
     private String kafkaDefaultNumPartitions = "1";
     private String kafkaDefaultReplicationFactor = "1";
-    private String ccDefaultNumPartitions = null;
-    private String ccDefaultReplicationFactor = null;
+    private String ccNumPartitions = null;
+    private String ccReplicationFactor = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
@@ -467,10 +467,10 @@ public class KafkaCluster extends AbstractModel {
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
         // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
         if (configuration.getConfigOption(CC_NUM_PARTITIONS_CONFIG_FIELD) == null) {
-            result.ccDefaultNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, result.kafkaDefaultNumPartitions);
+            result.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, result.kafkaDefaultNumPartitions);
         }
         if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
-            result.ccDefaultReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, result.kafkaDefaultReplicationFactor);
+            result.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, result.kafkaDefaultReplicationFactor);
         }
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
@@ -2491,7 +2491,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec, ccDefaultNumPartitions, ccDefaultReplicationFactor)
+                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor)
                 .withUserConfiguration(configuration)
                 .build().trim();
     }
