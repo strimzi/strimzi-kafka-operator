@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.Times;
+import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 
 import java.io.ByteArrayInputStream;
@@ -73,14 +74,14 @@ public class MockCruiseControl {
         return ccServer;
     }
 
-    private static String getJsonFromResource(String resource) throws URISyntaxException, IOException {
+    private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
 
         URI jsonURI = Objects.requireNonNull(MockCruiseControl.class.getClassLoader().getResource(CC_JSON_ROOT + resource)).toURI();
 
         Optional<String> json = Files.lines(Paths.get(jsonURI), UTF_8).reduce((x, y) -> x + y);
 
         if (json.isPresent()) {
-            return json.get();
+            return new JsonBody(json.get());
         } else {
             throw new IOException("File " + resource + " from resources was empty");
         }
@@ -90,7 +91,7 @@ public class MockCruiseControl {
     public static void setupCCStateResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Non-verbose response
-        String jsonProposalNotReady = getJsonFromResource("CC-State-proposal-not-ready.json");
+        JsonBody jsonProposalNotReady = getJsonFromResource("CC-State-proposal-not-ready.json");
 
         ccServer
                 .when(
@@ -108,7 +109,7 @@ public class MockCruiseControl {
 
 
         // Non-verbose response
-        String json = getJsonFromResource("CC-State.json");
+        JsonBody json = getJsonFromResource("CC-State.json");
 
         ccServer
                 .when(
@@ -124,7 +125,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // Verbose response
-        String jsonVerbose = getJsonFromResource("CC-State-verbose.json");
+        JsonBody jsonVerbose = getJsonFromResource("CC-State-verbose.json");
 
         ccServer
                 .when(
@@ -141,10 +142,10 @@ public class MockCruiseControl {
 
     }
 
-    public static void setupCCRebalanceResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Rebalance response with no goal that returns an error
-        String jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");
+        JsonBody jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");
 
         ccServer
                 .when(
@@ -153,8 +154,7 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
-                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path))
 
                 .respond(
                         response()
@@ -162,9 +162,30 @@ public class MockCruiseControl {
                                 .withBody(jsonError)
                                 .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+    }
+
+    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls) throws IOException, URISyntaxException {
+
+        // Rebalance in progress response with no goals set - non-verbose
+        JsonBody pendingJson = getJsonFromResource("CC-Rebalance-no-goals-in-progress.json");
+        ccServer
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path),
+                        Times.exactly(pendingCalls))
+                .respond(
+                        response()
+                                .withBody(pendingJson)
+                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withStatusCode(202)
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // Rebalance response with no goals set - non-verbose
-        String json = getJsonFromResource("CC-Rebalance-no-goals.json");
+        JsonBody json = getJsonFromResource("CC-Rebalance-no-goals.json");
 
         ccServer
                 .when(
@@ -173,7 +194,8 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path),
+                        Times.unlimited())
                 .respond(
                         response()
                                 .withBody(json)
@@ -181,7 +203,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // Rebalance response with no goals set - verbose
-        String jsonVerbose = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
+        JsonBody jsonVerbose = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
 
         ccServer
                 .when(
@@ -196,42 +218,100 @@ public class MockCruiseControl {
                                 .withBody(jsonVerbose)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+    }
 
 
+    public static void setupCCRebalanceBadGoalsError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
+        // Response if the user has set custom goals which do not include all configured hard.goals
+        JsonBody jsonError = getJsonFromResource("CC-Rebalance-bad-goals-error.json");
+
+        ccServer
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "false"))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                .respond(
+                        response()
+                                .withBody(jsonError)
+                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withStatusCode(500)
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+
+        // Response if the user has set custom goals which do not include all configured hard.goals
+        // Note: This uses the no-goals example response but the difference between custom goals and default goals is not tested here
+        JsonBody jsonSummary = getJsonFromResource("CC-Rebalance-no-goals.json");
+
+        ccServer
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "true"))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                .respond(
+                        response()
+                                .withBody(jsonSummary)
+                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withStatusCode(200)
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }
 
     /**
      * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
      * the rebalance endpoints.
      * @param ccServer The ClientAndServer instance that this endpoint will be added too.
-     * @param pendingCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
+     * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
+     * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
      * @throws IOException If there are issues connecting to the network port.
      * @throws URISyntaxException If any of the configured end points are invalid.
      */
-    public static void setupCCUserTasksResponse(ClientAndServer ccServer, int pendingCalls) throws IOException, URISyntaxException {
+    public static void setupCCUserTasksResponseNoGoals(ClientAndServer ccServer, int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
 
         // User tasks response for the rebalance request with no goals set (non-verbose)
-        String jsonInExecution = getJsonFromResource("CC-User-task-rebalance-no-goals-inExecution.json");
-        String jsonCompleted = getJsonFromResource("CC-User-task-rebalance-no-goals-completed.json");
+        JsonBody jsonActive = getJsonFromResource("CC-User-task-rebalance-no-goals-Active.json");
+        JsonBody jsonInExecution = getJsonFromResource("CC-User-task-rebalance-no-goals-inExecution.json");
+        JsonBody jsonCompleted = getJsonFromResource("CC-User-task-rebalance-no-goals-completed.json");
 
-        // The first N time respond that with a status of "InExecution"
-        if (pendingCalls > 0) {
-            ccServer
-                    .when(
-                            request()
-                                    .withMethod("GET")
-                                    .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
-                                    .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
-                                    .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                    .withPath(CruiseControlEndpoints.USER_TASKS.path),
-                            Times.exactly(pendingCalls))
-                    .respond(
-                            response()
-                                    .withBody(jsonInExecution)
-                                    .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                    .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
-        }
+        // The first activeCalls times respond that with a status of "Active"
+        ccServer
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                        Times.exactly(activeCalls))
+                .respond(
+                        response()
+                                .withBody(jsonActive)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+
+        // The next inExecutionCalls times respond that with a status of "InExecution"
+        ccServer
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                        Times.exactly(inExecutionCalls))
+                .respond(
+                        response()
+                                .withBody(jsonInExecution)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // On the N+1 call respond with a completed rebalance task.
         ccServer
@@ -250,26 +330,24 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // User tasks response for the rebalance request with no goals set (verbose)
-        String jsonInExecutionVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-inExecution.json");
-        String jsonCompletedVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-completed.json");
+        JsonBody jsonInExecutionVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-inExecution.json");
+        JsonBody jsonCompletedVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-completed.json");
 
-        if (pendingCalls > 0) {
-            ccServer
-                    .when(
-                            request()
-                                    .withMethod("GET")
-                                    .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
-                                    .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
-                                    .withQueryStringParameter(
-                                            Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                    .withPath(CruiseControlEndpoints.USER_TASKS.path),
-                            Times.exactly(pendingCalls))
-                    .respond(
-                            response()
-                                    .withBody(jsonInExecutionVerbose)
-                                    .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                    .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
-        }
+        ccServer
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
+                                .withQueryStringParameter(
+                                        Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                        Times.exactly(inExecutionCalls))
+                .respond(
+                        response()
+                                .withBody(jsonInExecutionVerbose)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         ccServer
                 .when(
@@ -286,5 +364,44 @@ public class MockCruiseControl {
                                 .withBody(jsonCompletedVerbose)
                                 .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+    }
+
+    public static void setupCCUserTasksFetchError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+
+        // This simulates the current behaviour of the user tasks endpoint if you ask for the status of a task that
+        // Complete with error and fetch_completed_task=true
+        JsonBody fetchErrorJson = getJsonFromResource("CC-User-task-status-fetch-error.json");
+
+        ccServer
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path))
+                .respond(
+                        response()
+                                .withBody(fetchErrorJson)
+                                .withStatusCode(500)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+    }
+
+    public static void setupCCStopResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
+
+        JsonBody jsonStop = getJsonFromResource("CC-Stop.json");
+
+        ccServer
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true|false"))
+                                .withPath(CruiseControlEndpoints.STOP.path))
+                .respond(
+                        response()
+                                .withBody(jsonStop)
+                                .withHeaders(header("User-Task-ID", "stopped"))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+
     }
 }

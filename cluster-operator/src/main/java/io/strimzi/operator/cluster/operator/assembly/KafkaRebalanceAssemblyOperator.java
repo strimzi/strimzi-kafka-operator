@@ -414,7 +414,7 @@ public class KafkaRebalanceAssemblyOperator
                });
     }
 
-    private Future<KafkaRebalanceStatus> computeNextStatus(Reconciliation reconciliation,
+    /* test */ protected Future<KafkaRebalanceStatus> computeNextStatus(Reconciliation reconciliation,
                                                            String host, CruiseControlApi apiClient,
                                                            KafkaRebalance kafkaRebalance, State currentState,
                                                            RebalanceAnnotation rebalanceAnnotation, RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {

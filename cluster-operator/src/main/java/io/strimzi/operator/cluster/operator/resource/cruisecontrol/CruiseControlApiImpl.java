@@ -87,7 +87,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .addRebalanceParameters(rbOptions)
                 .build();
 
-
         HttpClientRequest request = vertx.createHttpClient(httpOptions)
                 .post(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
@@ -116,10 +115,10 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.bodyHandler(buffer -> {
                             String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
-                            CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                 // If there was a client side error, check whether it was due to not enough data being available
                                 if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
+                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                                     ccResponse.setNotEnoughDataForProposal(true);
                                     result.complete(ccResponse);
                                 } else {
@@ -127,7 +126,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     result.fail(json.getString(CC_REST_API_ERROR_KEY));
                                 }
                             } else {
-                                result.complete(ccResponse);
+                                result.fail(json.toString());
                             }
                         });
                     } else {
@@ -176,15 +175,22 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
                         response.bodyHandler(buffer -> {
                             JsonObject jsonUserTask = buffer.toJsonObject().getJsonArray("userTasks").getJsonObject(0);
-                            JsonObject json = new JsonObject()
-                                    .put("Status", jsonUserTask.getString("Status"))
-                                    .put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
-                            if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                result.fail(json.getString(CC_REST_API_ERROR_KEY));
-                            } else {
-                                CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, json);
-                                result.complete(ccResponse);
+                            // This should not be an error with a 200 status but we play it safe
+                            if (jsonUserTask.containsKey(CC_REST_API_ERROR_KEY)) {
+                                result.fail(jsonUserTask.getString(CC_REST_API_ERROR_KEY));
                             }
+                            JsonObject json = new JsonObject();
+                            String taskStatus = jsonUserTask.getString("Status");
+                            json.put("Status", taskStatus);
+                            // The status could be ACTIVE in which case there will not be a "summary" so we check that we are
+                            // in a state that actually has that key.
+                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) ||
+                                    taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
+                                // We now need to extract the original response which is in a raw string (not nicely formatted JSON)
+                                json.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
+                            }
+                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, json);
+                            result.complete(ccResponse);
                         });
                     } else if (response.statusCode() == 500) {
                         response.bodyHandler(buffer -> {
@@ -199,6 +205,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 } else {
                                     result.fail(json.getString(CC_REST_API_ERROR_KEY));
                                 }
+                            } else {
+                                result.fail(json.toString());
                             }
                         });
                     } else {

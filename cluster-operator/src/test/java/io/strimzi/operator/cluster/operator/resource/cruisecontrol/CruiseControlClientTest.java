@@ -22,6 +22,7 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class CruiseControlClientTest {
@@ -65,7 +66,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRebalance(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceResponse(ccServer);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
@@ -84,7 +85,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRebalanceVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceResponse(ccServer);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
 
@@ -105,7 +106,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceResponse(ccServer);
+        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
@@ -114,7 +115,24 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint(1);
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                 .setHandler(context.succeeding(result -> {
-                    assertThat(result.thereIsNotEnoughDataForProposal(), is(true));
+                    assertTrue(result.thereIsNotEnoughDataForProposal());
+                    checkpoint.flag();
+                }));
+    }
+
+    @Test
+    public void testCCRebalancePropsosalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 1);
+
+        RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
+
+        CruiseControlApiImpl client = new CruiseControlApiImpl(vertx);
+
+        Checkpoint checkpoint = context.checkpoint(1);
+        client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                .setHandler(context.succeeding(result -> {
+                    assertTrue(result.proposalIsStillCalculating());
                     checkpoint.flag();
                 }));
     }
@@ -122,7 +140,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCGetRebalanceUserTask(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksResponse(ccServer, 0);
+        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
@@ -138,7 +156,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCGetRebalanceVerboseUserTask(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksResponse(ccServer, 0);
+        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
