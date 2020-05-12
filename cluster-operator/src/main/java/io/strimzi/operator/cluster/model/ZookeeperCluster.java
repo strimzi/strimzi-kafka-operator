@@ -116,7 +116,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generates the full DNS name of the pod including the cluster suffix
+     * Generates the DNS name of the pod including the cluster suffix
      * (i.e. usually with the cluster.local - but can be different on different clusters)
      * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc.cluster.local
      *
@@ -124,14 +124,13 @@ public class ZookeeperCluster extends AbstractModel {
      * @param cluster       Name of the cluster
      * @param podId         Id of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc.%s",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
-                ZookeeperCluster.headlessServiceName(cluster),
+        return ModelUtils.podDnsName(
                 namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+                ZookeeperCluster.headlessServiceName(cluster),
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     /**
@@ -143,13 +142,13 @@ public class ZookeeperCluster extends AbstractModel {
      * @param cluster       Name of the cluster
      * @param podId         Id of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
+        return ModelUtils.podDnsNameWithoutClusterDomain(
+                namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
-                namespace);
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
