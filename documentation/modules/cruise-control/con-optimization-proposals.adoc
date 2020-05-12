@@ -6,10 +6,10 @@
 
 = Optimization proposals
 
-An _optimization proposal_ is a summary of proposed changes from Cruise Control that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. 
-Each optimization proposal is based on the set of LINK optimization goals that were used to generate it.
+An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly across the brokers. 
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that were used to generate it.
 
-Optimization proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals. Hard goals are ignored if the `skip_hard_goal_check` option is specified.
+Optimization proposals always satisfy all the supplied hard goals, though not necessarily all the supplied soft goals. Hard goals are ignored if the `skip_hard_goal_check` option is specified for the rebalance operation.
 
 An optimization proposal provides the following information in JSON:
 

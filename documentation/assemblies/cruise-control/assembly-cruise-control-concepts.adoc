@@ -9,7 +9,7 @@ You can deploy {CruiseControlProject} and access a subset of its features throug
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/con-rebalance-goals-proposals.adoc[leveloffset=+1]
+include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffset=+1]
 
