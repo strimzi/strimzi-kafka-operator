@@ -13,20 +13,10 @@ A typical Kafka cluster can become unevenly loaded over time.
 Partitions that handle large amounts of message traffic might be unevenly distributed across the available brokers.
 To rebalance the cluster, administrators must monitor the load on brokers and manually reassign busy partitions to brokers with spare capacity.
 
-Cruise Control automates the monitoring and reassignment of partitions, therefore reducing the time and effort involved in running an efficient, balanced Kafka cluster.
-It constructs a model of resource utilization for the cluster--based on CPU, disk, and network load--and uses this to generate _optimization proposals_ for balanced partition assignments. These are based on a set of configurable _optimization goals_.
-You can choose to implement optimization proposals and reassign partitions to brokers to achieve a more balanced Kafka cluster.  
+Cruise Control automates the monitoring and reassignment of partitions, reducing the time and effort involved in running an efficient, balanced Kafka cluster.
+It constructs a model of resource utilization for the cluster--based on CPU, disk, and network load--and generates _optimization proposals_ for balanced partition assignments. A set of configurable _optimization goals_ is used to calculate these proposals.
 
-By continuously monitoring the CPU, disk, and network load of Kafka brokers, Cruise Control constructs a model of resource utilization in the cluster.
-You can use information from this model to:
-
-* Generate _optimization proposals_: balanced partition assignments based on configurable _optimization goals_.
-
-* Implement partition reassignments based on optimization proposals.
-
-.What to do next
-
-Read the overview of xref:con-rebalance-goals-proposals-{context}[] and then xref:proc-deploying-cruise-control-{context}[deploy Cruise Control] to your {ProductName} cluster.
+You can choose to implement optimization proposals to achieve a more balanced Kafka cluster.  
 
 .Additional resources
 
