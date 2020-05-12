@@ -64,49 +64,49 @@ public class ModelUtils {
             System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
 
     /**
-     * Generates the full DNS name of the pod including the cluster suffix
+     * Generates the DNS name of the pod including the cluster suffix
      * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-pod-1.my-cluster-service.svc.cluster.local
+     * Example: my-pod-1.my-service.my-ns.svc.cluster.local
      *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the cluster
      * @param podName       Name of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String serviceName, String podName) {
         return String.format("%s.%s",
                 podName,
-                ModelUtils.serviceDnsName(serviceName, namespace));
+                ModelUtils.serviceDnsName(namespace, serviceName));
     }
 
     /**
-     * Generates the full DNS name of the pod without the cluster domain suffix
+     * Generates the DNS name of the pod without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-pod-1.my-cluster-service.svc
+     * Example: my-cluster-pod-1.my-cluster-service.my-ns.svc
      *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the service
      * @param podName       Name of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
         return String.format("%s.%s",
                 podName,
-                ModelUtils.serviceDnsNameWithoutClusterDomain(serviceName, namespace));
+                ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName));
 
     }
 
     /**
-     * Generates the full DNS name of the service including the cluster suffix
+     * Generates the DNS name of the service including the cluster suffix
      * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-service.svc.cluster.local
+     * Example: my-service.my-ns.svc.cluster.local
      *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the cluster
      *
-     * @return              Full DNS name
+     * @return              DNS name of the service
      */
     public static String serviceDnsName(String namespace, String serviceName) {
         return String.format("%s.%s.svc.%s",
@@ -116,24 +116,20 @@ public class ModelUtils {
     }
 
     /**
-     * Generates the full DNS name of the service without the cluster domain suffix
+     * Generates the DNS name of the service without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-service.svc
+     * Example: my-service.my-ns.svc
      *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the service
      *
-     * @return              Full DNS name
+     * @return              DNS name of the service without the cluster domain suffix
      */
     public static String serviceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
         return String.format("%s.%s.svc",
                 serviceName,
                 namespace);
     }
-
-
-
-
 
     /**
      * @param certificateAuthority The CA configuration.
