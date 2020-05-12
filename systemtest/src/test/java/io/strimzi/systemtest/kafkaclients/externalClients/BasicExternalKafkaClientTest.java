@@ -31,18 +31,18 @@ class BasicExternalKafkaClientTest{
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
-    private static final KafkaContainer KAFKA_CONTAINER;
+    private static final StrimziContainer STRIMZI_CONTAINER;
     private static final AdminClient ADMIN_CLIENT;
 
     private static final String TOPIC_NAME = "my-topic";
     private static final int MESSAGE_COUNT = 500;
 
     static {
-        KAFKA_CONTAINER = new KafkaContainer();
-        KAFKA_CONTAINER.start();
+        STRIMZI_CONTAINER = new StrimziContainer("latest-kafka-2.5.0");
+        STRIMZI_CONTAINER.start();
 
         Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, STRIMZI_CONTAINER.getBootstrapServers());
 
         ADMIN_CLIENT = AdminClient.create(properties);
     }
@@ -61,7 +61,7 @@ class BasicExternalKafkaClientTest{
                     .withValueSerializerConfig(StringSerializer.class)
                     .withClientIdConfig("producer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
                     .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-                    .withBootstrapServerConfig(KAFKA_CONTAINER.getBootstrapServers())
+                    .withBootstrapServerConfig(STRIMZI_CONTAINER.getBootstrapServers())
                     .withSharedProperties()
                     .build()
             )
@@ -82,7 +82,7 @@ class BasicExternalKafkaClientTest{
             .withValueSerializerConfig(StringSerializer.class)
             .withClientIdConfig(clientId)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-            .withBootstrapServerConfig(KAFKA_CONTAINER.getBootstrapServers())
+            .withBootstrapServerConfig(STRIMZI_CONTAINER.getBootstrapServers())
             .withSharedProperties()
             .build();
 
@@ -110,7 +110,7 @@ class BasicExternalKafkaClientTest{
             .withValueSerializerConfig(StringSerializer.class)
             .withClientIdConfig(clientId)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-            .withBootstrapServerConfig(KAFKA_CONTAINER.getBootstrapServers())
+            .withBootstrapServerConfig(STRIMZI_CONTAINER.getBootstrapServers())
             .withSharedProperties()
             .build();
 
