@@ -242,12 +242,12 @@ public class ResourceManager {
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-                PodUtils.waitForPodDeletion(KafkaResources.zookeeperPodName(kafka.getMetadata().getName(), podIndex)));
+                PodUtils.deletePodWithWait(KafkaResources.zookeeperPodName(kafka.getMetadata().getName(), podIndex)));
 
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-                PodUtils.waitForPodDeletion(KafkaResources.kafkaPodName(kafka.getMetadata().getName(), podIndex)));
+                PodUtils.deletePodWithWait(KafkaResources.kafkaPodName(kafka.getMetadata().getName(), podIndex)));
 
         // Wait for EO deletion
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
@@ -255,7 +255,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(KafkaResources.entityOperatorDeploymentName(kafka.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
 
         // Wait for Kafka Exporter deletion
         DeploymentUtils.waitForDeploymentDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
@@ -263,7 +263,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(KafkaExporterResources.deploymentName(kafka.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
 
         SecretUtils.waitForClusterSecretsDeletion(kafkaClusterName);
         PersistentVolumeClaimUtils.waitUntilPVCDeletion(kafkaClusterName);
@@ -280,7 +280,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
     private static void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
@@ -305,7 +305,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(KafkaMirrorMaker2Resources.deploymentName(kafkaMirrorMaker.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
     private static void waitForDeletion(KafkaMirrorMaker2 kafkaMirrorMaker2) {
@@ -316,7 +316,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(KafkaMirrorMaker2Resources.deploymentName(kafkaMirrorMaker2.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
     private static void waitForDeletion(KafkaBridge kafkaBridge) {
@@ -327,7 +327,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName())))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
     private static void waitForDeletion(Deployment deployment) {
@@ -337,7 +337,7 @@ public class ResourceManager {
 
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
-                .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
     public static void deleteClassResources() {

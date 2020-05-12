@@ -142,7 +142,7 @@ class KafkaST extends BaseST {
         cmdKubeClient().waitForResourceDeletion("Kafka", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-            .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
+            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
 
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -170,7 +170,7 @@ class KafkaST extends BaseST {
 
         // Wait when EO(UO + TO) will be removed
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        PodUtils.waitForPodDeletion(pod.getMetadata().getName());
+        PodUtils.deletePodWithWait(pod.getMetadata().getName());
 
         LOGGER.info("Entity operator was deleted");
     }
@@ -903,7 +903,7 @@ class KafkaST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
         //Waiting when EO pod will be recreated without TO
-        PodUtils.waitForPodDeletion(eoPodName);
+        PodUtils.deletePodWithWait(eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
         PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
@@ -919,7 +919,7 @@ class KafkaST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
         //Waiting when EO pod will be recreated with TO
-        PodUtils.waitForPodDeletion(eoPodName);
+        PodUtils.deletePodWithWait(eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that TO was created
@@ -945,7 +945,7 @@ class KafkaST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(null));
 
         //Waiting when EO pod will be recreated without UO
-        PodUtils.waitForPodDeletion(eoPodName);
+        PodUtils.deletePodWithWait(eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
         PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
@@ -961,7 +961,7 @@ class KafkaST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
         //Waiting when EO pod will be recreated with UO
-        PodUtils.waitForPodDeletion(eoPodName);
+        PodUtils.deletePodWithWait(eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that UO was created
@@ -986,6 +986,7 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(null);
@@ -995,7 +996,7 @@ class KafkaST extends BaseST {
         //Waiting when EO pod will be deleted
         DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
         ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.waitForPodDeletion(eoDeploymentName);
+        PodUtils.deletePodWithWait(eoPodName);
 
         //Checking that EO was removed
         assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
