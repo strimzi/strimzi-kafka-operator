@@ -14,6 +14,8 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -866,6 +868,76 @@ class ConnectST extends BaseST {
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH);
+    }
+
+    @Test
+    void testScaleConnectWithoutConnectorToZero() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 2)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+            .endMetadata()
+            .done();
+
+        String connectDeploymentName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
+        List<String> connectPods = kubeClient().listPodNames("type", "kafka-connect");
+
+        assertThat(connectPods.size(), is(2));
+        //scale down
+        LOGGER.info("Scaling KafkaConnect down to zero");
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
+
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(connectDeploymentName), 0, true);
+
+        connectPods = kubeClient().listPodNames("type", "kafka-connect");
+        KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat(connectPods.size(), is(0));
+        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+    }
+
+    @Test
+    void testScaleConnectWithConnectorToZero() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 2)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .done();
+
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("topics", TOPIC_NAME)
+            .endSpec()
+            .done();
+
+        String connectDeploymentName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
+        List<String> connectPods = kubeClient().listPodNames("type", "kafka-connect");
+
+        assertThat(connectPods.size(), is(2));
+        //scale down
+        LOGGER.info("Scaling KafkaConnect down to zero");
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
+
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(connectDeploymentName), 0, true);
+
+        connectPods = kubeClient().listPodNames("type", "kafka-connect");
+        KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat(connectPods.size(), is(0));
+        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
     @Override
