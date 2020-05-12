@@ -303,4 +303,28 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
     }
+
+    @Test
+    public void testPodDnsName()  {
+        assertThat(ModelUtils.podDnsName("my-ns", "my-service", "my-pod-1"),
+                is("my-pod-1.my-service.my-ns.svc.cluster.local"));
+    }
+
+    @Test
+    public void testPodDnsNameWithoutClusterDomain()  {
+        assertThat(ModelUtils.podDnsNameWithoutClusterDomain("my-ns", "my-service", "my-pod-1"),
+                is("my-pod-1.my-service.my-ns.svc"));
+    }
+
+    @Test
+    public void testServiceDnsName()  {
+        assertThat(ModelUtils.serviceDnsName("my-ns", "my-service"),
+                is("my-service.my-ns.svc.cluster.local"));
+    }
+
+    @Test
+    public void testServiceDnsNameWithoutClusterDomain()  {
+        assertThat(ModelUtils.serviceDnsNameWithoutClusterDomain("my-ns", "my-service"),
+                is("my-service.my-ns.svc"));
+    }
 }
