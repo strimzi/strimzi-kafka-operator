@@ -68,9 +68,11 @@ public class ModelUtils {
      * (i.e. usually with the cluster.local - but can be different on different clusters)
      * Example: my-pod-1.my-service.my-ns.svc.cluster.local
      *
+     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
+     *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the cluster
-     * @param podName       Name of the pod within the STS
+     * @param podName       Name of the pod
      *
      * @return              DNS name of the pod
      */
@@ -85,9 +87,11 @@ public class ModelUtils {
      * (i.e. usually without the cluster.local - but can be different on different clusters)
      * Example: my-cluster-pod-1.my-cluster-service.my-ns.svc
      *
+     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
+     *
      * @param namespace     Namespace of the pod
      * @param serviceName   Name of the service
-     * @param podName       Name of the pod within the STS
+     * @param podName       Name of the pod
      *
      * @return              DNS name of the pod without the cluster domain suffix
      */
