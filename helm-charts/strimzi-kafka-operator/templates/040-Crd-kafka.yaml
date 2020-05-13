@@ -186,16 +186,15 @@ spec:
                           properties:
                             accessTokenIsJwt:
                               type: boolean
-                              description: Configure whether the access token should
-                                be treated as JWT. This should be set to `false` if
-                                the authorization server returns opaque tokens. Defaults
-                                to `true`.
+                              description: Configure whether the access token is treated
+                                as JWT. This must be set to `false` if the authorization
+                                server returns opaque tokens. Defaults to `true`.
                             checkAccessTokenType:
                               type: boolean
                               description: Configure whether the access token type
-                                check should be performed or not. This should be set
-                                to `false` if the authorization server does not include
-                                'typ' claim in JWT token. Defaults to `true`.
+                                check is performed or not. This should be set to `false`
+                                if the authorization server does not include 'typ'
+                                claim in JWT token. Defaults to `true`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -235,9 +234,9 @@ spec:
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used
-                                for user id if the claim specified by `userNameClaim`
+                                for the user id if the claim specified by `userNameClaim`
                                 is not present. Useful when `client_credentials` authentication
-                                only results in client id being provided in another
+                                only results in the client id being provided in another
                                 claim. It only takes effect if `userNameClaim` is
                                 set.
                             fallbackUserNamePrefix:
@@ -245,9 +244,9 @@ spec:
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim. Useful to be able to map usernames
-                                and client ids into the same user id space, preventing
-                                name collisions.
+                                for the claim. Mapping usernames and client ids into
+                                the same user id space is useful in preventing name
+                                collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -302,10 +301,10 @@ spec:
                                 only on TLS listeners.
                             userInfoEndpointUri:
                               type: string
-                              description: URI of the User Info Endpoint to use as
-                                a fallback to obtaining user id when Introspection
-                                Endpoint does not return information that could be
-                                used for user id.
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining the user id when the Introspection
+                                Endpoint does not return information that can be used
+                                for the user id. '
                             userNameClaim:
                               type: string
                               description: Name of the claim from the JWT authentication
@@ -317,9 +316,9 @@ spec:
                               description: URI of the token issuer used for authentication.
                             validTokenType:
                               type: string
-                              description: Valid value for `token_type` attribute
-                                returned by Introspection Endpoint. No default value,
-                                and not checked by default.
+                              description: Valid value for the `token_type` attribute
+                                returned by the Introspection Endpoint. No default
+                                value, and not checked by default.
                           required:
                           - type
                           description: 'Authentication configuration for this listener.
@@ -391,16 +390,15 @@ spec:
                           properties:
                             accessTokenIsJwt:
                               type: boolean
-                              description: Configure whether the access token should
-                                be treated as JWT. This should be set to `false` if
-                                the authorization server returns opaque tokens. Defaults
-                                to `true`.
+                              description: Configure whether the access token is treated
+                                as JWT. This must be set to `false` if the authorization
+                                server returns opaque tokens. Defaults to `true`.
                             checkAccessTokenType:
                               type: boolean
                               description: Configure whether the access token type
-                                check should be performed or not. This should be set
-                                to `false` if the authorization server does not include
-                                'typ' claim in JWT token. Defaults to `true`.
+                                check is performed or not. This should be set to `false`
+                                if the authorization server does not include 'typ'
+                                claim in JWT token. Defaults to `true`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -440,9 +438,9 @@ spec:
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used
-                                for user id if the claim specified by `userNameClaim`
+                                for the user id if the claim specified by `userNameClaim`
                                 is not present. Useful when `client_credentials` authentication
-                                only results in client id being provided in another
+                                only results in the client id being provided in another
                                 claim. It only takes effect if `userNameClaim` is
                                 set.
                             fallbackUserNamePrefix:
@@ -450,9 +448,9 @@ spec:
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim. Useful to be able to map usernames
-                                and client ids into the same user id space, preventing
-                                name collisions.
+                                for the claim. Mapping usernames and client ids into
+                                the same user id space is useful in preventing name
+                                collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -507,10 +505,10 @@ spec:
                                 only on TLS listeners.
                             userInfoEndpointUri:
                               type: string
-                              description: URI of the User Info Endpoint to use as
-                                a fallback to obtaining user id when Introspection
-                                Endpoint does not return information that could be
-                                used for user id.
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining the user id when the Introspection
+                                Endpoint does not return information that can be used
+                                for the user id. '
                             userNameClaim:
                               type: string
                               description: Name of the claim from the JWT authentication
@@ -522,9 +520,9 @@ spec:
                               description: URI of the token issuer used for authentication.
                             validTokenType:
                               type: string
-                              description: Valid value for `token_type` attribute
-                                returned by Introspection Endpoint. No default value,
-                                and not checked by default.
+                              description: Valid value for the `token_type` attribute
+                                returned by the Introspection Endpoint. No default
+                                value, and not checked by default.
                           required:
                           - type
                           description: Authentication configuration for this listener.
@@ -620,16 +618,15 @@ spec:
                           properties:
                             accessTokenIsJwt:
                               type: boolean
-                              description: Configure whether the access token should
-                                be treated as JWT. This should be set to `false` if
-                                the authorization server returns opaque tokens. Defaults
-                                to `true`.
+                              description: Configure whether the access token is treated
+                                as JWT. This must be set to `false` if the authorization
+                                server returns opaque tokens. Defaults to `true`.
                             checkAccessTokenType:
                               type: boolean
                               description: Configure whether the access token type
-                                check should be performed or not. This should be set
-                                to `false` if the authorization server does not include
-                                'typ' claim in JWT token. Defaults to `true`.
+                                check is performed or not. This should be set to `false`
+                                if the authorization server does not include 'typ'
+                                claim in JWT token. Defaults to `true`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -669,9 +666,9 @@ spec:
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used
-                                for user id if the claim specified by `userNameClaim`
+                                for the user id if the claim specified by `userNameClaim`
                                 is not present. Useful when `client_credentials` authentication
-                                only results in client id being provided in another
+                                only results in the client id being provided in another
                                 claim. It only takes effect if `userNameClaim` is
                                 set.
                             fallbackUserNamePrefix:
@@ -679,9 +676,9 @@ spec:
                               description: The prefix to use with the value of `fallbackUserNameClaim`
                                 to construct the user id. It only takes effect if
                                 `fallbackUserNameClaim` is set, and the value is present
-                                for the claim. Useful to be able to map usernames
-                                and client ids into the same user id space, preventing
-                                name collisions.
+                                for the claim. Mapping usernames and client ids into
+                                the same user id space is useful in preventing name
+                                collisions.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint
@@ -736,10 +733,10 @@ spec:
                                 only on TLS listeners.
                             userInfoEndpointUri:
                               type: string
-                              description: URI of the User Info Endpoint to use as
-                                a fallback to obtaining user id when Introspection
-                                Endpoint does not return information that could be
-                                used for user id.
+                              description: 'URI of the User Info Endpoint to use as
+                                a fallback to obtaining the user id when the Introspection
+                                Endpoint does not return information that can be used
+                                for the user id. '
                             userNameClaim:
                               type: string
                               description: Name of the claim from the JWT authentication
@@ -751,9 +748,9 @@ spec:
                               description: URI of the token issuer used for authentication.
                             validTokenType:
                               type: string
-                              description: Valid value for `token_type` attribute
-                                returned by Introspection Endpoint. No default value,
-                                and not checked by default.
+                              description: Valid value for the `token_type` attribute
+                                returned by the Introspection Endpoint. No default
+                                value, and not checked by default.
                           required:
                           - type
                           description: Authentication configuration for Kafka brokers.
