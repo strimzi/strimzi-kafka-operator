@@ -87,7 +87,7 @@ class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
-    private static int TO_RECONCILIATION_INTERVAL;
+    private static int topicOperatorReconciliationInterval;
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
@@ -315,7 +315,6 @@ class CustomResourceStatusST extends BaseST {
     @Test
     void testKafkaTopicStatus() {
         KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
-        // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
         assertKafkaTopicStatus(1, TOPIC_NAME);
     }
 
@@ -385,8 +384,8 @@ class CustomResourceStatusST extends BaseST {
         assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
 
         // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Wait {} ms for next reconciliation", TO_RECONCILIATION_INTERVAL);
-        Thread.sleep(TO_RECONCILIATION_INTERVAL);
+        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
+        Thread.sleep(topicOperatorReconciliationInterval);
         assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
     }
 
@@ -402,8 +401,8 @@ class CustomResourceStatusST extends BaseST {
         assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
 
         // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Wait {} ms for next reconciliation", TO_RECONCILIATION_INTERVAL);
-        Thread.sleep(TO_RECONCILIATION_INTERVAL);
+        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
+        Thread.sleep(topicOperatorReconciliationInterval);
         assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
     }
 
@@ -441,7 +440,7 @@ class CustomResourceStatusST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
-        TO_RECONCILIATION_INTERVAL = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
+        topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
             .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds();
     }
 
