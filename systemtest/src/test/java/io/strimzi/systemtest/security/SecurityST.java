@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
@@ -877,6 +878,7 @@ class SecurityST extends BaseST {
         assertThat("KafkaConnect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
     @Test
@@ -949,6 +951,7 @@ class SecurityST extends BaseST {
         assertThat("KafkaMirrorMaker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
 
         KafkaMirrorMakerResource.deleteKafkaMirrorMakerWithoutWait(kafkaMirrorMaker);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
     }
 
     @Test
@@ -1326,6 +1329,9 @@ class SecurityST extends BaseST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+
+        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
     @Test
@@ -1386,6 +1392,9 @@ class SecurityST extends BaseST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+
+        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
     @BeforeAll

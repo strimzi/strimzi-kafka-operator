@@ -175,6 +175,8 @@ public class SpecificST extends BaseST {
 
         KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
     @Test
