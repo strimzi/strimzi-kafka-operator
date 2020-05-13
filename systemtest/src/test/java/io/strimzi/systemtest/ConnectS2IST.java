@@ -682,8 +682,8 @@ class ConnectS2IST extends BaseST {
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
         assertThat(connectS2IStatus.getConditions().get(0).getType(), is("Ready"));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), Matchers.is(true));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), Matchers.is(true));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
