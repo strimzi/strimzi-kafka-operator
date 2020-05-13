@@ -390,6 +390,24 @@ class CustomResourceStatusST extends BaseST {
             .anyMatch(condition -> condition.getMessage().equals("Number of partitions cannot be decreased")), is(true));
     }
 
+    @Test
+    void testKafkaTopicChangingInSyncReplicasStatus() {
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+
+        LOGGER.info("Changing min.insync.replicas to random char");
+        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", "x"));
+        KafkaTopicUtils.waitForKafkaTopicNotReady(TEST_TOPIC_NAME);
+
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TEST_TOPIC_NAME).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().contains("Invalid value x for configuration min.insync.replicas")), is(true));
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
