@@ -46,7 +46,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.bodyHandler(buffer -> {
                             JsonObject json = buffer.toJsonObject();
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                result.fail(new CruiseControlRestException(
+                                    "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                    json.getString(CC_REST_API_ERROR_KEY)));
                             } else {
                                 CruiseControlResponse ccResponse = new CruiseControlResponse(userTaskID, json);
                                 result.complete(ccResponse);
@@ -55,8 +57,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
                     } else {
                         result.fail(new CruiseControlRestException(
-                                "Unexpected status code " + response.statusCode() + " for GET request to " +
-                                host + ":" + port + path));
+                                "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
                 .exceptionHandler(result::fail);
@@ -106,7 +107,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
                                 ccResponse.setProposalIsStillCalculating(true);
                             } else {
-                                result.fail(new CruiseControlRestException("202 Status code did not contain progress key. Response was: " +
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path +
+                                        ". 202 Status code did not contain progress key. Server returned: " +
                                         ccResponse.getJson().toString()));
                             }
                             result.complete(ccResponse);
@@ -123,21 +126,19 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     result.complete(ccResponse);
                                 } else {
                                     // If there was any other kind of error propagate this to the operator
-                                    result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                    result.fail(new CruiseControlRestException(
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                            json.getString(CC_REST_API_ERROR_KEY)));
                                 }
                             } else {
-                                result.fail(json.toString());
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                         json.toString()));
                             }
                         });
                     } else {
-                        response.bodyHandler(buffer -> {
-                            String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
-                            String json = buffer.toJsonObject().toString();
-                            String errMsg = String.format(
-                                    "Unexpected status code %d for rebalance request (%s) to %s:%d%s with message %s",
-                                    response.statusCode(), userTaskID, host, port, path, json);
-                            result.fail(new CruiseControlRestException(errMsg));
-                        });
+                        result.fail(new CruiseControlRestException(
+                                "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
                 .exceptionHandler(result::fail);
@@ -174,22 +175,25 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
                         String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
                         response.bodyHandler(buffer -> {
-                            JsonObject jsonUserTask = buffer.toJsonObject().getJsonArray("userTasks").getJsonObject(0);
+                            JsonObject json = buffer.toJsonObject();
+                            JsonObject jsonUserTask = json.getJsonArray("userTasks").getJsonObject(0);
                             // This should not be an error with a 200 status but we play it safe
                             if (jsonUserTask.containsKey(CC_REST_API_ERROR_KEY)) {
-                                result.fail(jsonUserTask.getString(CC_REST_API_ERROR_KEY));
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                json.getString(CC_REST_API_ERROR_KEY)));
                             }
-                            JsonObject json = new JsonObject();
+                            JsonObject statusJson = new JsonObject();
                             String taskStatus = jsonUserTask.getString("Status");
-                            json.put("Status", taskStatus);
+                            statusJson.put("Status", taskStatus);
                             // The status could be ACTIVE in which case there will not be a "summary" so we check that we are
                             // in a state that actually has that key.
                             if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) ||
                                     taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
                                 // We now need to extract the original response which is in a raw string (not nicely formatted JSON)
-                                json.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
+                                statusJson.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
                             }
-                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, json);
+                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
                             result.complete(ccResponse);
                         });
                     } else if (response.statusCode() == 500) {
@@ -203,10 +207,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     ccResponse.setCompletedWithError(true);
                                     result.complete(ccResponse);
                                 } else {
-                                    result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                    result.fail(new CruiseControlRestException(
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                    json.getString(CC_REST_API_ERROR_KEY)));
                                 }
                             } else {
-                                result.fail(json.toString());
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                json.toString()));
                             }
                         });
                     } else {

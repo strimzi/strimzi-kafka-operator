@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -228,11 +228,7 @@ public class KafkaRebalanceStateMachineTest {
 
     private static void checkOptimizationResults(AsyncResult<KafkaRebalanceStatus> result, VertxTestContext context, boolean shouldBeEmpty) {
         if (result.succeeded()) {
-            if (shouldBeEmpty) {
-                context.verify(() -> assertTrue(result.result().getOptimizationResult().isEmpty()));
-            } else {
-                context.verify(() -> assertFalse(result.result().getOptimizationResult().isEmpty()));
-            }
+            assertEquals(shouldBeEmpty, result.result().getOptimizationResult().isEmpty());
             context.completeNow();
         } else {
             context.failNow(result.cause());
