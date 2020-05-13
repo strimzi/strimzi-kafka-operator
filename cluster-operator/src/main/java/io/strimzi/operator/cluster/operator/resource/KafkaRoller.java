@@ -468,7 +468,7 @@ public class KafkaRoller {
      * This is an optimization for brokers which don't seem to be running.
      */
     private void maybeTcpProbe(int podId, Exception executionException, RestartContext restartContext) throws ForceableProblem {
-        if (restartContext.connectionError() + numPods * 120_000 >= System.currentTimeMillis()) {
+        if (restartContext.connectionError() + numPods * 120_000L >= System.currentTimeMillis()) {
             try {
                 log.debug("Probing TCP port due to previous problems connecting to pod {}", podId);
                 // do a tcp connect and close (with a short connect timeout)
