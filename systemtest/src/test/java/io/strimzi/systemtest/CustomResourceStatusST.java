@@ -87,6 +87,7 @@ class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
+    private static int TO_RECONCILIATION_INTERVAL;
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
@@ -372,7 +373,7 @@ class CustomResourceStatusST extends BaseST {
     }
 
     @Test
-    void testKafkaTopicDecreaseStatus() {
+    void testKafkaTopicDecreaseStatus() throws InterruptedException {
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
         int decreaseTo = 1;
 
@@ -380,6 +381,11 @@ class CustomResourceStatusST extends BaseST {
         KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo));
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TEST_TOPIC_NAME, decreaseTo);
 
+        assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
+
+        // Wait some time to check if error is still present in KafkaTopic status
+        LOGGER.info("Wait {} ms for next reconciliation", TO_RECONCILIATION_INTERVAL);
+        Thread.sleep(TO_RECONCILIATION_INTERVAL);
         assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
     }
 
@@ -395,7 +401,8 @@ class CustomResourceStatusST extends BaseST {
         assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
 
         // Wait some time to check if error is still present in KafkaTopic status
-        Thread.sleep(60_000);
+        LOGGER.info("Wait {} ms for next reconciliation", TO_RECONCILIATION_INTERVAL);
+        Thread.sleep(TO_RECONCILIATION_INTERVAL);
         assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
     }
 
@@ -432,6 +439,9 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
+        TO_RECONCILIATION_INTERVAL = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
+            .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds();
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
@@ -529,7 +539,7 @@ class CustomResourceStatusST extends BaseST {
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getMessage().equals("Number of partitions cannot be decreased")), is(true));
+            .anyMatch(condition -> condition.getMessage().contains("Number of partitions cannot be decreased")), is(true));
     }
 
     void assertKafkaTopicWrongMinInSyncReplicasStatus(String topicName, String invalidValue) {
