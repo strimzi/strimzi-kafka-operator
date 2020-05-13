@@ -57,7 +57,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.clientId = clientId;
     }
 
-    @Description("OAuth scope to use when authenticating against the authorization server. No default value.")
+    @Description("OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. "
+            + "The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getScope() {
         return scope;
@@ -77,7 +78,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.tokenEndpointUri = tokenEndpointUri;
     }
 
-    @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.")
+    @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate "
+            + "against the OAuth server and use the token endpoint URI.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public GenericSecretSource getClientSecret() {
         return clientSecret;
