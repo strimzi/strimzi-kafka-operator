@@ -48,10 +48,11 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
-            + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user"
+            + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user, "
             + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers";
 
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,"
+            + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms";
 
     protected Storage storage;
 
