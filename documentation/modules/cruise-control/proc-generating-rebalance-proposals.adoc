@@ -5,16 +5,9 @@
 [id='proc-generating-rebalance-proposals-{context}']
 = Generating optimization proposals 
 
-When you create or update a `KafkaRebalance` resource, Cruise Control generates an _optimization proposal_ for the Kafka cluster based on the optimization goals that were used.
-The proposal summarizes the following information, in JSON:
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
 
-* An optimal mapping of partitions to brokers
-
-* Changes to the partition leaders
-
-* Statistics on the pending cluster rebalance
-
-You can analyze the summary and decide whether to implement the optimization proposal. 
+You can then analyze the summary information in the optimization proposal and decide whether to implement it. 
 
 .Prerequisites
 
@@ -24,7 +17,7 @@ You can analyze the summary and decide whether to implement the optimization pro
 
 . Create a `KafkaRebalance` resource:
 
-.. To use the default optimization goals defined in the `Kafka` resource, leave the `spec` property empty:
+.. To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -37,8 +30,9 @@ metadata:
 spec: {}
 ----
 
-.. To use one or more user-provided optimization goals instead of the default goals, edit the `spec.goals` property.
-In the following example, rack awareness and replica capacity are set as custom goals:
+.. To set _user-provided optimization goals_ instead of using the default goals, edit the `spec.goals` property and enter one or more goals.
++
+In the following example, rack awareness and replica capacity are user-provided optimization goals:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -120,4 +114,6 @@ xref:proc-implementing-rebalance-proposal-{context}[]
 
 .Additional resources
 
-* xref:con-rebalance-goals-proposals-{context}[]
+* xref:con-optimization-goals-{context}[] 
+
+* xref:con-optimization-proposals-{context}[] 
