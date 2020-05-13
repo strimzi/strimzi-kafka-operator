@@ -918,10 +918,11 @@ spec:
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
-                    zookeeper.set.acl, authorizer., super.usercruise.control.metrics.topic,
+                    zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic,
                     cruise.control.metrics.reporter.bootstrap.servers (with the exception
                     of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
-                    ssl.enabled.protocols).'
+                    ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
+                    cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).'
                 rack:
                   type: object
                   properties:

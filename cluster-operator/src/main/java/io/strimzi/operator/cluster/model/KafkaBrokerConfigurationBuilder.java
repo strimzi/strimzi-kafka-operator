@@ -67,12 +67,14 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures the Cruise Control metric reporter. It is set only if user enabled the Cruise Control.
      *
      * @param clusterName Name of the cluster
-     * @param cruiseContol The Cruise Control configuration from the Kafka CR
+     * @param cruiseControl The Cruise Control configuration from the Kafka CR
+     * @param numPartitions The number of partitions specified in the Kafka config
+     * @param replicationFactor The replication factor specified in the Kafka config
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseContol)   {
-        if (cruiseContol != null) {
+    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseControl, String numPartitions, String replicationFactor)   {
+        if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
             writer.println("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS");
@@ -84,6 +86,13 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+            writer.println("cruise.control.metrics.topic.auto.create=true");
+            if (numPartitions != null) {
+                writer.println("cruise.control.metrics.topic.num.partitions=" + numPartitions);
+            }
+            if (replicationFactor != null) {
+                writer.println("cruise.control.metrics.topic.replication.factor=" + replicationFactor);
+            }
             writer.println();
         }
 
