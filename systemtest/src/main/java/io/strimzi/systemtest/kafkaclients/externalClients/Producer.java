@@ -64,7 +64,7 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
         if (msgCntPredicate.negate().test(numSent.get())) {
 
             KafkaProducerRecord<String, String> record =
-                    KafkaProducerRecord.create(topic, "\"Sending messages\": \"Hello-world - " + numSent.get() + "\"");
+                    KafkaProducerRecord.create(topic, "\"Hello-world - " + numSent.get() + "\"");
 
             producer.send(record, done -> {
                 if (done.succeeded()) {
