@@ -158,7 +158,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. " +
-            "Useful when `client_credentials` authentication only results in the client id being provided in another claim. " +
+            "This is useful when `client_credentials` authentication only results in the client id being provided in another claim. " +
             "It only takes effect if `userNameClaim` is set.")
     public String getFallbackUserNameClaim() {
         return fallbackUserNameClaim;
@@ -169,7 +169,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. " +
-            "It only takes effect if `fallbackUserNameClaim` is set, and the value is present for the claim. " +
+            "This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. " +
             "Mapping usernames and client ids into the same user id space is useful in preventing name collisions.")
     public String getFallbackUserNamePrefix() {
         return fallbackUserNamePrefix;
