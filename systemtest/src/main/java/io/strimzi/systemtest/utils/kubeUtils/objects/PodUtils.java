@@ -63,6 +63,10 @@ public class PodUtils {
         AtomicInteger count = new AtomicInteger();
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
+            if (pods.isEmpty() && expectPods == 0) {
+                LOGGER.debug("Expected pods are ready");
+                return true;
+            }
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
