@@ -107,6 +107,30 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
     public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
+    protected static final List<EnvVar> PROXY_ENV_VARS;
+
+    static {
+        List<EnvVar> envVars = new ArrayList<>(3);
+
+        if (System.getenv("HTTP_PROXY") != null)    {
+            envVars.add(buildEnvVar("HTTP_PROXY", System.getenv("HTTP_PROXY")));
+        }
+
+        if (System.getenv("HTTPS_PROXY") != null)    {
+            envVars.add(buildEnvVar("HTTPS_PROXY", System.getenv("HTTPS_PROXY")));
+        }
+
+        if (System.getenv("NO_PROXY") != null)    {
+            envVars.add(buildEnvVar("NO_PROXY", System.getenv("NO_PROXY")));
+        }
+
+        if (envVars.size() > 0) {
+            PROXY_ENV_VARS = envVars;
+        } else {
+            PROXY_ENV_VARS = new ArrayList<>(0);
+        }
+    }
+
     protected final String cluster;
     protected final String namespace;
 
@@ -407,6 +431,17 @@ public abstract class AbstractModel {
      */
     public String getAncillaryConfigName() {
         return ancillaryConfigName;
+    }
+
+    /**
+     * Returns a lit of environment variables which should be shared by all containers.
+     * Currently contains the mirrored HTTP Proxy environment variables
+     *
+     * @return  List with environment variables
+     */
+    protected List<EnvVar> getSharedEnvVars() {
+        // HTTP Proxy configuration should be passed to all images
+        return PROXY_ENV_VARS;
     }
 
     protected List<EnvVar> getEnvVars() {
