@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import io.strimzi.StrimziContainer;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.admin.AdminClient;
