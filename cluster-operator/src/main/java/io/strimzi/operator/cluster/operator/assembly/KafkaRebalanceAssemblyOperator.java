@@ -216,7 +216,7 @@ public class KafkaRebalanceAssemblyOperator
      * @throws RuntimeException If there is more than one Condition instance in the supplied status with the type
      *                          {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}.
      */
-    private Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
+    /* test */ protected Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
         if (status.getConditions() != null) {
 
             List<Condition> statusConditions = status.getConditions()
