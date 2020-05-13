@@ -379,28 +379,38 @@ public class KafkaBrokerConfigurationBuilder {
      * @param oauth     OAuth type authentication object
      * @return  Returns the builder instance
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     /*test*/ static List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
-        if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
-        if (!oauth.isCheckIssuer()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ISSUER, false));
-        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
-        if (oauth.isEnableECDSA()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, true));
-        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
-        if (oauth.getUserInfoEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri()));
-        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (oauth.getFallbackUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim()));
-        if (oauth.getFallbackUserNamePrefix() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix()));
-        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, false));
-        if (oauth.getValidTokenType() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType()));
-        if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
+        addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+        addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
+        addOption(options, ServerConfig.OAUTH_CHECK_ISSUER, String.valueOf(oauth.isCheckIssuer()));
+        addOption(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
+        }
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
+        }
+        addOption(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, String.valueOf(oauth.isEnableECDSA()));
+        addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
+        addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
+        addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
+        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
+        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
+        addOption(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, String.valueOf(oauth.isAccessTokenIsJwt()));
+        addOption(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, String.valueOf(oauth.isCheckAccessTokenType()));
+        addOption(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
+
+        if (oauth.isDisableTlsHostnameVerification()) {
+            addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+        }
 
         return options;
+    }
+
+    static void addOption(List<String> options, String option, String value) {
+        if (value != null) options.add(String.format("%s=\"%s\"", option, value));
     }
 
     /**
