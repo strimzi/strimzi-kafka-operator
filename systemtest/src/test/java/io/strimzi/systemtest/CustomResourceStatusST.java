@@ -316,7 +316,7 @@ class CustomResourceStatusST extends BaseST {
     void testKafkaTopicStatus() {
         KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
         // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
-        assertKafkaTopicStatus(2, TOPIC_NAME);
+        assertKafkaTopicStatus(1, TOPIC_NAME);
     }
 
     @Test
@@ -380,6 +380,7 @@ class CustomResourceStatusST extends BaseST {
         LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
         KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo));
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TEST_TOPIC_NAME, decreaseTo);
+        KafkaTopicUtils.waitForKafkaTopicNotReady(TEST_TOPIC_NAME);
 
         assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
 
