@@ -845,7 +845,7 @@ public class KafkaRebalanceAssemblyOperator
                                             }
                                             // check annotation
                                             RebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(fetchedKafkaRebalance);
-                                            return reconcile(reconciliation, ccHost == null ? CruiseControlResources.serviceName(clusterName) : ccHost, apiClient, fetchedKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
+                                            return reconcile(reconciliation, ccHost == null ? CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace) : ccHost, apiClient, fetchedKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
                                         }, exception -> Future.failedFuture(exception).mapEmpty());
 
                             } else {
