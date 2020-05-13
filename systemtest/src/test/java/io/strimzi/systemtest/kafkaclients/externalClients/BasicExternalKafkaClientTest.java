@@ -13,7 +13,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.KafkaContainer;
 
 import java.time.Duration;
 import java.util.Properties;
@@ -27,7 +26,7 @@ import java.util.function.IntPredicate;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
-class BasicExternalKafkaClientTest{
+class BasicExternalKafkaClientTest {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
