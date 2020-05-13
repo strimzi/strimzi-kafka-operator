@@ -31,7 +31,7 @@ public class MockCruiseControl {
 
     private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
 
-    private static final int RESPONSE_DELAY_SEC = 1;
+    private static final int RESPONSE_DELAY_SEC = 0;
 
     private static final String SEP =  "-";
     private static final String REBALANCE =  "rebalance";
