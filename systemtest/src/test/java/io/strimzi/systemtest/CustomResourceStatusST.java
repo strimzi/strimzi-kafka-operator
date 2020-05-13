@@ -371,6 +371,25 @@ class CustomResourceStatusST extends BaseST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
     }
 
+    @Test
+    void testKafkaTopicDecreaseStatus() {
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        int decreaseTo = 1;
+
+        LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
+        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo));
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(TEST_TOPIC_NAME, decreaseTo);
+
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TEST_TOPIC_NAME).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().equals("Number of partitions cannot be decreased")), is(true));
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
