@@ -1478,7 +1478,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsName(
+                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsNameWithoutClusterDomain(
                                 namespace,
                                 KafkaResources.zookeeperHeadlessServiceName(name),
                                 zkCluster.getPodName(i));
