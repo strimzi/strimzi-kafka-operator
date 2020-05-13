@@ -380,32 +380,23 @@ class CustomResourceStatusST extends BaseST {
         KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo));
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TEST_TOPIC_NAME, decreaseTo);
 
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TEST_TOPIC_NAME).get().getStatus();
-
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getMessage().equals("Number of partitions cannot be decreased")), is(true));
+        assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
     }
 
     @Test
-    void testKafkaTopicChangingInSyncReplicasStatus() {
+    void testKafkaTopicChangingInSyncReplicasStatus() throws InterruptedException {
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        String invalidValue = "x";
 
         LOGGER.info("Changing min.insync.replicas to random char");
-        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", "x"));
+        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue));
         KafkaTopicUtils.waitForKafkaTopicNotReady(TEST_TOPIC_NAME);
 
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TEST_TOPIC_NAME).get().getStatus();
+        assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
 
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getMessage().contains("Invalid value x for configuration min.insync.replicas")), is(true));
+        // Wait some time to check if error is still present in KafkaTopic status
+        Thread.sleep(60_000);
+        assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
     }
 
     @BeforeAll
@@ -528,5 +519,27 @@ class CustomResourceStatusST extends BaseST {
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
         assertThat("KafkaTopic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
+    }
+
+    void assertKafkaTopicDecreasePartitionsStatus(String topicName) {
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().equals("Number of partitions cannot be decreased")), is(true));
+    }
+
+    void assertKafkaTopicWrongMinInSyncReplicasStatus(String topicName, String invalidValue) {
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().contains(String.format("Invalid value %s for configuration min.insync.replicas", invalidValue))), is(true));
     }
 }
