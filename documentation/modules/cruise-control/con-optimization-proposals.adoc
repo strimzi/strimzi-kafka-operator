@@ -77,4 +77,6 @@ m¦excludedBrokersForReplicaMove
 
 * xref:con-optimization-goals-{context}[] 
 
-* xref:con-optimization-proposals-{context}[] 
+* xref:proc-generating-optimization-proposals-{context}[] 
+
+* xref:proc-implementing-optimization-proposal-{context}[] 

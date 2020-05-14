@@ -2,7 +2,8 @@
 //
 // assembly-cruise-control-concepts.adoc
 
-[id='proc-implementing-rebalance-proposal-{context}']
+[id='proc-implementing-optimization-proposal-{context}']
+
 = Implementing an optimization proposal
 
 You can implement an optimization proposal with a status of `ProposalReady`.
@@ -13,7 +14,7 @@ Review the optimization proposal before you implement it.
 
 .Prerequisites
 
-* You have xref:proc-generating-rebalance-proposals-{context}[generated an optimization proposal].
+* You have xref:proc-generating-optimization-proposals-{context}[generated an optimization proposal].
 
 * The optimization proposal is ready to implement (the `KafkaRebalance` custom resource status is `ProposalReady`).
 
@@ -27,14 +28,14 @@ Perform these steps for the optimization proposal that you want to implement:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance=refresh
+kubectl annotate kafkarebalance _cluster-name_-kafka strimzi.io/rebalance=refresh
 ----
 
 .. Check the status of the `KafkaRebalance` resource:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 ----
 
 .. Wait until the status changes to `ProposalReady`.
@@ -45,7 +46,7 @@ Annotate the `KafkaRebalance` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance=approved
+kubectl annotate kafkarebalance _cluster-name_-kafka strimzi.io/rebalance=approved
 ----
 
 . The Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.
@@ -54,7 +55,7 @@ kubectl annotate kafkaclusterrebalance _cluster-name_-kafka strimzi.io/rebalance
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
+kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 ----
 
 . Cruise Control returns one of three statuses:
@@ -69,4 +70,4 @@ kubectl get kafka kafkaclusterrebalance -o jsonpath='{.status}'
 
 .Additional resources
 
-* xref:con-rebalance-goals-proposals-{context}[]
+* xref:con-optimization-proposals-{context}[]

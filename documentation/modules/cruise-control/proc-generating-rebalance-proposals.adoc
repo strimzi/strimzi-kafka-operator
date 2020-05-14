@@ -2,7 +2,7 @@
 //
 // assembly-cruise-control-concepts.adoc
 
-[id='proc-generating-rebalance-proposals-{context}']
+[id='proc-generating-optimization-proposals-{context}']
 = Generating optimization proposals 
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
@@ -12,6 +12,8 @@ You can then analyze the summary information in the optimization proposal and de
 .Prerequisites
 
 * You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
+
+* You have configured xref:con-optimization-goals-{context}[optimization goals].
 
 .Procedure
 
@@ -37,7 +39,7 @@ In the following example, rack awareness and replica capacity are user-provided 
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
-kind: KafkaClusterRebalance
+kind: KafkaRebalance
 metadata:
   name: my-cluster-rebalance
   labels: 
@@ -55,7 +57,7 @@ spec:
 oc apply -f _your-file_
 ----
 +
-The Cluster Operator requests the optimization proposal from the Cruise Control server.
+The Cluster Operator requests the optimization proposal from Cruise Control.
 This might take a few minutes depending on the size of the Kafka cluster. 
 
 . Check the status of the `KafkaRebalance` resource:
@@ -72,7 +74,7 @@ Cruise Control returns one of two statuses:
 ** `ProposalReady`: The optimization proposal is ready for you to review and implement, if desired.
 The status is followed by the JSON optimization proposal.
 
-. Review the details of the optimization proposal in the `status.summary` property of the `KafkaRebalance` resource.
+. Review the JSON optimization proposal in the `status.summary` property of the `KafkaRebalance` resource.
 +
 Here is an example proposal:
 +
@@ -110,10 +112,8 @@ status:
 
 .What to do next
 
-xref:proc-implementing-rebalance-proposal-{context}[] 
+xref:proc-implementing-optimization-proposal-{context}[] 
 
 .Additional resources
-
-* xref:con-optimization-goals-{context}[] 
 
 * xref:con-optimization-proposals-{context}[] 
