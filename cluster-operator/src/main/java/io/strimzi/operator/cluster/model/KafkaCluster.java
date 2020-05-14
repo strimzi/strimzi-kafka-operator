@@ -1878,14 +1878,19 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
         }
 
-        if (oAuth.getValidIssuerUri() == null) {
-            log.error("{}: Valid Issuer URI has to be specified", listener);
-            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified");
+        if (oAuth.getValidIssuerUri() == null && oAuth.isCheckIssuer()) {
+            log.error("{}: Valid Issuer URI has to be specified or 'checkIssuer' set to false", listener);
+            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified or 'checkIssuer' set to false");
         }
 
         if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
             log.error("{}: Introspection Endpoint URI needs to be configured together with clientId and clientSecret", listener);
             throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+        }
+
+        if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured", listener);
+            throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if the Introspection Endpoint URI is also configured");
         }
 
         if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
@@ -1905,10 +1910,6 @@ public class KafkaCluster extends AbstractModel {
                 log.error("{}: accessTokenIsJwt=false can not be used together with jwksEndpointUri", listener);
                 throw new InvalidResourceException(listener + ": accessTokenIsJwt=false can not be used together with jwksEndpointUri");
             }
-            if (oAuth.getUserNameClaim() != null) {
-                log.error("{}: userNameClaim can not be set when accessTokenIsJwt is false", listener);
-                throw new InvalidResourceException(listener + ": userNameClaim can not be set when accessTokenIsJwt is false");
-            }
             if (!oAuth.isCheckAccessTokenType()) {
                 log.error("{}: checkAccessTokenType can not be set to false when accessTokenIsJwt is false", listener);
                 throw new InvalidResourceException(listener + ": checkAccessTokenType can not be set to false when accessTokenIsJwt is false");
@@ -1918,6 +1919,12 @@ public class KafkaCluster extends AbstractModel {
         if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
             log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
             throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
+        }
+
+        if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: validTokenType can only be used with introspectionEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": validTokenType can only be used with introspectionEndpointUri");
+
         }
     }
 
