@@ -1478,10 +1478,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        Function<Integer, String> zkNodeAddress = (Integer i) -> String.format("%s.%s.%s.svc",
-                                zkCluster.getPodName(i),
+                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsNameWithoutClusterDomain(
+                                namespace,
                                 KafkaResources.zookeeperHeadlessServiceName(name),
-                                namespace);
+                                zkCluster.getPodName(i));
 
                         ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
@@ -3381,7 +3381,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         String getInternalServiceHostname(String serviceName)    {
-            return serviceName + "." + namespace + ".svc";
+            return ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
