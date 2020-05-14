@@ -28,6 +28,7 @@ spec:
       regex: prometheus-kube-state-metrics
       replacement: $1
       action: keep
+    - sourceLabels: 
     - separator: ;
       regex: __meta_kubernetes_service_label_(.+)
       replacement: $1
