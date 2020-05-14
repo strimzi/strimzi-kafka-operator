@@ -21,9 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class StrimziContainer extends GenericContainer<StrimziContainer> {
+public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
-    private static final Logger LOGGER = LogManager.getLogger(StrimziContainer.class);
+    private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainer.class);
 
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
     private static final int KAFKA_PORT = 9092;
@@ -48,7 +48,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
         LATEST_KAFKA_VERSION = lastKafka.get("version");
     }
 
-    public StrimziContainer(final String version) {
+    public StrimziKafkaContainer(final String version) {
         super("strimzi/kafka:" + version);
         super.withNetwork(Network.SHARED);
 
@@ -56,7 +56,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
         withExposedPorts(KAFKA_PORT);
     }
 
-    public StrimziContainer() {
+    public StrimziKafkaContainer() {
         this("latest-kafka-" + LATEST_KAFKA_VERSION);
     }
 

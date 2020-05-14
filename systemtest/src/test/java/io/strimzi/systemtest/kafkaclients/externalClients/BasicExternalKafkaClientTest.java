@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
-import io.strimzi.StrimziContainer;
+import io.strimzi.StrimziKafkaContainer;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -31,14 +31,14 @@ class BasicExternalKafkaClientTest {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
-    private static final StrimziContainer STRIMZI_CONTAINER;
+    private static final StrimziKafkaContainer STRIMZI_CONTAINER;
     private static final AdminClient ADMIN_CLIENT;
 
     private static final String TOPIC_NAME = "my-topic";
     private static final int MESSAGE_COUNT = 500;
 
     static {
-        STRIMZI_CONTAINER = new StrimziContainer();
+        STRIMZI_CONTAINER = new StrimziKafkaContainer();
         STRIMZI_CONTAINER.start();
 
         Properties properties = new Properties();
