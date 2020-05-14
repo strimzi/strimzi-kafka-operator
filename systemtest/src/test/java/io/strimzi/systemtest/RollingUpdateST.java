@@ -972,6 +972,30 @@ class RollingUpdateST extends BaseST {
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
     }
 
+    @Test
+    void testKafkaTopicRFLowerThanMinInSyncReplicas() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 2).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 1, 1).done();
+
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
+        KafkaTopicResource.replaceTopicResource(TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2));
+
+        // rolling update for kafka
+        LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
+        // set annotation to trigger Kafka rolling update
+        kubeClient().statefulSet(kafkaName).cascading(false).edit()
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata().done();
+
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 2, kafkaPods);
+        assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
+    }
+
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
