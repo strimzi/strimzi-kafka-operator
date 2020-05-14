@@ -257,7 +257,7 @@ public class Util {
      * OkHttp wrongfully detects JDK8u251 and higher as JDK9 which enables Http2 unsupported for JDK8.
      * This method is used as workaround as described in https://github.com/fabric8io/kubernetes-client/issues/2212
      *
-     * Thsi shoud be removed after migrating to Fabric8 4.10.2 or higher or after migration to Java 11.
+     * This should be removed after migrating to Fabric8 4.10.2 or higher or after migration to Java 11.
      *
      * @return true if JDK8 is detected and the environment variable HTTP2_DISABLE is not set
      */
