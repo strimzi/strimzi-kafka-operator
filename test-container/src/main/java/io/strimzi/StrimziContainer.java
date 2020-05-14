@@ -16,9 +16,9 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class StrimziContainer extends GenericContainer<StrimziContainer> {
@@ -42,9 +42,8 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
             e.printStackTrace();
         }
 
-        ArrayList kafkaVersions = kafkaVersionYaml.load(yamlFile);
-
-        LinkedHashMap<String, String> lastKafka = (LinkedHashMap<String, String>) kafkaVersions.get(kafkaVersions.size() - 1);
+        List<LinkedHashMap<String, String>> kafkaVersions = kafkaVersionYaml.load(yamlFile);
+        LinkedHashMap<String, String> lastKafka = kafkaVersions.get(kafkaVersions.size() - 1);
 
         LATEST_KAFKA_VERSION = lastKafka.get("version");
     }
@@ -81,7 +80,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
         Collection<ContainerNetwork> cns = containerInfo.getNetworkSettings().getNetworks().values();
 
         for (ContainerNetwork cn : cns) {
-            advertisedListeners.append("," + "BROKER://").append(cn.getIpAddress()).append(":9092");
+            advertisedListeners.append("," + "BROKER://").append(cn.getIpAddress()).append(":9093");
         }
 
         LOGGER.info("This is all advertised listeners for Kafka {}", advertisedListeners.toString());
@@ -111,7 +110,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
         LOGGER.info("Starting kafka...");
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
-            .withCmd("bash", "-c", "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9092,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
+            .withCmd("bash", "-c", "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
             .exec();
 
         try {
