@@ -50,7 +50,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
-
 [options="header"]
 |====
 |Property                    |Description
@@ -1121,7 +1120,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
-
 [options="header"]
 |====
 |Property               |Description
@@ -1641,7 +1639,6 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 ### `KafkaConnectSpec` schema reference
 
 Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
-
 
 [options="header"]
 |====
@@ -2358,6 +2355,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2397,6 +2395,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=
 
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2726,6 +2725,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 
 Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2868,4 +2868,3 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |optimizationResult  1.2+<.<|A JSON object describing the optimization result.
 |map
 |====
-
