@@ -127,7 +127,7 @@ public abstract class AbstractModel {
         if (envVars.size() > 0) {
             PROXY_ENV_VARS = Collections.unmodifiableList(envVars);
         } else {
-            PROXY_ENV_VARS = Collections.unmodifiableList(new ArrayList<>(0));
+            PROXY_ENV_VARS = Collections.emptyList();
         }
     }
 
