@@ -485,6 +485,10 @@ public class CruiseControl extends AbstractModel {
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
         }
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateCruiseControlContainerEnvVars);
 
         return varList;
@@ -522,6 +526,9 @@ public class CruiseControl extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
