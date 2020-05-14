@@ -111,37 +111,44 @@ public class AuthenticationUtils {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
-
-                // skipping if a volume with same Secret name was already added
-                if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift));
-                }
+                addNewVolume(volumeList, volumeNamePrefix, tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
+                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
 
                 if (createOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getSecretName(), isOpenShift));
+                        addNewVolume(volumeList, volumeNamePrefix, oauth.getClientSecret().getSecretName(), isOpenShift);
                     }
                     if (oauth.getAccessToken() != null) {
-                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getSecretName(), isOpenShift));
+                        addNewVolume(volumeList, volumeNamePrefix, oauth.getAccessToken().getSecretName(), isOpenShift);
                     }
                     if (oauth.getRefreshToken() != null) {
-                        volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getSecretName(), isOpenShift));
+                        addNewVolume(volumeList, volumeNamePrefix, oauth.getRefreshToken().getSecretName(), isOpenShift);
                     }
                 }
             }
         }
     }
 
-        /**
+    /**
+     * Creates the Volumes used for authentication of Kafka client based components, checking that the named volume has not already been
+     * created.
+     */
+    private static void addNewVolume(List<Volume> volumeList, String volumeNamePrefix, String secretName, boolean isOpenShift) {
+        // skipping if a volume with same name was already added
+        if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + secretName))) {
+            volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + secretName, secretName, isOpenShift));
+        }
+    }
+
+    /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
      *
      * @param authentication    Authentication object from CRD
