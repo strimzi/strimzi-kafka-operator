@@ -21,12 +21,25 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
     private KafkaClientProperties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
     private final String topic;
-    private final String clientName;
+    private String clientName;
+    private final Integer partition;
 
-    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+             String topic, String clientName, Integer partition) {
+        super(resultPromise, msgCntPredicate);
+        this.properties = properties;
+        this.partition = partition;
+        this.topic = topic;
+        this.clientName = clientName;
+        this.vertx = Vertx.vertx();
+    }
+
+    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+             String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
+        this.partition = null;
         this.clientName = clientName;
         this.vertx = Vertx.vertx();
     }
@@ -63,8 +76,14 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
     private void sendNext(KafkaProducer<String, String> producer, String topic) {
         if (msgCntPredicate.negate().test(numSent.get())) {
 
-            KafkaProducerRecord<String, String> record =
-                    KafkaProducerRecord.create(topic, "\"Hello-world - " + numSent.get() + "\"");
+            KafkaProducerRecord<String, String> record;
+
+            if (partition != null) {
+                // send messages to the specific partition
+                record = KafkaProducerRecord.create(topic, null, "\"Hello-world - " + numSent.get() + "\"", partition);
+            } else {
+                record = KafkaProducerRecord.create(topic, "\"Hello-world - " + numSent.get() + "\"");
+            }
 
             producer.send(record, done -> {
                 if (done.succeeded()) {
@@ -91,5 +110,9 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
             });
 
         }
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
     }
 }

@@ -52,6 +52,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
+    public int sendMessagePlainWithHugeTimeout() {
+        return sendMessagesPlain(Constants.HUGE_CLIENTS_TIMEOUT);
+    }
+
     /**
      * Send messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
      * @return sent message count
@@ -77,7 +81,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName, partition)) {
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
@@ -124,7 +128,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, this.topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, this.topicName, clientName, partition)) {
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 

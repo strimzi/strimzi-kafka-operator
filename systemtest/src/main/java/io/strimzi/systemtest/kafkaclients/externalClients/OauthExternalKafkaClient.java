@@ -118,7 +118,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer plainProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName, partition)) {
 
             plainProducer.getVertx().deployVerticle(plainProducer);
 
@@ -163,7 +163,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 .build();
         }
 
-        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName)) {
+        try (Producer tlsProducer = new Producer(properties, resultPromise, msgCntPredicate, topicName, clientName, partition)) {
 
             tlsProducer.getVertx().deployVerticle(tlsProducer);
 
