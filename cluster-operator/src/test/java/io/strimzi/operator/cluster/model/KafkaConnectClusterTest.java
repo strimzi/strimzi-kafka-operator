@@ -388,6 +388,45 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
+    public void testGenerateDeploymentWithScramSha512AuthAndTLSSameSecret() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+            .editSpec()
+                .editOrNewTls()
+                    .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .endTls()
+                .withNewKafkaClientAuthenticationScramSha512()
+                    .withUsername("user1")
+                    .withNewPasswordSecret()
+                        .withSecretName("my-secret")
+                        .withPassword("user1.password")
+                    .endPasswordSecret()
+                .endKafkaClientAuthenticationScramSha512()
+            .endSpec()
+            .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertThat(containers.get(0).getVolumeMounts().size(), is(3));
+        assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/custom-config/"));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE), is("my-secret/user1.password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME), is("user1"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM), is("scram-sha-512"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS), is("true"));
+    }
+
+    @Test
     public void testGenerateDeploymentWithPlainAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -412,6 +451,45 @@ public class KafkaConnectClusterTest {
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE), is("user1-secret/password"));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME), is("user1"));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM), is("plain"));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithPlainAuthAndTLSSameSecret() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+            .editSpec()
+                .editOrNewTls()
+                    .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .endTls()
+                .withNewKafkaClientAuthenticationPlain()
+                    .withUsername("user1")
+                    .withNewPasswordSecret()
+                        .withSecretName("my-secret")
+                        .withPassword("user1.password")
+                    .endPasswordSecret()
+                .endKafkaClientAuthenticationPlain()
+            .endSpec()
+            .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertThat(containers.get(0).getVolumeMounts().size(), is(3));
+        assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/custom-config/"));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE), is("my-secret/user1.password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME), is("user1"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM), is("plain"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS), is("true"));
     }
 
     @Test
