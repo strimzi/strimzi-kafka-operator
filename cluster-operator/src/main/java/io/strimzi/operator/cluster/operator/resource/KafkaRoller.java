@@ -25,6 +25,9 @@ import org.apache.kafka.common.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,13 +162,29 @@ public class KafkaRoller {
         return result.future();
     }
 
-    private static class RestartContext {
+    protected static class RestartContext {
         final Promise<Void> promise;
         final BackOff backOff;
+        private long connectionErrorStart = 0L;
+
         RestartContext(Supplier<BackOff> backOffSupplier) {
             promise = Promise.promise();
             backOff = backOffSupplier.get();
             backOff.delayMs();
+        }
+
+        public void clearConnectionError() {
+            connectionErrorStart = 0L;
+        }
+
+        long connectionError() {
+            return connectionErrorStart;
+        }
+
+        void noteConnectionError() {
+            if (connectionErrorStart == 0L) {
+                connectionErrorStart = System.currentTimeMillis();
+            }
         }
 
         @Override
@@ -193,7 +212,7 @@ public class KafkaRoller {
         singleExecutor.schedule(() -> {
             log.debug("Considering restart of pod {} after delay of {} {}", podId, delay, unit);
             try {
-                restartIfNecessary(podId, ctx.backOff.done());
+                restartIfNecessary(podId, ctx);
                 ctx.promise.complete();
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
@@ -228,13 +247,13 @@ public class KafkaRoller {
      * Restart the given pod now if necessary according to {@link #podNeedsRestart}.
      * This method blocks.
      * @param podId The id of the pod to roll.
-     * @param finalAttempt True if this is the last attempt to roll this pod.
+     * @param restartContext
      * @throws InterruptedException Interrupted while waiting.
      * @throws ForceableProblem Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem Some error, still thrown when finalAttempt==true.
      */
-    private void restartIfNecessary(int podId, boolean finalAttempt)
-            throws InterruptedException, ForceableProblem, UnforceableProblem, FatalProblem {
+    private void restartIfNecessary(int podId, RestartContext restartContext)
+            throws Exception {
         Pod pod;
         try {
             pod = podOperations.get(namespace, KafkaCluster.kafkaPodName(cluster, podId));
@@ -249,7 +268,7 @@ public class KafkaRoller {
             try {
                 try {
                     adminClient = adminClient(podId);
-                    Integer controller = controller(podId, adminClient, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                    Integer controller = controller(podId, adminClient, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                     int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
                             0, Integer::sum);
                     if (controller == podId && stillRunning > 1) {
@@ -268,7 +287,8 @@ public class KafkaRoller {
                     closeLoggingAnyError(adminClient);
                 }
             } catch (ForceableProblem e) {
-                if (finalAttempt) {
+                if (restartContext.backOff.done() || e.forceNow) {
+                    log.warn("Pod {} will be force-rolled", podName(podId));
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
                     throw e;
@@ -295,13 +315,24 @@ public class KafkaRoller {
         }
     }
 
-    /** Exceptions which we're prepared to ignore in the final attempt */
+    /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
     static final class ForceableProblem extends Exception {
+        final boolean forceNow;
         ForceableProblem(String msg) {
             this(msg, null);
         }
+
         ForceableProblem(String msg, Throwable cause) {
+            this(msg, cause, false);
+        }
+
+        ForceableProblem(String msg, boolean forceNow) {
+            this(msg, null, forceNow);
+        }
+
+        ForceableProblem(String msg, Throwable cause, boolean forceNow) {
             super(msg, cause);
+            this.forceNow = forceNow;
         }
     }
 
@@ -416,20 +447,56 @@ public class KafkaRoller {
      * @return A future which completes the the node id of the controller of the cluster,
      * or -1 if there is not currently a controller.
      */
-    int controller(int podId, Admin ac, long timeout, TimeUnit unit) throws ForceableProblem, InterruptedException {
+    int controller(int podId, Admin ac, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
         Node controllerNode = null;
         try {
             DescribeClusterResult describeClusterResult = ac.describeCluster();
             KafkaFuture<Node> controller = describeClusterResult.controller();
             controllerNode = controller.get(timeout, unit);
+            restartContext.clearConnectionError();
         } catch (ExecutionException e) {
-            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), e.getCause());
+            maybeTcpProbe(podId, e, restartContext);
         } catch (TimeoutException e) {
-            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), e);
+            maybeTcpProbe(podId, e, restartContext);
         }
         int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
         log.debug("controller is {}", id);
         return id;
+    }
+
+    /**
+     * If we've already had trouble connecting to this broker try to probe whether the connection is
+     * open on the broker; if it's not then maybe throw a ForceableProblem to immediately force a restart.
+     * This is an optimization for brokers which don't seem to be running.
+     */
+    private void maybeTcpProbe(int podId, Exception executionException, RestartContext restartContext) throws Exception {
+        if (restartContext.connectionError() + numPods * 120_000L >= System.currentTimeMillis()) {
+            try {
+                log.debug("Probing TCP port due to previous problems connecting to pod {}", podId);
+                // do a tcp connect and close (with a short connect timeout)
+                tcpProbe(podName(podId), KafkaCluster.REPLICATION_PORT);
+            } catch (IOException connectionException) {
+                throw new ForceableProblem("Unable to connect to " + podName(podId) + ":" + KafkaCluster.REPLICATION_PORT, executionException.getCause(), true);
+            }
+            throw executionException;
+        } else {
+            restartContext.noteConnectionError();
+            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), executionException.getCause());
+        }
+    }
+    /**
+     * Tries to open and close a TCP connection to the given host and port.
+     * @param hostname The host
+     * @param port The port
+     * @throws IOException if anything went wrong.
+     */
+    void tcpProbe(String hostname, int port) throws IOException {
+        Socket socket = new Socket();
+        try {
+            socket.connect(new InetSocketAddress(hostname, port), 5_000);
+        } finally {
+            socket.close();
+        }
     }
 
     @Override
