@@ -324,6 +324,9 @@ public class TopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         return varList;
     }
 

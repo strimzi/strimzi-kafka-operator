@@ -403,6 +403,9 @@ public class KafkaBridgeCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;

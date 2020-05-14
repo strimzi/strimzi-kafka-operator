@@ -15,6 +15,7 @@
 * Add support for Kafka 2.5.0
 * Remove TLS sidecars from ZooKeeper pods, using native ZooKeeper TLS support instead
 * Add metrics for Topic Operator
+* Pass HTTP Proxy configuration from operator to operands
 
 ## 0.17.0
 

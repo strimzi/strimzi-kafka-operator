@@ -560,6 +560,9 @@ public class ZookeeperCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
 
         return varList;
