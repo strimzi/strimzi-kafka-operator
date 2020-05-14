@@ -384,7 +384,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
-        addOption(options, ServerConfig.OAUTH_CHECK_ISSUER, String.valueOf(oauth.isCheckIssuer()));
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());
         addOption(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
@@ -392,14 +392,14 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
         }
-        addOption(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, String.valueOf(oauth.isEnableECDSA()));
+        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, oauth.isEnableECDSA());
         addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
         addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
         addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
-        addOption(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, String.valueOf(oauth.isAccessTokenIsJwt()));
-        addOption(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, String.valueOf(oauth.isCheckAccessTokenType()));
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
         addOption(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
 
         if (oauth.isDisableTlsHostnameVerification()) {
@@ -411,6 +411,14 @@ public class KafkaBrokerConfigurationBuilder {
 
     static void addOption(List<String> options, String option, String value) {
         if (value != null) options.add(String.format("%s=\"%s\"", option, value));
+    }
+
+    static void addBooleanOptionIfTrue(List<String> options, String option, boolean value) {
+        if (value) options.add(String.format("%s=\"%s\"", option, value));
+    }
+
+    static void addBooleanOptionIfFalse(List<String> options, String option, boolean value) {
+        if (!value) options.add(String.format("%s=\"%s\"", option, value));
     }
 
     /**
