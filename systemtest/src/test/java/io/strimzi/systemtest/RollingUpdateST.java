@@ -992,10 +992,6 @@ class RollingUpdateST extends BaseST {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
-            .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
-
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 2, kafkaPods);
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
     }
