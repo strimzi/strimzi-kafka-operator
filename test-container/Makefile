@@ -1,4 +1,4 @@
-PROJECT_NAME=strimzi-container
+PROJECT_NAME=test-container
 
 docker_build: java_install
 docker_push:

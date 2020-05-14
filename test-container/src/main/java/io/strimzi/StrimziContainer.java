@@ -20,7 +20,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
     private static final Logger LOGGER = LogManager.getLogger(StrimziContainer.class);
 
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
-    private static final int KAFKA_PORT = 9093;
+    private static final int KAFKA_PORT = 9092;
     private static final int ZOOKEEPER_PORT = 2181;
 
     private int kafkaExposedPort;
