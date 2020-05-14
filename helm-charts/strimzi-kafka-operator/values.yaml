@@ -104,10 +104,10 @@ tlsSidecarCruiseControl:
     tagPrefix: latest
 resources:
   limits:
-    memory: 256Mi
+    memory: 384Mi
     cpu: 1000m
   requests:
-    memory: 256Mi
+    memory: 384Mi
     cpu: 200m
 livenessProbe:
   initialDelaySeconds: 10
