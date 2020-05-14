@@ -165,6 +165,10 @@ public class MockCruiseControl {
     }
 
     public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls) throws IOException, URISyntaxException {
+        setupCCRebalanceResponse(ccServer, pendingCalls, RESPONSE_DELAY_SEC);
+    }
+
+    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, int responseDelay) throws IOException, URISyntaxException {
 
         // Rebalance in progress response with no goals set - non-verbose
         JsonBody pendingJson = getJsonFromResource("CC-Rebalance-no-goals-in-progress.json");
@@ -182,7 +186,7 @@ public class MockCruiseControl {
                                 .withBody(pendingJson)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
                                 .withStatusCode(202)
-                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+                                .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - non-verbose
         JsonBody json = getJsonFromResource("CC-Rebalance-no-goals.json");
@@ -200,7 +204,7 @@ public class MockCruiseControl {
                         response()
                                 .withBody(json)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+                                .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - verbose
         JsonBody jsonVerbose = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
@@ -217,7 +221,7 @@ public class MockCruiseControl {
                         response()
                                 .withBody(jsonVerbose)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+                                .withDelay(TimeUnit.SECONDS, responseDelay));
     }
 
 

@@ -12,14 +12,24 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
+import java.net.ConnectException;
+import java.util.concurrent.TimeoutException;
+
 public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
+    private static final int HTTP_DEFAULT_IDLE_TIMEOUT = 0; // seconds
 
     private final Vertx vertx;
+    private final int idleTimeout;
 
     public CruiseControlApiImpl(Vertx vertx) {
+        this(vertx, HTTP_DEFAULT_IDLE_TIMEOUT);
+    }
+
+    public CruiseControlApiImpl(Vertx vertx, int idleTimeout) {
         this.vertx = vertx;
+        this.idleTimeout = idleTimeout;
     }
 
     @Override
@@ -31,7 +41,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> getCruiseControlState(String host, int port, boolean verbose, String userTaskId) {
 
         Promise<CruiseControlResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions()
+                .setIdleTimeout(idleTimeout)
+                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
                 .addParameter(CruiseControlParameters.JSON, "true")
@@ -60,7 +72,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail);
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+            request.setTimeout(idleTimeout * 1000);
+        }
 
         if (userTaskId != null) {
             request.putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
@@ -81,7 +97,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
 
         Promise<CruiseControlRebalanceResponse> result = Promise.promise();
-        HttpClientOptions httpOptions = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions httpOptions = new HttpClientOptions()
+                .setIdleTimeout(idleTimeout)
+                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .addParameter(CruiseControlParameters.JSON, "true")
@@ -141,7 +159,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail);
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+            request.setTimeout(idleTimeout * 1000);
+        }
 
         if (userTaskId != null) {
             request.putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
@@ -157,7 +179,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlUserTaskResponse> getUserTaskStatus(String host, int port, String userTaskId) {
 
         Promise<CruiseControlUserTaskResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions()
+                .setIdleTimeout(idleTimeout)
+                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .addParameter(CruiseControlParameters.JSON, "true")
@@ -169,7 +193,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
         String path = pathBuilder.build();
 
-        vertx.createHttpClient(options)
+        HttpClientRequest request = vertx.createHttpClient(options)
                 .get(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -223,8 +247,13 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail)
-                .end();
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+            request.setTimeout(idleTimeout * 1000);
+        }
+
+        request.end();
 
         return result.future();
     }
@@ -234,12 +263,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> stopExecution(String host, int port) {
 
         Promise<CruiseControlResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions()
+                .setIdleTimeout(idleTimeout)
+                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .addParameter(CruiseControlParameters.JSON, "true").build();
 
-        vertx.createHttpClient(options)
+        HttpClientRequest request = vertx.createHttpClient(options)
                 .post(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -260,9 +291,28 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail)
-                .end();
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+            request.setTimeout(idleTimeout * 1000);
+        }
+
+        request.end();
 
         return result.future();
+    }
+
+    private void httpExceptionHandler(Promise<? extends CruiseControlResponse> result, Throwable t) {
+        if (t instanceof TimeoutException) {
+            // Vert.x throws a NoStackTraceTimeoutException (inherits from TimeoutException) when the request times out
+            // goint to catch and raise a TimeoutException instead
+            result.fail(new TimeoutException(t.getMessage()));
+        } else if (t instanceof ConnectException) {
+            // Vert.x throws a AnnotatedConnectException (inherits from ConnectException) when the request times out
+            // goint to catch and raise a ConnectException instead
+            result.fail(new ConnectException(t.getMessage()));
+        } else {
+            result.fail(t);
+        }
     }
 }

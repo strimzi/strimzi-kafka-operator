@@ -161,7 +161,12 @@ public class KafkaRebalanceStateMachineTest {
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
-        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, HOST);
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier) {
+            @Override
+            public String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return HOST;
+            }
+        };
 
         Reconciliation recon = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME);
 
