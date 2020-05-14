@@ -309,7 +309,7 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaConnectorUtils.waitForConnectorNotReady(CLUSTER_NAME);
 
-        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).cascading(true).delete();
     }
 
     @Test
