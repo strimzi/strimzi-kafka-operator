@@ -294,6 +294,9 @@ public class EntityOperator extends AbstractModel {
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
         return varList;

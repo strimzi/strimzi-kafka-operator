@@ -1702,6 +1702,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
 
         return varList;
@@ -1857,6 +1860,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         // Add user defined environment variables to the Kafka broker containers
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
@@ -1932,6 +1938,9 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 

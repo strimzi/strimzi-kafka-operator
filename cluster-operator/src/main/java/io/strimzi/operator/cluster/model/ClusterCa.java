@@ -129,8 +129,8 @@ public class ClusterCa extends Ca {
             Map<String, String> sbjAltNames = new HashMap<>(6);
             sbjAltNames.put("DNS.1", ZookeeperCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", ZookeeperCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.3", String.format("%s.%s.svc", ZookeeperCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", ZookeeperCluster.serviceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.3", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.4", ModelUtils.serviceDnsName(namespace, ZookeeperCluster.serviceName(cluster)));
             sbjAltNames.put("DNS.5", ZookeeperCluster.podDnsName(namespace, cluster, i));
             sbjAltNames.put("DNS.6", ZookeeperCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
 
@@ -159,12 +159,12 @@ public class ClusterCa extends Ca {
             Map<String, String> sbjAltNames = new HashMap<>();
             sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", KafkaCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.3", String.format("%s.%s.svc", KafkaCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.3", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, KafkaCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.4", ModelUtils.serviceDnsName(namespace, KafkaCluster.serviceName(cluster)));
             sbjAltNames.put("DNS.5", KafkaCluster.headlessServiceName(cluster));
             sbjAltNames.put("DNS.6", String.format("%s.%s", KafkaCluster.headlessServiceName(cluster), namespace));
-            sbjAltNames.put("DNS.7", String.format("%s.%s.svc", KafkaCluster.headlessServiceName(cluster), namespace));
-            sbjAltNames.put("DNS.8", String.format("%s.%s.svc.%s", KafkaCluster.headlessServiceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.7", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, KafkaCluster.headlessServiceName(cluster)));
+            sbjAltNames.put("DNS.8", ModelUtils.serviceDnsName(namespace, KafkaCluster.headlessServiceName(cluster)));
             sbjAltNames.put("DNS.9", KafkaCluster.podDnsName(namespace, cluster, i));
             sbjAltNames.put("DNS.10", KafkaCluster.podDnsNameWithoutClusterDomain(namespace, cluster, i));
             int nextDnsId = 11;
