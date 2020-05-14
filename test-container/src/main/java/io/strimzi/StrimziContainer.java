@@ -11,8 +11,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class StrimziContainer extends GenericContainer<StrimziContainer> {
@@ -22,9 +28,26 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
     private static final int KAFKA_PORT = 9092;
     private static final int ZOOKEEPER_PORT = 2181;
+    private static final String LATEST_KAFKA_VERSION;
 
     private int kafkaExposedPort;
     private StringBuilder advertisedListeners;
+
+    static {
+        Yaml kafkaVersionYaml = new Yaml();
+        Reader yamlFile = null;
+        try {
+            yamlFile = new FileReader("../kafka-versions.yaml");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        ArrayList kafkaVersions = kafkaVersionYaml.load(yamlFile);
+
+        LinkedHashMap<String, String> lastKafka = (LinkedHashMap<String, String>) kafkaVersions.get(kafkaVersions.size() - 1);
+
+        LATEST_KAFKA_VERSION = lastKafka.get("version");
+    }
 
     public StrimziContainer(final String version) {
         super("strimzi/kafka:" + version);
@@ -35,7 +58,7 @@ public class StrimziContainer extends GenericContainer<StrimziContainer> {
     }
 
     public StrimziContainer() {
-        this("latest-kafka-2.5.0");
+        this("latest-kafka-" + LATEST_KAFKA_VERSION);
     }
 
     @Override

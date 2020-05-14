@@ -38,7 +38,7 @@ class BasicExternalKafkaClientTest {
     private static final int MESSAGE_COUNT = 500;
 
     static {
-        STRIMZI_CONTAINER = new StrimziContainer("latest-kafka-2.5.0");
+        STRIMZI_CONTAINER = new StrimziContainer();
         STRIMZI_CONTAINER.start();
 
         Properties properties = new Properties();

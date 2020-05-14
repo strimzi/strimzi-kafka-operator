@@ -224,7 +224,7 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>test-containers</artifactId>
+            <artifactId>test-container</artifactId>
             <version>0.18.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
