@@ -103,9 +103,9 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -365,8 +365,7 @@ class KafkaST extends BaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkComponentConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
         checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarGeneral);
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
+
 
         LOGGER.info("Checking configuration of TO and UO");
         checkReadinessLivenessProbe(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
@@ -472,8 +471,6 @@ class KafkaST extends BaseST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkComponentConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
         checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarUpdated);
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
         checkReadinessLivenessProbe(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -838,6 +835,7 @@ class KafkaST extends BaseST {
     void testForTopicOperator() throws InterruptedException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        String cliTopicName = "topic-from-cli";
 
         //Creating topics for testing
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
@@ -845,10 +843,11 @@ class KafkaST extends BaseST {
         KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getName(), is(topicName));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItem(topicName));
 
-        KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems(topicName, "topic-from-cli"));
-        assertThat(cmdKubeClient().list("kafkatopic"), hasItems(topicName, "topic-from-cli", topicName));
+        KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, cliTopicName, 1, 1);
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems(topicName, cliTopicName));
+        assertThat(cmdKubeClient().list(KafkaTopic.RESOURCE_KIND), hasItems(cliTopicName, topicName));
 
         //Updating first topic using pod CLI
         KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, topicName, 2);
@@ -857,27 +856,27 @@ class KafkaST extends BaseST {
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", topicName), KafkaTopic.class);
+        KafkaTopic testTopic = fromYamlString(cmdKubeClient().get(KafkaTopic.RESOURCE_KIND, topicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
 
         //Updating second topic via KafkaTopic update
-        KafkaTopicResource.replaceTopicResource("topic-from-cli", topic -> {
+        KafkaTopicResource.replaceTopicResource(cliTopicName, topic -> {
             topic.getSpec().setPartitions(2);
         });
 
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli"),
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, cliTopicName),
                 hasItems("PartitionCount:2"));
-        testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        testTopic = fromYamlString(cmdKubeClient().get(KafkaTopic.RESOURCE_KIND, cliTopicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
 
         //Deleting first topic by deletion of CM
-        cmdKubeClient().deleteByName("kafkatopic", "topic-from-cli");
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, cliTopicName);
 
         //Deleting another topic using pod CLI
         KafkaCmdClient.deleteTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
@@ -887,7 +886,7 @@ class KafkaST extends BaseST {
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(topicName)));
-        assertThat(topics, not(hasItems("topic-from-cli")));
+        assertThat(topics, not(hasItems(cliTopicName)));
     }
 
     @Test
@@ -1861,23 +1860,21 @@ class KafkaST extends BaseST {
             .build();
 
         TestUtils.waitFor("KafkaTopic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> !cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
-                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out().equals(""));
+            () -> cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
+                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(topicName));
 
-        String topicNameInPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
-                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out();
-
-        LOGGER.info("This is topic in kafka broker itself {}", topicNameInPod);
+        String topicDirNameInPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
+                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + topicName + "/p'").out();
 
         String commandToGetDataFromTopic =
-                "cd /var/lib/kafka/data/kafka-log0/" + topicNameInPod + "/;cat 00000000000000000000.log";
+                "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         String topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
         LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
-        assertThat("Topic contains data", topicData, isEmptyOrNullString());
+        assertThat("Topic contains data", topicData, emptyOrNullString());
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
