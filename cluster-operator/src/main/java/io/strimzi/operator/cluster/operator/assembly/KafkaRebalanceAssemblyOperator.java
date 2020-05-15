@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
@@ -47,7 +48,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi.CC_REST_API_SUMMARY;
@@ -132,9 +132,6 @@ public class KafkaRebalanceAssemblyOperator
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
     private final PlatformFeaturesAvailability pfa;
-    private final Function<Vertx, CruiseControlApi> cruiseControlClientProvider;
-
-    private final String ccHost;
 
     /**
      * @param vertx The Vertx instance
@@ -143,30 +140,30 @@ public class KafkaRebalanceAssemblyOperator
      */
     public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                           ResourceOperatorSupplier supplier) {
-        this(vertx, pfa, supplier, v -> new CruiseControlApiImpl(vertx), null);
-    }
-
-    /**
-     * @param vertx The Vertx instance
-     * @param pfa Platform features availability properties
-     * @param supplier Supplies the operators for different resources
-     * @param ccHost Optional host address for the Cruise Control REST API. If this is not supplied then Cruise Control
-     *             service address will be used. This parameter is intended for use in testing.
-     */
-    public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                          ResourceOperatorSupplier supplier, String ccHost) {
-        this(vertx, pfa, supplier, v -> new CruiseControlApiImpl(vertx), ccHost);
-    }
-
-    public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                          ResourceOperatorSupplier supplier,
-                                          Function<Vertx, CruiseControlApi> cruiseControlClientProvider, String ccHost) {
         super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider);
         this.pfa = pfa;
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
-        this.cruiseControlClientProvider = cruiseControlClientProvider;
-        this.ccHost = ccHost;
+    }
+
+    /**
+     * Provides an implementation of the Cruise Control API client
+     *
+     * @return Cruise Control API client instance
+     */
+    protected CruiseControlApi cruiseControlClientProvider() {
+        return new CruiseControlApiImpl(vertx);
+    }
+
+    /**
+     * The Cruise Control hostname to connect to
+     *
+     * @param clusterName the Kafka cluster resource name
+     * @param clusterNamespace the namespace of the Kafka cluster
+     * @return the Cruise Control hostname to connect to
+     */
+    protected String cruiseControlHost(String clusterName, String clusterNamespace) {
+        return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
     }
 
     /**
@@ -216,7 +213,7 @@ public class KafkaRebalanceAssemblyOperator
      * @throws RuntimeException If there is more than one Condition instance in the supplied status with the type
      *                          {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}.
      */
-    private Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
+    /* test */ protected Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
         if (status.getConditions() != null) {
 
             List<Condition> statusConditions = status.getConditions()
@@ -250,22 +247,24 @@ public class KafkaRebalanceAssemblyOperator
     private Future<KafkaRebalance> updateStatus(KafkaRebalance kafkaRebalance,
                                                 KafkaRebalanceStatus desiredStatus,
                                                 Throwable e) {
+        // leaving the current status when the desired one is null
+        if (desiredStatus != null) {
+            String rebalanceStatusString = rebalanceStateConditionStatus(desiredStatus);
 
-        String rebalanceStatusString = rebalanceStateConditionStatus(desiredStatus);
-
-        if (e != null) {
-            StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
-                KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, State.NotReady.toString(), e);
-        } else if (rebalanceStatusString != null) {
-            StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
-                KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, rebalanceStatusString);
-        } else {
-            throw new IllegalArgumentException("Status related exception and the Status condition's type cannot both be null");
-        }
-        StatusDiff diff = new StatusDiff(kafkaRebalance.getStatus(), desiredStatus);
-        if (!diff.isEmpty()) {
-            return kafkaRebalanceOperator
-                    .updateStatusAsync(new KafkaRebalanceBuilder(kafkaRebalance).withStatus(desiredStatus).build());
+            if (e != null) {
+                StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
+                        KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, State.NotReady.toString(), e);
+            } else if (rebalanceStatusString != null) {
+                StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
+                        KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, rebalanceStatusString);
+            } else {
+                throw new IllegalArgumentException("Status related exception and the Status condition's type cannot both be null");
+            }
+            StatusDiff diff = new StatusDiff(kafkaRebalance.getStatus(), desiredStatus);
+            if (!diff.isEmpty()) {
+                return kafkaRebalanceOperator
+                        .updateStatusAsync(new KafkaRebalanceBuilder(kafkaRebalance).withStatus(desiredStatus).build());
+            }
         }
         return Future.succeededFuture(kafkaRebalance);
     }
@@ -374,8 +373,8 @@ public class KafkaRebalanceAssemblyOperator
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
            .compose(desiredStatus -> {
-                    // due to a long rebalancing operation that takes the lock for the entire period, more events related to resource modification could be
-                    // queued with a stale resource (updated by the rebalancing holding the lock), so we need to get the current fresh resource
+               // due to a long rebalancing operation that takes the lock for the entire period, more events related to resource modification could be
+               // queued with a stale resource (updated by the rebalancing holding the lock), so we need to get the current fresh resource
                return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
                             .compose(freshKafkaRebalance -> {
                                 if (freshKafkaRebalance != null) {
@@ -414,7 +413,7 @@ public class KafkaRebalanceAssemblyOperator
                });
     }
 
-    private Future<KafkaRebalanceStatus> computeNextStatus(Reconciliation reconciliation,
+    /* test */ protected Future<KafkaRebalanceStatus> computeNextStatus(Reconciliation reconciliation,
                                                            String host, CruiseControlApi apiClient,
                                                            KafkaRebalance kafkaRebalance, State currentState,
                                                            RebalanceAnnotation rebalanceAnnotation, RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
@@ -481,9 +480,8 @@ public class KafkaRebalanceAssemblyOperator
             // requesting a new rebalance proposal
             return onNew(reconciliation, host, apiClient, rebalanceOptionsBuilder);
         } else {
-            // stay in the current error state, actually failing the Future
-            Condition statusCondition = rebalanceStateCondition(kafkaRebalance.getStatus());
-            return Future.failedFuture(statusCondition != null ? statusCondition.getMessage() : "Error retrieving status message");
+            // stay in the current (error) state, actually returning null as next state
+            return Future.succeededFuture();
         }
     }
 
@@ -641,7 +639,7 @@ public class KafkaRebalanceAssemblyOperator
                 // Check that we have not already failed to contact the API beyond the allowed number of times.
                 if (ccApiErrorCount.get() >= MAX_API_RETRIES) {
                     vertx.cancelTimer(t);
-                    p.fail(new RuntimeException("Unable to reach Cruise Control API after " + MAX_API_RETRIES + " attempts"));
+                    p.fail(new CruiseControlRestException("Unable to reach Cruise Control API after " + MAX_API_RETRIES + " attempts"));
                 }
                 kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).setHandler(getResult -> {
                     if (getResult.succeeded()) {
@@ -826,7 +824,7 @@ public class KafkaRebalanceAssemblyOperator
                                                 + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                                 + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
                             } else if (kafka.getSpec().getCruiseControl() != null) {
-                                CruiseControlApi apiClient = cruiseControlClientProvider.apply(vertx);
+                                CruiseControlApi apiClient = cruiseControlClientProvider();
 
                                 return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                                         .compose(fetchedKafkaRebalance -> {
@@ -845,7 +843,7 @@ public class KafkaRebalanceAssemblyOperator
                                             }
                                             // check annotation
                                             RebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(fetchedKafkaRebalance);
-                                            return reconcile(reconciliation, ccHost == null ? CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace) : ccHost, apiClient, fetchedKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
+                                            return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace), apiClient, fetchedKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
                                         }, exception -> Future.failedFuture(exception).mapEmpty());
 
                             } else {
@@ -931,10 +929,8 @@ public class KafkaRebalanceAssemblyOperator
                                     .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
                                 .endCondition().build();
                     } else {
-                        throw new RuntimeException("Rebalance returned unknown response: " + response.toString());
+                        throw new CruiseControlRestException("Rebalance returned unknown response: " + response.toString());
                     }
-                }).otherwise(t -> {
-                    throw new RuntimeException(t.getMessage());
                 });
     }
 

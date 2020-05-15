@@ -47,7 +47,7 @@ public class MockCruiseControlTest {
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksResponse(ccServer, pendingCalls);
+        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls);
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
 
@@ -107,7 +107,7 @@ public class MockCruiseControlTest {
         int pendingCalls2 = 4;
         Checkpoint secondPending = context.checkpoint(pendingCalls2);
 
-        MockCruiseControl.setupCCUserTasksResponse(ccServer, pendingCalls1);
+        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
 
         Future<CruiseControlUserTaskResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
 
@@ -133,7 +133,7 @@ public class MockCruiseControlTest {
         statusFuture = statusFuture.compose(response -> {
             try {
                 ccServer.reset();
-                MockCruiseControl.setupCCUserTasksResponse(ccServer, pendingCalls2);
+                MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
             } catch (IOException e) {
                 return Future.failedFuture(e);
             } catch (URISyntaxException e) {
