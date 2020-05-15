@@ -230,6 +230,24 @@ spec:
                   type: integer
                   minimum: 1023
                   description: The port which is the server listening on.
+                cors:
+                  type: object
+                  properties:
+                    allowedOrigins:
+                      type: array
+                      items:
+                        type: string
+                      description: List of allowed origins. Java regular expressions
+                        can be used.
+                    allowedMethods:
+                      type: array
+                      items:
+                        type: string
+                      description: List of allowed HTTP methods.
+                  required:
+                  - allowedOrigins
+                  - allowedMethods
+                  description: CORS configuration for the HTTP Bridge.
               description: The HTTP related configuration.
             consumer:
               type: object

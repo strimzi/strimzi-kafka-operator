@@ -2527,6 +2527,23 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |Property     |Description
 |port  1.2+<.<|The port which is the server listening on.
 |integer
+|cors  1.2+<.<|CORS configuration for the HTTP Bridge.
+|xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
+|====
+
+[id='type-KafkaBridgeHttpCors-{context}']
+### `KafkaBridgeHttpCors` schema reference
+
+Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|allowedOrigins  1.2+<.<|List of allowed origins. Java regular expressions can be used.
+|string array
+|allowedMethods  1.2+<.<|List of allowed HTTP methods.
+|string array
 |====
 
 [id='type-KafkaBridgeConsumerSpec-{context}']
