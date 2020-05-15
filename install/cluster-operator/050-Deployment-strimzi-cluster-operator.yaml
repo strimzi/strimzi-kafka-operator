@@ -96,9 +96,9 @@ spec:
         resources:
           limits:
             cpu: 1000m
-            memory: 256Mi
+            memory: 384Mi
           requests:
             cpu: 200m
-            memory: 256Mi
+            memory: 384Mi
   strategy:
     type: Recreate
