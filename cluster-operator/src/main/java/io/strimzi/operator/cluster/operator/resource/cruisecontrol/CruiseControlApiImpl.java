@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
-    private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = 0;
+    private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
 
     private final Vertx vertx;
     private final long idleTimeout;
