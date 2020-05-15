@@ -13,8 +13,12 @@ release:
 	$(CP) -r ./kafka-mirror-maker $(RELEASE_PATH)/
 	$(CP) -r ./kafka-mirror-maker-2 $(RELEASE_PATH)/
 	$(CP) -r ./kafka-bridge $(RELEASE_PATH)/
+	$(CP) -r ./connector $(RELEASE_PATH)/
+	$(CP) -r ./cruise-control $(RELEASE_PATH)/
+	$(CP) -r ./security $(RELEASE_PATH)/
 	$(CP) -r ./user $(RELEASE_PATH)/
 	$(CP) -r ./topic $(RELEASE_PATH)/
 	$(CP) -r ./metrics $(RELEASE_PATH)/
+	$(CP) -r ./README.md $(RELEASE_PATH)/
 
 .PHONY: all build clean docker_build docker_push docker_tag spotbugs
