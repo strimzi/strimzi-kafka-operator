@@ -16,6 +16,9 @@ rules:
     # The entity operator runs the KafkaTopic assembly operator, which needs to access and manage KafkaTopic resources
   - kafkatopics
   - kafkatopics/status
+    # The entity operator runs the KafkaUser assembly operator, which needs to access and manage KafkaUser resources
+  - kafkausers
+  - kafkausers/status
   verbs:
   - get
   - list
@@ -31,20 +34,6 @@ rules:
   verbs:
     # The entity operator needs to be able to create events
   - create
-- apiGroups:
-  - "kafka.strimzi.io"
-  resources:
-    # The entity operator runs the KafkaUser assembly operator, which needs to access and manage KafkaUser resources
-  - kafkausers
-  - kafkausers/status
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - patch
-  - update
-  - delete
 - apiGroups:
   - ""
   resources:
