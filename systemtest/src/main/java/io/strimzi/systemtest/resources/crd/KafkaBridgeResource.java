@@ -76,8 +76,8 @@ public class KafkaBridgeResource {
         return kafkaBridge;
     }
 
-    public static void deleteKafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
-        kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaBridge);
+    public static void deleteKafkaBridgeWithoutWait(String clusterName) {
+        kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
     }
 
     private static KafkaBridge getKafkaBridgeFromYaml(String yamlPath) {

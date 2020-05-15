@@ -200,10 +200,10 @@ public class KafkaResource {
     /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
-     * @param kafka kafka cluster specification
+     * @param clusterName kafka cluster name
      */
-    public static void deleteKafkaWithoutWait(Kafka kafka) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafka);
+    public static void deleteKafkaWithoutWait(String clusterName) {
+        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {

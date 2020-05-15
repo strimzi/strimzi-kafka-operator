@@ -123,8 +123,7 @@ public class KafkaMirrorMaker2Resource {
         return kafkaMirrorMaker2;
     }
 
-    public static void deleteKafkaMirrorMaker2WithoutWait(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        String clusterName = kafkaMirrorMaker2.getMetadata().getName();
+    public static void deleteKafkaMirrorMaker2WithoutWait(String clusterName) {
         kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
     }
 
