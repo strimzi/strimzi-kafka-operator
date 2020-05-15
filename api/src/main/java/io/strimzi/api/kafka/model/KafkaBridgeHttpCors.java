@@ -5,63 +5,55 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * A representation of the HTTP configuration.
+ * A representation of the HTTP CORS configuration.
  */
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"port", "cors"})
+@JsonPropertyOrder({"allowedOrigins", "allowedMethods"})
 @EqualsAndHashCode
-public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaBridgeHttpCors implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
-    public static final int HTTP_DEFAULT_PORT = 8080;
-    public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
-    private int port = HTTP_DEFAULT_PORT;
-    private KafkaBridgeHttpCors cors;
+    private List<String> allowedOrigins = null;
+    private List<String> allowedMethods = null;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    public KafkaBridgeHttpConfig() {
-    }
-
-    public KafkaBridgeHttpConfig(int port) {
-        this.port = port;
-    }
-
-    @Description("The port which is the server listening on.")
-    @DefaultValue("8080")
-    @Minimum(1023)
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    @Description("CORS configuration for the HTTP Bridge.")
+    @Description("List of allowed origins. " +
+            "Java regular expressions can be used.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaBridgeHttpCors getCors() {
-        return cors;
+    @JsonProperty(required = true)
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
     }
 
-    public void setCors(KafkaBridgeHttpCors cors) {
-        this.cors = cors;
+    public void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
+
+    @Description("List of allowed HTTP methods.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
+    public List<String> getAllowedMethods() {
+        return allowedMethods;
+    }
+
+    public void setAllowedMethods(List<String> allowedMethods) {
+        this.allowedMethods = allowedMethods;
     }
 
     @Override

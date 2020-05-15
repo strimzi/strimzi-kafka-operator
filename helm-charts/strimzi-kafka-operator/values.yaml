@@ -76,7 +76,7 @@ kafkaBridge:
   image:
     repository: strimzi
     name: kafka-bridge
-    tag: 0.15.2
+    tag: 0.16.0
 kafkaExporter:
   image:
     repository: strimzi
