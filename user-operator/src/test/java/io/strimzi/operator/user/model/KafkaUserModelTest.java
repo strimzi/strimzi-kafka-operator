@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Base64;
 
 import static io.strimzi.test.TestUtils.set;
-import static java.util.Collections.singleton;
+import static io.strimzi.test.TestUtils.is;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -233,8 +233,10 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
-        assertThat(generatedSecret.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
+        assertThat(generatedSecret.getData().keySet(), is(set(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_JAAS_CONFIG)));
         assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
+        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_JAAS_CONFIG))), is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + "aaaaaaaaaa" + "\";"));
+
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
@@ -257,8 +259,9 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap()));
-        assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
+        assertThat(generated.getData().keySet(), is(set(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_JAAS_CONFIG)));
         assertThat(generated.getData(), hasEntry(KafkaUserModel.KEY_PASSWORD, existingPassword));
+        assertThat(generated.getData(), hasEntry(KafkaUserModel.KEY_JAAS_CONFIG, "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + existingPassword + "\";"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -281,8 +284,9 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
-        assertThat(generated.getData().keySet(), is(singleton("password")));
+        assertThat(generated.getData().keySet(), is(set("password", "jaas_config")));
         assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
+        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_JAAS_CONFIG))), is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"aaaaaaaaaa\";"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);

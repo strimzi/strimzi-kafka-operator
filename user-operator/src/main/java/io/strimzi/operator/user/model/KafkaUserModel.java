@@ -146,7 +146,7 @@ public class KafkaUserModel {
             String password = Base64.getEncoder().encodeToString(scramSha512Password.getBytes(StandardCharsets.US_ASCII));
             Map<String, String> data = new HashMap<>();
             data.put(KafkaUserModel.KEY_PASSWORD, password);
-            data.put(KafkaUserModel.KEY_JAAS_CONFIG, saslJaasConfigBuilder(KafkaUserModel.getScramUserName(this.name), password));
+            data.put(KafkaUserModel.KEY_JAAS_CONFIG, saslJaasConfigBuilder(getUserName(), password));
             return createSecret(data);
         } else {
             return null;
