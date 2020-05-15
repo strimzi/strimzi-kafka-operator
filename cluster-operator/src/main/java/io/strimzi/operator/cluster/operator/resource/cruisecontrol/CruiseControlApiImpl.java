@@ -21,7 +21,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private static final int HTTP_DEFAULT_IDLE_TIMEOUT = 0; // seconds
 
     private final Vertx vertx;
-    private final int idleTimeout;
+    private final long idleTimeout;
 
     public CruiseControlApiImpl(Vertx vertx) {
         this(vertx, HTTP_DEFAULT_IDLE_TIMEOUT);
@@ -41,9 +41,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> getCruiseControlState(String host, int port, boolean verbose, String userTaskId) {
 
         Promise<CruiseControlResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions()
-                .setIdleTimeout(idleTimeout)
-                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
                 .addParameter(CruiseControlParameters.JSON, "true")
@@ -97,9 +95,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
 
         Promise<CruiseControlRebalanceResponse> result = Promise.promise();
-        HttpClientOptions httpOptions = new HttpClientOptions()
-                .setIdleTimeout(idleTimeout)
-                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions httpOptions = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .addParameter(CruiseControlParameters.JSON, "true")
@@ -179,9 +175,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlUserTaskResponse> getUserTaskStatus(String host, int port, String userTaskId) {
 
         Promise<CruiseControlUserTaskResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions()
-                .setIdleTimeout(idleTimeout)
-                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .addParameter(CruiseControlParameters.JSON, "true")
@@ -263,9 +257,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> stopExecution(String host, int port) {
 
         Promise<CruiseControlResponse> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions()
-                .setIdleTimeout(idleTimeout)
-                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .addParameter(CruiseControlParameters.JSON, "true").build();
