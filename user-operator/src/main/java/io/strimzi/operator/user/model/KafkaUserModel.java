@@ -254,8 +254,9 @@ public class KafkaUserModel {
     /**
      * Gerenate a SASL SSL Jaas Config String for SCRAM-SHA-512 secret
      *
-     * @param userName The KafkaPrincipal username
-     * @param userSecret The Secret containing any existing password.
+     * @param username The KafkaPrincipal username
+     * @param password The SCRAM password for a given user.
+     * @return SASL jaas config string
      */
     public String saslJaasConfigBuilder(String username, String password) {
         String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";

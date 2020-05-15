@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Base64;
 
 import static io.strimzi.test.TestUtils.set;
-import static io.strimzi.test.TestUtils.is;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -235,7 +234,7 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getData().keySet(), is(set(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_JAAS_CONFIG)));
         assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_JAAS_CONFIG))), is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + "aaaaaaaaaa" + "\";"));
+        assertThat(new String(generatedSecret.getData().get(KafkaUserModel.KEY_JAAS_CONFIG)), is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"YWFhYWFhYWFhYQ==\";"));
 
 
         // Check owner reference
@@ -286,7 +285,6 @@ public class KafkaUserModelTest {
 
         assertThat(generated.getData().keySet(), is(set("password", "jaas_config")));
         assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_JAAS_CONFIG))), is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"aaaaaaaaaa\";"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
