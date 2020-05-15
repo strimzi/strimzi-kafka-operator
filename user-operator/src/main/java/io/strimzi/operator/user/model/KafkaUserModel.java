@@ -44,6 +44,7 @@ public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
     public static final String KEY_PASSWORD = "password";
+    public static final String KEY_JAAS_CONFIG = "jaas_config";
 
     protected final String namespace;
     protected final String name;
@@ -142,8 +143,10 @@ public class KafkaUserModel {
             data.put("user.password", userCertAndKey.storePasswordAsBase64String());
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
+            String password = Base64.getEncoder().encodeToString(scramSha512Password.getBytes(StandardCharsets.US_ASCII));
             Map<String, String> data = new HashMap<>();
-            data.put(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(scramSha512Password.getBytes(StandardCharsets.US_ASCII)));
+            data.put(KafkaUserModel.KEY_PASSWORD, password);
+            data.put(KafkaUserModel.KEY_JAAS_CONFIG, saslJaasConfigBuilder(KafkaUserModel.getScramUserName(this.name), password));
             return createSecret(data);
         } else {
             return null;
@@ -246,6 +249,17 @@ public class KafkaUserModel {
         log.debug("Generating user password");
         this.scramSha512Password = generator.generate();
 
+    }
+
+    /**
+     * Gerenate a SASL SSL Jaas Config String for SCRAM-SHA-512 secret
+     *
+     * @param userName The KafkaPrincipal username
+     * @param userSecret The Secret containing any existing password.
+     */
+    public String saslJaasConfigBuilder(String username, String password) {
+        String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
+        return String.format(jaasTemplate, username, password);
     }
 
     /**
