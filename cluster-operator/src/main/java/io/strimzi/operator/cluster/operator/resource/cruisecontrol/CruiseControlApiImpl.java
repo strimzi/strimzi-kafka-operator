@@ -18,13 +18,13 @@ import java.util.concurrent.TimeoutException;
 public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
-    private static final int HTTP_DEFAULT_IDLE_TIMEOUT = 0; // seconds
+    private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = 0;
 
     private final Vertx vertx;
     private final long idleTimeout;
 
     public CruiseControlApiImpl(Vertx vertx) {
-        this(vertx, HTTP_DEFAULT_IDLE_TIMEOUT);
+        this(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS);
     }
 
     public CruiseControlApiImpl(Vertx vertx, int idleTimeout) {
@@ -72,7 +72,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 })
                 .exceptionHandler(t -> httpExceptionHandler(result, t));
 
-        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
             request.setTimeout(idleTimeout * 1000);
         }
 
@@ -157,7 +157,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 })
                 .exceptionHandler(t -> httpExceptionHandler(result, t));
 
-        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
             request.setTimeout(idleTimeout * 1000);
         }
 
@@ -243,7 +243,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 })
                 .exceptionHandler(t -> httpExceptionHandler(result, t));
 
-        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
             request.setTimeout(idleTimeout * 1000);
         }
 
@@ -285,7 +285,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 })
                 .exceptionHandler(t -> httpExceptionHandler(result, t));
 
-        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT) {
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
             request.setTimeout(idleTimeout * 1000);
         }
 

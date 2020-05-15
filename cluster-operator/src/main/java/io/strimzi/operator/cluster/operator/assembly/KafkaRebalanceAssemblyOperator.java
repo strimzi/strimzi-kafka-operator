@@ -151,7 +151,7 @@ public class KafkaRebalanceAssemblyOperator
      *
      * @return Cruise Control API client instance
      */
-    public CruiseControlApi cruiseControlClientProvider() {
+    protected CruiseControlApi cruiseControlClientProvider() {
         return new CruiseControlApiImpl(vertx);
     }
 
@@ -162,7 +162,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param clusterNamespace the namespace of the Kafka cluster
      * @return the Cruise Control hostname to connect to
      */
-    public String cruiseControlHost(String clusterName, String clusterNamespace) {
+    protected String cruiseControlHost(String clusterName, String clusterNamespace) {
         return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
     }
 
