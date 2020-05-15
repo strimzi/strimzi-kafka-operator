@@ -53,6 +53,8 @@ include::assembly-prometheus-metrics.adoc[leveloffset=+1]
 
 include::assembly-kafka-jmx-options.adoc[leveloffset=+1]
 
+include::assembly-jmxtrans.adoc[leveloffset=+1]
+
 include::assembly-jvm-options.adoc[leveloffset=+1]
 
 include::assembly-configuring-container-images.adoc[leveloffset=+1]
