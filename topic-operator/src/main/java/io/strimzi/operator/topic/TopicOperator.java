@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
+import static java.util.Collections.emptyList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -1202,6 +1203,7 @@ class TopicOperator {
             this.succeeded = succeeded;
             this.undetermined = undetermined;
             this.failed = failed;
+            this.ktList = emptyList();
         }
 
         public void addKafkaTopics(List<KafkaTopic> ktList) {
