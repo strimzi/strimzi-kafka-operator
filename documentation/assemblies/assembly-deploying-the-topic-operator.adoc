@@ -27,6 +27,4 @@ include::../modules/con-how-the-topic-operator-works.adoc[leveloffset=+1]
 
 include::../modules/proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]
 
-include::../modules/ref-topic-operator-environment.adoc[leveloffset=+1]
-
 :context: {parent-context-deploying}
