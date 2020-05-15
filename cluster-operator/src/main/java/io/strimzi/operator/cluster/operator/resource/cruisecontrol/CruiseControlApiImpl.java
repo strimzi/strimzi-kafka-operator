@@ -12,14 +12,24 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
+import java.net.ConnectException;
+import java.util.concurrent.TimeoutException;
+
 public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
+    private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
 
     private final Vertx vertx;
+    private final long idleTimeout;
 
     public CruiseControlApiImpl(Vertx vertx) {
+        this(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS);
+    }
+
+    public CruiseControlApiImpl(Vertx vertx, int idleTimeout) {
         this.vertx = vertx;
+        this.idleTimeout = idleTimeout;
     }
 
     @Override
@@ -46,7 +56,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.bodyHandler(buffer -> {
                             JsonObject json = buffer.toJsonObject();
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                result.fail(new CruiseControlRestException(
+                                    "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                    json.getString(CC_REST_API_ERROR_KEY)));
                             } else {
                                 CruiseControlResponse ccResponse = new CruiseControlResponse(userTaskID, json);
                                 result.complete(ccResponse);
@@ -55,11 +67,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
                     } else {
                         result.fail(new CruiseControlRestException(
-                                "Unexpected status code " + response.statusCode() + " for GET request to " +
-                                host + ":" + port + path));
+                                "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail);
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
+            request.setTimeout(idleTimeout * 1000);
+        }
 
         if (userTaskId != null) {
             request.putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
@@ -87,7 +102,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .addRebalanceParameters(rbOptions)
                 .build();
 
-
         HttpClientRequest request = vertx.createHttpClient(httpOptions)
                 .post(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
@@ -107,7 +121,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
                                 ccResponse.setProposalIsStillCalculating(true);
                             } else {
-                                result.fail(new CruiseControlRestException("202 Status code did not contain progress key. Response was: " +
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path +
+                                        ". 202 Status code did not contain progress key. Server returned: " +
                                         ccResponse.getJson().toString()));
                             }
                             result.complete(ccResponse);
@@ -116,32 +132,34 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.bodyHandler(buffer -> {
                             String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
-                            CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                 // If there was a client side error, check whether it was due to not enough data being available
                                 if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
+                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                                     ccResponse.setNotEnoughDataForProposal(true);
                                     result.complete(ccResponse);
                                 } else {
                                     // If there was any other kind of error propagate this to the operator
-                                    result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                    result.fail(new CruiseControlRestException(
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                            json.getString(CC_REST_API_ERROR_KEY)));
                                 }
                             } else {
-                                result.complete(ccResponse);
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                         json.toString()));
                             }
                         });
                     } else {
-                        response.bodyHandler(buffer -> {
-                            String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
-                            String json = buffer.toJsonObject().toString();
-                            String errMsg = String.format(
-                                    "Unexpected status code %d for rebalance request (%s) to %s:%d%s with message %s",
-                                    response.statusCode(), userTaskID, host, port, path, json);
-                            result.fail(new CruiseControlRestException(errMsg));
-                        });
+                        result.fail(new CruiseControlRestException(
+                                "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail);
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
+            request.setTimeout(idleTimeout * 1000);
+        }
 
         if (userTaskId != null) {
             request.putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
@@ -169,22 +187,32 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
         String path = pathBuilder.build();
 
-        vertx.createHttpClient(options)
+        HttpClientRequest request = vertx.createHttpClient(options)
                 .get(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
                         String userTaskID = response.getHeader(CC_REST_API_USER_ID_HEADER);
                         response.bodyHandler(buffer -> {
-                            JsonObject jsonUserTask = buffer.toJsonObject().getJsonArray("userTasks").getJsonObject(0);
-                            JsonObject json = new JsonObject()
-                                    .put("Status", jsonUserTask.getString("Status"))
-                                    .put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
-                            if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                result.fail(json.getString(CC_REST_API_ERROR_KEY));
-                            } else {
-                                CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, json);
-                                result.complete(ccResponse);
+                            JsonObject json = buffer.toJsonObject();
+                            JsonObject jsonUserTask = json.getJsonArray("userTasks").getJsonObject(0);
+                            // This should not be an error with a 200 status but we play it safe
+                            if (jsonUserTask.containsKey(CC_REST_API_ERROR_KEY)) {
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                json.getString(CC_REST_API_ERROR_KEY)));
                             }
+                            JsonObject statusJson = new JsonObject();
+                            String taskStatus = jsonUserTask.getString("Status");
+                            statusJson.put("Status", taskStatus);
+                            // The status could be ACTIVE in which case there will not be a "summary" so we check that we are
+                            // in a state that actually has that key.
+                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) ||
+                                    taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
+                                // We now need to extract the original response which is in a raw string (not nicely formatted JSON)
+                                statusJson.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
+                            }
+                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
+                            result.complete(ccResponse);
                         });
                     } else if (response.statusCode() == 500) {
                         response.bodyHandler(buffer -> {
@@ -197,8 +225,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     ccResponse.setCompletedWithError(true);
                                     result.complete(ccResponse);
                                 } else {
-                                    result.fail(json.getString(CC_REST_API_ERROR_KEY));
+                                    result.fail(new CruiseControlRestException(
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                    json.getString(CC_REST_API_ERROR_KEY)));
                                 }
+                            } else {
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                json.toString()));
                             }
                         });
                     } else {
@@ -207,8 +241,13 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail)
-                .end();
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
+            request.setTimeout(idleTimeout * 1000);
+        }
+
+        request.end();
 
         return result.future();
     }
@@ -223,7 +262,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .addParameter(CruiseControlParameters.JSON, "true").build();
 
-        vertx.createHttpClient(options)
+        HttpClientRequest request = vertx.createHttpClient(options)
                 .post(port, host, path, response -> {
                     response.exceptionHandler(result::fail);
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -244,9 +283,28 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 host + ":" + port + path));
                     }
                 })
-                .exceptionHandler(result::fail)
-                .end();
+                .exceptionHandler(t -> httpExceptionHandler(result, t));
+
+        if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
+            request.setTimeout(idleTimeout * 1000);
+        }
+
+        request.end();
 
         return result.future();
+    }
+
+    private void httpExceptionHandler(Promise<? extends CruiseControlResponse> result, Throwable t) {
+        if (t instanceof TimeoutException) {
+            // Vert.x throws a NoStackTraceTimeoutException (inherits from TimeoutException) when the request times out
+            // goint to catch and raise a TimeoutException instead
+            result.fail(new TimeoutException(t.getMessage()));
+        } else if (t instanceof ConnectException) {
+            // Vert.x throws a AnnotatedConnectException (inherits from ConnectException) when the request times out
+            // goint to catch and raise a ConnectException instead
+            result.fail(new ConnectException(t.getMessage()));
+        } else {
+            result.fail(t);
+        }
     }
 }
