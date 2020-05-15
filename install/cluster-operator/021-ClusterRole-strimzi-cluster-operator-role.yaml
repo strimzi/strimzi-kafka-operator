@@ -8,6 +8,8 @@ rules:
 - apiGroups:
   - "rbac.authorization.k8s.io"
   resources:
+  # The cluster operator needs to create and manage cluster role bindings in the case of an install where a user
+  # has specified they want their cluster role bindings generated
   - clusterrolebindings
   verbs:
   - get
@@ -19,16 +21,17 @@ rules:
 - apiGroups:
   - storage.k8s.io
   resources:
+  # The cluster operator requires "get" permissions to view storage class details
+  # This is because only a persistent volume of a supported storage class type can be resized
   - storageclasses
   verbs:
-  # Persistent Volumes can be resized only when it is supported in the storage class.
-  # Therefore we need the ability to get the storage class details and we require this access right.
   - get
 - apiGroups:
   - ""
   resources:
+  # The cluster operator requires "list" permissions to view all nodes in a cluster
+  # The listing is used to determine the node addresses when NodePort access is configured
+  # These addresses are then exposed in the custom resource states
   - nodes
   verbs:
-  # The listing of nodes is needed to find the node addresses when the NodePort access is configured and set the proper
-  # addresses in the status
   - list
