@@ -13,7 +13,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-    # The cluster operator needs to access and manage service accounts to grant applications cluster permissions
+    # The cluster operator needs to access and manage service accounts to grant Strimzi components cluster permissions
   - serviceaccounts
   verbs:
   - get
@@ -24,7 +24,7 @@ rules:
 - apiGroups:
   - "rbac.authorization.k8s.io"
   resources:
-    # The cluster operator needs to access and manage rolebindings to grant applications cluster permissions
+    # The cluster operator needs to access and manage rolebindings to grant Strimzi components cluster permissions
   - rolebindings
   verbs:
     - get
@@ -35,13 +35,13 @@ rules:
 - apiGroups:
   - ""
   resources:
-    # The cluster operator needs to access and manage config maps for application configuration
+    # The cluster operator needs to access and manage config maps for Strimzi components configuration
   - configmaps
-    # The cluster operator needs to access and manage services to expose applications to network traffic
+    # The cluster operator needs to access and manage services to expose Strimzi components to network traffic
   - services
     # The cluster operator needs to access and manage secrets to handle credentials
   - secrets
-    # The cluster operator needs to access and manage persistent volume claims to bind them to applications for persistent data
+    # The cluster operator needs to access and manage persistent volume claims to bind them to Strimzi components for persistent data
   - persistentvolumeclaims
   verbs:
   - get
@@ -109,14 +109,14 @@ rules:
     # apps/v1 was introduced in Kubernetes 1.14
   - "extensions"
   resources:
-    # The cluster operator needs to access and manage deployments to run deployment based applications
+    # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
   - deployments
   - deployments/scale
-    # The cluster operator needs to access replica sets to manage applications and to determine error states
+    # The cluster operator needs to access replica sets to manage Strimzi components and to determine error states
   - replicasets
     # The cluster operator needs to access and manage replication controllers to manage replicasets
   - replicationcontrollers
-    # The cluster operator needs to access and manage network policies to lock down communication between applications
+    # The cluster operator needs to access and manage network policies to lock down communication between Strimzi components
   - networkpolicies
     # The cluster operator needs to access and manage ingresses which allow external access to the services in a cluster
   - ingresses
@@ -131,13 +131,13 @@ rules:
 - apiGroups:
   - "apps"
   resources:
-    # The cluster operator needs to access and manage deployments to run deployment based applications
+    # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
   - deployments
   - deployments/scale
   - deployments/status
-    # The cluster operator needs to access and manage stateful sets to run stateful sets based applications
+    # The cluster operator needs to access and manage stateful sets to run stateful sets based Strimzi components
   - statefulsets
-    # The cluster operator needs to access replica-sets to manage applications and to determine error states
+    # The cluster operator needs to access replica-sets to manage Strimzi components and to determine error states
   - replicasets
   verbs:
   - get
@@ -201,7 +201,7 @@ rules:
 - apiGroups:
   - networking.k8s.io
   resources:
-    # The cluster operator needs to access and manage network policies to lock down communication between applications
+    # The cluster operator needs to access and manage network policies to lock down communication between Strimzi components
   - networkpolicies
   verbs:
   - get
@@ -214,7 +214,7 @@ rules:
 - apiGroups:
   - route.openshift.io
   resources:
-    # The cluster operator needs to access and manage routes to expose applications for external access
+    # The cluster operator needs to access and manage routes to expose Strimzi components for external access
   - routes
   - routes/custom-host
   verbs:
@@ -228,7 +228,7 @@ rules:
   - policy
   resources:
     # The cluster operator needs to access and manage pod disruption budgets this limits the number of concurrent disruptions
-    # that an application experiences, allowing for higher availability
+    # that a Strimzi component experiences, allowing for higher availability
   - poddisruptionbudgets
   verbs:
   - get
