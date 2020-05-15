@@ -1,4 +1,4 @@
-Use `ssl` configuration options to run external listeners on a specific _cipher suite_ for a TLS version.
+Use the three allowed `ssl` configuration options to run external listeners on a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
 
 .Example SSL configuration

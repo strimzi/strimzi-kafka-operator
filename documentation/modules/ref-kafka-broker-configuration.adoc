@@ -35,7 +35,7 @@ Specifically, you are prevented from modifying all configuration options with ke
 If the `config` property specifies a restricted option, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other supported options are passed to Kafka.
 
-`ssl` configuration options allow you to run external listeners on a specific _cipher suite_ for a TLS version.
+Use the three allowed `ssl` configuration options to run external listeners on a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
 
 .Example Kafka broker configuration
