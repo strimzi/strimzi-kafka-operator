@@ -40,7 +40,7 @@ public class Exec {
     private static final Pattern ERROR_PATTERN = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
     private static final Pattern INVALID_PATTERN = Pattern.compile("The ([a-zA-Z0-9]+) \"([a-z0-9.-]+)\" is invalid:");
     private static final Pattern PATH_SPLITTER = Pattern.compile(System.getProperty("path.separator"));
-    private static final int MAXIMUM_EXEC_LOG_CHARACTER_SIZE = 20000;
+    private static final int MAXIMUM_EXEC_LOG_CHARACTER_SIZE = Integer.parseInt(System.getenv().getOrDefault("STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS", "20000"));
     private static final Object LOCK = new Object();
 
     public Process process;
