@@ -18,6 +18,7 @@
 * Use Strimzi Kafka Bridge 0.18.0
 * Add support for CORS in the HTTP Kafka Bridge
 * Pass HTTP Proxy configuration from operator to operands
+* Add Cruise Control support, KafkaRebalance resource and rebalance operator
 
 ## 0.17.0
 
