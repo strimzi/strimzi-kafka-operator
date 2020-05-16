@@ -1,236 +1,52 @@
 [
-  {
-    "fromVersion":"0.11.4",
-    "toVersion":"0.12.1",
-    "fromExamples":"strimzi-0.11.4",
-    "toExamples":"strimzi-0.12.1",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.4/strimzi-0.11.4.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.1/strimzi-0.12.1.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.12.1-kafka-2.1.0",
-      "kafka": "strimzi/kafka:0.12.1-kafka-2.1.0",
-      "topicOperator": "strimzi/operator:0.12.1",
-      "userOperator": "strimzi/operator:0.12.1"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.12.1-kafka-2.2.1",
-      "kafka": "strimzi/kafka:0.12.1-kafka-2.2.1",
-      "topicOperator": "strimzi/operator:0.12.1",
-      "userOperator": "strimzi/operator:0.12.1"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "2.2.1",
-      "logMessageVersion": "2.2"
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1"
-    },
-    "environmentInfo": {
-      "status": "flaky",
-      "flakyEnvVariable": "JENKINS_URL",
-      "reason" : "From some reason, this test is not working on Jenkins. Locally it's fine."
-    }
-  },
-  {
-    "fromVersion":"0.12.1",
-    "toVersion":"0.13.0",
-    "fromExamples":"strimzi-0.12.1",
-    "toExamples":"strimzi-0.13.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.1/strimzi-0.12.1.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-0.13.0.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.13.0-kafka-2.2.1",
-      "kafka": "strimzi/kafka:0.13.0-kafka-2.2.1",
-      "topicOperator": "strimzi/operator:0.13.0",
-      "userOperator": "strimzi/operator:0.13.0"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.13.0-kafka-2.3.0",
-      "kafka": "strimzi/kafka:0.13.0-kafka-2.3.0",
-      "topicOperator": "strimzi/operator:0.13.0",
-      "userOperator": "strimzi/operator:0.13.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "2.3.0",
-      "logMessageVersion": "2.3"
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1",
-      "afterKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0"
-    },
-    "environmentInfo": {
-      "status": "stable",
-      "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
-    }
-  },
-  {
-    "fromVersion":"0.13.0",
-    "toVersion":"0.14.0",
-    "fromExamples":"strimzi-0.13.0",
-    "toExamples":"strimzi-0.14.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-0.13.0.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.14.0-kafka-2.3.0",
-      "kafka": "strimzi/kafka:0.14.0-kafka-2.3.0",
-      "topicOperator": "strimzi/operator:0.14.0",
-      "userOperator": "strimzi/operator:0.14.0"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.14.0-kafka-2.3.0",
-      "kafka": "strimzi/kafka:0.14.0-kafka-2.3.0",
-      "topicOperator": "strimzi/operator:0.14.0",
-      "userOperator": "strimzi/operator:0.14.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.14.0-kafka-2.3.0"
-    },
-    "environmentInfo": {
-      "status": "stable",
-      "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
-    }
-  },
-  {
-    "fromVersion":"0.14.0",
-    "toVersion":"0.15.0",
-    "fromExamples":"strimzi-0.14.0",
-    "toExamples":"strimzi-0.15.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.15.0-kafka-2.3.1",
-      "kafka": "strimzi/kafka:0.15.0-kafka-2.3.0",
-      "topicOperator": "strimzi/operator:0.15.0",
-      "userOperator": "strimzi/operator:0.15.0"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.15.0-kafka-2.3.1",
-      "kafka": "strimzi/kafka:0.15.0-kafka-2.3.1",
-      "topicOperator": "strimzi/operator:0.15.0",
-      "userOperator": "strimzi/operator:0.15.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "2.3.1",
-      "logMessageVersion": ""
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.14.0-kafka-2.3.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1"
-    },
-    "environmentInfo": {
-      "status": "stable",
-      "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
-    }
-  },
-  {
-    "fromVersion":"0.15.0",
-    "toVersion":"0.16.2",
-    "fromExamples":"strimzi-0.15.0",
-    "toExamples":"strimzi-0.16.2",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.16.2-kafka-2.3.1",
-      "kafka": "strimzi/kafka:0.16.2-kafka-2.3.1",
-      "topicOperator": "strimzi/operator:0.16.2",
-      "userOperator": "strimzi/operator:0.16.2"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.16.2-kafka-2.4.0",
-      "kafka": "strimzi/kafka:0.16.2-kafka-2.4.0",
-      "topicOperator": "strimzi/operator:0.16.2",
-      "userOperator": "strimzi/operator:0.16.2"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "2.4.0",
-      "logMessageVersion": "2.4"
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1",
-      "afterKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0"
-    },
-    "environmentInfo": {
-      "status": "stable",
-      "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
-    }
-  },
-  {
-    "fromVersion":"0.16.2",
-    "toVersion":"0.17.0",
-    "fromExamples":"strimzi-0.16.2",
-    "toExamples":"strimzi-0.17.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
-    "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
-      "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
-      "topicOperator": "strimzi/operator:0.17.0",
-      "userOperator": "strimzi/operator:0.17.0"
-    },
-    "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
-      "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
-      "topicOperator": "strimzi/operator:0.17.0",
-      "userOperator": "strimzi/operator:0.17.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "proceduresAfter": {
-      "kafkaVersion": "",
-      "logMessageVersion": ""
-    },
-    "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0"
-    },
-    "environmentInfo": {
-      "status": "stable",
-      "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
-    }
-  },
+
   {
     "fromVersion":"0.17.0",
-    "toVersion":"HEAD",
+    "toVersion":"0.18.0",
     "fromExamples":"strimzi-0.17.0",
-    "toExamples":"HEAD",
+    "toExamples":"strimzi-0.18.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
+    "imagesBeforeKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.18.0-kafka-2.4.0",
+      "kafka": "strimzi/kafka:0.18.0-kafka-2.4.0",
+      "topicOperator": "strimzi/operator:0.18.0",
+      "userOperator": "strimzi/operator:0.18.0"
+    },
+    "imagesAfterKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.18.0-kafka-2.5.0",
+      "kafka": "strimzi/kafka:0.18.0-kafka-2.5.0",
+      "topicOperator": "strimzi/operator:0.18.0",
+      "userOperator": "strimzi/operator:0.18.0"
+    },
+    "proceduresBefore": {
+      "kafkaVersion": "",
+      "logMessageVersion": ""
+    },
+    "proceduresAfter": {
+      "kafkaVersion": "2.5.0",
+      "logMessageVersion": "2.5"
+    },
+    "client": {
+      "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
+      "afterKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0"
+    },
+    "environmentInfo": {
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
+    "fromVersion":"0.18.0",
+    "toVersion":"HEAD",
+    "fromExamples":"strimzi-0.18.0",
+    "toExamples":"HEAD",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "urlTo":"HEAD",
     "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.4.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.4.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.5.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -245,11 +61,11 @@
       "logMessageVersion": ""
     },
     "proceduresAfter": {
-      "kafkaVersion": "2.5.0",
-      "logMessageVersion": "2.5"
+      "kafkaVersion": "",
+      "logMessageVersion": ""
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
+      "beforeKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.5.0"
     },
     "environmentInfo": {
