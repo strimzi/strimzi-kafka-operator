@@ -376,16 +376,9 @@ class RollingUpdateST extends BaseST {
         assertThat(received, is(sent));
     }
 
-    /**
-     * This test cover case, when KafkaRoller will not roll Kafka pods, because created topic doesn't meet requirements for roll remaining pods
-     * 1. Deploy kafka cluster with 4 pods
-     * 2. Create topic with 4 replicas
-     * 3. Scale down kafka cluster to 3 replicas
-     * 4. Trigger rolling update for Kafka cluster
-     * 5. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
-     */
+
     @Test
-    void testKafkaWontRollUpBecauseTopic() {
+    void testKafkaRollsWhenTopicIsUnderReplicated() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
