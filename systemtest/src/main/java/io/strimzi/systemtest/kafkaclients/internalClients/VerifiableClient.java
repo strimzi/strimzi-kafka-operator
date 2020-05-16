@@ -209,12 +209,12 @@ public class VerifiableClient {
                         LOGGER.info("{} RETURN code: {}", clientType,  ret);
                         if (!executor.out().isEmpty()) {
                             LOGGER.info("======STDOUT START=======");
-                            LOGGER.info("{}", executor.out());
+                            LOGGER.info("{}", Exec.cutExecutorLog(executor.out()));
                             LOGGER.info("======STDOUT END======");
                         }
                         if (!executor.err().isEmpty()) {
                             LOGGER.info("======STDERR START=======");
-                            LOGGER.info("{}", executor.err());
+                            LOGGER.info("{}", Exec.cutExecutorLog(executor.err()));
                             LOGGER.info("======STDERR END======");
                         }
                     }
