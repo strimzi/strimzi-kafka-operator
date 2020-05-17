@@ -172,6 +172,12 @@ public abstract class AbstractConfiguration {
         return options;
     }
 
+    /**
+     * Splits string with comma-separated values into a List
+     *
+     * @param prefixes  String with comma-separated items
+     * @return          List with the values as separate items
+     */
     protected static List<String> splitPrefixesToList(String prefixes) {
         return asList(prefixes.split("\\s*,+\\s*"));
     }
