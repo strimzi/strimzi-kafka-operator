@@ -25,6 +25,8 @@ spec:
     plural: kafkarebalances
     shortNames:
     - kr
+    categories:
+    - strimzi
   subresources:
     status: {}
   validation:
