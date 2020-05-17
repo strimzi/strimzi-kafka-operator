@@ -36,7 +36,8 @@ import static java.util.Collections.unmodifiableList;
                 names = @Crd.Spec.Names(
                         kind = KafkaRebalance.RESOURCE_KIND,
                         plural = KafkaRebalance.RESOURCE_PLURAL,
-                        shortNames = {KafkaRebalance.SHORT_NAME}
+                        shortNames = {KafkaRebalance.SHORT_NAME},
+                        categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = KafkaRebalance.RESOURCE_GROUP,
                 scope = KafkaRebalance.SCOPE,
