@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Zookeeper configuration passed by the user
  */
@@ -24,8 +22,8 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        FORBIDDEN_PREFIX_EXCEPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
         Map<String, String> config = new HashMap<>(4);
         config.put("tickTime", "2000");

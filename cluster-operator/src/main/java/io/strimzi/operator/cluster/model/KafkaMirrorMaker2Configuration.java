@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Kafka MirrorMaker 2.0 connect configuration passed by the user
  */
@@ -22,8 +20,8 @@ public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
         DEFAULTS = new HashMap<>(8);
         DEFAULTS.put("group.id", "mirrormaker2-cluster");

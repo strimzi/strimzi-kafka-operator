@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Kafka Mirror Maker consumer configuration passed by the user
  */
@@ -22,8 +20,8 @@ public class KafkaMirrorMakerConsumerConfiguration extends AbstractConfiguration
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIXES.split(", "));
-        FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMakerConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
         DEFAULTS = new HashMap<>(0);
     }
 
