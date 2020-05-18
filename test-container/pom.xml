@@ -26,7 +26,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.24</version>
+            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 
