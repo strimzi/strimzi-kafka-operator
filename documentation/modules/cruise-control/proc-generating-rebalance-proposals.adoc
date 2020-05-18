@@ -71,10 +71,15 @@ Cruise Control returns one of two statuses:
 
 ** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
 
-** `ProposalReady`: The optimization proposal is ready for you to review and implement, if desired.
-The status is followed by the JSON optimization proposal.
+** `ProposalReady`: The optimization proposal is ready for review and, if desired, implementation.
+The status contains the optimization proposal as JSON, in the `status.summary` property of the `KafkaRebalance` resource.
 
-. Review the JSON optimization proposal in the `status.summary` property of the `KafkaRebalance` resource.
+. Review the JSON optimization proposal.
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance.kafka.strimzi.io -n <namespace> <rebalance-cr-name>
+----
 +
 Here is an example proposal:
 +

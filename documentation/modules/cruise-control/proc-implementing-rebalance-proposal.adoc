@@ -6,11 +6,16 @@
 
 = Implementing an optimization proposal
 
-You can implement an optimization proposal with a status of `ProposalReady`.
-Cruise Control will then reassign partitions to brokers as summarized in the optimization proposal.
+You can implement an xref:con-optimization-proposals-{context}[optimization proposal] if its status is `ProposalReady`.
+Cruise Control will then reassign partitions to brokers and change partition leadership as summarized in the optimization proposal.
 
-WARNING: This is not a dry run. 
-Review the optimization proposal before you implement it.
+[CAUTION]
+====
+*This is not a dry run.* Before you implement an optimization proposal:
+
+* Refresh the proposal in case it has become out of date.
+* Carefully review the contents of the proposal.
+====
 
 .Prerequisites
 
@@ -22,7 +27,7 @@ Review the optimization proposal before you implement it.
 
 Perform these steps for the optimization proposal that you want to implement:
 
-. If the `KafkaRebalance` status has been `ProposalReady` for some time, refresh the optimization proposal in case it has become out of date:
+. If the `KafkaRebalance` status has been `ProposalReady` for some time, it might no longer apply to the current state of the Kafka cluster. In this case, you must refresh the optimization proposal to make sure it uses the latest cluster metrics:
 
 .. Annotate the `KafkaRebalance` resource in Kubernetes:
 +
@@ -65,8 +70,6 @@ kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 ** Ready: The cluster rebalancing operation completed successfully.
 
 ** NotReady: An error occurred. 
-
-//Is there a way to verify the rebalance?
 
 .Additional resources
 
