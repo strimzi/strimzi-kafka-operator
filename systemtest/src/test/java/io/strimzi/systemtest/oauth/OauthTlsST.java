@@ -24,6 +24,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.json.JsonArray;
@@ -197,7 +198,7 @@ public class OauthTlsST extends OauthBaseST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(root, clusterHost,
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, clusterHost,
                 KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {

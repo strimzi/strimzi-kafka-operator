@@ -16,6 +16,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -62,8 +63,8 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
+        JsonObject records = BridgeUtils.generateHttpMessages(messageCount);
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
@@ -104,7 +105,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
-        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
+        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, groupId, client);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
         // Create topics json
         JsonArray topic = new JsonArray();
@@ -112,12 +113,12 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
+        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
 
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
@@ -147,7 +148,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
-        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
+        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, groupId, client);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
 
         // Create topics json
@@ -157,7 +158,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         topics.put("topics", topic);
 
         // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -170,10 +171,10 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer

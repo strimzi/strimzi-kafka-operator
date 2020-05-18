@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -33,6 +34,31 @@ public class KafkaBridgeResource {
     public static DoneableKafkaBridge kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
         KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
         return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas).build());
+    }
+
+    public static DoneableKafkaBridge kafkaBridgeWithCoors(String name, String bootstrap, int kafkaBridgeReplicas,
+                                                           String allowCoorsOrigin, String allowCoorsMethods) {
+        return kafkaBridgeWithCoors(name, name, bootstrap, kafkaBridgeReplicas, allowCoorsOrigin, allowCoorsMethods);
+    }
+
+    public static DoneableKafkaBridge kafkaBridgeWithCoors(String name, String clusterName, String bootstrap,
+                                                           int kafkaBridgeReplicas, String allowCoorsOrigin,
+                                                           String allowCoorsMethods) {
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
+
+        KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
+
+        kafkaBridgeBuilder
+            .editSpec()
+                .editHttp()
+                    .withNewCors()
+                        .withAllowedOrigins(allowCoorsOrigin)
+                        .withAllowedMethods(allowCoorsMethods != null ? allowCoorsMethods : "GET,POST,PUT,DELETE,OPTIONS,PATCH")
+                    .endCors()
+                .endHttp()
+            .endSpec();
+
+        return deployKafkaBridge(kafkaBridgeBuilder.build());
     }
 
     private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
