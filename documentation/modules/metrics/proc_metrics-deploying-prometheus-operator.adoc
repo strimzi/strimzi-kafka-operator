@@ -29,4 +29,4 @@ NOTE: If it is not required, you can manually remove the `spec.template.spec.sec
 [source,shell,subs="+attributes"]
 kubectl apply -f prometheus-operator-deployment.yaml
 +
-NOTE: the latest Prometheus Operator installation works fine with Kubernetes 1.18+. For checking which version to use with a different Kubernetes, see this https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[compatibility matrix]
+NOTE: The Prometheus Operator installation works with Kubernetes 1.18+. To check which version to use with a different Kubernetes version, refer to the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix].
