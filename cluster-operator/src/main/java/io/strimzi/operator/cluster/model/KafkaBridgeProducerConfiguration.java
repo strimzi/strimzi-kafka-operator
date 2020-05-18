@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Kafka Bridge producer configuration passed by the user
  */
@@ -23,8 +21,8 @@ public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES.split(", "));
-        FORBIDDEN_PREFIX_EXCEPTIONS = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
         DEFAULTS = new HashMap<>(0);
     }
 
