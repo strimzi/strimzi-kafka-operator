@@ -317,24 +317,4 @@ public class EntityTopicOperator extends AbstractModel {
         templateContainerSecurityContext = securityContext;
     }
 
-    /**
-     * Transforms map to log4j properties file format
-     * @param properties map with properties
-     * @return
-     */
-    @Override
-    protected String createPropertiesString(OrderedProperties properties) {
-        properties.addPair("monitorInterval", "15");
-        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
-    }
-
-    @Override
-    protected String addMonitorIntervalToExternalLogging(String data) {
-        if (!data.contains("monitorInterval=")) {
-            // do not override custom value
-            return data + "monitorInterval=15";
-        } else {
-            return data;
-        }
-    }
 }

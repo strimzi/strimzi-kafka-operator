@@ -393,8 +393,8 @@ class LogSettingST extends AbstractST {
 
         eoPods = DeploymentUtils.depSnapshot(eoName);
         String eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
-        assertThat("Pod name changed after logging changed", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
-        assertThat("Pod hash changed after logging changed", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
+        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
 
 
         ConfigMap configMapTo = new ConfigMapBuilder()
@@ -461,8 +461,8 @@ class LogSettingST extends AbstractST {
         eoPodHash = eoPods.get(eoPodName);
         eoPods = DeploymentUtils.depSnapshot(eoName);
         eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
-        assertThat("Pod name changed after logging changed", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
-        assertThat("Pod hash changed after logging changed", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
+        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
 
 
         configMapTo.setData(Collections.singletonMap("log4j2.properties", "name = TOConfig\n" +
