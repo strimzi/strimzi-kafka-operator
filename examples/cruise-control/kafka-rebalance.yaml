@@ -4,8 +4,5 @@ metadata:
   name: my-rebalance
   labels:
     strimzi.io/cluster: my-cluster
-spec:
-  skipHardGoalCheck: true
-  goals:
-    - DiskCapacityGoal
-    - CpuCapacityGoal
+# no goals specified, using the default goals from the Cruise Control configuration
+spec: {}
