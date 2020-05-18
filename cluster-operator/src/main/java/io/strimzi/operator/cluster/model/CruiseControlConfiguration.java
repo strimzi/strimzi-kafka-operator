@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Cruise Control configuration passed by the user
  */
@@ -82,8 +80,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         config.put("goals", CRUISE_CONTROL_GOALS);
         CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableMap(config);
 
-        FORBIDDEN_PREFIXES = asList(CruiseControlSpec.FORBIDDEN_PREFIXES.split(", *"));
-        FORBIDDEN_PREFIX_EXCEPTIONS = asList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", *"));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
     /**
