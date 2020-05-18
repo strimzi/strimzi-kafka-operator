@@ -45,7 +45,7 @@ NOTE: If it is not required, you can manually remove the `spec.template.spec.sec
 . Deploy the Prometheus Operator:
 +
 [source,shell,subs="+attributes"]
-kubectl apply -f prometheus-operator-deployment.yaml
+kubectl apply -f prometheus-operator-service-account.yaml
 kubectl apply -f prometheus-operator-cluster-role.yaml
 kubectl apply -f prometheus-operator-cluster-role-binding.yaml
-kubectl apply -f prometheus-operator-service-account.yaml
+kubectl apply -f prometheus-operator-deployment.yaml
