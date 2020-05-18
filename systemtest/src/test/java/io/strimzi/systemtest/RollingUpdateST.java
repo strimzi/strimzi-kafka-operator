@@ -962,7 +962,7 @@ class RollingUpdateST extends BaseST {
 
     @Test
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 2).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 1, 1).done();
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
