@@ -42,7 +42,7 @@ public class StrimziKafkaContainerTest {
 
         List<String> supportedKafkaVersions = new ArrayList<>(3);
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src/test/resources/kafka-versions.txt")))) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src/main/resources/kafka-versions.txt")))) {
 
             String kafkaVersion;
 

@@ -71,7 +71,6 @@
                         <argument>.version</argument>
                     </arguments>
                     <outputFile>./src/main/resources/kafka-versions.txt</outputFile>
-                    <outputFile>./src/test/resources/kafka-versions.txt</outputFile>
                 </configuration>
             </plugin>
         </plugins>
