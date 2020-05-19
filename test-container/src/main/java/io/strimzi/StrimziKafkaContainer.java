@@ -11,13 +11,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
-import java.io.Reader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,20 +33,27 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
     private int kafkaExposedPort;
     private StringBuilder advertisedListeners;
+    private static List<String> supportedKafkaVersions = new ArrayList<>(3);
 
     static {
-        Yaml kafkaVersionYaml = new Yaml();
-        Reader yamlFile = null;
-        try {
-            yamlFile = new FileReader("../kafka-versions.yaml");
-        } catch (FileNotFoundException e) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src/main/resources/kafka-versions.txt")))) {
+
+            String kafkaVersion;
+
+            while ((kafkaVersion = bufferedReader.readLine()) != null) {
+                supportedKafkaVersions.add(kafkaVersion);
+            }
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
-        List<LinkedHashMap<String, String>> kafkaVersions = kafkaVersionYaml.load(yamlFile);
-        LinkedHashMap<String, String> lastKafka = kafkaVersions.get(kafkaVersions.size() - 1);
+        LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
 
-        LATEST_KAFKA_VERSION = lastKafka.get("version");
+        // sort kafka version from low to high
+        Collections.sort(supportedKafkaVersions);
+
+        LATEST_KAFKA_VERSION = supportedKafkaVersions.get(supportedKafkaVersions.size() - 1);
     }
 
     public StrimziKafkaContainer(final String version) {
@@ -123,5 +131,13 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
     public String getBootstrapServers() {
         return String.format("PLAINTEXT://%s:%s", getContainerIpAddress(), kafkaExposedPort);
+    }
+
+    public static List<String> getSupportedKafkaVersions() {
+        return supportedKafkaVersions;
+    }
+
+    public static String getLatestKafkaVersion() {
+        return LATEST_KAFKA_VERSION;
     }
 }
