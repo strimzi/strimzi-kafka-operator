@@ -1151,12 +1151,12 @@ public class ListenersST extends BaseST {
 
     @BeforeEach
     void setupCertificates() {
-        SecretUtils.deleteSecretWithWait(customCertChain1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertChain2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA2, NAMESPACE);
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA2).delete();
 
         SecretUtils.createCustomSecret(customCertChain1, CLUSTER_NAME, NAMESPACE,
                 Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt")).getFile(),
