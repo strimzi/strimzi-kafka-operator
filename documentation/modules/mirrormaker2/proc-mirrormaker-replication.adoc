@@ -130,7 +130,7 @@ spec:
 <11> Bootstrap server for connection to the target Kafka cluster.
 <12> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}.
-<13> xref:type-KafkaMirrorMaker2ClusterSpec-reference[SSL properties for external listeners to run on a specific _cipher suite_ for a TLS version].
+<13> xref:type-KafkaMirrorMaker2ClusterSpec-reference[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
 <14> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <15> MirrorMaker 2.0 connectors.
 <16> The alias of the source cluster used by the MirrorMaker 2.0 connectors.

@@ -128,7 +128,7 @@ spec:
 <9> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
 <10> Authorization xref:ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
 <11> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}].
-<12> xref:ref-kafka-broker-configuration-{context}[SSL properties for external listeners to run on a specific _cipher suite_ for a TLS version].
+<12> xref:ref-kafka-broker-configuration-{context}[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
 <13> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
 <14> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <15> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
