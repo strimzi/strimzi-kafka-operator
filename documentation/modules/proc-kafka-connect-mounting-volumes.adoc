@@ -60,7 +60,7 @@ Use `kubectl apply`:
 kubectl apply -f _your-file_
 
 . Configure your connector
-.. If you are using the Kafka Connect HTTP REST interface, use the values from the mounted properties file in your JSON payload with connector configuration.
+* If you are using the Kafka Connect HTTP REST interface, use the values from the mounted properties file in your JSON payload with connector configuration.
 For example:
 +
 [source,json,subs="attributes+"]
@@ -78,7 +78,7 @@ For example:
 }
 ----
 
-.. If you are using a `KafkaConnector` resource use the values from the mounted properties file in the `spec.config` section of your custom resource.
+* If you are using a `KafkaConnector` resource, use the values from the mounted properties file in the `spec.config` section of your custom resource.
 For example:
 +
 [source,yaml,subs="attributes+"]
