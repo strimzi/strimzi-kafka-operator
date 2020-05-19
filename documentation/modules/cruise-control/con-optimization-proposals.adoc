@@ -9,17 +9,7 @@
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
 Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that were used to generate it.
 
-Optimization proposals always satisfy all the configured hard goals, although not necessarily all the soft goals. Hard goals are ignored if `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource.
-
-An optimization proposal contains the following information, in JSON, about the pending cluster rebalance:
-
-* An optimal mapping of partitions to brokers
-
-* Changes to the partition leaders
-
-* Statistics on the cluster rebalance (before and after)
-
-Use the information to decide whether to implement the cluster rebalance, or change the optimization goals. 
+Use the summary to decide whether to implement the cluster rebalance, or change the optimization goals. 
 
 NOTE: All optimization proposals are dry runs: you cannot implement a cluster rebalance without first generating an optimization proposal. 
 There is no limit to the number of optimization proposals that can be generated.
@@ -34,6 +24,7 @@ If you generate an optimization proposal using the default optimization goals, C
 To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
 Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
 
+[id="contents-optimization-proposals"]
 [discrete]
 == Contents of optimization proposals
 
@@ -46,7 +37,7 @@ m¦JSON property
 ¦Description
 
 m¦numIntraBrokerReplicaMovements
-¦The total number of partition replicas that will be transferred between the disks of an individual broker.
+¦The total number of partition replicas that will be transferred between the disks of the cluster's brokers.
 
 m¦excludedBrokersForLeadership
 ¦Not yet supported. An empty list is returned.

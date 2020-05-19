@@ -14,7 +14,7 @@ Cruise Control will then reassign partitions to brokers and change partition lea
 *This is not a dry run.* Before you implement an optimization proposal, you must:
 
 * Refresh the proposal in case it has become out of date.
-* Carefully review the contents of the proposal.
+* Carefully review the link:#contents-optimization-proposals[contents of the proposal].
 ====
 
 .Prerequisites
