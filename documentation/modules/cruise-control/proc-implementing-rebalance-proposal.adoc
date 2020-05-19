@@ -7,11 +7,11 @@
 = Implementing an optimization proposal
 
 You can implement an xref:con-optimization-proposals-{context}[optimization proposal] if its status is `ProposalReady`.
-Cruise Control will then reassign partitions to brokers and change partition leadership as summarized in the optimization proposal.
+Cruise Control will then reassign partitions to brokers and change partition leadership, as summarized in the optimization proposal.
 
 [CAUTION]
 ====
-*This is not a dry run.* Before you implement an optimization proposal:
+*This is not a dry run.* Before you implement an optimization proposal, you must:
 
 * Refresh the proposal in case it has become out of date.
 * Carefully review the contents of the proposal.
@@ -33,7 +33,7 @@ Perform these steps for the optimization proposal that you want to implement:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _cluster-name_-kafka strimzi.io/rebalance=refresh
+kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=refresh
 ----
 
 .. Check the status of the `KafkaRebalance` resource:
@@ -51,7 +51,7 @@ Annotate the `KafkaRebalance` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _cluster-name_-kafka strimzi.io/rebalance=approved
+kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=approve
 ----
 
 . The Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.
@@ -74,3 +74,5 @@ kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 .Additional resources
 
 * xref:con-optimization-proposals-{context}[]
+
+* xref:proc-stopping-cluster-rebalance-{context}[] 

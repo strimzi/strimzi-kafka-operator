@@ -7,6 +7,8 @@
 
 You can deploy {CruiseControlProject} and access a subset of its features through {ProductName} custom resources.
 
+Example YAML files for deploying Cruise Control and setting optimization goals are provided in `examples/kafka/`.
+
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1]
@@ -20,3 +22,5 @@ include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leve
 include::../../modules/cruise-control/proc-generating-rebalance-proposals.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-implementing-rebalance-proposal.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]

@@ -26,13 +26,13 @@ You can then analyze the summary information in the optimization proposal and de
 apiVersion: {KafkaApiVersion}
 kind: KafkaRebalance
 metadata:
-  name: my-cluster-rebalance
+  name: my-rebalance
   labels: 
     strimzi.io/cluster: my-cluster
 spec: {}
 ----
 
-.. To set _user-provided optimization goals_ instead of using the default goals, edit the `spec.goals` property and enter one or more goals.
+.. To set _user-provided optimization goals_ instead of using the default goals, edit the `goals` property and enter one or more goals.
 +
 In the following example, rack awareness and replica capacity are user-provided optimization goals:
 +
@@ -41,20 +41,20 @@ In the following example, rack awareness and replica capacity are user-provided 
 apiVersion: {KafkaApiVersion}
 kind: KafkaRebalance
 metadata:
-  name: my-cluster-rebalance
+  name: my-rebalance
   labels: 
     strimzi.io/cluster: my-cluster
 spec:    
-    goals: >
-      RackAwareGoal,
-      ReplicaCapacityGoal
+  goals:
+    - RackAwareGoal,
+    - ReplicaCapacityGoal
 ----
 
 . Create or update the resource:
 +
 [source,shell,subs="+quotes"]
 ----
-oc apply -f _your-file_
+kubectl apply -f _your-file_
 ----
 +
 The Cluster Operator requests the optimization proposal from Cruise Control.
@@ -96,10 +96,10 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2020-05-23T23:46:57+0000
-    status: "True"
-    type: Ready
+    status: "Ready"
+    type: State
   observedGeneration: 4
-  summary: CHECK THE FORMATTING IS CORRECT
+  summary:
   - numIntraBrokerReplicaMovements:0,
   - excludedBrokersForLeadership:[],
   - numReplicaMovements:31,
