@@ -72,7 +72,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
@@ -376,16 +375,9 @@ class RollingUpdateST extends BaseST {
         assertThat(received, is(sent));
     }
 
-    /**
-     * This test cover case, when KafkaRoller will not roll Kafka pods, because created topic doesn't meet requirements for roll remaining pods
-     * 1. Deploy kafka cluster with 4 pods
-     * 2. Create topic with 4 replicas
-     * 3. Scale down kafka cluster to 3 replicas
-     * 4. Trigger rolling update for Kafka cluster
-     * 5. Rolling update will not be performed, because topic which we created had some replicas on deleted pods - manual fix is needed in that case
-     */
+
     @Test
-    void testKafkaWontRollUpBecauseTopic() {
+    void testKafkaRollsWhenTopicIsUnderReplicated() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
@@ -420,19 +412,15 @@ class RollingUpdateST extends BaseST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
 
+        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
+
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata().done();
 
-        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
-
-        Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        for (Map.Entry<String, String> entry : kafkaPodsScaleDown.entrySet()) {
-            assertThat(kafkaPods, hasEntry(entry.getKey(), entry.getValue()));
-        }
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
     }
 
     @Test
