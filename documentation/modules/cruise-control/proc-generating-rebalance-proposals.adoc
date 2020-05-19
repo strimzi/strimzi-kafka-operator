@@ -46,7 +46,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:    
   goals:
-    - RackAwareGoal,
+    - RackAwareGoal
     - ReplicaCapacityGoal
 ----
 
@@ -64,7 +64,7 @@ This might take a few minutes depending on the size of the Kafka cluster.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafkarebalance <rebalance-cr-name> -o jsonpath='{.status}'
+kubectl describe kafkarebalance _rebalance-name_
 ----
 +
 Cruise Control returns one of two statuses:
@@ -78,41 +78,33 @@ The status contains the optimization proposal, in the `status.summary` property 
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance.kafka.strimzi.io -n <namespace> <rebalance-cr-name>
+kubectl describe kafkarebalance _rebalance-name_
 ----
 +
 Here is an example proposal:
 +
 [source,shell,subs="+quotes"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
-kind: KafkaRebalance
-metadata:
-  name: my-cluster-rebalance
-  labels: 
-    strimzi.io/cluster: my-cluster
-spec:
-  # ...
-status:
-  conditions:
-  - lastTransitionTime: 2020-05-23T23:46:57+0000
-    status: "Ready"
-    type: State
-  observedGeneration: 4
-  summary:
-  - numIntraBrokerReplicaMovements:0,
-  - excludedBrokersForLeadership:[],
-  - numReplicaMovements:31,
-  - onDemandBalancednessScoreAfter:84.08179174145127,
-  - onDemandBalancednessScoreBefore:79.74705957325753,
-  - intraBrokerDataToMoveMB:0,
-  - recentWindows:1,
-  - dataToMoveMB:0,
-  - monitoredPartitionsPercentage:100.0,
-  - excludedTopics:[],
-  - numLeaderMovements:12,
-  - excludedBrokersForReplicaMove:[]
-# ...
+Status:
+  Conditions:
+    Last Transition Time:  2020-05-19T13:50:12.533Z
+    Status:                ProposalReady
+    Type:                  State
+  Observed Generation:     1
+  Optimization Result:
+    Data To Move MB:  0
+    Excluded Brokers For Leadership:
+    Excluded Brokers For Replica Move:
+    Excluded Topics:
+    Intra Broker Data To Move MB:         0
+    Monitored Partitions Percentage:      100
+    Num Intra Broker Replica Movements:   0
+    Num Leader Movements:                 0
+    Num Replica Movements:                26
+    On Demand Balancedness Score After:   81.8666802863978
+    On Demand Balancedness Score Before:  78.01176356230222
+    Recent Windows:                       1
+  Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
 For information about the different properties, see xref:con-optimization-proposals-{context}[]. 
