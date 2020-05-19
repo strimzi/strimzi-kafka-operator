@@ -673,7 +673,9 @@ public class KafkaCluster extends AbstractModel {
 
                 if (result.isExposedWithLoadBalancer()) {
                     result.templateExternalBootstrapServiceLoadBalancerSourceRanges = template.getExternalBootstrapService().getLoadBalancerSourceRanges();
-                } else {
+                } else if (template.getExternalBootstrapService().getLoadBalancerSourceRanges() != null
+                        && template.getExternalBootstrapService().getLoadBalancerSourceRanges().size() > 0) {
+                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
@@ -688,7 +690,9 @@ public class KafkaCluster extends AbstractModel {
 
                 if (result.isExposedWithLoadBalancer()) {
                     result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
-                } else {
+                } else if (template.getPerPodService().getLoadBalancerSourceRanges() != null
+                        && template.getPerPodService().getLoadBalancerSourceRanges().size() > 0) {
+                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
