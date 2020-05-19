@@ -708,12 +708,12 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
+        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
-        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
+            .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -728,15 +728,15 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
+        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsNewPodName);
+        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setTopicName(topic1);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
 
-        LOGGER.info("Verifying that {} pod is not able to exchange messages", kafkaClientsNewPodName);
-        assertThrows(RuntimeException.class, () ->  {
+        LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
+        assertThrows(AssertionError.class, () ->  {
             internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesPlain(),
                 internalKafkaClient.receiveMessagesPlain()
@@ -792,12 +792,12 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
+        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
-        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
+            .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -812,15 +812,15 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
+        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsNewPodName);
+        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         internalKafkaClient.setTopicName(topic1);
 
-        LOGGER.info("Verifying that {} pod is  not able to exchange messages", kafkaClientsNewPodName);
+        LOGGER.info("Verifying that {} pod is  not able to exchange messages", deniedKafkaClientsPodName);
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(AssertionError.class, () -> {
             internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesTls(),
                 internalKafkaClient.receiveMessagesTls()
