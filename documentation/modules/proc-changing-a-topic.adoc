@@ -14,7 +14,7 @@ It is important that you consider the following before making your changes:
 * Kafka does _not_ support making the following changes through the `KafkaTopic` resource:
 ** Changing topic names using `spec.topicName`
 ** Decreasing partition size using `spec.partitions`
-** Changing the number of replicas using `spec.replicas`
+* You cannot change the number of replicas initially specified using `spec.replicas`.
 * Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
 
 .Prerequisites
