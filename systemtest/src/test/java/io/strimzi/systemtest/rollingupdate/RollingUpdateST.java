@@ -2,11 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -17,7 +16,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
-import io.strimzi.operator.common.Annotations;
+import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -60,11 +60,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
-import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Scheduled;
-import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
@@ -375,54 +371,6 @@ class RollingUpdateST extends BaseST {
         assertThat(received, is(sent));
     }
 
-
-    @Test
-    void testKafkaRollsWhenTopicIsUnderReplicated() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
-            .editSpec()
-                .editKafka()
-                    .addToConfig("auto.create.topics.enable", "false")
-                .endKafka()
-            .endSpec().done();
-
-        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertEquals(4, initialReplicas);
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 4, 4, 4).done();
-
-        //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME,  3));
-        List<Event> events = kubeClient().listEvents(uid);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
-
-        // scale down
-        int scaledDownReplicas = 3;
-        LOGGER.info("Scaling down to {}", scaledDownReplicas);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
-
-        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
-
-        // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
-
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
-    }
-
     @Test
     void testZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -524,115 +472,6 @@ class RollingUpdateST extends BaseST {
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
         // Stop measuring
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-    }
-
-    @Test
-    void testManualTriggeringRollingUpdate() {
-        // This test needs Operation Timetout set to higher value, because manual rolling update work in different way
-        kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
-        ResourceManager.setClassResources();
-        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT).done();
-        ResourceManager.setMethodResources();
-
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(userName)
-            .build();
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        // rolling update for kafka
-        LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
-        // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(kafkaName).cascading(false).edit()
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
-                .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
-
-        // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
-                    || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
-
-        // rolling update for zookeeper
-        LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
-
-        int received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(sent));
-
-        // set annotation to trigger Zookeeper rolling update
-        kubeClient().statefulSet(zkName).cascading(false).edit()
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(zkName)
-                .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
-
-        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
-
-        // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
-                    || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
-
-
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
-
-        received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(sent));
-
-        // Create new topic to ensure, that ZK is working properly
-        String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-        KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
-
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
-
-        sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(sent));
-
-        // deploy Cluster Operator with short timeout for other tests (restore default configuration)
-        kubeClient().deleteDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
-        ResourceManager.setClassResources();
-        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
-        ResourceManager.setMethodResources();
     }
 
     @Test
@@ -958,30 +797,6 @@ class RollingUpdateST extends BaseST {
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
-    }
-
-    @Test
-    void testKafkaTopicRFLowerThanMinInSyncReplicas() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 1, 1).done();
-
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
-
-        LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
-        KafkaTopicResource.replaceTopicResource(TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2));
-
-        // rolling update for kafka
-        LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
-        // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(kafkaName).cascading(false).edit()
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 2, kafkaPods);
-        assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
     }
 
     @Override
