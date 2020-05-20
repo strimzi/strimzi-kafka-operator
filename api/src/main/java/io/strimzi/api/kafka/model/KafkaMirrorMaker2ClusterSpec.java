@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

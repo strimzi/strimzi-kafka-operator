@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
