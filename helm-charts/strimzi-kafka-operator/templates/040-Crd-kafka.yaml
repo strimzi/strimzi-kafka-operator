@@ -1322,14 +1322,14 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
-                    -XX:
+                    "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
-                    -Xms:
+                    "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xms option to to the JVM.
-                    -Xmx:
+                    "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
@@ -2639,14 +2639,14 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
-                    -XX:
+                    "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
-                    -Xms:
+                    "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xms option to to the JVM.
-                    -Xmx:
+                    "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
@@ -3693,14 +3693,14 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
-                    -XX:
+                    "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
-                    -Xms:
+                    "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xms option to to the JVM.
-                    -Xmx:
+                    "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
@@ -3885,14 +3885,14 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
-                        -XX:
+                        "-XX":
                           type: object
                           description: A map of -XX options to the JVM.
-                        -Xms:
+                        "-Xms":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xms option to to the JVM.
-                        -Xmx:
+                        "-Xmx":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xmx option to to the JVM.
@@ -4016,14 +4016,14 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
-                        -XX:
+                        "-XX":
                           type: object
                           description: A map of -XX options to the JVM.
-                        -Xms:
+                        "-Xms":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xms option to to the JVM.
-                        -Xmx:
+                        "-Xmx":
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xmx option to to the JVM.
@@ -5023,14 +5023,14 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
-                    -XX:
+                    "-XX":
                       type: object
                       description: A map of -XX options to the JVM.
-                    -Xms:
+                    "-Xms":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xms option to to the JVM.
-                    -Xmx:
+                    "-Xmx":
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
