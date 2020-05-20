@@ -114,7 +114,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
             .withPrivileged(true)
-            .withCmd("bash", "-c", "sudo bin/zookeeper-server-start.sh config/zookeeper.properties &")
+            .withCmd("bash", "-c", "bin/zookeeper-server-start.sh config/zookeeper.properties &")
             .exec();
 
         try {
@@ -135,7 +135,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
             .withAttachStdin(true)
             .withAttachStderr(true)
             .withTty(false)
-            .withCmd("bash", "-c", "sudo bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
+            .withCmd("bash", "-c", "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
             .exec();
 
         try (OutputStream outputStream = new ByteArrayOutputStream();
