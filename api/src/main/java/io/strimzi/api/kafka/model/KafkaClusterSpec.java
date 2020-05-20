@@ -92,7 +92,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.version = version;
     }
 
-    @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;

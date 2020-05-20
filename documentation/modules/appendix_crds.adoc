@@ -64,7 +64,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, keycloak].
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).
+|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -2358,6 +2358,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2397,6 +2398,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=
 
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2726,6 +2728,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 
 Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
