@@ -7,7 +7,6 @@ package io.strimzi.systemtest.rollingupdate;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -84,7 +83,7 @@ class RollingUpdateST extends BaseST {
     void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -119,20 +118,11 @@ class RollingUpdateST extends BaseST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
-        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         PodUtils.waitForPendingPod(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        LOGGER.info("Verifying stability of zookeper pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        TestUtils.waitFor("Waiting for some zookeeper pod to be in the pending phase because of selected high cpu resource",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
-                        .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
-                LOGGER.info("Filtered pods are {}", filteredPod.toString());
-                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
-            }
-        );
-
+        LOGGER.info("Verifying stability of kafka pods");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
@@ -171,13 +161,8 @@ class RollingUpdateST extends BaseST {
     void testRecoveryDuringKafkaRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .addToConfig("offsets.topic.replication.factor", 1)
-                .endKafka()
-            .endSpec().done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3, 1).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 3).done();
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
@@ -211,23 +196,14 @@ class RollingUpdateST extends BaseST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-
-        TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                List<Pod> filteredPod = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
-                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
-                LOGGER.info("Filtered pods are {}", filteredPod.toString());
-                return filteredPod.get(0).getStatus().getPhase().equals("Pending");
-            }
-        );
-
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
-        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         PodUtils.waitForPendingPod(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Verifying stability of zookeeper pods");
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
@@ -266,7 +242,7 @@ class RollingUpdateST extends BaseST {
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .addToConfig(singletonMap("default.replication.factor", 1))
@@ -376,7 +352,7 @@ class RollingUpdateST extends BaseST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
