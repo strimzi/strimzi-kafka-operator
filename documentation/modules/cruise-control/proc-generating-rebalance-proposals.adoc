@@ -64,7 +64,7 @@ This might take a few minutes depending on the size of the Kafka cluster.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance _rebalance-name_
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 +
 Cruise Control returns one of two statuses:
@@ -78,7 +78,7 @@ The status contains the optimization proposal, in the `status.summary` property 
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance _rebalance-name_
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 +
 Here is an example proposal:

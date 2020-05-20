@@ -2,7 +2,7 @@
 //
 // assembly-cruise-control-concepts.adoc
 
-[id='proc-fixing-problems-with-kafkarebalance-{context}']
+[id='-{context}']
 
 = Fixing problems with a `KafkaRebalance` resource
 
@@ -39,10 +39,10 @@ kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=re
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance.kafka.strimzi.io -n <namespace> <rebalance-cr-name>
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 
-. Wait until the status changes to `PendingProposal` or directly to `ProposalReady`.
+. Wait until the status changes to `PendingProposal`, or directly to `ProposalReady`.
 
 .Additional resources
 

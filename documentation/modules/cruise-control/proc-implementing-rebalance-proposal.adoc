@@ -40,7 +40,7 @@ kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=re
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkarebalance -o jsonpath='{.status}'
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 
 .. Wait until the status changes to `ProposalReady`.
@@ -60,7 +60,7 @@ kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=ap
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkarebalance -o jsonpath='{.status}'
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 
 . Cruise Control returns one of three statuses:
@@ -69,7 +69,7 @@ kubectl get kafka kafkarebalance -o jsonpath='{.status}'
 
 ** Ready: The cluster rebalancing operation completed successfully.
 
-** NotReady: An error occurred. 
+** NotReady: An error occurred--see xref:proc-fixing-problems-with-kafkarebalance-{context}[].  
 
 .Additional resources
 
