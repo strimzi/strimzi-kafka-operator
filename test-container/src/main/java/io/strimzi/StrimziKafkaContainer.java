@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +32,8 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static final int KAFKA_PORT = 9092;
     private static final int ZOOKEEPER_PORT = 2181;
     private static final String LATEST_KAFKA_VERSION;
+    private static final long STARTUP_COMPONENT_TIMEOUT_MS = Duration.ofMinutes(1).toMillis();
+
 
     private int kafkaExposedPort;
     private StringBuilder advertisedListeners;
@@ -111,7 +114,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
             .exec();
 
         try {
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(10, TimeUnit.SECONDS);
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -126,7 +129,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
             .exec();
 
         try {
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(10, TimeUnit.SECONDS);
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
