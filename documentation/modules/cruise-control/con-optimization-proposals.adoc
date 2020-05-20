@@ -34,7 +34,7 @@ Consider a shorter interval for fast changing clusters, although this increases 
 
 The following table explains the properties contained in an optimization proposal:
 
-[cols="2*",options="header",stripes="none",separator=¦]
+[cols="35,65",options="header",stripes="none",separator=¦]
 |===
 
 m¦JSON property
