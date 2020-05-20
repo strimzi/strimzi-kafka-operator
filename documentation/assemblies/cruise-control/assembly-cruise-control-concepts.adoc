@@ -19,9 +19,9 @@ include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[levelof
 
 include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-generating-rebalance-proposals.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-generating-optimization-proposals.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-approving-rebalance-proposal.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-approving-optimization-proposal.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
 
