@@ -7,7 +7,7 @@
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
 
-You can then analyze the summary information in the optimization proposal and decide whether to implement it. 
+You can then analyze the summary information in the optimization proposal and decide whether to approve it. 
 
 .Prerequisites
 
@@ -71,7 +71,7 @@ Cruise Control returns one of two statuses:
 
 ** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
 
-** `ProposalReady`: The optimization proposal is ready for review and, if desired, implementation.
+** `ProposalReady`: The optimization proposal is ready for review and, if desired, approval.
 The status contains the optimization proposal, in the `status.summary` property of the `KafkaRebalance` resource.
 
 . Review the optimization proposal.
@@ -111,7 +111,7 @@ For information about the different properties, see link:#contents-optimization-
 
 .What to do next
 
-xref:proc-implementing-optimization-proposal-{context}[] 
+xref:proc-approving-optimization-proposal-{context}[] 
 
 .Additional resources
 

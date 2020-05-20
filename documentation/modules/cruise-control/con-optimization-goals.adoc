@@ -5,7 +5,7 @@
 [id='con-optimization-goals-{context}']
 = Optimization goals overview
 
-To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals].  
+To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.  
 
 Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster.
 With a few exceptions, {ProductName} supports all the optimization goals developed in the Cruise Control project.
@@ -49,7 +49,7 @@ You can think of soft goals as _best effort_ goals: they do _not_ need to be sat
 An optimization proposal that violates one or more soft goals, but satisfies all hard goals, is valid.
 
 Cruise control will calculate optimization proposals that satisfy all the hard goals and as many soft goals as possible (in their priority order). 
-An optimization proposal that does _not_ satisfy all the hard goals is rejected by Cruise Control and not sent to the user.
+An optimization proposal that does _not_ satisfy all the hard goals is rejected by Cruise Control and not sent to the user for approval.
 
 NOTE: For example, you might have a soft goal to distribute a topic's replicas evenly across the cluster (the topic replica distribution goal). 
 Cruise Control will ignore this goal if doing so enables all the configured hard goals to be met.

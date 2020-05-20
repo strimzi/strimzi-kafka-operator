@@ -20,7 +20,7 @@ During a “refresh”, a new optimization proposal is requested from the Cruise
 
 .Prerequisites
 
-* You have xref:proc-implementing-optimization-proposal-{context}[implemented an optimization proposal].
+* You have xref:proc-approving-optimization-proposal-{context}[approved an optimization proposal].
 
 * The status of the `KafkaRebalance` custom resource for the rebalance operation is `NotReady`.
 

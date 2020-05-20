@@ -17,7 +17,7 @@ NOTE: The performance of the Kafka cluster in the intermediate (stopped) state m
 
 .Prerequisites
 
-* You have xref:proc-implementing-optimization-proposal-{context}[implemented the optimization proposal] by annotating the `KafkaRebalance` custom resource with `approve`. 
+* You have xref:proc-approving-optimization-proposal-{context}[approved the optimization proposal] by annotating the `KafkaRebalance` custom resource with `approve`. 
 
 * The status of the `KafkaRebalance` custom resource is `Rebalancing`.
 

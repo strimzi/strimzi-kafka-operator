@@ -21,7 +21,7 @@ include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leve
 
 include::../../modules/cruise-control/proc-generating-rebalance-proposals.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-implementing-rebalance-proposal.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-approving-rebalance-proposal.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
 
