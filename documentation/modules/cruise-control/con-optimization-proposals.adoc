@@ -9,7 +9,7 @@
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
 Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that were used to generate it.
 
-Use the summary (shown in the `Status` of the `KafkaRebalance` resource) to decide whether to:
+Use the summary (shown in the `status` of the `KafkaRebalance` resource) to decide whether to:
 
 * Approve the optimization proposal. This instructs Cruise Control to apply the proposal to the Kafka cluster and start a cluster rebalance operation.
 

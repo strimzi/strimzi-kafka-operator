@@ -130,7 +130,7 @@ spec:
     config:
       default.goals: >
          com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
          com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
       # ...         
 ----
