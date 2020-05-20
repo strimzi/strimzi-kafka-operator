@@ -100,8 +100,8 @@ public class KafkaMirrorMakerResource {
         return kafkaMirrorMaker;
     }
 
-    public static void deleteKafkaMirrorMakerWithoutWait(String clusterName) {
-        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
+    public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {
+        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
     }
 
     private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {

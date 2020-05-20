@@ -107,8 +107,8 @@ public class KafkaConnectResource {
         return kafkaConnect;
     }
 
-    public static void deleteKafkaConnectWithoutWait(String clusterName) {
-        kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
+    public static void deleteKafkaConnectWithoutWait(String resourceName) {
+        kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
     }
 
     private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {

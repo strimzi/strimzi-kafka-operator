@@ -91,8 +91,8 @@ public class KafkaConnectS2IResource {
         return kafkaConnectS2I;
     }
 
-    public static void deleteKafkaConnectS2IWithoutWait(String clusterName) {
-        kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(clusterName).cascading(true).delete();
+    public static void deleteKafkaConnectS2IWithoutWait(String resourceName) {
+        kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
     }
 
     private static KafkaConnectS2I getKafkaConnectS2IFromYaml(String yamlPath) {
