@@ -56,10 +56,7 @@ spec:
          com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
          com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
          # ...
-      goals: >
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
-         # ...
+      goals: {}
       cpu.balance.threshold: 1.1
       metadata.max.age.ms: 300000
       send.buffer.bytes: 131072
@@ -114,8 +111,8 @@ kubectl apply -f _kafka.yaml_
 kubectl get deployments -l app.kubernetes.io/name=strimzi
 ----
 
-//.What to do next
-//After configuring and deploying Cruise Control, you can xref:proc-interacting-with-cruise-control-api-{context}[interact with the Cruise Control API]
+.What to do next
+After configuring and deploying Cruise Control, you can xref:proc-generating-optimization-proposals-{context}[generate optimization proposals]. 
 
 .Additional resources
 
