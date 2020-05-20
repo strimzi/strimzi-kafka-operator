@@ -39,11 +39,15 @@ m¦JSON property
 m¦numIntraBrokerReplicaMovements
 ¦The total number of partition replicas that will be transferred between the disks of the cluster's brokers.
 
+*Performance impact during rebalance operation*: Relatively high, but lower than `numReplicaMovements`.
+
 m¦excludedBrokersForLeadership
 ¦Not yet supported. An empty list is returned.
 
 m¦numReplicaMovements
 ¦The number of partition replicas that will be moved between separate brokers.
+
+*Performance impact during rebalance operation*: Relatively high.
 
 m¦onDemandBalancednessScoreBefore, onDemandBalancednessScoreAfter
 ¦A measurement of the overall _balancedness_ of a Kafka Cluster, before and after the optimization proposal was generated.
@@ -54,13 +58,13 @@ The `Before` score is based on the current configuration of the Kafka cluster.
 The `After` score is based on the generated optimization proposal.
 
 m¦intraBrokerDataToMoveMB
-¦The sum of the size of each partition replica that will be moved between disks on the same broker (see also `numReplicaMovements`).
+¦The sum of the size of each partition replica that will be moved between disks on the same broker (see also `numIntraBrokerReplicaMovements`).
 
 m¦recentWindows
 ¦The number of metrics windows upon which the optimization proposal is based.
 
 m¦dataToMoveMB
-¦The sum of the size of each partition replica that will be moved to a separate broker (see also `numIntraBrokerReplicaMovements`).
+¦The sum of the size of each partition replica that will be moved to a separate broker (see also `numReplicaMovements`).
 
 m¦monitoredPartitionsPercentage
 ¦The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
@@ -70,6 +74,8 @@ m¦excludedTopics
 
 m¦numLeaderMovements
 ¦The number of partitions whose leaders will be switched to different replicas. This involves a change to ZooKeeper configuration.
+
+*Performance impact during rebalance operation*: Relatively low.
 
 m¦excludedBrokersForReplicaMove
 ¦Not yet supported. An empty list is returned.
