@@ -32,7 +32,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static final int KAFKA_PORT = 9092;
     private static final int ZOOKEEPER_PORT = 2181;
     private static final String LATEST_KAFKA_VERSION;
-    private static final long STARTUP_COMPONENT_TIMEOUT_MS = Duration.ofMinutes(1).toMillis();
+    private static final long STARTUP_COMPONENT_TIMEOUT_MS = Duration.ofMinutes(2).toMillis();
 
 
     private int kafkaExposedPort;
