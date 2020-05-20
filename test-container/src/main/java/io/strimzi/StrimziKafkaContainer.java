@@ -13,9 +13,10 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +37,10 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static List<String> supportedKafkaVersions = new ArrayList<>(3);
 
     static {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src/main/resources/kafka-versions.txt")))) {
+        try (
+            InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
+            InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+            BufferedReader bufferedReader = new BufferedReader(streamReader)) {
 
             String kafkaVersion;
 
