@@ -107,7 +107,7 @@ Status:
   Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
-For information about the different properties, see xref:con-optimization-proposals-{context}[]. 
+For information about the different properties, see link:#contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 

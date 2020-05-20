@@ -2,7 +2,7 @@
 //
 // assembly-cruise-control-concepts.adoc
 
-[id='-{context}']
+[id='proc-fixing-problems-with-kafkarebalance-{context}']
 
 = Fixing problems with a `KafkaRebalance` resource
 

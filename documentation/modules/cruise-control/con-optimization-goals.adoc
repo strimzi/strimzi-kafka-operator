@@ -39,7 +39,7 @@ You configure optimization goals in the `Kafka` and `KafkaRebalance` custom reso
 
 The following sections describe each goal configuration in more detail.
 
-[id="hard-soft-goals"]
+[#hard-soft-goals]
 [discrete]
 === Hard goals and soft goals
 
@@ -69,7 +69,7 @@ Increasing the number of hard goals will reduce the likelihood of Cruise Control
 
 NOTE: If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does not check that the list of user-provided optimization goals (`goals`) contains _all_ the configured hard goals (`hard.goals`). Therefore, if some, but not all, of the user-provided optimization goals are in the `hard.goals` list, Cruise Control will still treat them as hard goals even if `skipHardGoalCheck: true` is specified.
 
-[id="master-goals"]
+[#master-goals]
 [discrete]
 === Master optimization goals
 
@@ -91,7 +91,7 @@ Master optimization goals are controlled, if needed, in the Cruise Control deplo
 
 * If you need to modify the inherited master optimization goals, specify a list of goals in the `goals` configuration option.
 
-[id="default-goals"]
+[#default-goals]
 [discrete]
 === Default optimization goals
 
@@ -139,7 +139,7 @@ NOTE: For an example of the complete deployment configuration, see xref:proc-dep
 
 If no default optimization goals are specified, the cached proposal is generated using the master optimization goals.
 
-[id="user-provided-goals"]
+[#user-provided-goals]
 [discrete]
 === User-provided optimization goals
 

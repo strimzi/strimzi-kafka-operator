@@ -24,7 +24,7 @@ If you generate an optimization proposal using the default optimization goals, C
 To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
 Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
 
-[id="contents-optimization-proposals"]
+[#contents-optimization-proposals]
 [discrete]
 == Contents of optimization proposals
 
