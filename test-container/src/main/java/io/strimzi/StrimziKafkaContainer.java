@@ -7,15 +7,18 @@ package io.strimzi;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -121,17 +124,30 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         }
     }
 
+
     private void startKafka() {
         LOGGER.info("Starting kafka...");
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
+            .withAttachStdout(true)
+            .withAttachStdin(true)
+            .withAttachStderr(true)
+            .withTty(false)
             .withCmd("bash", "-c", "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
             .exec();
 
-        try {
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        try (OutputStream outputStream = new ByteArrayOutputStream();
+             OutputStream errorStream = new ByteArrayOutputStream()) {
 
-        } catch (InterruptedException e) {
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback(outputStream, errorStream)).awaitCompletion();
+
+            LOGGER.info("OUTPUT STREAM");
+            LOGGER.info(outputStream);
+            LOGGER.info("=================");
+            LOGGER.info("ERROR STREAM");
+            LOGGER.info(errorStream);
+
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
