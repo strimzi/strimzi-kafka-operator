@@ -14,7 +14,7 @@ before_install:
 - gem install asciidoctor
 - "./.travis/install_yq.sh"
 install:
-- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn clean install -DskipTests=false -f test-container/pom.xml
 before_script:
 - "./.travis/setup-kubernetes.sh"
 - "./.travis/setup-helm.sh"
