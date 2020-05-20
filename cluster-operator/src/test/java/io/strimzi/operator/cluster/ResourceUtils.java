@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -756,5 +757,15 @@ public class ResourceUtils {
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
         return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()));
+    }
+
+    /**
+     * Find the first resource in the given resources with the given name.
+     * @param resources The secrets to search.
+     * @param name The secret name.
+     * @return The secret with that name.
+     */
+    public static <T extends HasMetadata> T findResourceWithName(List<T> resources, String name) {
+        return resources.stream().filter(s -> s.getMetadata().getName().equals(name)).findFirst().orElse(null);
     }
 }
