@@ -36,24 +36,19 @@ public class KafkaConnectApiMockTest {
     }
 
     @Test
-    public void testStatusWithBackOffSuccedingImmediatelly(VertxTestContext context) {
+    public void testStatusWithBackOffSucceedingImmediately(VertxTestContext context) {
         Queue<Future<Map<String, Object>>> statusResults = new ArrayBlockingQueue<>(1);
         statusResults.add(Future.succeededFuture(Collections.emptyMap()));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector").setHandler(res -> {
-            if (res.succeeded()) {
-                async.flag();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
+        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+            .setHandler(context.succeeding(res -> async.flag()));
     }
 
     @Test
-    public void testStatusWithBackOffSuccedingLater(VertxTestContext context) {
+    public void testStatusWithBackOffSuccedingEventually(VertxTestContext context) {
         Queue<Future<Map<String, Object>>> statusResults = new ArrayBlockingQueue<>(3);
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
@@ -62,17 +57,12 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector").setHandler(res -> {
-            if (res.succeeded()) {
-                async.flag();
-            } else {
-                context.failNow(res.cause());
-            }
-        });
+        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+            .setHandler(context.succeeding(res -> async.flag()));
     }
 
     @Test
-    public void testStatusWithBackOffFailingAfterBackOff(VertxTestContext context) {
+    public void testStatusWithBackOffFailingRepeatedly(VertxTestContext context) {
         Queue<Future<Map<String, Object>>> statusResults = new ArrayBlockingQueue<>(4);
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
@@ -82,30 +72,20 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector").setHandler(res -> {
-            if (res.succeeded()) {
-                context.failNow(new Throwable("Was expected to fail"));
-            } else {
-                async.flag();
-            }
-        });
+        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+            .setHandler(context.failing(res -> async.flag()));
     }
 
     @Test
-    public void testStatusWithBackOffAnotherError(VertxTestContext context) {
+    public void testStatusWithBackOffOtherExceptionStillFails(VertxTestContext context) {
         Queue<Future<Map<String, Object>>> statusResults = new ArrayBlockingQueue<>(1);
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 500, null, null)));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector").setHandler(res -> {
-            if (res.succeeded()) {
-                context.failNow(new Throwable("Was expected to fail"));
-            } else {
-                async.flag();
-            }
-        });
+        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+            .setHandler(context.failing(res -> async.flag()));
     }
 
     class MockKafkaConnectApi extends KafkaConnectApiImpl   {
