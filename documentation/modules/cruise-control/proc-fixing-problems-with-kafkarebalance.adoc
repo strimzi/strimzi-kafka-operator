@@ -9,7 +9,7 @@
 If an issue occurs in the process of creating a `KafkaRebalance` resource, or when interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
 The resource also moves to the `NotReady` state.
 
-To continue with the cluster rebalance operation, you must fix the problem on the `KafkaRebalance` resource itself. 
+To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself. 
 Problems can include the following:
 
 * A misconfigured parameter.
