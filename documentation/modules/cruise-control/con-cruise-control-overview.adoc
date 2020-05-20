@@ -18,7 +18,7 @@ To rebalance the cluster, administrators must monitor the load on brokers and ma
 Cruise Control automates the cluster rebalancing process.
 It constructs a _workload model_ of resource utilization for the cluster--based on CPU, disk, and network load--and generates _optimization proposals_ for more balanced partition assignments. A set of configurable _optimization goals_ is used to calculate these proposals.
 
-You can choose to apply those optimization proposals to your Kafka cluster so the broker pods are used most effectively, leading to a more balanced cluster.
+You can choose to apply those optimization proposals to your Kafka cluster so the broker pods are used more effectively, leading to a more balanced cluster.
 
 .Additional resources
 
