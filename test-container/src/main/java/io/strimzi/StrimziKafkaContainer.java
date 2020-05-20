@@ -113,6 +113,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Executing command in container with Id {}", getContainerId());
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
+            .withPrivileged(true)
             .withCmd("bash", "-c", "sudo bin/zookeeper-server-start.sh config/zookeeper.properties &")
             .exec();
 
@@ -129,6 +130,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Starting kafka...");
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
+            .withPrivileged(true)
             .withAttachStdout(true)
             .withAttachStdin(true)
             .withAttachStderr(true)
