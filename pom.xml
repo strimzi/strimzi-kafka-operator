@@ -102,6 +102,7 @@
         <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
 
         <junit-json-params.version>5.5.1-r0</junit-json-params.version>
+        <test-containers.version>1.14.0</test-containers.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.json.version>1.1.4</javax.json.version>
         <rest-assured.version>4.1.1</rest-assured.version>
@@ -130,6 +131,7 @@
         <module>mirror-maker-agent</module>
         <module>tracing-agent</module>
         <module>test</module>
+        <module>test-container</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
@@ -619,6 +621,11 @@
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-micrometer-metrics</artifactId>
                 <version>${vertx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${test-containers.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
