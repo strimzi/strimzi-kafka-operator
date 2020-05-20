@@ -64,11 +64,15 @@ The `After` score is based on the generated optimization proposal.
 m¦intraBrokerDataToMoveMB
 ¦The sum of the size of each partition replica that will be moved between disks on the same broker (see also `numIntraBrokerReplicaMovements`).
 
+*Performance impact during rebalance operation*: Variable. The larger the number, the longer the cluster rebalance will take to complete. Moving a large amount of data between disks on the same broker has less impact than between separate brokers (see `dataToMoveMB`).
+
 m¦recentWindows
 ¦The number of metrics windows upon which the optimization proposal is based.
 
 m¦dataToMoveMB
 ¦The sum of the size of each partition replica that will be moved to a separate broker (see also `numReplicaMovements`).
+
+*Performance impact during rebalance operation*: Variable. The larger the number, the longer the cluster rebalance will take to complete.
 
 m¦monitoredPartitionsPercentage
 ¦The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
