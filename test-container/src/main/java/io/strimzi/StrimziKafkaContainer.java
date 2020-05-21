@@ -114,13 +114,25 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
             .withPrivileged(true)
+            .withAttachStdout(true)
+            .withAttachStdin(true)
+            .withAttachStderr(true)
+            .withTty(false)
             .withCmd("bash", "-c", "bin/zookeeper-server-start.sh config/zookeeper.properties &")
             .exec();
 
-        try {
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        try (OutputStream outputStream = new ByteArrayOutputStream();
+             OutputStream errorStream = new ByteArrayOutputStream()) {
 
-        } catch (InterruptedException e) {
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback(outputStream, errorStream)).awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+            LOGGER.info("OUTPUT STREAM");
+            LOGGER.info(outputStream);
+            LOGGER.info("=================");
+            LOGGER.info("ERROR STREAM");
+            LOGGER.info(errorStream);
+
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
