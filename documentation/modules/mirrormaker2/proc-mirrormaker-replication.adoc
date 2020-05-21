@@ -7,10 +7,6 @@
 
 Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
 
-The previous version of MirrorMaker continues to be supported.
-If you wish to use the resources configured for the previous version,
-they must be updated to the format supported by MirrorMaker 2.0.
-
 The configuration must specify:
 
 * Each Kafka cluster
@@ -20,6 +16,10 @@ The configuration must specify:
 ** Topic to topic
 
 Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
+
+NOTE: The previous version of MirrorMaker continues to be supported.
+If you wish to use the resources configured for the previous version,
+they must be updated to the format supported by MirrorMaker 2.0.
 
 MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
 A minimal configuration, with defaults left unchanged, would be something like this example:
@@ -116,6 +116,62 @@ spec:
         checkpoints.topic.replication.factor: 1 <25>
     topicsPattern: ".*" <26>
     groupsPattern: "group1|group2|group3" <27>
+  resources: <28>
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  logging: <29>
+    type: inline
+    loggers:
+      connect.root.logger.level: "INFO"
+  readinessProbe: <30>
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  jvmOptions: <31>
+    "-Xmx": "1g"
+    "-Xms": "1g"
+  image: my-org/my-image:latest <32>
+  template: <33>
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+    connectContainer: 1
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+        - name: JAEGER_AGENT_HOST
+          value: jaeger-agent-name
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+  tracing:
+    type: jaeger <34>
+  externalConfiguration: <35>
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsAccessKey
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsSecretAccessKey
 ----
 <1> The Kafka Connect version.
 <2> The number of replica nodes.
@@ -146,6 +202,15 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <26> Topic replication from the source cluster defined as regular expression patterns. Here we request all topics.
 <27> Consumer group replication from the source cluster defined as regular expression patterns. Here we request three consumer groups by name.
 You can use comma-separated lists.
+<28> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<29> Specified loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. Kafka Connect has a single logger called `connect.root.logger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<30> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<31> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
+<32> ADVANCED OPTION: Container image configuration, which is xref:con-configuring-container-images-deployment-configuration-kafka-mirror-maker[recommended only in special situations].
+<33> xref:assembly-customizing-deployments-str[Template customization]. Here a pod is scheduled based with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+Environment variables are also set for distributed tracing using Jaeger.
+<34> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<35> Kubernetes Secret mounted to Kafka Connect as an environment variable.
 
 . Create or update the resource:
 +
