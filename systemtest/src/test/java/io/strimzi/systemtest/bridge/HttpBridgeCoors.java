@@ -104,7 +104,7 @@ public class HttpBridgeCoors extends HttpBridgeBaseST {
 
     @BeforeAll
     static void beforeAll() throws InterruptedException {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1,1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
