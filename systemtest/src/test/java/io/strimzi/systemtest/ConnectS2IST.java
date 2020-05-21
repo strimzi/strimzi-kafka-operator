@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectTlsBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
@@ -376,8 +375,8 @@ class ConnectS2IST extends BaseST {
             }
         });
 
-        KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2I);
-        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
+        KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2IName);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
     }
 
     @Test
