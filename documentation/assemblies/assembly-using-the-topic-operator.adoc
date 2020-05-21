@@ -5,7 +5,7 @@
 [id='using-the-topic-operator-{context}']
 = Using the Topic Operator
 
-When you create, modify or delete a user using the `KafkaTopic` resource,
+When you create, modify or delete a topic using the `KafkaTopic` resource,
 the Topic Operator ensures those changes are reflected in the Kafka cluster.
 
 include::../modules/ref-topic-operator.adoc[leveloffset=+1]
