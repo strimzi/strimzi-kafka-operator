@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -26,10 +27,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
+
 /**
  * Base for test classes where HTTP Bridge is used.
  */
 @ExtendWith(VertxExtension.class)
+@Tag(BRIDGE)
+@Tag(REGRESSION)
+@Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
 public class HttpBridgeBaseST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
 

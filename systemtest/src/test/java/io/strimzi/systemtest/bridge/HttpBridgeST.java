@@ -46,10 +46,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(BRIDGE)
-@Tag(REGRESSION)
-@Tag(NODEPORT_SUPPORTED)
-@Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
 
