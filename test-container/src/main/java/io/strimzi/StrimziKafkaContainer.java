@@ -98,7 +98,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         Collection<ContainerNetwork> cns = containerInfo.getNetworkSettings().getNetworks().values();
 
         for (ContainerNetwork cn : cns) {
-            advertisedListeners.append("," + "BROKER://").append(cn.getIpAddress()).append(":9093");
+            advertisedListeners.append("," + "BROKER://").append(cn.getIpAddress()).append(":9092");
         }
 
         LOGGER.info("This is all advertised listeners for Kafka {}", advertisedListeners.toString());
