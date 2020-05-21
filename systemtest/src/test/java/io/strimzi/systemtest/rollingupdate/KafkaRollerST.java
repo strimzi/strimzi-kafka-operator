@@ -52,10 +52,11 @@ class KafkaRollerST extends BaseST {
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
             .editSpec()
-            .editKafka()
-            .addToConfig("auto.create.topics.enable", "false")
-            .endKafka()
-            .endSpec().done();
+                .editKafka()
+                    .addToConfig("auto.create.topics.enable", "false")
+                .endKafka()
+            .endSpec()
+            .done();
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -86,8 +87,9 @@ class KafkaRollerST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
     }
@@ -109,8 +111,9 @@ class KafkaRollerST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(kafkaName).cascading(false).edit()
             .editMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));

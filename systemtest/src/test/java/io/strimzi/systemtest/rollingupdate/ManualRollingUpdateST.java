@@ -84,8 +84,9 @@ class ManualRollingUpdateST extends BaseST {
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(kafkaName).cascading(false).edit()
             .editMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
 
         // check annotation to trigger rolling update
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
@@ -108,8 +109,9 @@ class ManualRollingUpdateST extends BaseST {
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zkName).cascading(false).edit()
             .editMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata().done();
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
 
         // check annotation to trigger rolling update
         assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(zkName)
