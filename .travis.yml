@@ -7,12 +7,11 @@ notifications:
 jdk:
 - openjdk8
 - openjdk11
-services:
-- docker
 before_install:
 - if [ $(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p') -gt 1 ] ; then export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p'); export JAVA_VERSION=$JAVA_VERSION_BUILD; else export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2/p'); export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2.\3/p'); fi;
 - gem install asciidoctor
 - "./.travis/install_yq.sh"
+- "./.azure/scripts/setup_docker.sh"
 install:
 - mvn clean install -DskipTests=false -f test-container/pom.xml
 before_script:
