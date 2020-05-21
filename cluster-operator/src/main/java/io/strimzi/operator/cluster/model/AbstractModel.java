@@ -375,12 +375,10 @@ public abstract class AbstractModel {
 
     /**
      * Transforms map to log4j properties file format.
-     *
      * @param properties map of log4j properties.
      * @return log4j properties as a String.
      */
-    protected String createPropertiesString(OrderedProperties properties) {
-        properties.addPair("monitorInterval", "5");
+    public String createPropertiesString(OrderedProperties properties) {
         return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
     }
 
@@ -428,10 +426,16 @@ public abstract class AbstractModel {
         }
     }
 
+    /**
+     * Adds 'monitorInterval=5' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     * This property is ignored by log4j but used by log4j2.
+     * @param data
+     * @return
+     */
     protected String addMonitorIntervalToExternalLogging(String data) {
         if (!data.contains("monitorInterval=")) {
             // do not override custom value
-            return data + "monitorInterval=5";
+            return data + "\nmonitorInterval=5";
         } else {
             return data;
         }
