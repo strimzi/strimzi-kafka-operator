@@ -12,9 +12,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -710,12 +708,12 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
+        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
-        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
+            .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -730,15 +728,15 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
+        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsNewPodName);
+        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setTopicName(topic1);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
 
-        LOGGER.info("Verifying that {} pod is not able to exchange messages", kafkaClientsNewPodName);
-        assertThrows(RuntimeException.class, () ->  {
+        LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
+        assertThrows(AssertionError.class, () ->  {
             internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesPlain(),
                 internalKafkaClient.receiveMessagesPlain()
@@ -794,12 +792,12 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
+        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
-        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
+            .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -814,15 +812,15 @@ class SecurityST extends BaseST {
 
         KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).done();
 
-        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
+        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(kafkaClientsNewPodName);
+        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
         internalKafkaClient.setTopicName(topic1);
 
-        LOGGER.info("Verifying that {} pod is  not able to exchange messages", kafkaClientsNewPodName);
+        LOGGER.info("Verifying that {} pod is  not able to exchange messages", deniedKafkaClientsPodName);
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(AssertionError.class, () -> {
             internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesTls(),
                 internalKafkaClient.receiveMessagesTls()
@@ -839,7 +837,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -877,7 +875,7 @@ class SecurityST extends BaseST {
 
         assertThat("KafkaConnect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
 
-        KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
@@ -898,7 +896,7 @@ class SecurityST extends BaseST {
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
+        KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
             "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
             .editMetadata()
                 .addToLabels("type", "kafka-mirror-maker")
@@ -950,7 +948,7 @@ class SecurityST extends BaseST {
 
         assertThat("KafkaMirrorMaker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
 
-        KafkaMirrorMakerResource.deleteKafkaMirrorMakerWithoutWait(kafkaMirrorMaker);
+        KafkaMirrorMakerResource.deleteKafkaMirrorMakerWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
     }
 
@@ -1330,7 +1328,7 @@ class SecurityST extends BaseST {
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
 
-        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
@@ -1393,7 +1391,7 @@ class SecurityST extends BaseST {
 
         KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
 
-        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
     }
 
@@ -1404,6 +1402,6 @@ class SecurityST extends BaseST {
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM).done();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT).done();
     }
 }

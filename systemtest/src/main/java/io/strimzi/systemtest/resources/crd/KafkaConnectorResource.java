@@ -59,7 +59,10 @@ public class KafkaConnectorResource {
     public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
         return kafkaConnector;
+    }
 
+    public static void deleteKafkaConnectorWithoutWait(String connectorName) {
+        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).cascading(true).delete();
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {

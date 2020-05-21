@@ -367,7 +367,7 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(CLUSTER_NAME);
 
-        KafkaMirrorMaker2Resource.deleteKafkaMirrorMaker2WithoutWait(kafkaMirrorMaker2);
+        KafkaMirrorMaker2Resource.deleteKafkaMirrorMaker2WithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
     }
 
