@@ -48,7 +48,7 @@ do
         "${TLS_AUTH_KEYS["${clusterAlias}"]}" \
         "/tmp/kafka/clusters/${clusterAlias}.truststore.p12" \
         "/tmp/kafka/clusters/${clusterAlias}.keystore.p12" \
-        "/opt/kafka/mm2-certs" \
+        "/opt/kafka/mm2-certs/${clusterAlias}" \
         "/opt/kafka/mm2-oauth-certs/${clusterAlias}" \
         "/tmp/kafka/clusters/${clusterAlias}-oauth.truststore.p12"
 done
