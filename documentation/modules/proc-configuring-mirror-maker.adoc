@@ -114,7 +114,15 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-  tracing: <20>
+    connectContainer: <20>
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+        - name: JAEGER_AGENT_HOST
+          value: jaeger-agent-name
+        - name: JAEGER_AGENT_PORT
+          value: "6831
+  tracing: <21>
     type: jaeger
 ----
 <1> The number of replica nodes.
@@ -136,7 +144,8 @@ spec:
 <17> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <18> ADVANCED OPTION: Container image configuration, which is xref:con-configuring-container-images-{context}[recommended only in special situations].
 <19> xref:assembly-customizing-deployments-str[Template customization]. Here a pod is scheduled based with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<20> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<20> Environment variables are also xref:ref-tracing-environment-variables-{context}[set for distributed tracing using Jaeger].
+<21> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
 +
 WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.
 

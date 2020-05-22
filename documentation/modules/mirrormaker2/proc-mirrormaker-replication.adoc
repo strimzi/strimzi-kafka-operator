@@ -150,7 +150,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: 1
+    connectContainer: <34>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -159,8 +159,8 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <34>
-  externalConfiguration: <35>
+    type: jaeger <35>
+  externalConfiguration: <36>
     env:
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
@@ -208,9 +208,9 @@ You can use comma-separated lists.
 <31> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <32> ADVANCED OPTION: Container image configuration, which is xref:con-configuring-container-images-deployment-configuration-kafka-mirror-maker[recommended only in special situations].
 <33> xref:assembly-customizing-deployments-str[Template customization]. Here a pod is scheduled based with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-Environment variables are also set for distributed tracing using Jaeger.
-<34> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
-<35> Kubernetes Secret mounted to Kafka Connect as an environment variable.
+<34> Environment variables are also xref:ref-tracing-environment-variables-{context}[set for distributed tracing using Jaeger].
+<35> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<36> Kubernetes Secret mounted to Kafka MirroMaker as an environment variable.
 
 . Create or update the resource:
 +
