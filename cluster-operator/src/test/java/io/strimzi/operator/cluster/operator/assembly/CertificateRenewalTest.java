@@ -160,7 +160,7 @@ public class CertificateRenewalTest {
 
         Promise reconcileCasComplete = Promise.promise();
         op.new ReconciliationState(reconciliation, kafka).reconcileCas(dateSupplier)
-            .setHandler(ar -> {
+            .onComplete(ar -> {
                 // If succeeded return the argument captor object instead of the Reconciliation state
                 // This is for the purposes of testing
                 // If failed then return the throwable of the reconcileCas
@@ -263,7 +263,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 assertThat(c.getAllValues().get(0).getData().keySet(), is(set(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
@@ -290,7 +290,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(InvalidConfigurationException.class));
                 assertThat(e.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
                 async.flag();
@@ -349,7 +349,7 @@ public class CertificateRenewalTest {
         Checkpoint async = context.checkpoint();
 
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().get(0).getData().keySet(), is(set(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
                 assertThat(c.getAllValues().get(0).getData().get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
                 assertDoesNotThrow(() -> {
@@ -403,7 +403,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -486,7 +486,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -584,7 +584,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()))
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -685,7 +685,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().size(), is(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -774,7 +774,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -889,7 +889,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 0, 0).atZone(ZoneId.of("GMT")).toInstant()))
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -989,7 +989,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
 
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -1132,7 +1132,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
@@ -1196,7 +1196,7 @@ public class CertificateRenewalTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
-            .setHandler(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(0));
                 async.flag();
             })));

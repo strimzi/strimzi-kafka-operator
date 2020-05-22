@@ -99,7 +99,7 @@ public class K8sImpl implements K8s {
                         boolean notExists = kafkaTopic == null;
                         LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);
                         return notExists;
-                    }).setHandler(future);
+                    }).onComplete(future);
                 }
             } catch (Exception e) {
                 future.fail(e);

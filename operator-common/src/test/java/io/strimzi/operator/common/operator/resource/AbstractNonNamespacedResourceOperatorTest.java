@@ -108,7 +108,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource())
-            .setHandler(context.succeeding(ar -> {
+            .onComplete(context.succeeding(ar -> {
                 verify(mockResource).get();
                 verify(mockResource).patch(any());
                 verify(mockResource, never()).create(any());
@@ -139,7 +139,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -165,7 +165,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
                 vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.succeeding(rr -> {
+        op.createOrUpdate(resource).onComplete(context.succeeding(rr -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.flag();
@@ -193,7 +193,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -216,7 +216,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.succeeding(rrDeleted -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).get();
             verify(mockResource, never()).delete();
             async.flag();
@@ -252,7 +252,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.succeeding(rrDeleted -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
@@ -286,7 +286,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.failing(e -> context.verify(() -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             verify(mockResource).delete();
             assertThat("Watch was not closed", watchWasClosed.get(), is(true));
@@ -323,7 +323,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.succeeding(rrDeleted -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
@@ -360,7 +360,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.failing(e -> context.verify(() -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             assertThat("Watch was not closed", watchWasClosed.get(), is(true));
             async.flag();
@@ -389,7 +389,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.failing(e -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -425,7 +425,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).setHandler(context.failing(e -> {
+        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();

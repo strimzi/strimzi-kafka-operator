@@ -237,7 +237,7 @@ public class TopicOperatorMockTest {
         AtomicReference<Topic> ref = new AtomicReference<>();
         Checkpoint async = context.checkpoint();
         Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(new TopicName(topicName));
-        kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).setHandler(fromKafka -> {
+        kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).onComplete(fromKafka -> {
             if (fromKafka.succeeded()) {
                 ref.set(fromKafka.result());
             } else {
@@ -276,7 +276,7 @@ public class TopicOperatorMockTest {
 
     void reconcile(VertxTestContext context) throws InterruptedException {
         Checkpoint async = context.checkpoint();
-        session.topicOperator.reconcileAllTopics("test").setHandler(ar -> {
+        session.topicOperator.reconcileAllTopics("test").onComplete(ar -> {
             if (!ar.succeeded()) {
                 context.failNow(ar.cause());
             }

@@ -53,7 +53,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, never()).isReady();
@@ -83,7 +83,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, never()).isReady();
                 async.flag();
@@ -135,7 +135,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
-            .setHandler(context.succeeding(v -> {
+            .onComplete(context.succeeding(v -> {
                 verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
 
                 if (Readiness.isReadinessApplicable(resource.getClass())) {
@@ -171,7 +171,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, atLeastOnce()).isReady();
@@ -207,7 +207,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 async.flag();
             })));

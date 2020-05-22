@@ -96,16 +96,16 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 if (desired != null) {
                     if (current == null) {
                         log.debug("{} {} does not exist, creating it", resourceKind, name);
-                        internalCreate(name, desired).setHandler(future);
+                        internalCreate(name, desired).onComplete(future);
                     } else {
                         log.debug("{} {} already exists, patching it", resourceKind, name);
-                        internalPatch(name, current, desired).setHandler(future);
+                        internalPatch(name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {} exist, deleting it", resourceKind, name);
-                        internalDelete(name).setHandler(future);
+                        internalDelete(name).onComplete(future);
                     } else {
                         log.debug("{} {} does not exist, noop", resourceKind, name);
                         future.complete(ReconcileResult.noop(null));

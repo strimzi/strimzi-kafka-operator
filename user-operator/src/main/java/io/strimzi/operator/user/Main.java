@@ -69,7 +69,7 @@ public class Main {
         KubernetesClient client = new DefaultKubernetesClient();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
-        run(vertx, client, adminClientProvider, config).setHandler(ar -> {
+        run(vertx, client, adminClientProvider, config).onComplete(ar -> {
             if (ar.failed()) {
                 log.error("Unable to start operator", ar.cause());
                 System.exit(1);

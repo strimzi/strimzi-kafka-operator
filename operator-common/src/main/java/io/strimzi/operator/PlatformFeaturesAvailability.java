@@ -57,7 +57,7 @@ public class PlatformFeaturesAvailability {
             pfa.setImages(supported);
             return Future.succeededFuture(pfa);
         })
-        .setHandler(pfaPromise);
+        .onComplete(pfaPromise);
 
         return pfaPromise.future();
     }

@@ -168,7 +168,7 @@ public class ClusterOperatorTest {
         Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size()));
 
                 for (String deploymentId: vertx.deploymentIDs()) {
@@ -237,7 +237,7 @@ public class ClusterOperatorTest {
         Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                 ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1));
                 for (String deploymentId: vertx.deploymentIDs()) {
                     vertx.undeploy(deploymentId, context.succeeding());
