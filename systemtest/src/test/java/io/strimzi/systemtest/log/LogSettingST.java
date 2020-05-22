@@ -498,6 +498,13 @@ class LogSettingST extends AbstractST {
                         && cmdKubeClient().execInPodContainer(finalEoPodName1, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG");
             }
         );
+
+        eoPodHash = eoPods.get(eoPodName);
+        eoPods = DeploymentUtils.depSnapshot(eoName);
+        eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
+        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
+        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
