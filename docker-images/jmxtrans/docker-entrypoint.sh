@@ -17,9 +17,9 @@ MONITOR_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=
               -Djava.rmi.server.hostname=${PROXY_HOST}"
 
 if [ "$1" = 'start-without-jmx' ]; then
-    set /usr/bin/tini -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $EXEC
+    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $EXEC
 elif [ "$1" = 'start-with-jmx' ]; then
-    set /usr/bin/tini -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $MONITOR_OPTS $EXEC
+    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $MONITOR_OPTS $EXEC
 fi
 
 exec "$@"

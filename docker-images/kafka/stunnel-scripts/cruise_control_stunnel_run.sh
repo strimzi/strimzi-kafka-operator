@@ -7,4 +7,4 @@ ${STUNNEL_HOME}/cruise_control_stunnel_config_generator.sh | tee /tmp/stunnel.co
 echo ""
 
 # starting Stunnel with final configuration
-exec /usr/bin/stunnel /tmp/stunnel.conf
+exec /usr/bin/tini -w -e 143 -- /usr/bin/stunnel /tmp/stunnel.conf
