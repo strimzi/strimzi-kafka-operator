@@ -104,11 +104,13 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .setHandler(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
-                int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
-                if (bridge.getHttp() != null) {
-                    port = bridge.getHttp().getPort();
+                if (!bridgeHasZeroReplicas) {
+                    int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
+                    if (bridge.getHttp() != null) {
+                        port = bridge.getHttp().getPort();
+                    }
+                    kafkaBridgeStatus.setUrl(KafkaBridgeResources.url(bridge.getCluster(), namespace, port));
                 }
-                kafkaBridgeStatus.setUrl(KafkaBridgeResources.url(bridge.getCluster(), namespace, port));
 
                 updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).setHandler(statusResult -> {
                     // If both features succeeded, createOrUpdate succeeded as well

@@ -62,12 +62,16 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaBridgeAssemblyOperatorTest {
@@ -716,14 +720,14 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+                .setHandler(context.succeeding(v -> context.verify(() -> {
+                    // 0 Replicas - readiness should never get called.
+                    verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
+                    assertNull(bridgeCaptor.getValue().getStatus().getUrl());
 
-            // Replica is 0 so readiness shouldn't get called.
-            verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
-
-            async.flag();
-        });
+                    async.flag();
+                })));
     }
 
 }
