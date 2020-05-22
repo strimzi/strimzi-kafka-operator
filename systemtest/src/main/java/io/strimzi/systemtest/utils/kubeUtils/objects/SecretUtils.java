@@ -118,6 +118,7 @@ public class SecretUtils {
         certsPaths.put("ca.key", keyPath);
 
         SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        waitForSecretReady(name);
     }
 
     public static void waitForCertToChange(String originalCert, String secretName) {
@@ -135,5 +136,15 @@ public class SecretUtils {
                 return false;
             }
         });
+    }
+
+    public static void deleteSecretWithWait(String secretName, String namespace) {
+        kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
+
+        LOGGER.info("Waiting for Secret: {} to be deleted", secretName);
+        TestUtils.waitFor(String.format("Deletion of secret: {}", secretName), Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> kubeClient().getSecret(secretName) == null);
+
+        LOGGER.info("Secret: {} successfully deleted", secretName);
     }
 }
