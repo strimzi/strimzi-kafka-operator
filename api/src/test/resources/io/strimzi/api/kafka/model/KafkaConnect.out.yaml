@@ -20,7 +20,6 @@ spec:
     value: "value2"
   logging:
     type: "inline"
-    loggers: {}
   externalConfiguration:
     env:
     - name: "SOME_VARIABLE"

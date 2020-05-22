@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
@@ -36,6 +37,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -54,15 +56,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -102,7 +101,7 @@ public class KafkaBridgeAssemblyOperatorTest {
     }
 
     @Test
-    public void testCreateCluster(VertxTestContext context) {
+    public void testCreateOrUpdateCreatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -147,50 +146,49 @@ public class KafkaBridgeAssemblyOperatorTest {
                 VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                // Verify service
+                List<Service> capturedServices = serviceCaptor.getAllValues();
+                assertThat(capturedServices, hasSize(1));
+                Service service = capturedServices.get(0);
+                assertThat(service.getMetadata().getName(), is(bridge.getServiceName()));
+                assertThat(service, is(bridge.generateService()));
 
-            // Verify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedServices.size(), is(1)));
-            Service service = capturedServices.get(0);
-            context.verify(() -> assertThat(service.getMetadata().getName(), is(bridge.getServiceName())));
-            context.verify(() -> assertThat("Services are not equal", service, is(bridge.generateService())));
+                // No metrics config  => no CMs created
+                Set<String> metricsNames = new HashSet<>();
+                if (bridge.isMetricsEnabled()) {
+                    metricsNames.add(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName));
+                }
 
-            // No metrics config  => no CMs created
-            Set<String> metricsNames = new HashSet<>();
-            if (bridge.isMetricsEnabled()) {
-                metricsNames.add(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName));
-            }
+                // Verify Deployment
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                assertThat(capturedDc, hasSize(1));
+                Deployment dc = capturedDc.get(0);
+                assertThat(dc.getMetadata().getName(), is(bridge.getName()));
+                Map annotations = new HashMap();
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                assertThat(dc, is(bridge.generateDeployment(annotations, true, null, null)));
 
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
-            Deployment dc = capturedDc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(bridge.getName())));
-            Map annotations = new HashMap();
-            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
-            context.verify(() -> assertThat("Deployments are not equal", dc, is(bridge.generateDeployment(annotations, true, null, null))));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                assertThat(capturedPdb.size(), is(1));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                assertThat(pdb.getMetadata().getName(), is(bridge.getName()));
+                assertThat(pdb, is(bridge.generatePodDisruptionBudget()));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(bridge.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(bridge.generatePodDisruptionBudget())));
+                // Verify status
+                List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
+                assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080"));
+                assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
+                assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
 
-            // Verify status
-            List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080")));
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready")));
-
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test
-    public void testUpdateClusterNoDiff(VertxTestContext context) {
+    public void testCreateOrUpdateWithNoDiffCausesNoChanges(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -243,34 +241,34 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
 
-            // Verify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedServices.size(), is(1)));
+                // Verify service
+                List<Service> capturedServices = serviceCaptor.getAllValues();
+                assertThat(capturedServices, hasSize(1));
 
-            // Verify Deployment Config
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
+                // Verify Deployment Config
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                assertThat(capturedDc, hasSize(1));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(bridge.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(bridge.generatePodDisruptionBudget())));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                assertThat(capturedPdb, hasSize(1));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                assertThat(pdb.getMetadata().getName(), is(bridge.getName()));
+                assertThat(pdb, is(bridge.generatePodDisruptionBudget()));
 
-            // Verify scaleDown / scaleUp were not called
-            context.verify(() -> assertThat(dcScaleDownNameCaptor.getAllValues().size(), is(1)));
-            context.verify(() -> assertThat(dcScaleUpNameCaptor.getAllValues().size(), is(1)));
+                // Verify scaleDown / scaleUp were not called
+                assertThat(dcScaleDownNameCaptor.getAllValues(), hasSize(1));
+                assertThat(dcScaleUpNameCaptor.getAllValues(), hasSize(1));
 
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test
-    public void testUpdateCluster(VertxTestContext context) {
+    public void testCreateOrUpdateUpdatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -351,47 +349,47 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
 
-            KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(clusterCm,
-                    VERSIONS);
+                KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(clusterCm,
+                        VERSIONS);
 
-            // Verify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedServices.size(), is(1)));
-            Service service = capturedServices.get(0);
-            context.verify(() -> assertThat(service.getMetadata().getName(), is(compareTo.getServiceName())));
-            context.verify(() -> assertThat("Services are not equal", service, is(compareTo.generateService())));
+                // Verify service
+                List<Service> capturedServices = serviceCaptor.getAllValues();
+                assertThat(capturedServices, hasSize(1));
+                Service service = capturedServices.get(0);
+                assertThat(service.getMetadata().getName(), is(compareTo.getServiceName()));
+                assertThat(service, is(compareTo.generateService()));
 
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
-            Deployment dc = capturedDc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(compareTo.getName())));
-            Map<String, String> annotations = new HashMap();
-            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
-            context.verify(() -> assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null))));
+                // Verify Deployment
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                assertThat(capturedDc, hasSize(1));
+                Deployment dc = capturedDc.get(0);
+                assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
+                Map<String, String> annotations = new HashMap();
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+                assertThat(dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(compareTo.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(compareTo.generatePodDisruptionBudget())));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                assertThat(capturedPdb, hasSize(1));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                assertThat(pdb.getMetadata().getName(), is(compareTo.getName()));
+                assertThat(pdb, is(compareTo.generatePodDisruptionBudget()));
 
-            // Verify scaleDown / scaleUp were not called
-            context.verify(() -> assertThat(dcScaleDownNameCaptor.getAllValues().size(), is(1)));
-            context.verify(() -> assertThat(dcScaleUpNameCaptor.getAllValues().size(), is(1)));
+                // Verify scaleDown / scaleUp were not called
+                assertThat(dcScaleDownNameCaptor.getAllValues(), hasSize(1));
+                assertThat(dcScaleUpNameCaptor.getAllValues(), hasSize(1));
 
-            // No metrics config  => no CMs created
-            verify(mockCmOps, never()).createOrUpdate(any());
-            async.flag();
-        });
+                // No metrics config  => no CMs created
+                verify(mockCmOps, never()).createOrUpdate(any());
+                async.flag();
+            })));
     }
 
     @Test
-    public void testUpdateClusterFailure(VertxTestContext context) {
+    public void testCreateOrUpdateThrowsWhenCreateServiceThrows(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -408,7 +406,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
-        clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
+        clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some differences
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
@@ -450,15 +448,12 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
-
-            async.flag();
-        });
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.failing(e -> async.flag()));
     }
 
     @Test
-    public void testUpdateClusterScaleUp(VertxTestContext context) {
+    public void testCreateOrUpdateWithReplicasScaleUpToOne(VertxTestContext context) {
         final int scaleTo = 1;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -480,7 +475,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
-        Deployment dep = bridge.generateDeployment(new HashMap<String, String>(), true, null, null);
+        Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(dep);
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -503,17 +498,16 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
 
-            verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
-
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test
-    public void testUpdateClusterScaleDown(VertxTestContext context) {
+    public void testCreateOrUpdateWithScaleDown(VertxTestContext context) {
         int scaleTo = 1;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -527,15 +521,21 @@ public class KafkaBridgeAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaBridge clusterCm = ResourceUtils.createEmptyKafkaBridgeCluster(clusterCmNamespace, clusterCmName);
-        clusterCm.getSpec().setReplicas(3);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
+
+        // Change replicas to create ScaleDown
+        KafkaBridge scaledDownCluster = new KafkaBridgeBuilder(clusterCm)
+                .editOrNewSpec()
+                    .withReplicas(scaleTo)
+                .endSpec()
+                .build();
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm, VERSIONS);
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
-        Deployment dep = bridge.generateDeployment(new HashMap<String, String>(), true, null, null);
+        Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(dep);
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -558,17 +558,16 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
-
-            verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
-
-            async.flag();
-        });
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), scaledDownCluster)
+            .setHandler(context.succeeding(v -> context.verify(() -> {
+                verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
+                verify(mockDcOps).scaleDown(clusterCmNamespace, bridge.getName(), scaleTo);
+                async.flag();
+            })));
     }
 
     @Test
-    public void testReconcile(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testReconcileCallsCreateOrUpdate(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -610,7 +609,8 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
-        CountDownLatch async = new CountDownLatch(2);
+        // Should be called twice, once for foo and once for bar
+        Checkpoint asyncCreatedOrUpdated = context.checkpoint(2);
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -621,18 +621,22 @@ public class KafkaBridgeAssemblyOperatorTest {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge kafkaBridgeAssembly) {
                 createdOrUpdated.add(kafkaBridgeAssembly.getMetadata().getName());
-                async.countDown();
+                asyncCreatedOrUpdated.flag();
                 return Future.succeededFuture();
             }
         };
 
+        Checkpoint async = context.checkpoint();
+        Promise reconciled = Promise.promise();
         // Now try to reconcile all the Kafka Bridge clusters
-        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
+        ops.reconcileAll("test", clusterCmNamespace, v -> reconciled.complete());
 
-        async.await(60, TimeUnit.SECONDS);
+        reconciled.future().setHandler(context.succeeding(v -> context.verify(() -> {
+            assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar"))));
+            async.flag();
+        })));
 
-        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
-        context.completeNow();
+
     }
 
     @Test
@@ -672,17 +676,16 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .setHandler(context.failing(e -> context.verify(() -> {
+                // Verify status
+                List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
+                assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080"));
+                assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
+                assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("NotReady"));
 
-            // Verify status
-            List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080")));
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
-            context.verify(() -> assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("NotReady")));
-
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test

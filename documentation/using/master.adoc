@@ -2,7 +2,6 @@ include::shared/version-dependent-attrs.adoc[]
 include::shared/attributes.adoc[]
 
 :context: str
-:BookURLDeploying: ./deploying.html
 
 = Using {ProductLongName}
 

@@ -15,6 +15,10 @@
 * Add support for Kafka 2.5.0
 * Remove TLS sidecars from ZooKeeper pods, using native ZooKeeper TLS support instead
 * Add metrics for Topic Operator
+* Use Strimzi Kafka Bridge 0.16.0
+* Add support for CORS in the HTTP Kafka Bridge
+* Pass HTTP Proxy configuration from operator to operands
+* Add Cruise Control support, KafkaRebalance resource and rebalance operator
 
 ## 0.17.0
 

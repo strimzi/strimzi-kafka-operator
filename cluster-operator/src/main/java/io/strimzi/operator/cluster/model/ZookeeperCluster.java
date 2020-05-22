@@ -116,7 +116,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generates the full DNS name of the pod including the cluster suffix
+     * Generates the DNS name of the pod including the cluster suffix
      * (i.e. usually with the cluster.local - but can be different on different clusters)
      * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc.cluster.local
      *
@@ -124,14 +124,13 @@ public class ZookeeperCluster extends AbstractModel {
      * @param cluster       Name of the cluster
      * @param podId         Id of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc.%s",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
-                ZookeeperCluster.headlessServiceName(cluster),
+        return ModelUtils.podDnsName(
                 namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+                ZookeeperCluster.headlessServiceName(cluster),
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     /**
@@ -143,13 +142,13 @@ public class ZookeeperCluster extends AbstractModel {
      * @param cluster       Name of the cluster
      * @param podId         Id of the pod within the STS
      *
-     * @return              Full DNS name
+     * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return String.format("%s.%s.%s.svc",
-                ZookeeperCluster.zookeeperPodName(cluster, podId),
+        return ModelUtils.podDnsNameWithoutClusterDomain(
+                namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
-                namespace);
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
@@ -378,7 +377,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector2 = new LabelSelector();
-        Map<String, String> expressions2 = new HashMap<>();
+        Map<String, String> expressions2 = new HashMap<>(1);
         expressions2.put(Labels.STRIMZI_NAME_LABEL, zookeeperClusterName(cluster));
         labelSelector2.setMatchLabels(expressions2);
         zookeeperClusterPeer.setPodSelector(labelSelector2);
@@ -400,21 +399,21 @@ public class ZookeeperCluster extends AbstractModel {
         if (namespaceAndPodSelectorNetworkPolicySupported) {
             NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector = new LabelSelector();
-            Map<String, String> expressions = new HashMap<>();
+            Map<String, String> expressions = new HashMap<>(1);
             expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
             labelSelector.setMatchLabels(expressions);
             kafkaClusterPeer.setPodSelector(labelSelector);
 
             NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector3 = new LabelSelector();
-            Map<String, String> expressions3 = new HashMap<>();
+            Map<String, String> expressions3 = new HashMap<>(1);
             expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
             labelSelector3.setMatchLabels(expressions3);
             entityOperatorPeer.setPodSelector(labelSelector3);
 
             NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector4 = new LabelSelector();
-            Map<String, String> expressions4 = new HashMap<>();
+            Map<String, String> expressions4 = new HashMap<>(1);
             expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
             labelSelector4.setMatchLabels(expressions4);
             clusterOperatorPeer.setPodSelector(labelSelector4);
@@ -422,7 +421,7 @@ public class ZookeeperCluster extends AbstractModel {
 
             NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector5 = new LabelSelector();
-            Map<String, String> expressions5 = new HashMap<>();
+            Map<String, String> expressions5 = new HashMap<>(1);
             expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
             labelSelector5.setMatchLabels(expressions5);
             cruiseControlPeer.setPodSelector(labelSelector5);
@@ -500,7 +499,7 @@ public class ZookeeperCluster extends AbstractModel {
      */
     public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) {
 
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(replicas * 4);
 
         log.debug("Generating certificates");
         Map<String, CertAndKey> certs;
@@ -526,7 +525,7 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
                 .withName(ZOOKEEPER_NAME)
@@ -561,13 +560,16 @@ public class ZookeeperCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
 
         return varList;
     }
 
     private List<ServicePort> getServicePortList() {
-        List<ServicePort> portList = new ArrayList<>();
+        List<ServicePort> portList = new ArrayList<>(3);
         portList.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
         portList.add(createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));

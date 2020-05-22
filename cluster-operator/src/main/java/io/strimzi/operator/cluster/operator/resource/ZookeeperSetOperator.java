@@ -74,7 +74,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         log.debug("Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
-        ArrayList<Pod> pods = new ArrayList<>();
+        ArrayList<Pod> pods = new ArrayList<>(replicas);
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
             Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));

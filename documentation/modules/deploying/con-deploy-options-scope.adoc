@@ -13,14 +13,6 @@ You can use custom resources to refine your deployment.
 You may wish to review the configuration options available for Kafka components before you deploy {ProductName}.
 For more information on the configuration through custom resources, see link:{BookURLUsing}#assembly-deployment-configuration-str[Deployment configuration^].
 
-== Monitoring your deployment
-
-{ProductName} supports additional deployment options to monitor your deployment.
-
-* Extract metrics and monitor Kafka components by xref:assembly-metrics-setup-str[deploying Prometheus and Grafana with your Kafka cluster].
-* Extract additional metrics, particularly related to monitoring consumer lag, by xref:assembly-kafka-exporter-{context}[deploying Kafka Exporter with your Kafka cluster].
-* Track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].
-
 == Securing Kafka
 
 On deployment, the Cluster Operator automatically sets up TLS certificates for data encryption and authentication within your cluster.
@@ -30,3 +22,11 @@ On deployment, the Cluster Operator automatically sets up TLS certificates for d
 * Secure data exchange between the Kafka cluster and clients by link:{BookURLUsing}#assembly-deployment-configuration-str[configuration of Kafka resources^].
 * Configure your deployment to use an authorization server to provide link:{BookURLUsing}#assembly-oauth-authentication_str[{oauth} authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[{oauth} authorization^].
 * link:{BookURLUsing}#security-str[Secure Kafka using your own certificates^].
+
+== Monitoring your deployment
+
+{ProductName} supports additional deployment options to monitor your deployment.
+
+* Extract metrics and monitor Kafka components by xref:assembly-metrics-setup-str[deploying Prometheus and Grafana with your Kafka cluster].
+* Extract additional metrics, particularly related to monitoring consumer lag, by xref:assembly-kafka-exporter-{context}[deploying Kafka Exporter with your Kafka cluster].
+* Track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].

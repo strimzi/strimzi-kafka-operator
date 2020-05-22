@@ -63,6 +63,10 @@ public class PodUtils {
         AtomicInteger count = new AtomicInteger();
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
+            if (pods.isEmpty() && expectPods == 0) {
+                LOGGER.debug("Expected pods are ready");
+                return true;
+            }
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -110,7 +114,7 @@ public class PodUtils {
         LOGGER.info("Waiting when all Pods with prefix {} will be deleted", podsNamePrefix);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(podsNamePrefix))
-            .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+            .forEach(p -> deletePodWithWait(p.getMetadata().getName()));
     }
 
     public static String getPodNameByPrefix(String prefix) {
@@ -139,22 +143,24 @@ public class PodUtils {
         LOGGER.info("Pod {} is ready", name);
     }
 
-    public static void waitForPodDeletion(String name) {
+    public static void deletePodWithWait(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
-            TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
-                () -> {
-                    Pod pod = kubeClient().getPod(name);
-                    if (pod == null) {
-                        return true;
-                    } else {
-                        LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
-                        cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
-                        return false;
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
+                if (pods.size() != 0) {
+                    for (Pod pod : pods) {
+                        if (pod.getStatus().getPhase().equals("Terminating")) {
+                            LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                            cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                        }
                     }
-                });
-        }
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         LOGGER.info("Pod {} deleted", name);
     }
 

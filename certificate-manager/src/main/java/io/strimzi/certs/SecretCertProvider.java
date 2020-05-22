@@ -88,7 +88,7 @@ public class SecretCertProvider {
                                byte[] store, byte[] storePassword,
                                Map<String, String> labels, Map<String, String> annotations,
                                OwnerReference ownerReference) {
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(4);
 
         Base64.Encoder encoder = Base64.getEncoder();
 

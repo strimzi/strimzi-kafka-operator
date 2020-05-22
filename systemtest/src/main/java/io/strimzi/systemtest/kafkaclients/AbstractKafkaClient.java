@@ -23,6 +23,7 @@ public abstract class AbstractKafkaClient {
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
     protected String topicName;
+    protected Integer partition;
     protected String namespaceName;
     protected String clusterName;
     protected int messageCount;
@@ -35,6 +36,7 @@ public abstract class AbstractKafkaClient {
     public abstract static class Builder<T extends Builder<T>> {
 
         private String topicName;
+        protected Integer partition;
         private String namespaceName;
         private String clusterName;
         private int messageCount;
@@ -46,6 +48,11 @@ public abstract class AbstractKafkaClient {
 
         public T withTopicName(String topicName) {
             this.topicName = topicName;
+            return self();
+        }
+
+        public T withPartition(Integer partition) {
+            this.partition = partition;
             return self();
         }
 
@@ -108,6 +115,7 @@ public abstract class AbstractKafkaClient {
         }
 
         topicName = builder.topicName;
+        partition = builder.partition;
         namespaceName = builder.namespaceName;
         clusterName = builder.clusterName;
         messageCount = builder.messageCount;

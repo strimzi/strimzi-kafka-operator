@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperato
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
@@ -68,6 +69,13 @@ public class Main {
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
+
+        // Workaround for https://github.com/fabric8io/kubernetes-client/issues/2212
+        // Can be removed after upgrade to Fabric8 4.10.2 or higher or to Java 11
+        if (Util.shouldDisableHttp2()) {
+            System.setProperty("http2.disable", "true");
+        }
+        
         KubernetesClient client = new DefaultKubernetesClient();
 
         maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
@@ -127,7 +135,10 @@ public class Main {
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
                 new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
-        List<Future> futures = new ArrayList<>();
+        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
+                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier);
+
+        List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
             futures.add(prom.future());
@@ -140,6 +151,7 @@ public class Main {
                     kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
+                    kafkaRebalanceAssemblyOperator,
                     resourceOperatorSupplier.metricsProvider);
             vertx.deployVerticle(operator,
                 res -> {

@@ -35,10 +35,10 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems(TOPIC_NAME)));
+        assertThat(topics, not(hasItems(EXAMPLE_TOPIC_NAME)));
 
-        deployNewTopic(CO_NAMESPACE, SECOND_NAMESPACE, TOPIC_NAME);
-        deleteNewTopic(CO_NAMESPACE, TOPIC_NAME);
+        deployNewTopic(CO_NAMESPACE, SECOND_NAMESPACE, EXAMPLE_TOPIC_NAME);
+        deleteNewTopic(CO_NAMESPACE, EXAMPLE_TOPIC_NAME);
         cluster.setNamespace(CO_NAMESPACE);
     }
 

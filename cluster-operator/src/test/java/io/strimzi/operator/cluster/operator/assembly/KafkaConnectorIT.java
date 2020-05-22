@@ -167,7 +167,7 @@ public class KafkaConnectorIT {
                 new ResourceOperatorSupplier(
                         null, null, null, null, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null,
-                        null, connectCrdOperator, null, null, null, null, metrics),
+                        null, connectCrdOperator, null, null, null, null, null, metrics),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort() + 2
@@ -186,8 +186,7 @@ public class KafkaConnectorIT {
                         .withName(connectorName)
                         .patch(createKafkaConnector(namespace, connectorName, config));
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
-                        "localhost", connectClient, true, connectorName,
-                        connector);
+                        "localhost", connectClient, true, connectorName, connector);
             })
             .setHandler(context.succeeding(v -> context.verify(() -> {
                 assertConnectorIsRunning(context, client, namespace, connectorName);

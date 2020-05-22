@@ -47,7 +47,7 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
 
     private List<Condition> prepareConditionsUpdate() {
         List<Condition> oldConditions = getConditions();
-        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>();
+        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
         return newConditions;
     }
 
@@ -81,7 +81,7 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

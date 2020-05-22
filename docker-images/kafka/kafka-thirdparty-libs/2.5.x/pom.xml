@@ -16,8 +16,8 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.4.0</strimzi-oauth.version>
-        <cruise-control.version>2.0.101</cruise-control.version>
+        <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
+        <cruise-control.version>2.0.103</cruise-control.version>
     </properties>
 
     <repositories>
@@ -98,6 +98,10 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -116,6 +120,10 @@
                 <exclusion>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -139,6 +147,10 @@
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

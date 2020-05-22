@@ -96,6 +96,45 @@ spec:
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 
+== Topic creation and configuration
+
+Cruise Control requires the following three topics to be created in order to function properly:
+
+* `strimzi.cruisecontrol.partitionmetricsamples`
+* `strimzi.cruisecontrol.modeltrainingsamples`
+* `strimzi.cruisecontrol.metrics`
+
+Cruise Control will create the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics after the Cruise Control metric reporters create the `strimzi.cruisecontrol.metrics` topic.
+However, if automatic topic creation is disabled in Kafka with a configuration of `auto.create.topics.enable: false` in `spec.kafka.config` when starting a new Kafka cluster, the Cruise Control metric reporters will be unable to create the `strimzi.cruisecontrol.metrics` topic.
+In this situation, the `strimzi.cruisecontrol.metrics` topic will need to be created manually.
+
+To manually create the `strimzi.cruisecontrol.metrics` Cruise Control topic in your Kubernetes cluster:
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
+----
+
+Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must be configured with `cleanup.policy=delete` to disable log compaction.
+Cruise Control will automatically disable log compaction for the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
+The Cruise Control metric reporters will attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic but will fail when being started with a new Kafka cluster.
+This will only become a problem when log compaction is enabled in Kafka with the setting `log.cleanup.policy=compact` in the `spec.kafka.config`.
+In this situation, log compaction will be enabled for `strimzi.cruisecontrol.metrics` topic and will need to be overridden with a `cleanup.policy=delete` in the `strimzi.cruisecontrol.metrics` KafkaTopic.
+
+Here we see an example of log compaction being disabled in a Cruise Control KafkaTopic.
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: strimzi.cruisecontrol.metrics
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    cleanup.policy: delete
+----
+
 == Logging configuration
 
 Cruise Control has its own configurable logger:
@@ -116,6 +155,7 @@ Here we see examples of `inline` and `external` logging.
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+# ...
 spec:
   cruiseControl:
     # ...
@@ -131,6 +171,7 @@ spec:
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+# ...
 spec:
   cruiseControl:
     # ...

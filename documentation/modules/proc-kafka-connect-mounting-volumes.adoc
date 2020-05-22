@@ -59,7 +59,8 @@ Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 
-. Use the values from the mounted properties file in your JSON payload with connector configuration.
+. Configure your connector
+* If you are using the Kafka Connect HTTP REST interface, use the values from the mounted properties file in your JSON payload with connector configuration.
 For example:
 +
 [source,json,subs="attributes+"]
@@ -69,12 +70,31 @@ For example:
    "config":{
       "connector.class":"MyDbConnector",
       "tasks.max":"3",
-      "database": "my-postgresql:5432"
+      "database": "my-postgresql:5432",
       "username":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}",
       "password":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}",
       # ...
    }
 }
+----
+
+* If you are using a `KafkaConnector` resource, use the values from the mounted properties file in the `spec.config` section of your custom resource.
+For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-connector
+  # ...
+spec:
+  class: "MyDbConnector"
+  tasksMax: 3
+  config:
+    database: "my-postgresql:5432"
+    username: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}"
+    password: "${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}"
 ----
 
 .Additional resources

@@ -7,16 +7,20 @@
 // See also the complementary step on the last line of this file.
 
 [id='con-cruise-control-overview-{context}']
-= Cruise Control overview
+= Why use Cruise Control?
 
-Brokers in a Kafka cluster can become unevenly loaded for many reasons.
-For example, partitions that handle large amounts of message traffic can be unevenly distributed across the available brokers.
-Monitoring broker load and reassigning busy partitions to brokers with spare capacity is time consuming and adds to the overhead of managing a Kafka cluster.
-Cruise Control is a tool for automating the monitoring and rebalancing of partitions across a Kafka cluster.
-When deployed alongside a Kafka cluster, Cruise Control can perform the following cluster balancing tasks:
+Cruise Control reduces the time and effort involved in running an efficient and balanced Kafka cluster.
 
-* Monitoring the CPU, disk, and network load of Kafka brokers.
-* Making optimization proposals: balanced partition assignments based on configurable optimization goals.
-* Executing partition reassignments based on optimization proposals.
+A typical cluster can become unevenly loaded over time.
+Partitions that handle large amounts of message traffic might be unevenly distributed across the available brokers.
+To rebalance the cluster, administrators must monitor the load on brokers and manually reassign busy partitions to brokers with spare capacity.
 
-The following sections explain how to xref:proc-deploying-cruise-control-{context}[deploy Cruise Control] and xref:ref-cruise-control-configuration-{context}[set configuration options].
+Cruise Control automates the cluster rebalancing process.
+It constructs a _workload model_ of resource utilization for the cluster--based on CPU, disk, and network load--and generates _optimization proposals_ (that you can approve or reject) for more balanced partition assignments. A set of configurable _optimization goals_ is used to calculate these proposals.
+
+When you approve an optimization proposal, Cruise Control applies it to your Kafka cluster. 
+When the cluster rebalancing operation is complete, the broker pods are used more effectively and the Kafka cluster is more evenly balanced.
+
+.Additional resources
+
+* link:https://github.com/linkedin/cruise-control/wiki[Cruise Control Wiki^]

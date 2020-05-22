@@ -11,7 +11,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -148,7 +147,7 @@ public class MetricsST extends BaseST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
-            .withTopicName(TEST_TOPIC_NAME)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(5000)
@@ -167,7 +166,7 @@ public class MetricsST extends BaseST {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TEST_TOPIC_NAME + "\"} 7"));
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TOPIC_NAME + "\"} 7"));
         });
     }
 
@@ -182,29 +181,30 @@ public class MetricsST extends BaseST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
-            k.getSpec().getKafkaExporter().setTopicRegex(TEST_TOPIC_NAME);
+            k.getSpec().getKafkaExporter().setTopicRegex(TOPIC_NAME);
         });
 
         DeploymentUtils.waitTillDepHasRolled(KafkaExporterResources.deploymentName(CLUSTER_NAME), 1, kafkaExporterSnapshot);
 
         runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
-        assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + TEST_TOPIC_NAME + "\""));
+        assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + TOPIC_NAME + "\""));
     }
 
     @Test
     void testClusterOperatorMetrics() {
+        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2");
 
         for (String resource : resourcesList) {
-            assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_locked_total", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_successful_total", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource);
-            assertCoMetricNotNull("strimzi_reconciliations_failed_total", resource);
+            assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_locked_total", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_successful_total", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
+            assertCoMetricNotNull("strimzi_reconciliations_failed_total", resource, clusterOperatorMetricsData);
         }
 
         Pattern connectResponse = Pattern.compile("strimzi_resources\\{kind=\"Kafka\",} ([\\d.][^\\n]+)");
@@ -238,14 +238,15 @@ public class MetricsST extends BaseST {
 
     @Test
     void testUserOperatorMetrics() {
-        assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_periodical_total", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_failed_total", "KafkaUser");
-        assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaUser");
+        userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(CLUSTER_NAME);
+        assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_periodical_total", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_failed_total", "KafkaUser", userOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaUser", userOperatorMetricsData);
 
         Pattern userPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaUser\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(userPattern, userOperatorMetricsData);
@@ -254,14 +255,15 @@ public class MetricsST extends BaseST {
 
     @Test
     void testTopicOperatorMetrics() {
-        assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_periodical_total", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_failed_total", "KafkaTopic");
-        assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaTopic");
+        topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(CLUSTER_NAME);
+        assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_periodical_total", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_failed_total", "KafkaTopic", topicOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaTopic", topicOperatorMetricsData);
 
         Pattern topicPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaTopic\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPattern, topicOperatorMetricsData);
@@ -273,6 +275,7 @@ public class MetricsST extends BaseST {
 
     @Test
     void testMirrorMaker2Metrics() {
+        kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
         Pattern connectResponse = Pattern.compile("kafka_connect_worker_connector_count ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 3));
@@ -302,9 +305,9 @@ public class MetricsST extends BaseST {
         return exec.out();
     }
 
-    private void assertCoMetricNotNull(String metric, String kind) {
+    private void assertCoMetricNotNull(String metric, String kind, HashMap<String, String> data) {
         Pattern connectResponse = Pattern.compile(metric + "\\{kind=\"" + kind + "\",} ([\\d.][^\\n]+)");
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, clusterOperatorMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, data);
         assertThat(values.stream().mapToDouble(i -> i).count(), notNullValue());
     }
 
@@ -325,7 +328,7 @@ public class MetricsST extends BaseST {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, KafkaTopicUtils.generateRandomNameOfTopic(), 7, 2).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 7, 2).done();
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
@@ -336,10 +339,6 @@ public class MetricsST extends BaseST {
         zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
         kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(CLUSTER_NAME);
         kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
-        kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
-        userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(CLUSTER_NAME);
-        topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(CLUSTER_NAME);
-        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
     }
     
     private List<String> getExpectedTopics() {
@@ -352,8 +351,8 @@ public class MetricsST extends BaseST {
         list.add("my-cluster-connect-offsets");
         list.add("my-cluster-connect-status");
         list.add("second-kafka-cluster.checkpoints.internal");
-        list.add("test-topic");
         list.add("heartbeats");
+        list.add(TOPIC_NAME);
         return list;
     }
 }

@@ -7,20 +7,30 @@ spec:
     version: 2.5.0
     replicas: 3
     listeners:
-      plain: {}
-      tls: {}
+      tls:
+        authentication:
+          type: tls
+    authorization:
+      type: simple
     config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: "2.4"
+      log.message.format.version: "2.5"
     storage:
-      type: ephemeral
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
   zookeeper:
     replicas: 3
     storage:
-      type: ephemeral
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}
-  cruiseControl: {}
+

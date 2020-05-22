@@ -5,14 +5,24 @@
 [id='cruise-control-concepts-{context}']
 = Cruise Control
 
-This chapter provides an overview of the Kafka cluster rebalancing features provided by the {CruiseControlProject} open source project and helps you get started using Cruise Control with {ProductName}.
+You can deploy {CruiseControlProject} and access a subset of its features through {ProductName} custom resources.
+
+Example YAML files for deploying Cruise Control and setting optimization goals are provided in `examples/cruise-control/`.
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
 
-//include::../../modules/cruise-control/proc-interacting-with-cruise-control-api.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-generating-optimization-proposals.adoc[leveloffset=+1]
 
-//include::../../modules/cruise-control/proc-executing-cruise-control-rebalance-operations.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-approving-optimization-proposal.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-fixing-problems-with-kafkarebalance.adoc[leveloffset=+1]

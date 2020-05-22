@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
+
 /**
  * Abstract class for processing and generating configuration passed by the user.
  */
@@ -168,5 +170,15 @@ public abstract class AbstractConfiguration {
      */
     OrderedProperties asOrderedProperties() {
         return options;
+    }
+
+    /**
+     * Splits string with comma-separated values into a List
+     *
+     * @param prefixes  String with comma-separated items
+     * @return          List with the values as separate items
+     */
+    protected static List<String> splitPrefixesToList(String prefixes) {
+        return asList(prefixes.split("\\s*,+\\s*"));
     }
 }

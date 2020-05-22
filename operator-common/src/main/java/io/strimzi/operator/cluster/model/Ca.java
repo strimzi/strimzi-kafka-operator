@@ -352,11 +352,12 @@ public abstract class Ca {
         File brokerCertFile = File.createTempFile("tls", "broker-cert");
         File brokerKeyStoreFile = File.createTempFile("tls", "broker-p12");
 
-        Map<String, CertAndKey> certs = new HashMap<>();
+        int replicasInNewSecret = Math.min(replicasInSecret, replicas);
+        Map<String, CertAndKey> certs = new HashMap<>(replicasInNewSecret);
         // copying the minimum number of certificates already existing in the secret
         // scale up -> it will copy all certificates
         // scale down -> it will copy just the requested number of replicas
-        for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
+        for (int i = 0; i < replicasInNewSecret; i++) {
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} already exists", podName);
             Subject subject = subjectFn.apply(i);
@@ -512,12 +513,12 @@ public abstract class Ca {
             log.debug("{} renewalType {}", this, renewalType);
             switch (renewalType) {
                 case CREATE:
-                    keyData = new HashMap<>();
-                    certData = new HashMap<>();
+                    keyData = new HashMap<>(1);
+                    certData = new HashMap<>(3);
                     generateCaKeyAndCert(nextCaSubject(caKeyGeneration), keyData, certData);
                     break;
                 case REPLACE_KEY:
-                    keyData = new HashMap<>();
+                    keyData = new HashMap<>(1);
                     certData = new HashMap<>(caCertSecret.getData());
                     if (certData.containsKey(CA_CRT)) {
                         String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
@@ -529,7 +530,7 @@ public abstract class Ca {
                     break;
                 case RENEW_CERT:
                     keyData = caKeySecret.getData();
-                    certData = new HashMap<>();
+                    certData = new HashMap<>(3);
                     ++caCertGeneration;
                     renewCaCert(nextCaSubject(caKeyGeneration), certData);
                     break;

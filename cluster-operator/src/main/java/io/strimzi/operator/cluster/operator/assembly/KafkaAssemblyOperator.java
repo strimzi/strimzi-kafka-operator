@@ -1478,10 +1478,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        Function<Integer, String> zkNodeAddress = (Integer i) -> String.format("%s.%s.%s.svc",
-                                zkCluster.getPodName(i),
+                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsNameWithoutClusterDomain(
+                                namespace,
                                 KafkaResources.zookeeperHeadlessServiceName(name),
-                                namespace);
+                                zkCluster.getPodName(i));
 
                         ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
@@ -2579,7 +2579,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                                     .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
                                                     .collect(Collectors.toList());
                                         } else {
-                                            deletePvcs = new ArrayList<>();
+                                            deletePvcs = new ArrayList<>(0);
                                         }
 
                                         List<PersistentVolumeClaim> createPvcs = desiredPvcs
@@ -2906,7 +2906,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 configAnnotation += this.userOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
                             }
 
-                            Map<String, String> annotations = new HashMap<>();
+                            Map<String, String> annotations = new HashMap<>(1);
                             annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, configAnnotation);
 
                             this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
@@ -3381,7 +3381,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         String getInternalServiceHostname(String serviceName)    {
-            return serviceName + "." + namespace + ".svc";
+            return ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
