@@ -185,7 +185,7 @@ public class ZookeeperLeaderFinderTest {
             final int id = i;
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
             zks.add(zk);
-            zk.start().setHandler(context.succeeding(port -> {
+            zk.start().onComplete(context.succeeding(port -> {
                 log.debug("ZK {} listening on port {}", id, port);
                 result[id] = port;
                 async.countDown();
@@ -217,7 +217,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, emptyList(), coKeySecret())
-            .setHandler(context.succeeding(leader -> {
+            .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(ZookeeperLeaderFinder.UNKNOWN_LEADER))));
                 a.flag();
             }));
@@ -229,7 +229,7 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
         int firstPodIndex = 0;
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(firstPodIndex)), coKeySecret())
-            .setHandler(context.succeeding(leader -> {
+            .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(firstPodIndex))));
                 a.flag();
             }));
@@ -262,7 +262,7 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
 
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithMissingClusterOperatorKey)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(RuntimeException.class));
                 assertThat(e.getMessage(),
                         is("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key"));
@@ -300,7 +300,7 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
 
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithBadCertificate)
-                .setHandler(context.failing(e -> context.verify(() -> {
+                .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(RuntimeException.class));
                     assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
                     a.flag();
@@ -340,7 +340,7 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
-            .setHandler(context.succeeding(leader -> context.verify(() -> {
+            .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
                 for (FakeZk zk : zks) {
                     assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(MAX_ATTEMPTS + 1));
@@ -380,7 +380,7 @@ public class ZookeeperLeaderFinderTest {
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
-            .setHandler(context.succeeding(leader -> context.verify(() -> {
+            .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
                 for (FakeZk zk : zks) {
                     assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(0));
@@ -419,7 +419,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
-            .setHandler(context.succeeding(leader -> context.verify(() -> {
+            .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(desiredLeaderId));
                 for (FakeZk zk : zks) {
                     assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(succeedOnAttempt + 1));
@@ -457,7 +457,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
-            .setHandler(context.succeeding(l -> context.verify(() -> {
+            .onComplete(context.succeeding(l -> context.verify(() -> {
                 assertThat(l, is(leader));
                 for (FakeZk zk : zks) {
                     assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(1));

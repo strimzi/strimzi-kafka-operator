@@ -120,7 +120,7 @@ public class KafkaConnectApiTest {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
         client.listConnectorPlugins("localhost", PORT)
-            .setHandler(context.succeeding(connectorPlugins -> context.verify(() -> {
+            .onComplete(context.succeeding(connectorPlugins -> context.verify(() -> {
                 assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
                 ConnectorPlugin fileSink = connectorPlugins.stream()
@@ -137,7 +137,7 @@ public class KafkaConnectApiTest {
             })))
 
             .compose(connectorPlugins -> client.list("localhost", PORT))
-            .setHandler(context.succeeding(connectorNames -> context.verify(() -> assertThat(connectorNames, is(empty())))))
+            .onComplete(context.succeeding(connectorNames -> context.verify(() -> assertThat(connectorNames, is(empty())))))
 
             .compose(connectorNames -> {
                 JsonObject o = new JsonObject()
@@ -147,7 +147,7 @@ public class KafkaConnectApiTest {
                     .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest("localhost", PORT, "test", o);
             })
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(created -> {
 
                 Promise<Map<String, Object>> promise = Promise.promise();
@@ -155,7 +155,7 @@ public class KafkaConnectApiTest {
                 Handler<Long> handler = new Handler<Long>() {
                     @Override
                     public void handle(Long timerId) {
-                        client.status("localhost", PORT, "test").setHandler(result -> {
+                        client.status("localhost", PORT, "test").onComplete(result -> {
                             if (result.succeeded()) {
                                 Map<String, Object> status = result.result();
                                 if ("RUNNING".equals(((Map) status.getOrDefault("connector", emptyMap())).get("state"))) {
@@ -174,7 +174,7 @@ public class KafkaConnectApiTest {
                 vertx.setTimer(1000, handler);
                 return promise.future();
             })
-            .setHandler(context.succeeding(status -> context.verify(() -> {
+            .onComplete(context.succeeding(status -> context.verify(() -> {
                 assertThat(status.get("name"), is("test"));
                 Map<String, Object> connectorStatus = (Map<String, Object>) status.getOrDefault("connector", emptyMap());
                 assertThat(connectorStatus.get("state"), is("RUNNING"));
@@ -188,7 +188,7 @@ public class KafkaConnectApiTest {
                 }
             })))
             .compose(status -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test"))
-            .setHandler(context.succeeding(config -> context.verify(() -> {
+            .onComplete(context.succeeding(config -> context.verify(() -> {
                 assertThat(config, is(TestUtils.map("connector.class", "FileStreamSource",
                         "file", "/dev/null",
                         "tasks.max", "1",
@@ -196,17 +196,17 @@ public class KafkaConnectApiTest {
                         "topic", "my-topic")));
             })))
             .compose(config -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist"))
-            .setHandler(context.failing(error -> context.verify(() -> {
+            .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
                 assertThat(((ConnectRestException) error).getStatusCode(), is(404));
             })))
             .recover(error -> Future.succeededFuture())
 
             .compose(ignored -> client.pause("localhost", PORT, "test"))
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
 
             .compose(ignored -> client.resume("localhost", PORT, "test"))
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
 
             .compose(ignored -> {
                 JsonObject o = new JsonObject()
@@ -216,7 +216,7 @@ public class KafkaConnectApiTest {
                         .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest("localhost", PORT, "broken", o);
             })
-            .setHandler(context.failing(error -> context.verify(() -> {
+            .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
 
                 assertThat(error.getMessage(),
@@ -231,21 +231,21 @@ public class KafkaConnectApiTest {
                         .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest("localhost", PORT, "broken2", o);
             })
-            .setHandler(context.failing(error -> context.verify(() -> {
+            .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
                 assertThat(error.getMessage(),
                         containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
             })))
             .recover(e -> Future.succeededFuture())
             .compose(createResponse -> client.list("localhost", PORT))
-            .setHandler(context.succeeding(connectorNames -> context.verify(() ->
+            .onComplete(context.succeeding(connectorNames -> context.verify(() ->
                     assertThat(connectorNames, is(singletonList("test"))))))
             .compose(connectorNames -> client.delete("localhost", PORT, "test"))
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(deletedConnector -> client.list("localhost", PORT))
-            .setHandler(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
+            .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
             .compose(connectorNames -> client.delete("localhost", PORT, "never-existed"))
-            .setHandler(context.failing(error -> {
+            .onComplete(context.failing(error -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
                 assertThat(error.getMessage(),
                         containsString("Connector never-existed not found"));

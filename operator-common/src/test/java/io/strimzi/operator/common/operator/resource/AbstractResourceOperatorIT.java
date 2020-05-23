@@ -90,21 +90,21 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
         T modResource = getModified();
 
         op.reconcile(namespace, RESOURCE_NAME, newResource)
-            .setHandler(context.succeeding(rrCreated -> {
+            .onComplete(context.succeeding(rrCreated -> {
                 T created = op.get(namespace, RESOURCE_NAME);
 
                 context.verify(() -> assertThat(created, is(notNullValue())));
                 assertResources(context, newResource, created);
             }))
             .compose(rr -> op.reconcile(namespace, RESOURCE_NAME, modResource))
-            .setHandler(context.succeeding(rrModified -> {
+            .onComplete(context.succeeding(rrModified -> {
                 T modified = op.get(namespace, RESOURCE_NAME);
 
                 context.verify(() -> assertThat(modified, is(notNullValue())));
                 assertResources(context, modResource, modified);
             }))
             .compose(rr -> op.reconcile(namespace, RESOURCE_NAME, null))
-            .setHandler(context.succeeding(rrDeleted -> {
+            .onComplete(context.succeeding(rrDeleted -> {
                 T deleted = op.get(namespace, RESOURCE_NAME);
 
                 context.verify(() -> assertThat(deleted, is(nullValue())));

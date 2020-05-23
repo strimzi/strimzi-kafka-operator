@@ -97,16 +97,16 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 if (desired != null) {
                     if (current == null) {
                         log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        internalCreate(namespace, name, desired).setHandler(future);
+                        internalCreate(namespace, name, desired).onComplete(future);
                     } else {
                         log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                        internalPatch(namespace, name, current, desired).setHandler(future);
+                        internalPatch(namespace, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        internalDelete(namespace, name).setHandler(future);
+                        internalDelete(namespace, name).onComplete(future);
                     } else {
                         log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop(null));

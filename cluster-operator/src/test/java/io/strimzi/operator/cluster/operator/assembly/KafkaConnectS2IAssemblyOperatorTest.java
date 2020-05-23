@@ -170,7 +170,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCm.getMetadata().getNamespace(), clusterCm.getMetadata().getName()), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -345,7 +345,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
                 assertThat(capturedServices, hasSize(1));
@@ -481,7 +481,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
                 // Verify service
@@ -606,7 +606,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(v -> context.verify(() -> async.flag())));
+            .onComplete(context.failing(v -> context.verify(() -> async.flag())));
     }
 
     @Test
@@ -678,7 +678,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
                 async.flag();
             })));
@@ -754,7 +754,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify ScaleDown
                 verify(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
                 async.flag();
@@ -862,7 +862,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 // Verify status
                 List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects.get(0).getStatus().getUrl(), is("http://foo-connect-api.test.svc:8083"));
@@ -944,7 +944,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCm.getMetadata().getNamespace(), clusterCm.getMetadata().getName()), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
                 assertThat(capturedServices, hasSize(1));
@@ -1053,7 +1053,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(v -> context.verify(() -> {
+            .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify status
                 List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));

@@ -320,7 +320,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long tid) {
-                supplier.get().setHandler(connectorStatus -> {
+                supplier.get().onComplete(connectorStatus -> {
                     if (connectorStatus.succeeded()) {
                         result.complete(connectorStatus.result());
                     } else {

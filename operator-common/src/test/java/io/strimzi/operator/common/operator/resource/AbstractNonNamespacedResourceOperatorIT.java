@@ -63,21 +63,21 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         T modResource = getModified();
 
         op.reconcile(RESOURCE_NAME, newResource)
-            .setHandler(context.succeeding(rrCreate -> context.verify(() -> {
+            .onComplete(context.succeeding(rrCreate -> context.verify(() -> {
                 T created = op.get(RESOURCE_NAME);
 
                 assertThat("Failed to get created Resource", created, is(notNullValue()));
                 assertResources(context, newResource, created);
             })))
             .compose(rr -> op.reconcile(RESOURCE_NAME, modResource))
-            .setHandler(context.succeeding(rrModified -> context.verify(() -> {
+            .onComplete(context.succeeding(rrModified -> context.verify(() -> {
                 T modified = (T) op.get(RESOURCE_NAME);
 
                 assertThat("Failed to get modified Resource", modified, is(notNullValue()));
                 assertResources(context, modResource, modified);
             })))
             .compose(rr -> op.reconcile(RESOURCE_NAME, null))
-            .setHandler(context.succeeding(rrDelete -> context.verify(() -> {
+            .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
                 T deleted = (T) op.get(RESOURCE_NAME);
 
                 assertThat("Failed to get modified Resource", deleted, is(nullValue()));

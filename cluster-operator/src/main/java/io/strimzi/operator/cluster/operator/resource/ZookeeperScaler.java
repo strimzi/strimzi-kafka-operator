@@ -95,7 +95,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
                     getCurrentConfig(zkAdmin)
                             .compose(servers -> scaleTo(zkAdmin, servers, scaleTo))
-                            .setHandler(res -> {
+                            .onComplete(res -> {
                                 closeConnection(zkAdmin);
 
                                 if (res.succeeded())    {
@@ -148,7 +148,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 1_000,
                 operationTimeoutMs,
                 () -> zkAdmin.getState().isAlive() && zkAdmin.getState().isConnected())
-                .setHandler(res -> {
+                .onComplete(res -> {
                     if (res.succeeded())  {
                         connected.complete(zkAdmin);
                     } else {

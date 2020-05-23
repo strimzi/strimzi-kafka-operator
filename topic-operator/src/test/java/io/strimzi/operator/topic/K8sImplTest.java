@@ -68,7 +68,7 @@ public class K8sImplTest {
 
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new Labels("foo", "bar"), "default");
 
-        k8s.listResources().setHandler(context.succeeding(kafkaTopics -> context.verify(() -> {
+        k8s.listResources().onComplete(context.succeeding(kafkaTopics -> context.verify(() -> {
             assertThat(kafkaTopics, is(mockKafkaTopicsList));
             async.flag();
         })));

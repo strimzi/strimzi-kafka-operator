@@ -192,7 +192,7 @@ public abstract class AbstractOperator<
         });
 
         Promise<Void> result = Promise.promise();
-        handler.setHandler(reconcileResult -> {
+        handler.onComplete(reconcileResult -> {
             handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
             result.handle(reconcileResult);
         });
@@ -227,7 +227,7 @@ public abstract class AbstractOperator<
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
                 Lock lock = res.result();
                 try {
-                    callable.call().setHandler(callableRes -> {
+                    callable.call().onComplete(callableRes -> {
                         if (callableRes.succeeded()) {
                             handler.complete(callableRes.result());
                         } else {
