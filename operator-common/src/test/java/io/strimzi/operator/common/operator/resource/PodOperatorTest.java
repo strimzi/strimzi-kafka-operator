@@ -55,7 +55,7 @@ public class PodOperatorTest extends
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
         Checkpoint async = context.checkpoint(1);
-        pr.createOrUpdate(resource()).setHandler(createResult -> {
+        pr.createOrUpdate(resource()).onComplete(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
@@ -89,7 +89,7 @@ public class PodOperatorTest extends
                 patchAsync.complete();
             });
             patchAsync.await();*/
-            pr.reconcile(NAMESPACE, RESOURCE_NAME, null).setHandler(deleteResult -> {
+            pr.reconcile(NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
                 context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
                 async.flag();
             });

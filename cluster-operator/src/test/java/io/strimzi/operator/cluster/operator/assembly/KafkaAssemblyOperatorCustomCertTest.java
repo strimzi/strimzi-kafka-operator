@@ -238,7 +238,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testPodToRestartFalseWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
 
                 StatefulSet reconcileSts = reconcileStsCaptor.getValue();
@@ -259,7 +259,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testPodToRestartTrueWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
 
                 StatefulSet reconcileSts = reconcileStsCaptor.getValue();
@@ -288,7 +288,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
 
                 StatefulSet reconcileSts = reconcileStsCaptor.getValue();
@@ -338,7 +338,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
 
                 StatefulSet reconcileSts = reconcileStsCaptor.getValue();

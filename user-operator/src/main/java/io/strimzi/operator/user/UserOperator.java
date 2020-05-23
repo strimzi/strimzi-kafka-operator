@@ -75,7 +75,7 @@ public class UserOperator extends AbstractVerticle {
 
                 return startHealthServer().map((Void) null);
             })
-            .setHandler(start);
+            .onComplete(start);
     }
 
     @Override

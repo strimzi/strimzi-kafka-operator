@@ -121,7 +121,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         Promise created = Promise.promise();
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
-            .setHandler(context.succeeding(ar -> context.verify(() -> {
+            .onComplete(context.succeeding(ar -> context.verify(() -> {
                 assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
@@ -150,12 +150,12 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock)
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
-            .setHandler(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> async.flag()));
     }
 
 }

@@ -293,7 +293,7 @@ public class KafkaAssemblyOperatorMockTest {
     private Future<Void> initialReconcile(VertxTestContext context) {
         LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet kafkaSts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
                 kafkaSts.setStatus(new StatefulSetStatus());
 
@@ -328,9 +328,9 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> async.flag()));
     }
     
     @ParameterizedTest
@@ -355,7 +355,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String secret: secrets) {
                     client.secrets().inNamespace(NAMESPACE).withName(secret).cascading(true).delete();
                     assertThat("Expected secret " + secret + " to not exist",
@@ -364,7 +364,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String secret: secrets) {
                     assertThat("Expected secret " + secret + " to have been recreated",
                             client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(notNullValue()));
@@ -380,7 +380,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String service : services) {
                     client.services().inNamespace(NAMESPACE).withName(service).cascading(true).delete();
                     assertThat("Expected service " + service + " to be not exist",
@@ -389,7 +389,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String service: services) {
                     assertThat("Expected service " + service + " to have been recreated",
                             client.services().inNamespace(NAMESPACE).withName(service).get(), is(notNullValue()));
@@ -440,7 +440,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).cascading(true).delete();
                 assertThat("Expected sts " + statefulSet + " should not exist",
                         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
@@ -448,7 +448,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("Expected sts " + statefulSet + " should have been re-created",
                         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(notNullValue()));
                 async.flag();
@@ -465,7 +465,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
 
                 // Try to update the storage class
@@ -486,7 +486,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Updating with changed storage class");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the storage class was not changed
                 assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
                 async.flag();
@@ -521,7 +521,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 originalPVCs.set(Optional.ofNullable(client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get())
                         .map(StatefulSet::getSpec)
                         .map(StatefulSetSpec::getVolumeClaimTemplates)
@@ -571,7 +571,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Updating with changed storage type");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the Volumes and PVCs were not changed
                 assertPVCs(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalPVCs.get());
                 assertVolumes(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalVolumes.get());
@@ -637,7 +637,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 kafkaPvcs.set(client.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(kafkaLabels).list().getItems()
                         .stream()
                         .map(pvc -> pvc.getMetadata().getName())
@@ -661,7 +661,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Updating with changed delete claim");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // check that the new delete-claim annotation is on the PVCs
                 for (String pvcName: kafkaPvcs.get()) {
                     assertThat(client.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).get()
@@ -672,7 +672,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Reconciling again -> delete");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> async.flag()));
     }
 
     /** Create a cluster from a Kafka Cluster CM */
@@ -691,7 +691,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
@@ -710,7 +710,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Scaling down to {} Kafka pods", scaleDownTo);
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas(),
                         is(scaleDownTo));
                 assertThat("Expected pod " + deletedPod + " to have been deleted",
@@ -740,7 +740,7 @@ public class KafkaAssemblyOperatorMockTest {
         String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
 
         initialReconcile(context)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
@@ -754,7 +754,7 @@ public class KafkaAssemblyOperatorMockTest {
                 LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas(),
                         is(scaleUpTo));
                 assertThat("Expected pod " + newPod + " to have been created",
@@ -777,7 +777,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(v -> async.flag());
+            .onComplete(v -> async.flag());
     }
 
 
@@ -819,10 +819,10 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(v -> initialState.getZookeeperDescription())
             .compose(state -> state.zkVersionChange())
-            .setHandler(context.succeeding(state -> context.verify(() -> {
+            .onComplete(context.succeeding(state -> context.verify(() -> {
                 assertThat(state.zkCluster.getImage(), is(changedImage));
                 async.flag();
             })));

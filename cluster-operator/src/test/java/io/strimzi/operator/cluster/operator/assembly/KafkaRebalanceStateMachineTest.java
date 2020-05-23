@@ -247,7 +247,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.New, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -260,7 +260,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.New, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -271,7 +271,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.New, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -295,7 +295,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.New, KafkaRebalanceAssemblyOperator.State.NotReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, kcRebalance)
-                .setHandler(result -> {
+                .onComplete(result -> {
                     if (result.failed()) {
                         if (result.cause().getMessage().contains("java.lang.IllegalArgumentException: Missing hard goals")) {
                             context.completeNow();
@@ -328,7 +328,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.New, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, kcRebalance)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -339,7 +339,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.PendingProposal, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -350,7 +350,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.PendingProposal, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -361,7 +361,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.PendingProposal, KafkaRebalanceAssemblyOperator.State.Stopped,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, "stop", null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -372,7 +372,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null, null)
-                .setHandler(result -> defaultStatusHandler(result, context));
+                .onComplete(result -> defaultStatusHandler(result, context));
 
     }
 
@@ -383,7 +383,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.approve, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -394,7 +394,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.Rebalancing,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.approve, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -405,7 +405,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.Rebalancing,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.approve, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -416,7 +416,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -427,7 +427,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -438,7 +438,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.ProposalReady, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -450,7 +450,7 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceAssemblyOperator.State.Rebalancing, KafkaRebalanceAssemblyOperator.State.Ready,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null,
                 MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -465,7 +465,7 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceAssemblyOperator.State.Rebalancing, KafkaRebalanceAssemblyOperator.State.Rebalancing,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null,
                 MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -478,7 +478,7 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceAssemblyOperator.State.Rebalancing, KafkaRebalanceAssemblyOperator.State.Stopped,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, "stop",
                 MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -490,7 +490,7 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceAssemblyOperator.State.Rebalancing, KafkaRebalanceAssemblyOperator.State.NotReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null,
                 MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -501,7 +501,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.Stopped, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 
@@ -513,7 +513,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.Stopped, KafkaRebalanceAssemblyOperator.State.ProposalReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, false));
+                .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
 
@@ -524,7 +524,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.Stopped, KafkaRebalanceAssemblyOperator.State.PendingProposal,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.refresh, null, null)
-                .setHandler(result -> checkOptimizationResults(result, context, true));
+                .onComplete(result -> checkOptimizationResults(result, context, true));
 
     }
 }

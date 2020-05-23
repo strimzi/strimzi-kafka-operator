@@ -134,7 +134,7 @@ public class ClusterOperator extends AbstractVerticle {
                     });
                     return startHealthServer().map((Void) null);
                 })
-                .setHandler(start);
+                .onComplete(start);
     }
 
 

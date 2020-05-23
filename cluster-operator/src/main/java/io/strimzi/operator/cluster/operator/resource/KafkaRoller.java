@@ -155,7 +155,7 @@ public class KafkaRoller {
             futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
         }
         Promise<Void> result = Promise.promise();
-        CompositeFuture.join(futures).setHandler(ar -> {
+        CompositeFuture.join(futures).onComplete(ar -> {
             singleExecutor.shutdown();
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });
@@ -393,7 +393,7 @@ public class KafkaRoller {
                                             Function<Throwable, E> exceptionMapper)
             throws E, InterruptedException {
         CompletableFuture<T> cf = new CompletableFuture<>();
-        future.setHandler(ar -> {
+        future.onComplete(ar -> {
             if (ar.succeeded()) {
                 cf.complete(ar.result());
             } else {
