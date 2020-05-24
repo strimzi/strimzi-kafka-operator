@@ -98,7 +98,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", Collections.singleton(rule))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule));
@@ -119,7 +119,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async1 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
@@ -136,7 +136,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async2 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", new HashSet<>(asList(rule1, rule2)))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, hasSize(2));
                     assertThat(acls, hasItems(rule1, rule2));
@@ -157,7 +157,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async1 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
@@ -168,7 +168,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async2 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", null)
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, IsEmptyCollection.empty());
                     async2.countDown();
@@ -188,7 +188,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async1 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
@@ -205,7 +205,7 @@ public class SimpleAclOperatorIT {
 
         CountDownLatch async2 = new CountDownLatch(1);
         simpleAclOperator.reconcile("my-user-2", Collections.singleton(rule2))
-                .setHandler(ignore -> context.verify(() -> {
+                .onComplete(ignore -> context.verify(() -> {
                     Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user-2");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule2));

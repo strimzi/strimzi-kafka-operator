@@ -9,4 +9,4 @@ ${STUNNEL_HOME}/kafka_stunnel_config_generator.sh | tee /tmp/stunnel.conf
 echo ""
 
 # starting Stunnel with final configuration
-exec /usr/bin/stunnel /tmp/stunnel.conf
+exec /usr/bin/tini -w -e 143 -- /usr/bin/stunnel /tmp/stunnel.conf

@@ -44,7 +44,7 @@ public class KafkaConnectApiMockTest {
         Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
-            .setHandler(context.succeeding(res -> async.flag()));
+            .onComplete(context.succeeding(res -> async.flag()));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class KafkaConnectApiMockTest {
         Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
-            .setHandler(context.succeeding(res -> async.flag()));
+            .onComplete(context.succeeding(res -> async.flag()));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class KafkaConnectApiMockTest {
         Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
-            .setHandler(context.failing(res -> async.flag()));
+            .onComplete(context.failing(res -> async.flag()));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class KafkaConnectApiMockTest {
         Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
-            .setHandler(context.failing(res -> async.flag()));
+            .onComplete(context.failing(res -> async.flag()));
     }
 
     class MockKafkaConnectApi extends KafkaConnectApiImpl   {

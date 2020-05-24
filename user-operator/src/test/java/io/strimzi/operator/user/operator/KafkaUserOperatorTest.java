@@ -103,7 +103,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -184,7 +184,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -259,7 +259,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
                 assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
@@ -329,7 +329,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -378,7 +378,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -433,7 +433,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -517,7 +517,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -596,7 +596,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -723,7 +723,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -807,7 +807,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -887,7 +887,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -939,7 +939,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
@@ -977,7 +977,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));

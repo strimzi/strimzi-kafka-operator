@@ -146,7 +146,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
                 if (mirror.isMetricsEnabled()) {
@@ -236,7 +236,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment Config
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
@@ -340,7 +340,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(clusterCm,
                         VERSIONS);
 
@@ -431,7 +431,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(v -> context.verify(() -> async.flag())));
+            .onComplete(context.failing(v -> context.verify(() -> async.flag())));
     }
 
     @Test
@@ -489,7 +489,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
                 async.flag();
             })));
@@ -550,7 +550,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
                 async.flag();
             })));
@@ -674,7 +674,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 // Verify status
                 List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
                 assertThat(capturedMM, hasSize(1));

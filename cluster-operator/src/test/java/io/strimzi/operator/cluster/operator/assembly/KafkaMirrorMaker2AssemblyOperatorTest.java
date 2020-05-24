@@ -134,7 +134,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
                 if (mirrorMaker2.isMetricsEnabled()) {
@@ -226,7 +226,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -333,7 +333,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
 
                 // Verify service
@@ -424,7 +424,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(v -> async.flag()));
+            .onComplete(context.failing(v -> async.flag()));
     }
 
     @Test
@@ -477,7 +477,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
                 async.flag();
             })));
@@ -533,7 +533,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
                 async.flag();
             })));
@@ -631,7 +631,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(v -> context.verify(() -> {
+            .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify status
                 List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is("http://foo-mirrormaker2-api.test.svc:8083"));

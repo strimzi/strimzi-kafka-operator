@@ -618,7 +618,7 @@ public class KafkaAssemblyOperatorTest {
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // No metrics config  => no CMs created
                 Set<String> logsAndMetricsNames = new HashSet<>();
@@ -1170,7 +1170,7 @@ public class KafkaAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName),
                 updatedAssembly)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // rolling restart
                 Set<String> expectedRollingRestarts = set();
                 if (KafkaSetOperator.needsRollingUpdate(

@@ -177,7 +177,7 @@ public class KafkaConnectorIT {
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
                 connector)
-            .setHandler(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
+            .onComplete(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
             .compose(v -> {
                 config.remove(TestingConnector.START_TIME_MS, 1_000);
                 config.put(TestingConnector.START_TIME_MS, 1_000);
@@ -188,7 +188,7 @@ public class KafkaConnectorIT {
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                         "localhost", connectClient, true, connectorName, connector);
             })
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertConnectorIsRunning(context, client, namespace, connectorName);
                 // Assert metrics from Connector Operator
                 MeterRegistry registry = metrics.meterRegistry();

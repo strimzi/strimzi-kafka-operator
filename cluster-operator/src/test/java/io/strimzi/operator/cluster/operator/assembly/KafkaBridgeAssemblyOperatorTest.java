@@ -147,7 +147,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
                 assertThat(capturedServices, hasSize(1));
@@ -242,7 +242,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -350,7 +350,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(clusterCm,
                         VERSIONS);
@@ -449,7 +449,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(e -> async.flag()));
+            .onComplete(context.failing(e -> async.flag()));
     }
 
     @Test
@@ -499,7 +499,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
 
                 async.flag();
@@ -559,7 +559,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), scaledDownCluster)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
                 verify(mockDcOps).scaleDown(clusterCmNamespace, bridge.getName(), scaleTo);
                 async.flag();
@@ -631,7 +631,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         // Now try to reconcile all the Kafka Bridge clusters
         ops.reconcileAll("test", clusterCmNamespace, v -> reconciled.complete());
 
-        reconciled.future().setHandler(context.succeeding(v -> context.verify(() -> {
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
             assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar"))));
             async.flag();
         })));
@@ -677,7 +677,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 // Verify status
                 List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080"));

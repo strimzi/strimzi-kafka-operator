@@ -114,7 +114,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                         return maybeRestartPod(sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }
-            }).setHandler(rollFuture);
+            }).onComplete(rollFuture);
         } else {
             rollFuture = Future.succeededFuture();
         }

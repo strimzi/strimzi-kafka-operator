@@ -511,7 +511,7 @@ public class KafkaRebalanceAssemblyOperator
         if (rebalanceAnnotation == RebalanceAnnotation.none) {
             log.debug("{}: Arming Cruise Control rebalance proposal request timer", reconciliation);
             vertx.setPeriodic(REBALANCE_POLLING_TIMER_MS, t -> {
-                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).setHandler(getResult -> {
+                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).onComplete(getResult -> {
                     if (getResult.succeeded()) {
                         KafkaRebalance freshKafkaRebalance = getResult.result();
                         // checking that the resource wasn't delete meanwhile the timer wasn't raised
@@ -530,7 +530,7 @@ public class KafkaRebalanceAssemblyOperator
                                             .endCondition().build());
                                 } else {
                                     requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder,
-                                            freshKafkaRebalance.getStatus().getSessionId()).setHandler(rebalanceResult -> {
+                                            freshKafkaRebalance.getStatus().getSessionId()).onComplete(rebalanceResult -> {
                                                 if (rebalanceResult.succeeded()) {
                                                     // If the returned status has an optimization result then the rebalance proposal
                                                     // is ready, so stop the polling
@@ -641,7 +641,7 @@ public class KafkaRebalanceAssemblyOperator
                     vertx.cancelTimer(t);
                     p.fail(new CruiseControlRestException("Unable to reach Cruise Control API after " + MAX_API_RETRIES + " attempts"));
                 }
-                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).setHandler(getResult -> {
+                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).onComplete(getResult -> {
                     if (getResult.succeeded()) {
                         KafkaRebalance freshKafkaRebalance = getResult.result();
                         // checking that the resource wasn't delete meanwhile the timer wasn't raised
@@ -652,7 +652,7 @@ public class KafkaRebalanceAssemblyOperator
                                 if (rebalanceAnnotation(freshKafkaRebalance) == RebalanceAnnotation.stop) {
                                     log.debug("{}: Stopping current Cruise Control rebalance user task", reconciliation);
                                     vertx.cancelTimer(t);
-                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT).setHandler(stopResult -> {
+                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT).onComplete(stopResult -> {
                                         if (stopResult.succeeded()) {
                                             p.complete(new KafkaRebalanceStatusBuilder()
                                                     .withSessionId(null)
@@ -667,7 +667,7 @@ public class KafkaRebalanceAssemblyOperator
                                     });
                                 } else {
                                     log.info("{}: Getting Cruise Control rebalance user task status", reconciliation);
-                                    apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId).setHandler(userTaskResult -> {
+                                    apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId).onComplete(userTaskResult -> {
                                         if (userTaskResult.succeeded()) {
                                             CruiseControlUserTaskResponse response = userTaskResult.result();
                                             JsonObject taskStatusJson = response.getJson();

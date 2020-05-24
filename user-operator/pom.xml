@@ -81,7 +81,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
-            <version>${vertx-juni5.version}</version>
+            <version>${vertx-junit5.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

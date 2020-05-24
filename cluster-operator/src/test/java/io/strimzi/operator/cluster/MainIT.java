@@ -69,7 +69,7 @@ public class MainIT {
 
         Checkpoint a = context.checkpoint();
         Main.maybeCreateClusterRoles(vertx, config, client)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
                 assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));
                 assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue()));
