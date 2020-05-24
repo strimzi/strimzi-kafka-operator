@@ -456,14 +456,76 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
         assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
         assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-        assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
         assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-        assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
 
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE, "my-secret/user1.password"));
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, "user1"));
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM, "scram-sha-512"));
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TLS, "true"));
+    }
+
+    /**
+     * This test uses the same secret to hold the certs for TLS and the credentials for SCRAM SHA 512 client authentication for multiple clusters.
+     * It checks that the volumes and volume mounts that reference the secret are correctly created and that each volume name and volume mount path is only
+     * created once - duplicate volume names and duplicate volume mount paths will cause Kubernetes to reject the deployment.
+     */
+    @Test
+    public void testGenerateDeploymentWithMultipleClustersScramSha512AuthAndTLSSameSecret() {
+        KafkaMirrorMaker2ClusterSpec targetClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
+            .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+            .endTls()
+            .withNewKafkaClientAuthenticationScramSha512()
+                .withUsername("user1")
+                .withNewPasswordSecret()
+                    .withSecretName("my-secret")
+                    .withPassword("user1.password")
+                .endPasswordSecret()
+            .endKafkaClientAuthenticationScramSha512()
+            .build();
+        KafkaMirrorMaker2ClusterSpec sourceClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterWithScramSha512Auth)
+            .withAlias("source")
+            .withBootstrapServers("source-bootstrap-kafka:9092")
+            .build();
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+            .editSpec()
+                .withClusters(targetClusterWithScramSha512Auth, sourceClusterWithScramSha512Auth)
+            .endSpec()
+            .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kmm2.generateDeployment(emptyMap(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(4));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("target-my-secret"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("source-my-secret"));
+
+        Container cont = getContainer(dep);
+
+        assertThat(cont.getVolumeMounts().size(), is(7));
+        assertThat(cont.getVolumeMounts().get(0).getName(), is("kafka-metrics-and-logging"));
+        assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/custom-config/"));
+        assertThat(cont.getVolumeMounts().get(1).getName(), is("my-secret"));
+        assertThat(cont.getVolumeMounts().get(1).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
+        assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
+        assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+        assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
+        assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+        assertThat(cont.getVolumeMounts().get(5).getName(), is("source-my-secret"));
+        assertThat(cont.getVolumeMounts().get(5).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "source/my-secret"));
+        assertThat(cont.getVolumeMounts().get(6).getName(), is("source-my-secret"));
+        assertThat(cont.getVolumeMounts().get(6).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "source/my-secret"));
+
+        assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE, "my-secret/user1.password"));
+        assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, "user1"));
+        assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM, "scram-sha-512"));
+        assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS, "true"));
     }
 
     @Test
@@ -539,9 +601,9 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
         assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
         assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-        assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
         assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-        assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "my-secret"));
+        assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
 
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE, "my-secret/user1.password"));
         assertThat(AbstractModel.containerEnvVars(cont), hasEntry(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, "user1"));

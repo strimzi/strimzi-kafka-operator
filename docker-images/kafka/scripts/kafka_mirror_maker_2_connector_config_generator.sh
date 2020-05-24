@@ -29,7 +29,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS" ]; then
         export clusterAlias="${PASSWORD_FILE_CLUSTER[0]}"
         export passwordFile="${PASSWORD_FILE_CLUSTER[1]}"
 
-        PASSWORD=$(cat /opt/kafka/mm2-password/$passwordFile)
+        PASSWORD=$(cat /opt/kafka/mm2-password/$clusterAlias/$passwordFile)
         SASL_AUTH_CONFIGURATION=$(cat <<EOF
 ${SASL_AUTH_CONFIGURATION}
 ${clusterAlias}.sasl.password=${PASSWORD}
