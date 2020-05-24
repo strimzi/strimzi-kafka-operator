@@ -79,7 +79,9 @@ The feedback we got on this is that this is very confusing and not clear to some
 Asciidoc as the language used for writing the documentation seems to work well for us.
 We have existing integration using Asciidoctor.
 There are also many other tools which we can use if we decide that the documentation should be presented in a different way such as for example Antora which can be used to render the docs form Markdown more in a _website style_ form.
-Asciidoc was also designed for writing documentation and supports rich syntax to achieve everything one might need for a software documentation.
+
+Asciidoc was designed for writing documentation and supports rich syntax to achieve all the typography needed for a software documentation.
+Its structure is easy to use and the basic are covered in our [contributing guide](https://strimzi.io/contributing/guide/) and are also easy to learn from the existing parts.
 
 While Markdown might be slightly more widespread, it is sometimes too simple for things such as documentation.
 As a result, it sometimes suffers from a lot of different flavors which add different missing features.
