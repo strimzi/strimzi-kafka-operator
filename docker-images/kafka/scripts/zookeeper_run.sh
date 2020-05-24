@@ -69,4 +69,4 @@ KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.skipACL=yes"
 export KAFKA_OPTS
 
 # starting Zookeeper with final configuration
-exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties"
+exec /usr/bin/tini -w -e 143 -- ${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties

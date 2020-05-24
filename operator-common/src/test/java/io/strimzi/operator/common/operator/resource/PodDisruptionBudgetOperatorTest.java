@@ -94,7 +94,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
 
         Checkpoint async = context.checkpoint();
         Future<ReconcileResult<PodDisruptionBudget>> fut = op.createOrUpdate(resource());
-        fut.setHandler(ar -> {
+        fut.onComplete(ar -> {
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }

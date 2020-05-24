@@ -161,7 +161,7 @@ public class MockCruiseControlTest {
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             return Future.succeededFuture(response);
-        }).setHandler(context.succeeding(result -> {
+        }).onComplete(context.succeeding(result -> {
             context.completeNow();
         }));
     }

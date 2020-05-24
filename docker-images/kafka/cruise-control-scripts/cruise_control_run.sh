@@ -49,4 +49,4 @@ if [ -z "$KAFKA_JVM_PERFORMANCE_OPTS" ]; then
 fi
 
 # starting Cruise Control server with final configuration
-exec java ${KAFKA_HEAP_OPTS} ${KAFKA_JVM_PERFORMANCE_OPTS} ${KAFKA_GC_LOG_OPTS} ${KAFKA_JMX_OPTS} ${KAFKA_LOG4J_OPTS} ${KAFKA_OPTS} -classpath ${CLASSPATH} com.linkedin.kafka.cruisecontrol.KafkaCruiseControlMain /tmp/cruisecontrol.properties
+exec /usr/bin/tini -w -e 143 -- java ${KAFKA_HEAP_OPTS} ${KAFKA_JVM_PERFORMANCE_OPTS} ${KAFKA_GC_LOG_OPTS} ${KAFKA_JMX_OPTS} ${KAFKA_LOG4J_OPTS} ${KAFKA_OPTS} -classpath ${CLASSPATH} com.linkedin.kafka.cruisecontrol.KafkaCruiseControlMain /tmp/cruisecontrol.properties

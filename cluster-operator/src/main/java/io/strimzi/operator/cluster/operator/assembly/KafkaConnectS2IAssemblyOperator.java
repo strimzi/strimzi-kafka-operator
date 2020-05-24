@@ -156,7 +156,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus, connectHasZeroReplicas))
-                .setHandler(reconciliationResult -> {
+                .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
 
                     if (!connectHasZeroReplicas) {
@@ -164,7 +164,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
                     }
 
-                    updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
+                    updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).onComplete(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -192,7 +192,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     Future<Void> updateStatus(KafkaConnectS2I kafkaConnectS2Iassembly, Reconciliation reconciliation, KafkaConnectS2IStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
-        resourceOperator.getAsync(kafkaConnectS2Iassembly.getMetadata().getNamespace(), kafkaConnectS2Iassembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(kafkaConnectS2Iassembly.getMetadata().getNamespace(), kafkaConnectS2Iassembly.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
                 KafkaConnectS2I connect = getRes.result();
 
@@ -208,7 +208,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         if (!ksDiff.isEmpty()) {
                             KafkaConnectS2I resourceWithNewStatus = new KafkaConnectS2IBuilder(connect).withStatus(desiredStatus).build();
 
-                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusPromise.complete();

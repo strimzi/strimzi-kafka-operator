@@ -139,7 +139,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -209,7 +209,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
             // The status should not change => we test that updateStatusAsync was not called
             assertThat(kafkaCaptor.getAllValues().size(), is(0));
@@ -249,7 +249,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -319,7 +319,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -481,7 +481,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -595,7 +595,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -699,7 +699,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -800,7 +800,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -880,7 +880,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -918,7 +918,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(2));
@@ -955,7 +955,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(1));
@@ -1002,7 +1002,7 @@ public class KafkaStatusTest {
 
         Checkpoint async = context.checkpoint();
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-                .setHandler(context.succeeding(v -> context.verify(() -> {
+                .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(kafkaCaptor.getValue(), is(notNullValue()));
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();

@@ -122,7 +122,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         LOGGER.info("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
@@ -150,12 +150,12 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock)
-            .setHandler(context.succeeding())
+            .onComplete(context.succeeding())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
-            .setHandler(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> async.flag()));
 
     }
 

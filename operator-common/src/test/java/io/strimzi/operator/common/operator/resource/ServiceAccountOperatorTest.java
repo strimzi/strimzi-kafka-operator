@@ -87,7 +87,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource)
-            .setHandler(context.succeeding(rr -> {
+            .onComplete(context.succeeding(rr -> {
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
                 verify(mockResource).get();
                 //verify(mockResource).patch(any());

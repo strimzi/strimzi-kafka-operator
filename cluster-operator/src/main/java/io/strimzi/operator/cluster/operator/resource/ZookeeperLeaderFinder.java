@@ -162,7 +162,7 @@ public class ZookeeperLeaderFinder {
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long tid) {
-                zookeeperLeader(pods, netClientOptions).setHandler(leader -> {
+                zookeeperLeader(pods, netClientOptions).onComplete(leader -> {
                     if (leader.succeeded()) {
                         if (leader.result() != UNKNOWN_LEADER) {
                             result.complete(leader.result());
