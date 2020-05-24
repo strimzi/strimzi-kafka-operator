@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.EntityOperatorSpec.DEFAULT_REPLICAS;
 
 @Buildable(
         editableEnabled = false,
@@ -36,6 +35,7 @@ import static io.strimzi.api.kafka.model.EntityOperatorSpec.DEFAULT_REPLICAS;
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final int DEFAULT_REPLICAS = 1;
 
     private int replicas = DEFAULT_REPLICAS;
 
