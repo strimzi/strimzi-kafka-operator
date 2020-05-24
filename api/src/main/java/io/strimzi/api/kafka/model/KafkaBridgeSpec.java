@@ -35,7 +35,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     private static final long serialVersionUID = 1L;
 
-    private int replicas;
+    private int replicas = 1;
 
     private String image;
     private KafkaBridgeHttpConfig http;

@@ -724,7 +724,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-                .setHandler(context.succeeding(v -> context.verify(() -> {
+                .onComplete(context.succeeding(v -> context.verify(() -> {
                     // 0 Replicas - readiness should never get called.
                     verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
                     assertNull(bridgeCaptor.getValue().getStatus().getUrl());

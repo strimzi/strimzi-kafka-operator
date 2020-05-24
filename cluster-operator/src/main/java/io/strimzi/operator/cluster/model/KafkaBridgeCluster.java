@@ -57,7 +57,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
 
     // Configuration defaults
-    protected static final int DEFAULT_REPLICAS = 0;
+    protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     protected static final boolean DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED = false;
