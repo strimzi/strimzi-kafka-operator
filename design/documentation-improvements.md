@@ -106,7 +106,7 @@ This should make it easier to write and review the documentation since it won't 
 * Procedures should follow the current template only where it makes sense and does not make the procedure hard to read. 
 For example when the template is longer that the actual procedure or when the prerequisites in the same book right before given procedure.
 Especially for shorter procedures, it might be easier to have the commands part of the concept or reference
-For bigger procedures or 
+For bigger procedures where the template might make more sense it can be of course used also in the future.
 
 * Documentation should be part of the PR which does the corresponding changes to the code.
 
