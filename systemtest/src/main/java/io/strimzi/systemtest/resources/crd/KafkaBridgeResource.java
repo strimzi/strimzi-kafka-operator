@@ -35,14 +35,14 @@ public class KafkaBridgeResource {
         return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas).build());
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithCoors(String name, String bootstrap, int kafkaBridgeReplicas,
-                                                           String allowCoorsOrigin, String allowCoorsMethods) {
-        return kafkaBridgeWithCoors(name, name, bootstrap, kafkaBridgeReplicas, allowCoorsOrigin, allowCoorsMethods);
+    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String bootstrap, int kafkaBridgeReplicas,
+                                                          String allowedCorsOrigin, String allowedCorsMethods) {
+        return kafkaBridgeWithCors(name, name, bootstrap, kafkaBridgeReplicas, allowedCorsOrigin, allowedCorsMethods);
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithCoors(String name, String clusterName, String bootstrap,
-                                                           int kafkaBridgeReplicas, String allowCoorsOrigin,
-                                                           String allowCoorsMethods) {
+    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String clusterName, String bootstrap,
+                                                          int kafkaBridgeReplicas, String allowedCorsOrigin,
+                                                          String allowedCorsMethods) {
         KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
 
         KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
@@ -51,8 +51,8 @@ public class KafkaBridgeResource {
             .editSpec()
                 .editHttp()
                     .withNewCors()
-                        .withAllowedOrigins(allowCoorsOrigin)
-                        .withAllowedMethods(allowCoorsMethods != null ? allowCoorsMethods : "GET,POST,PUT,DELETE,OPTIONS,PATCH")
+                        .withAllowedOrigins(allowedCorsOrigin)
+                        .withAllowedMethods(allowedCorsMethods != null ? allowedCorsMethods : "GET,POST,PUT,DELETE,OPTIONS,PATCH")
                     .endCors()
                 .endHttp()
             .endSpec();
