@@ -1,12 +1,12 @@
 # Documentation improvements
 
-This proposal outlines possible improvements to or documentation
+This proposal outlines possible improvements to our documentation
 
 ## Current situation
 
 The documentation is written in [Asciidoc](http://asciidoc.org/) format and converted to HTML for publishing on the website using the [Asciidoctor](https://asciidoctor.org/) utility.
 
-Our documentation is current following the so called modular approach:
+Our documentation is currently following the so-called modular approach:
 
 * Everything is written in small modules / files
 * These modules can have 3 different types:
@@ -14,10 +14,10 @@ Our documentation is current following the so called modular approach:
     * Reference
     * Procedure
 * Out of these, especially the procedure modules follow a predefined layout.
-* These modules are than assembled in _assemblies_ which create the 4 different documentation books.
+* These modules are then assembled in _assemblies_ which create the 4 different documentation books.
 * All these modules are currently stored only in few directories
 
-Across the documentation, different variables / placeholders are used which allow easily substituting.
+Across the documentation, different variables / placeholders are used which allow easy substituting.
 These are used in place of things which are often changing such as versions.
 But also on other places - for example instead of saying just `Strimzi`, the documentation uses the variable `{ProductName}`.
 
@@ -33,7 +33,7 @@ While they do a great job, this situation is not optimal and it would be much be
 This should also improve the release cycle which often has to wait for documentation for already merged features.
 With the documentation being done together with the code, the documentation will be either merged with the feature or the feature will not be merged.
 
-Apart form the way it influences the release cycle, the current documentation has also many other aspects which are not community friendly and which might discourage contributors:
+Apart from the way it influences the release cycle, the current documentation has also many other aspects which are not community friendly and which might discourage contributors:
 
 ### It is hard to write
 
@@ -52,14 +52,14 @@ But it also makes it harder to update because it is not clear on how many differ
 
 ### It is hard to review
 
-* It is not clear how the final document will look like and what will be the structure or order of the modules. 
-Since there is currently no CI/CD system available, authors often have to provide rendered version of the document “out of band”.
+* It is not clear what the final document will look like and what the structure or order of the modules will be. 
+Since there is currently no CI/CD system available, authors often have to provide a rendered version of the document “out of band”.
 
 * Some reviewers actually know how to render the docs to help with the review, but that is still only partially helpful because it does not show the changes. 
 So it makes it easy to miss the changes etc. 
-So you need to spend all the time looking across several windows and still risk seeing all the changes.
+So you need to spend all the time looking across several windows and still risk not seeing all the changes.
 
-* As a result it happened several times that we were surprised by what the changes did later after they were merged.
+* As a result we have been surprised several times by what the changes did after they were merged.
 
 ### It is hard to read
 
@@ -90,16 +90,16 @@ Keeping Asciidoc allows us to change the documentation format on the fly over lo
 
 ## Proposed improvements
 
-This design document proposes following improvements to make the documentation better and easier to contribute:
+This design document proposes following improvements to make the documentation better and easier to contribute to:
 
 * The placeholders / variables should be used only where it makes sense and adds value.
-For example for parts of the text which are used on many places and are often changing such as versions of Kafka, Strimzi or their dependencies, or API versions.
+For example for parts of the text which are used in many places and are often changing such as versions of Kafka, Strimzi or their dependencies, or API versions.
 
-* The placeholders or variables should not be used for text which is not changing and which makes witting harder.
+* The placeholders or variables should not be used for text which is not changing and which makes writing harder.
 For example `{ProductName}` instead of `Strimzi` or `{OAuth}` instead of `OAuth 2.0`.
 
 * Instead of using small modules, the documentation should be composed from bigger files covering whole chapters or even whole books (for smaller books such as the overview or quickstart guides).
-This should make it easier to write and review the documentation since it won't be split into hundred smaller files.
+This should make it easier to write and review the documentation since it won't be split into hundreds of smaller files.
 
 * Small modules should be used only for parts which are repeating very often across multiple books or for the parts which are generated from the build system such as list of supported Kafka versions etc.
 
@@ -112,7 +112,7 @@ For bigger procedures or
 
 * We should use more the API reference which is generated.
 Description of the different options and how do they work should be ideally part of the API reference and not be in some other place in the book.
-For longer texts, the `@DescirptionFile` annotation with a separate Asciidoc file can be used.
+For longer texts, the `@DescriptionFile` annotation with a separate Asciidoc file can be used.
 
 ## Next steps
 
@@ -122,7 +122,7 @@ Should this proposal be approved, following changes should be done to the docume
 * All new documentation from this point should be preferably written in non-modular fashion in bigger files corresponding to books or chapters.
     * The only exception would be small changes such as fixing typos.
 
-Additionally, over the next moths and next releases we should work on gradually implementing the changes to the existing documentation:
+Additionally, over the next months and next releases we should work on gradually implementing the changes to the existing documentation:
 * Join the small modules into bigger blocks corresponding to books or chapters
 * Remove the _procedure structure_ in places where it makes no sense
 * These changes could be done when some bigger changes are being done to the different sections of the documentation.
