@@ -21,6 +21,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.model.EntityOperatorSpec.DEFAULT_REPLICAS;
+
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -35,7 +37,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     private static final long serialVersionUID = 1L;
 
-    private int replicas = 1;
+    private int replicas = DEFAULT_REPLICAS;
 
     private String image;
     private KafkaBridgeHttpConfig http;
