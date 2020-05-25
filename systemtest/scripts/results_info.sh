@@ -5,6 +5,9 @@ TEST_CASE=${2}
 TEST_PROFILE=${3}
 BUILD_ID=${4:-0}
 OCP_VERSION=${5:-3}
+TEST_ONLY=${6:-''}
+EXCLUDED_GROUPS=${7:-''}
+ADDITIONAL_INFO=""
 
 JSON_FILE_RESULTS=results.json
 
@@ -35,7 +38,11 @@ fi
 
 TEST_ALL_FAILED_COUNT=$((TEST_ERRORS_COUNT + TEST_FAILURES_COUNT))
 
-SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**BUILD_ENV:** ${BUILD_ENV}\n"
+if [[ -n "${EXCLUDED_GROUPS}" ]]; then
+  ADDITIONAL_INFO="**EXCLUDED_GROUPS:** ${EXCLUDED_GROUPS}\n"
+fi
+
+SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n${ADDITIONAL_INFO}**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**BUILD_ENV:** ${BUILD_ENV}\n"
 
 
 FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>\)#\1#p" | awk -F '"' '{print "\\n- " $2 " in "  $4}')
@@ -43,7 +50,7 @@ echo ${FAILED_TESTS}
 echo "Creating body ..."
 
 TMP_FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>\)#\1#p" | awk -F '"' '{print "" $4 "#" $2}')
-COMMAND="@strimzi-ci run tests profile=${TEST_PROFILE} testcase="
+COMMAND="@strimzi-ci run tests ${TEST_ONLY} profile=${TEST_PROFILE} testcase="
 
 for line in ${TMP_FAILED_TESTS}
 do
