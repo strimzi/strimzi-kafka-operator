@@ -16,6 +16,11 @@ addons:
     packages:
       - docker-ce
 install:
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+- sudo apt-get update
+- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+- echo docker version
 - mvn clean install -DskipTests=false -f test-container/pom.xml
 #- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_script:
