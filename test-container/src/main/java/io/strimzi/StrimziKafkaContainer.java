@@ -113,26 +113,12 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Executing command in container with Id {}", getContainerId());
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
-            .withPrivileged(true)
-            .withAttachStdout(true)
-            .withAttachStdin(true)
-            .withAttachStderr(true)
-            .withTty(false)
             .withCmd("bash", "-c", "bin/zookeeper-server-start.sh config/zookeeper.properties &")
             .exec();
 
-        try (OutputStream outputStream = new ByteArrayOutputStream();
-             OutputStream errorStream = new ByteArrayOutputStream()) {
-
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback(outputStream, errorStream)).awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
-            LOGGER.info("OUTPUT STREAM");
-            LOGGER.info(outputStream);
-            LOGGER.info("=================");
-            LOGGER.info("ERROR STREAM");
-            LOGGER.info(errorStream);
-
-        } catch (InterruptedException | IOException e) {
+        try {
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -142,26 +128,12 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Starting kafka...");
 
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
-            .withPrivileged(true)
-            .withAttachStdout(true)
-            .withAttachStdin(true)
-            .withAttachStderr(true)
-            .withTty(false)
             .withCmd("bash", "-c", "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "  --override advertised.listeners=" + advertisedListeners.toString() + " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT + " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT --override inter.broker.listener.name=BROKER &")
             .exec();
 
-        try (OutputStream outputStream = new ByteArrayOutputStream();
-             OutputStream errorStream = new ByteArrayOutputStream()) {
-
-            dockerClient.execStartCmd(execCreateCmdResponse.getId()).withDetach(false).exec(new ExecStartResultCallback(outputStream, errorStream)).awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
-            LOGGER.info("OUTPUT STREAM");
-            LOGGER.info(outputStream);
-            LOGGER.info("=================");
-            LOGGER.info("ERROR STREAM");
-            LOGGER.info(errorStream);
-
-        } catch (InterruptedException | IOException e) {
+        try {
+            dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitCompletion(STARTUP_COMPONENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
