@@ -61,6 +61,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
@@ -743,6 +744,7 @@ public class TracingST extends BaseST {
         KafkaTopicUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testKafkaBridgeService(Vertx vertx) throws Exception {
         WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
