@@ -1,13 +1,13 @@
 # Do update and install docker
-apt update
-apt install docker.io
-systemctl unmask docker
+sudo apt update
+sudo apt install docker.io
+sudo systemctl unmask docker
 
-mkdir /mnt/docker
+sudo mkdir /mnt/docker
 
-sh -c "sed -i 's#ExecStart=/usr/bin/dockerd -H fd://#ExecStart=/usr/bin/dockerd -g /mnt/docker -H fd://#' /lib/systemd/system/docker.service"
+sudo sh -c "sed -i 's#ExecStart=/usr/bin/dockerd -H fd://#ExecStart=/usr/bin/dockerd -g /mnt/docker -H fd://#' /lib/systemd/system/docker.service"
 
-systemctl daemon-reload
-rsync -aqxP /var/lib/docker/ /mnt/docker
+sudo systemctl daemon-reload
+sudo rsync -aqxP /var/lib/docker/ /mnt/docker
 
-systemctl start docker
+sudo systemctl start docker
