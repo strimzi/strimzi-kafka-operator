@@ -11,7 +11,10 @@ before_install:
 - if [ $(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p') -gt 1 ] ; then export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p'); export JAVA_VERSION=$JAVA_VERSION_BUILD; else export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2/p'); export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2.\3/p'); fi;
 - gem install asciidoctor
 - "./.travis/install_yq.sh"
-- "./.travis/setup_docker.sh"
+addons:
+  apt:
+    packages:
+      - docker-ce
 install:
 - mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_script:
