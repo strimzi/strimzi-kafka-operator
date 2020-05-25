@@ -40,7 +40,6 @@ pipeline {
         TEST_CLUSTER_ADMIN = "admin"
         OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
         COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
-        JAVA_VERSION = "11"
     }
     stages {
         stage('Clean WS') {
