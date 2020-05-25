@@ -1,4 +1,5 @@
 dist: xenial
+sudo: required
 language: java
 notifications:
   slack:
@@ -12,7 +13,7 @@ before_install:
 - "./.travis/install_yq.sh"
 - "./.travis/setup_docker.sh"
 install:
-- mvn clean install -DskipTests=false -f test-container/pom.xml
+- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_script:
 - "./.travis/setup-kubernetes.sh"
 - "./.travis/setup-helm.sh"
