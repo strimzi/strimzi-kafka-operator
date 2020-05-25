@@ -65,4 +65,13 @@ public class KafkaBridgeHttpCors implements UnknownPropertyPreserving, Serializa
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
+
+    @Override
+    public String toString() {
+        return "KafkaBridgeHttpCors{" +
+            "allowedOrigins=" + allowedOrigins +
+            ", allowedMethods=" + allowedMethods +
+            ", additionalProperties=" + additionalProperties +
+            '}';
+    }
 }

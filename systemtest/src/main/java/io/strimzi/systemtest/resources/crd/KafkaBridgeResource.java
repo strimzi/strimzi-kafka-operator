@@ -35,6 +35,31 @@ public class KafkaBridgeResource {
         return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas).build());
     }
 
+    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String bootstrap, int kafkaBridgeReplicas,
+                                                          String allowedCorsOrigin, String allowedCorsMethods) {
+        return kafkaBridgeWithCors(name, name, bootstrap, kafkaBridgeReplicas, allowedCorsOrigin, allowedCorsMethods);
+    }
+
+    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String clusterName, String bootstrap,
+                                                          int kafkaBridgeReplicas, String allowedCorsOrigin,
+                                                          String allowedCorsMethods) {
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
+
+        KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
+
+        kafkaBridgeBuilder
+            .editSpec()
+                .editHttp()
+                    .withNewCors()
+                        .withAllowedOrigins(allowedCorsOrigin)
+                        .withAllowedMethods(allowedCorsMethods != null ? allowedCorsMethods : "GET,POST,PUT,DELETE,OPTIONS,PATCH")
+                    .endCors()
+                .endHttp()
+            .endSpec();
+
+        return deployKafkaBridge(kafkaBridgeBuilder.build());
+    }
+
     private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
         return new KafkaBridgeBuilder(kafkaBridge)
             .withNewMetadata()
