@@ -508,4 +508,9 @@ public class KafkaBridgeCluster extends AbstractModel {
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
     }
+
+    @Override
+    public String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
+    }
 }

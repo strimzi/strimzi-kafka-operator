@@ -1,9 +1,25 @@
-log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-bridge.root.logger=INFO
-log4j.rootLogger=${bridge.root.logger}, CONSOLE
-log4j.logger.http.openapi.operation.healthy=WARN, CONSOLE
-log4j.additivity.http.openapi.operation.healthy=false
-log4j.logger.http.openapi.operation.ready=WARN, CONSOLE
-log4j.additivity.http.openapi.operation.ready=false
+#
+# The logging properties used
+#
+name = BridgeConfig
+
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{ISO8601} %p %m (%c) [%t]%n
+
+rootLogger.level = INFO
+rootLogger.appenderRefs = stdout
+rootLogger.appenderRef.console.ref = STDOUT
+rootLogger.additivity = false
+
+io.strimzi.kafka.bridge.level = INFO
+io.strimzi.kafka.bridge.appenderRefs = stdout
+io.strimzi.kafka.bridge.appenderRef.console.ref = STDOUT
+io.strimzi.kafka.bridge.appenderRef.additivity = false
+
+# HTTP OpenAPI specific logging levels (default is INFO)
+http.openapi.operation.healthy.level=WARN
+http.openapi.operation.healthyadditivity=false
+http.openapi.operation.ready.level=WARN
+http.openapi.operation.ready.additivity=false
