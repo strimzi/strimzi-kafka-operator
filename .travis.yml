@@ -16,7 +16,8 @@ addons:
     packages:
       - docker-ce
 install:
-- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- mvn clean install -DskipTests=false -f test-container/pom.xml
+#- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_script:
 - "./.travis/setup-kubernetes.sh"
 - "./.travis/setup-helm.sh"
