@@ -16,6 +16,8 @@ home: https://strimzi.io/
 sources:
 - https://github.com/strimzi/strimzi-kafka-operator
 maintainers:
+- name: Frawless
 - name: ppatierno
+- name: samuel-hawker
 - name: scholzj
 - name: tombentley
