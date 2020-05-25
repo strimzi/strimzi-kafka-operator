@@ -2,14 +2,17 @@
 
 def lib
 def NODE_LABEL = null
+def DEFAULT_EXCLUDED_GROUPS = null
 
 node('master') {
     stage('Set agent label') {
         echo "Github PR comment: ${env.ghprbCommentBody}"
         if (env.ghprbCommentBody.contains('crc') || env.ghprbCommentBody.contains('ocp4')) {
             NODE_LABEL = "strimzi-crc"
+            DEFAULT_EXCLUDED_GROUPS = ""
         } else {
             NODE_LABEL = 'strimzi-pr'
+            DEFAULT_EXCLUDED_GROUPS = "networkpolicies"
         }
     }
 }
@@ -23,7 +26,7 @@ pipeline {
     parameters {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
-        string(name: 'EXCLUDE', defaultValue: 'networkpolicies', description: 'maven parameter for exclude specific test tag')
+        string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
     }
     options {
         timeout(time: 22, unit: 'HOURS')
@@ -55,8 +58,8 @@ pipeline {
                     echo "Comment body: ${env.ghprbCommentBody}"
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
-                    env.EXCLUDE_GROUPS = params.EXCLUDE
                     env.OC_VERSION = NODE_LABEL == 'strimzi-crc' ? "4" : "3"
+                    env.EXCLUDE_GROUPS = DEFAULT_EXCLUDED_GROUPS
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
@@ -64,12 +67,11 @@ pipeline {
                     if (env.ghprbCommentBody.contains('profile=')) {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
                     }
-                    echo "EXCLUDE_GROUPS: ${env.EXCLUDE_GROUPS}"
-                    if (env.ghprbCommentBody.contains('exclude=')) {
-                        env.EXCLUDE_GROUPS = env.ghprbCommentBody.split('exclude=')[1].split(/\s/)[0]
-                        env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",networkpolicies"
-                    }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
+                    if (env.ghprbCommentBody.contains('exclude=')) {
+                        env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ',' + env.ghprbCommentBody.split('exclude=')[1].split(/\s/)[0]
+                    }
+                    echo "EXCLUDE_GROUPS: ${env.EXCLUDE_GROUPS}"
                     if (env.ghprbCommentBody.contains('test_only')) {
                         env.TEST_ONLY = true
                         env.DOCKER_REGISTRY = "docker.io"
@@ -153,7 +155,7 @@ pipeline {
     post {
         always {
             script {
-                sh "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.OC_VERSION}"
+                sh "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.OC_VERSION} ${env.TEST_ONLY} ${env.EXCLUDE_GROUPS}"
                 lib.postGithubPrComment("results.json")
                 lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
             }
