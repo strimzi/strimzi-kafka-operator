@@ -108,7 +108,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
             // Any volume claim template changes apart from size change should trigger rolling update
             // Size changes should not trigger rolling update. Therefore we need to separate these two in the diff.
             changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue) && !VOLUME_SIZE.matcher(pathValue).matches();
-            changesVolumeSize |= !isVolumeSizeEqual(pathValue, lookupPath(source, pathValue), lookupPath(target, pathValue));
+            changesVolumeSize |= isVolumeSizeChanged(pathValue, source, target);
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
             // by k8s
             changesSpecTemplate |= equalsOrPrefix("/spec/template", pathValue);
@@ -123,11 +123,13 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         this.changesVolumeSize = changesVolumeSize;
     }
 
-    private boolean isVolumeSizeEqual(String pathValue, JsonNode current, JsonNode desired) {
+    private boolean isVolumeSizeChanged(String pathValue, JsonNode source, JsonNode target) {
         if (VOLUME_SIZE.matcher(pathValue).matches()) {
-            return StorageUtils.parseMemory(current.asText()) == StorageUtils.parseMemory(desired.asText());
+            JsonNode current = lookupPath(source, pathValue);
+            JsonNode desired = lookupPath(target, pathValue);
+            return StorageUtils.parseMemory(current.asText()) != StorageUtils.parseMemory(desired.asText());
         }
-        return true;
+        return false;
     }
 
     boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
