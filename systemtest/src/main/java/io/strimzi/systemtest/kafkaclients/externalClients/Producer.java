@@ -102,10 +102,6 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
                     if (msgCntPredicate.negate().test(-1)) {
                         sendNext(producer, topic);
                     }
-
-                } else {
-                    LOGGER.warn("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
-                    sendNext(producer, topic);
                 }
             });
         }
