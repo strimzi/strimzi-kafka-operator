@@ -20,6 +20,7 @@ public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseabl
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
+    private final KafkaConsumer<String, String> consumer;
 
     Consumer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
@@ -27,13 +28,12 @@ public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseabl
         this.topic = topic;
         this.clientName = clientName;
         this.vertx = Vertx.vertx();
+        this.consumer = KafkaConsumer.create(vertx, properties.getProperties());
     }
 
     @Override
     protected void handleClient() {
         LOGGER.info("Consumer is starting with following properties: {}", properties.getProperties().toString());
-
-        KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties.getProperties());
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
@@ -65,8 +65,11 @@ public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseabl
 
     @Override
     public void close() {
-        LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
         if (vertx != null) {
+            LOGGER.info("Closing Consumer instance {}", consumer.getClass().getName());
+            consumer.close();
+
+            LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
             vertx.close();
         }
     }

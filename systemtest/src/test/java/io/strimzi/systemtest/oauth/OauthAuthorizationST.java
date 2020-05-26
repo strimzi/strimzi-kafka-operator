@@ -244,7 +244,7 @@ public class OauthAuthorizationST extends OauthBaseST {
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .withConsumerGroupName("a_consumer_group")
             .withOauthClientId(TEAM_A_CLIENT)
-            .withClientSecretName(TEAM_A_CLIENT_SECRET)
+            .withClientSecretName("weeqwew")
             .withOauthTokenEndpointUri(oauthTokenEndpointUri)
             .build();
 
