@@ -27,6 +27,8 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import okhttp3.OkHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static Vertx vertx;
+    private static final Logger log = LogManager.getLogger(ClusterOperatorTest.class.getName());
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -76,7 +79,11 @@ public class ClusterOperatorTest {
 
     @AfterAll
     public static void after() {
-        vertx.close();
+        try {
+            vertx.close();
+        } catch (Exception e) {
+            log.warn("Failed to close vertx instance. ", e);
+        }
     }
 
     @Test
