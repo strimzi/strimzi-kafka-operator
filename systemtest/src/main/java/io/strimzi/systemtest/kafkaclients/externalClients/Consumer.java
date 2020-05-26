@@ -7,6 +7,7 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,10 +67,10 @@ public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseabl
     @Override
     public void close() {
         if (vertx != null) {
-            LOGGER.info("Closing Consumer instance {}", consumer.getClass().getName());
+            LOGGER.info("Closing Consumer instance {} with client.id {}", consumer.getClass().getName(), properties.getProperties().get(ConsumerConfig.CLIENT_ID_CONFIG));
             consumer.close();
 
-            LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
+            LOGGER.info("Closing Vert.x instance {}", this.getClass().getName());
             vertx.close();
         }
     }

@@ -9,6 +9,7 @@ import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -70,12 +71,12 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
     public void close() {
         if (vertx != null) {
 
-            LOGGER.info("Closing Producer instance {}", producer.getClass().getName());
             if (producer != null) {
+                LOGGER.info("Closing Producer instance {} with client.id {}", producer.getClass().getName(), properties.getProperties().get(ProducerConfig.CLIENT_ID_CONFIG));
                 producer.close();
             }
 
-            LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
+            LOGGER.info("Closing Vert.x instance {}", this.getClass().getName());
             vertx.close();
         }
     }
