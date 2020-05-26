@@ -9,7 +9,7 @@ Kafka Bridge HTTP configuration is set using the properties in `KafkaBridge.spec
 
 As well as enabling HTTP access to a Kafka cluster, HTTP properties provide the capability to enable and define access control for the Kafka Bridge through Cross-Origin Resource Sharing (CORS).
 CORS is a HTTP mechanism that allows browser access to selected resources from more than one origin.
-For CORS, you define a list of allowed resource origins and HTTP methods for access.
+To configure CORS, you define a list of allowed resource origins and HTTP methods to access them.
 Additional HTTP headers in requests link:{external-cors-link}[describe the origins that are permitted access to the Kafka cluster^].
 
 .Example Kafka Bridge HTTP configuration
@@ -30,4 +30,4 @@ spec:
 ----
 <1> The default HTTP configuration for the Kafka Bridge to listen on port 8080.
 <2> Comma-separated list of allowed CORS origins. You can use a URL or a Java regular expression.
-<3> Comma-separated list of allowed CORS HTTP methods.
+<3> Comma-separated list of allowed HTTP methods for CORS.
