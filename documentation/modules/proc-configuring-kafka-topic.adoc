@@ -7,7 +7,7 @@
 
 Use the properties of the `KafkaTopic` resource to configure a Kafka topic.
 
-You can use `kubectl apply` to create or modify topics, and kubectl delete to delete existing topics.
+You can use `kubectl apply` to create or modify topics, and `kubectl delete` to delete existing topics.
 
 For example:
 
@@ -23,7 +23,7 @@ It is important that you consider the following before making your changes:
 * Kafka does _not_ support making the following changes through the `KafkaTopic` resource:
 ** Changing topic names using `spec.topicName`
 ** Decreasing partition size using `spec.partitions`
-* You cannot change the number of replicas initially specified using `spec.replicas`.
+* You cannot use `spec.replicas` to change the number of replicas that were initially specified.
 * Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
 
 .Prerequisites
