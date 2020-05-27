@@ -1,9 +1,7 @@
 [[setting-up-git]]
 = Setting up git
 
-Strimzi uses git to manage repositories.  This guide explains how to set up your system to connect to the proper git repositories.
-
-https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: A public GitHub repo that hosts all of the Strimzi code and documentation.
+This section explains how to set up your system to connect to the proper git repositories.
 
 [[install-git]]
 == Install git

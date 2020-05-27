@@ -12,6 +12,9 @@
 //standard intro
 include::../shared/snip-intro-text.adoc[leveloffset=+1]
 
+This guide provides instructions for evaluating a working environment of Strimzi.
+The steps describe how to get a Strimzi deployment up-and-running as quickly as possible.
+
 Before trying {ProductName}, it is useful to understand its capabilities and how you might wish to use it.
 This chapter introduces some of the key concepts behind Kafka, and also provides a brief overview of the {ProductName} Operators.
 
