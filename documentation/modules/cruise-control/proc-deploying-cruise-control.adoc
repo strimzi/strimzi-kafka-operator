@@ -5,29 +5,21 @@
 [id='proc-deploying-cruise-control-{context}']
 = Deploying Cruise Control
 
-Cruise Control is configured using the `cruiseControl` property in the `Kafka` resource.
-Once configured, you can deploy a Cruise Control instance to your {ProductName} cluster by creating or updating the `Kafka` resource.
+To deploy Cruise Control to your {ProductName} cluster, define the configuration using the `cruiseControl` property in the `Kafka` resource, and then create or update the resource.
 
-For an overview of the `Kafka` resource, see the xref:ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration].
-
-You can configure `cruiseControl` properties as part of a deployment or redeployment of a Kafka cluster.
 Deploy one instance of Cruise Control per Kafka cluster.
 
-This procedure uses the following example file provided with {ProductName}:
-
-* `examples/cruise-control/cruise-control-topic.yaml`
-
-This creates a `strimzi.cruisecontrol.metrics` topic in your Kafka cluster, which collects information from the Cruise Control Metrics Reporter for use in generating rebalance proposals.
-You do not need to interact with this topic after Cruise Control is deployed.
+NOTE: Step one is only required if automatic topic creation is disabled in the Kafka cluster.
 
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
+* You are aware of the guidance on link:#auto-created-topics-logs[Auto-created topics and log compaction].
 
 .Procedure
 
-. Create the Cruise Control metrics topic in your Kafka cluster:
+. If automatic topic creation is disabled (`auto.create.topics.enable: false` is configured in `spec.kafka.config`), first create the `strimzi.cruisecontrol.metrics` topic:
 +
 [source,shell,subs="attributes+"]
 ----
@@ -90,7 +82,9 @@ spec:
 # ...
 ----
 <1> Specifies capacity limits for broker resources. For more information, see xref:capacity_configuration[Capacity configuration].
-<2> Defines the Cruise Control configuration, including default and enabled optimization goals. You can provide any xref:ref-cruise-control-configuration-{context}[standard configuration option] apart from those managed directly by {ProductName}.
+<2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the master optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
+You can provide any xref:ref-cruise-control-configuration-{context}[standard configuration option] apart from those managed directly by {ProductName}. 
+For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[]. 
 <3> CPU and memory resources reserved for Cruise Control. For more information, see xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[].
 <4> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger called cruisecontrol.root.logger. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:logging_configuration[Logging configuration].
 <5> xref:assembly-customizing-deployments-str[Customization of deployment templates and pods].

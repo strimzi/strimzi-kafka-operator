@@ -35,7 +35,7 @@ Specifically, you *cannot* modify configuration options with keys equal to or st
 * `sasl.`
 
 If restricted options are specified, they are ignored and a warning message is printed to the Cluster Operator log file.
-All supported options are passed to Cruise Control.
+All the supported options are passed to Cruise Control.
 
 .An example Cruise Control configuration
 [source,yaml,subs="attributes+"]
@@ -57,11 +57,13 @@ spec:
       send.buffer.bytes: 131072
     # ...
 ----
+
+[#capacity-configuration]
+[discrete]
 == Capacity configuration
 
 Cruise Control uses _capacity limits_ to determine if optimization goals for broker resources are being broken.
-An optimization will fail if a goal is broken, preventing the optimization from being used to generate an optimization proposal for balanced partition assignments.
-For example, an optimization that would cause a broker to exceed its CPU capacity would not be used if the `CpuCapacityGoal` is set as a hard goal.
+An optimization will fail if a goal is broken, preventing the optimization from being used to generate an optimization proposal.
 
 You specify capacity limits for broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 Capacity limits can be set for the following broker resources in the described units:
@@ -92,23 +94,26 @@ spec:
     # ...
 ----
 
-
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 
-== Topic creation and configuration
+[#auto-created-topics-logs]
+[discrete]
+== Auto-created topics and log compaction
 
-Cruise Control requires the following three topics to be created in order to function properly:
+Cruise Control requires the following three topics in order to work:
 
 * `strimzi.cruisecontrol.partitionmetricsamples`
 * `strimzi.cruisecontrol.modeltrainingsamples`
 * `strimzi.cruisecontrol.metrics`
 
-Cruise Control will create the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics after the Cruise Control metric reporters create the `strimzi.cruisecontrol.metrics` topic.
-However, if automatic topic creation is disabled in Kafka with a configuration of `auto.create.topics.enable: false` in `spec.kafka.config` when starting a new Kafka cluster, the Cruise Control metric reporters will be unable to create the `strimzi.cruisecontrol.metrics` topic.
-In this situation, the `strimzi.cruisecontrol.metrics` topic will need to be created manually.
+These three topics are usually auto-created by {ProductName} and Cruise Control. First, the metric reporters create the `strimzi.cruisecontrol.metrics` topic. 
+Then, Cruise Control creates the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
 
-To manually create the `strimzi.cruisecontrol.metrics` Cruise Control topic in your Kubernetes cluster:
+However, if automatic topic creation is _disabled_ in Kafka (`auto.create.topics.enable: false` is configured in `spec.kafka.config` when starting a new Kafka cluster) the Cruise Control metric reporters are unable to create the `strimzi.cruisecontrol.metrics` topic.
+In this situation, you need to manually create the `strimzi.cruisecontrol.metrics` topic before deploying Cruise Control. 
+You can do this using the following command:
+
 [source,shell,subs="attributes+"]
 ----
 kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
@@ -116,11 +121,11 @@ kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
 
 Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must be configured with `cleanup.policy=delete` to disable log compaction.
 Cruise Control will automatically disable log compaction for the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
-The Cruise Control metric reporters will attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic but will fail when being started with a new Kafka cluster.
+The Cruise Control metric reporters will attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic but will fail if they are started with a new Kafka cluster.
 This will only become a problem when log compaction is enabled in Kafka with the setting `log.cleanup.policy=compact` in the `spec.kafka.config`.
 In this situation, log compaction will be enabled for `strimzi.cruisecontrol.metrics` topic and will need to be overridden with a `cleanup.policy=delete` in the `strimzi.cruisecontrol.metrics` KafkaTopic.
 
-Here we see an example of log compaction being disabled in a Cruise Control KafkaTopic.
+Here is an example where log compaction is disabled in a topic that was auto-created by Cruise Control:
 
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -135,6 +140,8 @@ spec:
     cleanup.policy: delete
 ----
 
+[#logging-configuration]
+[discrete]
 == Logging configuration
 
 Cruise Control has its own configurable logger:

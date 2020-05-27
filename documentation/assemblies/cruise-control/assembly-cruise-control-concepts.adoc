@@ -3,11 +3,16 @@
 // master.adoc
 
 [id='cruise-control-concepts-{context}']
-= Cruise Control
+= Cruise Control for cluster rebalancing
 
-You can deploy {CruiseControlProject} and access a subset of its features through {ProductName} custom resources.
+You can deploy {CruiseControlProject} to your {ProductName} cluster and access its _cluster rebalancing_ feature through custom resources.
 
-Example YAML files for deploying Cruise Control and setting optimization goals are provided in `examples/cruise-control/`.
+Cruise Control is an open source system for automating Kafka operations, including monitoring cluster workload, rebalancing a cluster based on predefined constraints, and detecting and fixing anomalies, among others. 
+It consists of four main components--the Load Monitor, the Analyzer, the Anomaly Detector, and the Executor--and a REST API for all interactions.
+{ProductName} utilizes the REST API to support the cluster rebalancing features of Cruise Control.
+Other features, such as anomaly detection, Slack notifications, and changing the topic replication factor, are not supported.
+
+NOTE: Example YAML files for Cruise Control are provided in `examples/cruise-control/`.
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 

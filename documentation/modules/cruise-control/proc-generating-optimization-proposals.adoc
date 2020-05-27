@@ -13,7 +13,7 @@ You can then analyze the summary information in the optimization proposal and de
 
 * You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
 
-* You have configured xref:con-optimization-goals-{context}[optimization goals].
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, link:#capacity-configuration[capacity limits on broker resources].
 
 .Procedure
 
@@ -32,9 +32,9 @@ metadata:
 spec: {}
 ----
 
-.. To set _user-provided optimization goals_ instead of using the default goals, edit the `goals` property and enter one or more goals.
+.. To configure _user-provided optimization goals_ instead of using the default goals, edit the `goals` property and enter one or more goals.
 +
-In the following example, rack awareness and replica capacity are user-provided optimization goals:
+In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
 +
 [source,yaml,subs="attributes+"]
 ----
