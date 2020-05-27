@@ -31,9 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -459,20 +457,9 @@ class LogSettingST extends BaseST {
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1, zkPods);
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
 
-        TestUtils.waitFor("Logs in CO", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            String clusterOperatorName = kubeClient().listPodsByPrefixInName("strimzi-cluster-operator").get(0).getMetadata().getName();
-            String logs = "{" + kubeClient().logs(clusterOperatorName).split("\\+(.*?)\\n\\{")[1];
-            try {
-                new JsonObject(logs);
-                LOGGER.info("JSON format logging successfully set for {}", clusterOperatorName);
-                return true;
-            } catch (Exception e) {
-                LOGGER.info("Failed to set JSON format logging for {}", clusterOperatorName);
-                return false;
-            }
-        });
-
+        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ""), is(true));
         assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));

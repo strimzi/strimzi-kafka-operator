@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class StUtils {
@@ -201,13 +202,17 @@ public class StUtils {
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
 
+        String regex = "(\\{.*})\\{";
+        Pattern pattern = Pattern.compile(regex);
+
         for (String podName : pods.keySet()) {
-            String logs = kubeClient().logs(podName, containerName).replaceFirst("([^{]+)", "");
-            try {
-                new JsonObject(logs);
+            String log = cmdKubeClient().exec(true, false, "logs", podName, "-c", containerName, "--tail=100").out();
+            log = log.replaceAll("[\n|\r]", "");
+            Matcher matcher = pattern.matcher(log);
+            if (matcher.find()) {
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
                 isJSON = true;
-            } catch (Exception e) {
+            } else {
                 LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
                 isJSON = false;
                 break;
