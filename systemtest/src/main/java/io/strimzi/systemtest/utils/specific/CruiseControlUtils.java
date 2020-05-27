@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
@@ -48,6 +49,8 @@ public class CruiseControlUtils {
         USER_TASKS
     }
 
+    @SuppressWarnings("Regexp")
+    @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String call(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
 
@@ -57,9 +60,8 @@ public class CruiseControlUtils {
             "cruise-control",
             "/bin/bash",
             "-c",
-            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_ENDPOINT + endpoint.name()).out();
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_ENDPOINT + endpoint.name().toLowerCase()).out();
     }
-
 
     @SuppressWarnings("BooleanExpressionComplexity")
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {

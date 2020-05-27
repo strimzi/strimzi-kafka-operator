@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.systemtest.BaseST;
@@ -40,7 +44,7 @@ public class CruiseControlApiST extends BaseST {
     void testCruiseControlDeploymentStateEndpoint()  {
         String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STATE);
 
-        assertThat(response, is("Unrecognized endpoint in request '/STATE'\n" +
+        assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
         response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STATE);
@@ -59,7 +63,7 @@ public class CruiseControlApiST extends BaseST {
     void testRebalance() {
         String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
 
-        assertThat(response, is("Unrecognized endpoint in request '/REBALANCE'\n" +
+        assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
         response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
@@ -89,7 +93,7 @@ public class CruiseControlApiST extends BaseST {
     void testStopProposalExecution() {
         String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
 
-        assertThat(response, is("Unrecognized endpoint in request '/STOP_PROPOSAL_EXECUTION'\n" +
+        assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
         response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
@@ -102,15 +106,16 @@ public class CruiseControlApiST extends BaseST {
     void testUserTasks() {
         String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
 
-        assertThat(response, is("Unrecognized endpoint in request '/USER_TASKS'\n" +
+        assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
         response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, containsString("GET"));
-        assertThat(response, containsString("/kafkacruisecontrol/STATE"));
+        assertThat(response, containsString("/kafkacruisecontrol/state"));
         assertThat(response, containsString("POST"));
-        assertThat(response, containsString("/kafkacruisecontrol/REBALANCE"));
+        assertThat(response, containsString("/kafkacruisecontrol/rebalance"));
+        assertThat(response, containsString("/kafkacruisecontrol/stop_proposal_execution"));
         assertThat(response, containsString("Completed"));
     }
 
