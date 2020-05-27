@@ -437,7 +437,7 @@ public class KafkaConnectCluster extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -500,6 +500,9 @@ public class KafkaConnectCluster extends AbstractModel {
         if (tracing != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         varList.addAll(getExternalConfigurationEnvVars());
 

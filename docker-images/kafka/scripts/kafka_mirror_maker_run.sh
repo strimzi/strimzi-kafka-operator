@@ -106,7 +106,7 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Kafka Mirror Maker with final configuration
-exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
+exec /usr/bin/tini -w -e 143 -- $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
 $whitelist \

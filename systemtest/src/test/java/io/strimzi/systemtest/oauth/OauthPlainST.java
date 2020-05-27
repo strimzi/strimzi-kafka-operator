@@ -15,11 +15,11 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -340,7 +340,7 @@ public class OauthPlainST extends OauthBaseST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(root, clusterHost,
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, clusterHost,
                 KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
@@ -411,7 +411,6 @@ public class OauthPlainST extends OauthBaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withClientSecretName(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(oauthTokenEndpointUri)

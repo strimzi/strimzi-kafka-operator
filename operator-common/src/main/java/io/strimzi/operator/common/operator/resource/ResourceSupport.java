@@ -111,14 +111,14 @@ public class ResourceSupport {
                 this.timerId = vertx.setTimer(timeoutMs, ignored -> {
                     donePromise.tryFail(new TimeoutException());
                 });
-                CompositeFuture.join(watchPromise.future(), donePromise.future()).setHandler(joinResult -> {
+                CompositeFuture.join(watchPromise.future(), donePromise.future()).onComplete(joinResult -> {
                     Future<Void> closeFuture;
                     if (watchPromise.future().succeeded()) {
                         closeFuture = closeOnWorkerThread(watchPromise.future().result());
                     } else {
                         closeFuture = Future.succeededFuture();
                     }
-                    closeFuture.setHandler(closeResult -> {
+                    closeFuture.onComplete(closeResult -> {
                         vertx.runOnContext(ignored2 -> {
                             LOGGER.warn("Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {

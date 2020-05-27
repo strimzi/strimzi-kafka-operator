@@ -59,7 +59,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 }
             };
             if (!action.equals(Action.ERROR)) {
-                topicOperator.onResourceEvent(logContext, kafkaTopic, action).setHandler(resultHandler);
+                topicOperator.onResourceEvent(logContext, kafkaTopic, action).onComplete(resultHandler);
             } else {
                 LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
             }

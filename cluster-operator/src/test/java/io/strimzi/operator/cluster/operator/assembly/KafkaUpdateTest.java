@@ -191,7 +191,7 @@ public class KafkaUpdateTest {
                 }
                 .kafkaVersionChange();
         AtomicReference<UpgradeException> ex = new AtomicReference<>();
-        future.setHandler(ar -> {
+        future.onComplete(ar -> {
             if (ar.failed()) {
                 ex.set(new UpgradeException(states, ar.cause()));
             }

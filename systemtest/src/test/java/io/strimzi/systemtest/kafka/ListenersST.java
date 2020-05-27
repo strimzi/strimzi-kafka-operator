@@ -14,7 +14,6 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -28,7 +27,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,12 +62,12 @@ public class ListenersST extends BaseST {
     private String customRootCA1 = "custom-certificate-root-1";
     private String customRootCA2 = "custom-certificate-root-2";
 
-    private String userName = "alice";
+    private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testCustomSoloCertificatesForNodePort() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -105,7 +103,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -140,7 +137,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testCustomChainCertificatesForNodePort() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -170,26 +167,15 @@ public class ListenersST extends BaseST {
 
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withKafkaClientProperties(
-                new KafkaClientProperties.KafkaClientPropertiesBuilder()
-                    .withNamespaceName(NAMESPACE)
-                    .withClusterName(CLUSTER_NAME)
-                    .withBootstrapServerConfig(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                    .withKeySerializerConfig(StringSerializer.class)
-                    .withValueSerializerConfig(StringSerializer.class)
-                    .withClientIdConfig("kafka-user-producer")
-                    .build()
-            ).build();
+            .build();
 
         LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
 
@@ -223,7 +209,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomSoloCertificatesForLoadBalancer() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -259,7 +245,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -294,7 +279,7 @@ public class ListenersST extends BaseST {
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testCustomChainCertificatesForLoadBalancer() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -334,7 +319,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -370,7 +354,7 @@ public class ListenersST extends BaseST {
     @Tag(ACCEPTANCE)
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -406,7 +390,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -441,7 +424,7 @@ public class ListenersST extends BaseST {
     @Test
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -477,7 +460,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -514,7 +496,7 @@ public class ListenersST extends BaseST {
     @Tag(LOADBALANCER_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -545,7 +527,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -598,7 +579,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
@@ -693,7 +673,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -714,7 +693,7 @@ public class ListenersST extends BaseST {
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertNodePortAndTlsRollingUpdate() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -745,7 +724,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
@@ -798,7 +776,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
@@ -890,7 +867,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -910,7 +886,7 @@ public class ListenersST extends BaseST {
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertRouteAndTlsRollingUpdate() {
-        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -941,7 +917,6 @@ public class ListenersST extends BaseST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -1110,6 +1085,8 @@ public class ListenersST extends BaseST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
     @Test
@@ -1138,6 +1115,8 @@ public class ListenersST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
     @Test
@@ -1166,16 +1145,18 @@ public class ListenersST extends BaseST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
                 "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
     @BeforeEach
     void setupCertificates() {
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain1).delete();
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain2).delete();
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer1).delete();
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer2).delete();
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA1).delete();
-        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA2).delete();
+        SecretUtils.deleteSecretWithWait(customCertChain1, NAMESPACE);
+        SecretUtils.deleteSecretWithWait(customCertChain2, NAMESPACE);
+        SecretUtils.deleteSecretWithWait(customCertServer1, NAMESPACE);
+        SecretUtils.deleteSecretWithWait(customCertServer2, NAMESPACE);
+        SecretUtils.deleteSecretWithWait(customRootCA1, NAMESPACE);
+        SecretUtils.deleteSecretWithWait(customRootCA2, NAMESPACE);
 
         SecretUtils.createCustomSecret(customCertChain1, CLUSTER_NAME, NAMESPACE,
                 Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt")).getFile(),

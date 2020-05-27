@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -49,6 +50,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -84,12 +86,12 @@ import static org.hamcrest.core.StringContains.containsString;
 class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
-    private static final String TOPIC_NAME = "status-topic";
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
+    private static int topicOperatorReconciliationInterval;
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    void testKafkaStatus() throws Exception {
+    void testKafkaStatus() {
         LOGGER.info("Checking status of deployed kafka cluster");
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
@@ -98,7 +100,6 @@ class CustomResourceStatusST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -307,13 +308,14 @@ class CustomResourceStatusST extends BaseST {
             .build());
 
         KafkaConnectorUtils.waitForConnectorNotReady(CLUSTER_NAME);
+
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).cascading(true).delete();
     }
 
     @Test
     void testKafkaTopicStatus() {
         KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
-        // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
-        assertKafkaTopicStatus(2, TOPIC_NAME);
+        assertKafkaTopicStatus(1, TOPIC_NAME);
     }
 
     @Test
@@ -365,7 +367,43 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(CLUSTER_NAME);
 
-        KafkaMirrorMaker2Resource.deleteKafkaMirrorMaker2WithoutWait(kafkaMirrorMaker2);
+        KafkaMirrorMaker2Resource.deleteKafkaMirrorMaker2WithoutWait(CLUSTER_NAME);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
+    }
+
+    @Test
+    void testKafkaTopicDecreaseStatus() throws InterruptedException {
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        int decreaseTo = 1;
+
+        LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
+        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo));
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(TEST_TOPIC_NAME, decreaseTo);
+        KafkaTopicUtils.waitForKafkaTopicNotReady(TEST_TOPIC_NAME);
+
+        assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
+
+        // Wait some time to check if error is still present in KafkaTopic status
+        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
+        Thread.sleep(topicOperatorReconciliationInterval);
+        assertKafkaTopicDecreasePartitionsStatus(TEST_TOPIC_NAME);
+    }
+
+    @Test
+    void testKafkaTopicChangingInSyncReplicasStatus() throws InterruptedException {
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        String invalidValue = "x";
+
+        LOGGER.info("Changing min.insync.replicas to random char");
+        KafkaTopicResource.replaceTopicResource(TEST_TOPIC_NAME, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue));
+        KafkaTopicUtils.waitForKafkaTopicNotReady(TEST_TOPIC_NAME);
+
+        assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
+
+        // Wait some time to check if error is still present in KafkaTopic status
+        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
+        Thread.sleep(topicOperatorReconciliationInterval);
+        assertKafkaTopicWrongMinInSyncReplicasStatus(TEST_TOPIC_NAME, invalidValue);
     }
 
     @BeforeAll
@@ -401,6 +439,9 @@ class CustomResourceStatusST extends BaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
+        topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
+            .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
@@ -488,5 +529,27 @@ class CustomResourceStatusST extends BaseST {
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
         assertThat("KafkaTopic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
+    }
+
+    void assertKafkaTopicDecreasePartitionsStatus(String topicName) {
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().contains("Number of partitions cannot be decreased")), is(true));
+    }
+
+    void assertKafkaTopicWrongMinInSyncReplicasStatus(String topicName, String invalidValue) {
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
+
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
+        assertThat(kafkaTopicStatus.getConditions().stream()
+            .anyMatch(condition -> condition.getMessage().contains(String.format("Invalid value %s for configuration min.insync.replicas", invalidValue))), is(true));
     }
 }

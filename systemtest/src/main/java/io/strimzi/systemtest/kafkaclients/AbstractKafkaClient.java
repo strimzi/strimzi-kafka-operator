@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
+import java.util.Random;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -22,6 +23,7 @@ public abstract class AbstractKafkaClient {
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
     protected String topicName;
+    protected Integer partition;
     protected String namespaceName;
     protected String clusterName;
     protected int messageCount;
@@ -34,6 +36,7 @@ public abstract class AbstractKafkaClient {
     public abstract static class Builder<T extends Builder<T>> {
 
         private String topicName;
+        protected Integer partition;
         private String namespaceName;
         private String clusterName;
         private int messageCount;
@@ -45,6 +48,11 @@ public abstract class AbstractKafkaClient {
 
         public T withTopicName(String topicName) {
             this.topicName = topicName;
+            return self();
+        }
+
+        public T withPartition(Integer partition) {
+            this.partition = partition;
             return self();
         }
 
@@ -101,8 +109,13 @@ public abstract class AbstractKafkaClient {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            builder.consumerGroup = generateRandomConsumerGroup();
+        }
 
         topicName = builder.topicName;
+        partition = builder.partition;
         namespaceName = builder.namespaceName;
         clusterName = builder.clusterName;
         messageCount = builder.messageCount;
@@ -165,6 +178,16 @@ public abstract class AbstractKafkaClient {
         } else {
             throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapServiceType + " for Kafka cluster " + clusterName);
         }
+    }
+
+    /**
+     * Generated random name for a consumer group
+     * @return random name with additional salt
+     */
+    public static String generateRandomConsumerGroup() {
+        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        return  "my-consumer-group-" + salt;
     }
 
     public KafkaClientProperties getClientProperties() {

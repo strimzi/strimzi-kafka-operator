@@ -9,6 +9,8 @@ metadata:
     component: broker-role-binding
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+# The Kafka broker cluster role must be bound to the cluster operator service account so that it can delegate the cluster role to the Kafka brokers.
+# This must be done to avoid escalating privileges which would be blocked by Kubernetes.
 subjects:
   - kind: ServiceAccount
     name: strimzi-cluster-operator

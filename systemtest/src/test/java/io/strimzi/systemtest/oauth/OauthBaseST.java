@@ -44,9 +44,6 @@ public class OauthBaseST extends BaseST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";
     protected static final Logger LOGGER = LogManager.getLogger(OauthBaseST.class);
-
-    protected static final String TOPIC_NAME = "my-topic";
-
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
     protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";

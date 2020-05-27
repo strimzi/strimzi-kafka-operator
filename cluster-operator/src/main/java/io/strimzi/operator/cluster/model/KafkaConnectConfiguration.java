@@ -11,21 +11,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Kafka Connect configuration passed by the user
  */
 public class KafkaConnectConfiguration extends AbstractConfiguration {
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaConnectSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        DEFAULTS = new HashMap<>();
+        DEFAULTS = new HashMap<>(6);
         DEFAULTS.put("group.id", "connect-cluster");
         DEFAULTS.put("offset.storage.topic", "connect-cluster-offsets");
         DEFAULTS.put("config.storage.topic", "connect-cluster-configs");
@@ -41,6 +39,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConnectConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }

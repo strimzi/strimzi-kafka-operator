@@ -107,6 +107,30 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
     public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
+    protected static final List<EnvVar> PROXY_ENV_VARS;
+
+    static {
+        List<EnvVar> envVars = new ArrayList<>(3);
+
+        if (System.getenv("HTTP_PROXY") != null)    {
+            envVars.add(buildEnvVar("HTTP_PROXY", System.getenv("HTTP_PROXY")));
+        }
+
+        if (System.getenv("HTTPS_PROXY") != null)    {
+            envVars.add(buildEnvVar("HTTPS_PROXY", System.getenv("HTTPS_PROXY")));
+        }
+
+        if (System.getenv("NO_PROXY") != null)    {
+            envVars.add(buildEnvVar("NO_PROXY", System.getenv("NO_PROXY")));
+        }
+
+        if (envVars.size() > 0) {
+            PROXY_ENV_VARS = Collections.unmodifiableList(envVars);
+        } else {
+            PROXY_ENV_VARS = Collections.emptyList();
+        }
+    }
+
     protected final String cluster;
     protected final String namespace;
 
@@ -351,8 +375,14 @@ public abstract class AbstractModel {
      */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
+            InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
-            newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
+
+            if (inlineLogging.getLoggers() != null) {
+                // Inline logging as specified and some loggers are configured
+                newSettings.addMapPairs(inlineLogging.getLoggers());
+            }
+
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
@@ -401,6 +431,17 @@ public abstract class AbstractModel {
      */
     public String getAncillaryConfigName() {
         return ancillaryConfigName;
+    }
+
+    /**
+     * Returns a lit of environment variables which should be shared by all containers.
+     * Currently contains the mirrored HTTP Proxy environment variables
+     *
+     * @return  List with environment variables
+     */
+    protected List<EnvVar> getSharedEnvVars() {
+        // HTTP Proxy configuration should be passed to all images
+        return PROXY_ENV_VARS;
     }
 
     protected List<EnvVar> getEnvVars() {
@@ -587,7 +628,7 @@ public abstract class AbstractModel {
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>();
+        Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
         LabelSelector selector = null;
@@ -1092,7 +1133,6 @@ public abstract class AbstractModel {
 
     @SafeVarargs
     protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
-        
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {

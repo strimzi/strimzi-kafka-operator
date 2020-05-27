@@ -29,7 +29,7 @@ authorization:
 # ...
 ----
 
-Access rules for users are xref:simple-acl-using-uo[defined using Access Control Lists (ACLs)].
+Access rules for users are xref:simple-acl-str[defined using Access Control Lists (ACLs)].
 You can optionally designate a list of super users in the `superUsers` field.
 
 [id='ref-kafka-authorization-super-user-{context}']

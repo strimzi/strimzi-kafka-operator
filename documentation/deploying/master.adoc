@@ -2,7 +2,6 @@
 include::shared/attributes.adoc[]
 
 :context: str
-:BookURLUsing: ./using.html
 
 [id="deploying-book_{context}"]
 = Deploying and Upgrading {ProductName}

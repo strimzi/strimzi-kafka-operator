@@ -359,7 +359,7 @@ public class KafkaRollerTest {
                 return null;
             }
         })
-            .setHandler(testContext.succeeding(v -> {
+            .onComplete(testContext.succeeding(v -> {
                 testContext.verify(() -> assertThat(restarted(), is(expected)));
                 assertNoUnclosedAdminClient(testContext, kafkaRoller);
                 async.flag();
@@ -386,7 +386,7 @@ public class KafkaRollerTest {
                 return null;
             }
         })
-            .setHandler(testContext.failing(e -> testContext.verify(() -> {
+            .onComplete(testContext.failing(e -> testContext.verify(() -> {
                 assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
                 assertThat("The exception message was not as expected", e.getMessage(), is(message));
                 assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
@@ -518,7 +518,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        int controller(int podId, Admin ac, long timeout, TimeUnit unit) throws ForceableProblem {
+        int controller(int podId, Admin ac, long timeout, TimeUnit unit, RestartContext restartContext) throws ForceableProblem {
             if (controllerException != null) {
                 throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podName(podId), controllerException);
             } else {

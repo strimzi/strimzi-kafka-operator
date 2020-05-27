@@ -173,7 +173,11 @@ public class KafkaCluster extends AbstractModel {
     private static final String NAME_SUFFIX = "-kafka";
 
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
-    
+    private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
+    private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
+    private static final String CC_NUM_PARTITIONS_CONFIG_FIELD = "cruise.control.metrics.topic.num.partitions";
+    private static final String CC_REPLICATION_FACTOR_CONFIG_FIELD = "cruise.control.metrics.topic.replication.factor";
+
     protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
     protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
@@ -221,6 +225,10 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
     private CruiseControlSpec cruiseControlSpec;
+    private String kafkaDefaultNumPartitions = "1";
+    private String kafkaDefaultReplicationFactor = "1";
+    private String ccNumPartitions = null;
+    private String ccReplicationFactor = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
@@ -314,22 +322,21 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsName(String namespace, String cluster, String podName) {
-        return String.format("%s.%s.%s.svc.%s",
-                podName,
-                KafkaCluster.headlessServiceName(cluster),
+        return ModelUtils.podDnsName(
                 namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
-    }
-
-    public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return podDnsNameWithoutSuffix(namespace, cluster, KafkaCluster.kafkaPodName(cluster, podId));
-    }
-
-    public static String podDnsNameWithoutSuffix(String namespace, String cluster, String podName) {
-        return String.format("%s.%s.%s.svc",
-                podName,
                 KafkaCluster.headlessServiceName(cluster),
-                namespace);
+                podName);
+    }
+
+    public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, int podId) {
+        return podDnsNameWithoutClusterDomain(namespace, cluster, KafkaCluster.kafkaPodName(cluster, podId));
+    }
+
+    public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, String podName) {
+        return ModelUtils.podDnsNameWithoutClusterDomain(
+                namespace,
+                KafkaCluster.headlessServiceName(cluster),
+                podName);
     }
 
     /**
@@ -457,6 +464,13 @@ public class KafkaCluster extends AbstractModel {
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
+        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
+        if (configuration.getConfigOption(CC_NUM_PARTITIONS_CONFIG_FIELD) == null) {
+            result.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, result.kafkaDefaultNumPartitions);
+        }
+        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
+            result.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, result.kafkaDefaultReplicationFactor);
+        }
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
         if (metricReporters != null) {
@@ -659,7 +673,9 @@ public class KafkaCluster extends AbstractModel {
 
                 if (result.isExposedWithLoadBalancer()) {
                     result.templateExternalBootstrapServiceLoadBalancerSourceRanges = template.getExternalBootstrapService().getLoadBalancerSourceRanges();
-                } else {
+                } else if (template.getExternalBootstrapService().getLoadBalancerSourceRanges() != null
+                        && template.getExternalBootstrapService().getLoadBalancerSourceRanges().size() > 0) {
+                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
@@ -674,7 +690,9 @@ public class KafkaCluster extends AbstractModel {
 
                 if (result.isExposedWithLoadBalancer()) {
                     result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
-                } else {
+                } else if (template.getPerPodService().getLoadBalancerSourceRanges() != null
+                        && template.getPerPodService().getLoadBalancerSourceRanges().size() > 0) {
+                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
@@ -1349,7 +1367,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Secret generateBrokersSecret() {
 
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
@@ -1366,7 +1384,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(2);
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
         for (String key : keys) {
@@ -1688,6 +1706,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
 
         return varList;
@@ -1695,7 +1716,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> initContainers = new ArrayList<>();
+        List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null || isExposedWithNodePort()) {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
@@ -1725,7 +1746,7 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(2);
 
         Container container = new ContainerBuilder()
                 .withName(KAFKA_NAME)
@@ -1843,6 +1864,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         // Add user defined environment variables to the Kafka broker containers
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
@@ -1864,14 +1888,19 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
         }
 
-        if (oAuth.getValidIssuerUri() == null) {
-            log.error("{}: Valid Issuer URI has to be specified", listener);
-            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified");
+        if (oAuth.getValidIssuerUri() == null && oAuth.isCheckIssuer()) {
+            log.error("{}: Valid Issuer URI has to be specified or 'checkIssuer' set to false", listener);
+            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified or 'checkIssuer' set to false");
         }
 
         if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
             log.error("{}: Introspection Endpoint URI needs to be configured together with clientId and clientSecret", listener);
             throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+        }
+
+        if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured", listener);
+            throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if the Introspection Endpoint URI is also configured");
         }
 
         if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
@@ -1891,10 +1920,6 @@ public class KafkaCluster extends AbstractModel {
                 log.error("{}: accessTokenIsJwt=false can not be used together with jwksEndpointUri", listener);
                 throw new InvalidResourceException(listener + ": accessTokenIsJwt=false can not be used together with jwksEndpointUri");
             }
-            if (oAuth.getUserNameClaim() != null) {
-                log.error("{}: userNameClaim can not be set when accessTokenIsJwt is false", listener);
-                throw new InvalidResourceException(listener + ": userNameClaim can not be set when accessTokenIsJwt is false");
-            }
             if (!oAuth.isCheckAccessTokenType()) {
                 log.error("{}: checkAccessTokenType can not be set to false when accessTokenIsJwt is false", listener);
                 throw new InvalidResourceException(listener + ": checkAccessTokenType can not be set to false when accessTokenIsJwt is false");
@@ -1905,12 +1930,21 @@ public class KafkaCluster extends AbstractModel {
             log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
             throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
         }
+
+        if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
+            log.error("{}: validTokenType can only be used with introspectionEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": validTokenType can only be used with introspectionEndpointUri");
+
+        }
     }
 
     protected List<EnvVar> getTlsSidevarEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
@@ -2476,7 +2510,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec)
+                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor)
                 .withUserConfiguration(configuration)
                 .build().trim();
     }

@@ -57,7 +57,7 @@ public class SpecificST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testRackAware() throws Exception {
+    void testRackAware() {
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -113,7 +113,7 @@ public class SpecificST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testLoadBalancerIpOverride() throws Exception {
+    void testLoadBalancerIpOverride() {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
 
@@ -150,7 +150,6 @@ public class SpecificST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -176,6 +175,8 @@ public class SpecificST extends BaseST {
 
         KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
+
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
     }
 
     @Test
@@ -221,7 +222,6 @@ public class SpecificST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(

@@ -188,7 +188,7 @@ public class ZookeeperScalerTest {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
 
         Checkpoint check = context.checkpoint();
-        scaler.scale(5).setHandler(context.failing(cause -> context.verify(() -> {
+        scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper zookeeper:2181. Connection was not ready in 1000 ms."));
             check.flag();
         })));
@@ -214,7 +214,7 @@ public class ZookeeperScalerTest {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
         Checkpoint check = context.checkpoint();
-        scaler.scale(1).setHandler(context.succeeding(res -> context.verify(() -> {
+        scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, never()).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             check.flag();
         })));
@@ -245,7 +245,7 @@ public class ZookeeperScalerTest {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
         Checkpoint check = context.checkpoint();
-        scaler.scale(1).setHandler(context.succeeding(res -> context.verify(() -> {
+        scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, times(1)).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             check.flag();
         })));
@@ -273,7 +273,7 @@ public class ZookeeperScalerTest {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
         Checkpoint check = context.checkpoint();
-        scaler.scale(1).setHandler(context.failing(cause -> context.verify(() -> {
+        scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getCause(), instanceOf(KeeperException.class));
             check.flag();
         })));
@@ -284,7 +284,7 @@ public class ZookeeperScalerTest {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
 
         Checkpoint check = context.checkpoint();
-        scaler.scale(5).setHandler(context.failing(cause -> context.verify(() -> {
+        scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
             check.flag();
         })));

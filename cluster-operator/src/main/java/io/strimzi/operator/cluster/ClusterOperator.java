@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.common.MetricsProvider;
@@ -70,6 +71,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator;
     private final KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator;
     private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
+    private final KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator;
 
     public ClusterOperator(String namespace,
                            long reconciliationInterval,
@@ -80,6 +82,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
                            KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator,
                            KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
+                           KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
                            MetricsProvider metricsProvider) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
@@ -91,6 +94,7 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaMirrorMaker2AssemblyOperator = kafkaMirrorMaker2AssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
+        this.kafkaRebalanceAssemblyOperator = kafkaRebalanceAssemblyOperator;
 
         this.metricsProvider = metricsProvider;
         setupMetrics();
@@ -103,7 +107,7 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        List<Future> watchFutures = new ArrayList<>();
+        List<Future> watchFutures = new ArrayList<>(8);
         List<AbstractOperator<?, ?>> operators = new ArrayList<>(asList(
                 kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
                 kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
@@ -119,6 +123,7 @@ public class ClusterOperator extends AbstractVerticle {
         }
 
         watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, kafkaConnectS2IAssemblyOperator, namespace));
+        watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
 
         CompositeFuture.join(watchFutures)
                 .compose(f -> {
@@ -129,7 +134,7 @@ public class ClusterOperator extends AbstractVerticle {
                     });
                     return startHealthServer().map((Void) null);
                 })
-                .setHandler(start);
+                .onComplete(start);
     }
 
 
@@ -157,6 +162,7 @@ public class ClusterOperator extends AbstractVerticle {
         kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
         kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
 
         if (kafkaConnectS2IAssemblyOperator != null) {
             kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, ignore);

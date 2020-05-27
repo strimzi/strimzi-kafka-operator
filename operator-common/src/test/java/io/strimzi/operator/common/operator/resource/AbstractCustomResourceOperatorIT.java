@@ -120,7 +120,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         log.info("Getting Kubernetes version");
         PlatformFeaturesAvailability.create(vertx, client)
-                .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
                             pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
                 })))
@@ -129,17 +129,17 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Creating resource");
                     return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
-                .setHandler(context.succeeding())
+                .onComplete(context.succeeding())
                 .compose(rrCreated -> {
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
                     log.info("Updating resource status");
                     return op.updateStatusAsync(newStatus);
                 })
-                .setHandler(context.succeeding())
+                .onComplete(context.succeeding())
 
                 .compose(rrModified -> op.getAsync(namespace, RESOURCE_NAME))
-                .setHandler(context.succeeding(modifiedCustomResource -> context.verify(() -> {
+                .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> {
                     assertReady(context, modifiedCustomResource);
                 })))
 
@@ -147,7 +147,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Deleting resource");
                     return op.reconcile(namespace, RESOURCE_NAME, null);
                 })
-                .setHandler(context.succeeding(rrDeleted ->  async.flag()));
+                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
     }
 
 
@@ -167,7 +167,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         log.info("Getting Kubernetes version");
         PlatformFeaturesAvailability.create(vertx, client)
-                .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
                             pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
                 })))
@@ -175,7 +175,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Creating resource");
                     return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
-                .setHandler(context.succeeding())
+                .onComplete(context.succeeding())
 
                 .compose(rr -> {
                     log.info("Saving resource with status change prior to deletion");
@@ -183,13 +183,13 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Deleting resource");
                     return op.reconcile(namespace, RESOURCE_NAME, null);
                 })
-                .setHandler(context.succeeding())
+                .onComplete(context.succeeding())
 
                 .compose(rrDeleted -> {
                     log.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(newStatus.get());
                 })
-                .setHandler(context.failing(e -> context.verify(() -> {
+                .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(KubernetesClientException.class));
                     async.flag();
                 })));
@@ -211,7 +211,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         log.info("Getting Kubernetes version");
         PlatformFeaturesAvailability.create(vertx, client)
-                .setHandler(context.succeeding(pfa -> context.verify(() -> {
+                .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
                             pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
                 })))
@@ -219,7 +219,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Creating resource");
                     return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
-                .setHandler(context.succeeding())
+                .onComplete(context.succeeding())
                 .compose(rrCreated -> {
                     T updated = getResourceWithModifications(rrCreated.resource());
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
@@ -230,7 +230,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     log.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(newStatus);
                 })
-                .setHandler(context.failing(e -> context.verify(() -> {
+                .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat("Exception was not KubernetesClientException, it was : " + e.toString(),
                             e, instanceOf(KubernetesClientException.class));
                     updateFailed.complete();
@@ -240,7 +240,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
             log.info("Deleting resource");
             return op.reconcile(namespace, RESOURCE_NAME, null);
         })
-        .setHandler(context.succeeding(v -> async.flag()));
+        .onComplete(context.succeeding(v -> async.flag()));
     }
 }
 

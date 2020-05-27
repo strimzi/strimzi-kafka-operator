@@ -253,7 +253,7 @@ public class EntityOperator extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(3);
 
         if (topicOperator != null) {
             containers.addAll(topicOperator.getContainers(imagePullPolicy));
@@ -294,13 +294,16 @@ public class EntityOperator extends AbstractModel {
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
         return varList;
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
+        List<Volume> volumeList = new ArrayList<>(4);
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
         }

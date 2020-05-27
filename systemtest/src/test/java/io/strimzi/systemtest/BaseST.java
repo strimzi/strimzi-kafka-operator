@@ -17,6 +17,8 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -24,6 +26,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
+import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,8 +106,10 @@ public abstract class BaseST implements TestSeparator {
     protected Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
-    public static final String TOPIC_NAME = "my-topic";
-    public static final String USER_NAME = "user-name-example";
+    public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
+    public static final String EXAMPLE_TOPIC_NAME = "my-topic";
+
+    public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
     private HelmClient helmClient() {
         return cluster.helmClient().namespace(cluster.getNamespace());
@@ -737,9 +742,11 @@ public abstract class BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         AssertionError assertionError = null;
         try {
-            assertNoCoErrorsLogged(0);
+            long testDuration = timeMeasuringSystem.getDurationInSeconds(context.getTestClass().get().getName(), context.getTestMethod().get().getName(), Operation.TEST_EXECUTION.name());
+            assertNoCoErrorsLogged(testDuration);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
             assertionError = new AssertionError(e);

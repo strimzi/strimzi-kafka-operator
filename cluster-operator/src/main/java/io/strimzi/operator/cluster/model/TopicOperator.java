@@ -272,7 +272,7 @@ public class TopicOperator extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(2);
 
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)
@@ -313,7 +313,7 @@ public class TopicOperator extends AbstractModel {
 
     @Override
     protected List<EnvVar> getEnvVars() {
-        List<EnvVar> varList = new ArrayList<>();
+        List<EnvVar> varList = new ArrayList<>(9);
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)));
@@ -323,6 +323,9 @@ public class TopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         return varList;
     }
@@ -377,7 +380,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
+        List<Volume> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
@@ -385,7 +388,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
+        List<VolumeMount> volumeMountList = new ArrayList<>(3);
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         volumeMountList.add(VolumeUtils.createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));

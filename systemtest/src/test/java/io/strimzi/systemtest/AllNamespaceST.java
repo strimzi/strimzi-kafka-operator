@@ -59,8 +59,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
-        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
-        deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
+        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, EXAMPLE_TOPIC_NAME);
+        deleteNewTopic(SECOND_NAMESPACE, EXAMPLE_TOPIC_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -166,7 +166,6 @@ class AllNamespaceST extends AbstractNamespaceST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);

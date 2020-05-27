@@ -8,9 +8,14 @@
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
 Specifically, consumer lag for a given consumer group indicates the delay between the last message in the partition and the message being currently picked up by that consumer.
+
 The lag reflects the position of the consumer offset in relation to the end of the partition log.
 
-This difference is sometimes referred to as the _delta_ between the producer offset and consumer offset, the read and write positions in the Kafka broker topic partitions.
+.Consumer lag between the producer and consumer offset
+
+image:consumer-lag.png[Consumer lag]
+
+This difference is sometimes referred to as the _delta_ between the producer offset and consumer offset: the read and write positions in the Kafka broker topic partitions.
 
 Suppose a topic streams 100 messages a second. A lag of 1000 messages between the producer offset (the topic partition head) and the last offset the consumer has read means a 10-second delay.
 

@@ -67,12 +67,14 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures the Cruise Control metric reporter. It is set only if user enabled the Cruise Control.
      *
      * @param clusterName Name of the cluster
-     * @param cruiseContol The Cruise Control configuration from the Kafka CR
+     * @param cruiseControl The Cruise Control configuration from the Kafka CR
+     * @param numPartitions The number of partitions specified in the Kafka config
+     * @param replicationFactor The replication factor specified in the Kafka config
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseContol)   {
-        if (cruiseContol != null) {
+    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseControl, String numPartitions, String replicationFactor)   {
+        if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
             writer.println("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS");
@@ -84,6 +86,13 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+            writer.println("cruise.control.metrics.topic.auto.create=true");
+            if (numPartitions != null) {
+                writer.println("cruise.control.metrics.topic.num.partitions=" + numPartitions);
+            }
+            if (replicationFactor != null) {
+                writer.println("cruise.control.metrics.topic.replication.factor=" + replicationFactor);
+            }
             writer.println();
         }
 
@@ -123,9 +132,9 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the listeners based on the listeners enabled by the users in the Kafka CR.
      *
-     * @param clusterName   Name of the cluster (important for the advertised hostnames)
-     * @param namespace Namespace (important for generating the advertised hostname)
-     * @param kafkaListeners    The listeners configuration from the Kafka CR
+     * @param clusterName     Name of the cluster (important for the advertised hostnames)
+     * @param namespace       Namespace (important for generating the advertised hostname)
+     * @param kafkaListeners  The listeners configuration from the Kafka CR
      *
      * @return  Returns the builder instance
      */
@@ -136,7 +145,12 @@ public class KafkaBrokerConfigurationBuilder {
 
         // Replication listener
         listeners.add("REPLICATION-9091://0.0.0.0:9091");
-        advertisedListeners.add(String.format("REPLICATION-9091://%s-${STRIMZI_BROKER_ID}.%s-brokers.%s.svc:9091", KafkaResources.kafkaStatefulSetName(clusterName), KafkaResources.kafkaStatefulSetName(clusterName), namespace));
+        advertisedListeners.add(String.format("REPLICATION-9091://%s:9091",
+                ModelUtils.podDnsNameWithoutClusterDomain(namespace,
+                        KafkaResources.brokersServiceName(clusterName),
+                        // Pod name constructed to be templatable for each individual ordinal
+                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
+        ));
         securityProtocol.add("REPLICATION-9091:SSL");
         configureReplicationListener();
 
@@ -273,7 +287,13 @@ public class KafkaBrokerConfigurationBuilder {
      * @return  String with advertised listener configuration
      */
     private String getAdvertisedListener(String clusterName, String namespace, String listenerName, int port)    {
-        return String.format("%s://%s-${STRIMZI_BROKER_ID}.%s-brokers.%s.svc:%d", listenerName, KafkaResources.kafkaStatefulSetName(clusterName), KafkaResources.kafkaStatefulSetName(clusterName), namespace, port);
+        return String.format("%s://%s:%d",
+                listenerName,
+                ModelUtils.podDnsNameWithoutClusterDomain(namespace,
+                        KafkaResources.brokersServiceName(clusterName),
+                        // Pod name constructed to be templatable for each individual ordinal
+                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}"),
+                port);
     }
 
     /**
@@ -373,19 +393,43 @@ public class KafkaBrokerConfigurationBuilder {
     /*test*/ static List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
-        if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
-        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
-        if (oauth.isEnableECDSA()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, true));
-        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
-        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, false));
-        if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
+        addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+        addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());
+        addOption(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
+        }
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
+        }
+        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, oauth.isEnableECDSA());
+        addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
+        addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
+        addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
+        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
+        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
+        addOption(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
+
+        if (oauth.isDisableTlsHostnameVerification()) {
+            addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+        }
 
         return options;
+    }
+
+    static void addOption(List<String> options, String option, String value) {
+        if (value != null) options.add(String.format("%s=\"%s\"", option, value));
+    }
+
+    static void addBooleanOptionIfTrue(List<String> options, String option, boolean value) {
+        if (value) options.add(String.format("%s=\"%s\"", option, value));
+    }
+
+    static void addBooleanOptionIfFalse(List<String> options, String option, boolean value) {
+        if (!value) options.add(String.format("%s=\"%s\"", option, value));
     }
 
     /**

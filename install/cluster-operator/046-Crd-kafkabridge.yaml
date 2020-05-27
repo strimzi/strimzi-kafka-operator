@@ -173,6 +173,13 @@ spec:
                   description: Link to Kubernetes Secret containing the refresh token
                     which can be used to obtain access token from the authorization
                     server.
+                scope:
+                  type: string
+                  description: OAuth scope to use when authenticating against the
+                    authorization server. Some authorization servers require this
+                    to be set. The possible values depend on how authorization server
+                    is configured. By default `scope` is not specified when doing
+                    the token endpoint request.
                 tlsTrustedCertificates:
                   type: array
                   items:
@@ -218,6 +225,24 @@ spec:
                   type: integer
                   minimum: 1023
                   description: The port which is the server listening on.
+                cors:
+                  type: object
+                  properties:
+                    allowedOrigins:
+                      type: array
+                      items:
+                        type: string
+                      description: List of allowed origins. Java regular expressions
+                        can be used.
+                    allowedMethods:
+                      type: array
+                      items:
+                        type: string
+                      description: List of allowed HTTP methods.
+                  required:
+                  - allowedOrigins
+                  - allowedMethods
+                  description: CORS configuration for the HTTP Bridge.
               description: The HTTP related configuration.
             consumer:
               type: object

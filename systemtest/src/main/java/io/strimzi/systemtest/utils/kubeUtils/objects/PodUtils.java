@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +18,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -65,6 +63,10 @@ public class PodUtils {
         AtomicInteger count = new AtomicInteger();
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubeClient().listPods(selector);
+            if (pods.isEmpty() && expectPods == 0) {
+                LOGGER.debug("Expected pods are ready");
+                return true;
+            }
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -112,7 +114,7 @@ public class PodUtils {
         LOGGER.info("Waiting when all Pods with prefix {} will be deleted", podsNamePrefix);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(podsNamePrefix))
-            .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+            .forEach(p -> deletePodWithWait(p.getMetadata().getName()));
     }
 
     public static String getPodNameByPrefix(String prefix) {
@@ -141,22 +143,24 @@ public class PodUtils {
         LOGGER.info("Pod {} is ready", name);
     }
 
-    public static void waitForPodDeletion(String name) {
+    public static void deletePodWithWait(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
-            TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
-                () -> {
-                    Pod pod = kubeClient().getPod(name);
-                    if (pod == null) {
-                        return true;
-                    } else {
-                        LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
-                        cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
-                        return false;
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
+                if (pods.size() != 0) {
+                    for (Pod pod : pods) {
+                        if (pod.getStatus().getPhase().equals("Terminating")) {
+                            LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                            cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                        }
                     }
-                });
-        }
+                    return false;
+                } else {
+                    return true;
+                }
+            });
         LOGGER.info("Pod {} deleted", name);
     }
 
@@ -234,28 +238,37 @@ public class PodUtils {
     }
 
     /**
-     * Method waitUntilPodsByNameStability ensuring for every pod listed for kafka or zookeeper statefulSet will be controlling
-     * their status in Running phase. If the pod will be running for selected time #Constants.GLOBAL_RECONCILIATION_COUNT
-     * pod is considered as a stable. Otherwise this procedure will be repeat.
-     * @param podNamePrefix all pods that matched the prefix will be verified
+     * Ensures that at least one pod from listed (by prefix) is in {@code Pending} phase
+     * @param podPrefix - all pods that matched the prefix will be verified
      */
-    public static void waitUntilPodsByNameStability(String podNamePrefix) {
-        verifyThatPodsAreStable(() -> ResourceManager.kubeClient().listPodsByPrefixInName(podNamePrefix));
+    public static void waitForPendingPod(String podPrefix) {
+        LOGGER.info("Wait for at least one pod with prefix: {} will be in pending phase", podPrefix);
+        TestUtils.waitFor("One pod to be in PENDING state", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> actualPods = kubeClient().listPodsByPrefixInName(podPrefix);
+                return actualPods.stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Pending"));
+            });
     }
 
     /**
-     * * Waits until all matching pods are {@linkplain #verifyThatPodsAreStable(Supplier)} stable} in the "Running" phase.
-     * @param pods all pods that will be verified
-     */
-    public static void waitUntilPodsStability(List<Pod> pods) {
-        verifyThatPodsAreStable(() -> pods);
+     * Ensures every pod in a StatefulSet is stable in the {@code Running} phase.
+     * A pod must be in the Running phase for {@link Constants#GLOBAL_RECONCILIATION_COUNT} seconds for
+     * it to be considered as stable. Otherwise this procedure will be repeat.
+     * @param podPrefix all pods that matched the prefix will be verified
+     * */
+    public static void verifyThatRunningPodsAreStable(String podPrefix) {
+        LOGGER.info("Verify that all pods with prefix: {} are stable", podPrefix);
+        verifyThatPodsAreStable(podPrefix);
     }
 
-    private static void verifyThatPodsAreStable(Supplier<List<Pod>> pods) {
+    private static void verifyThatPodsAreStable(String podPrefix) {
         int[] stabilityCounter = {0};
+        List<Pod> runningPods = kubeClient().listPodsByPrefixInName(podPrefix).stream()
+            .filter(pod -> pod.getStatus().getPhase().equals("Running")).collect(Collectors.toList());
+
         TestUtils.waitFor("Pods stability", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = pods.get().stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
+                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals("Running")) {

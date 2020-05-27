@@ -1,0 +1,91 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kafkarebalances.kafka.strimzi.io
+  labels:
+    app: strimzi
+    strimzi.io/crd-install: "true"
+spec:
+  group: kafka.strimzi.io
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: KafkaRebalance
+    listKind: KafkaRebalanceList
+    singular: kafkarebalance
+    plural: kafkarebalances
+    shortNames:
+    - kr
+    categories:
+    - strimzi
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            goals:
+              type: array
+              items:
+                type: string
+              description: A list of goals, ordered by decreasing priority, to use
+                for generating and executing the rebalance proposal. The supported
+                goals are available at https://github.com/linkedin/cruise-control#goals.
+                If an empty goals list is provided, the goals declared in the default.goals
+                Cruise Control configuration parameter are used.
+            skipHardGoalCheck:
+              type: boolean
+              description: Whether to allow the hard goals specified in the Kafka
+                CR to be skipped in rebalance proposal generation. This can be useful
+                when some of those hard goals are preventing a balance solution being
+                found. Default is false.
+          description: The specification of the Kafka rebalance.
+        status:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: The unique identifier of a condition, used to distinguish
+                      between other conditions in the resource.
+                  status:
+                    type: string
+                    description: The status of the condition, either True, False or
+                      Unknown.
+                  lastTransitionTime:
+                    type: string
+                    description: Last time the condition of a type changed from one
+                      status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                      in the UTC time zone.
+                  reason:
+                    type: string
+                    description: The reason for the condition's last transition (a
+                      single word in CamelCase).
+                  message:
+                    type: string
+                    description: Human-readable message indicating details about the
+                      condition's last transition.
+              description: List of status conditions.
+            observedGeneration:
+              type: integer
+              description: The generation of the CRD that was last reconciled by the
+                operator.
+            sessionId:
+              type: string
+              description: The session identifier for requests to Cruise Control pertaining
+                to this KafkaRebalance resource. This is used by the Kafka Rebalance
+                operator to track the status of ongoing rebalancing operations.
+            optimizationResult:
+              type: object
+              description: A JSON object describing the optimization result.
+          description: The status of the Kafka rebalance.

@@ -41,7 +41,7 @@ public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/kafka/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 
@@ -200,10 +200,10 @@ public class KafkaResource {
     /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
-     * @param kafka kafka cluster specification
+     * @param resourceName kafka cluster name
      */
-    public static void deleteKafkaWithoutWait(Kafka kafka) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafka);
+    public static void deleteKafkaWithoutWait(String resourceName) {
+        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {

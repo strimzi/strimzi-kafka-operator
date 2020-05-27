@@ -91,7 +91,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 configMapOperations.get(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
                 null);
 
-        Map<String, String> annotations = new HashMap<>();
+        Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation);
@@ -103,10 +103,10 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, mirror.getName(), 1_000, operationTimeoutMs))
-                .setHandler(reconciliationResult -> {
+                .onComplete(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 
-                        updateStatus(assemblyResource, reconciliation, kafkaMirrorMakerStatus).setHandler(statusResult -> {
+                        updateStatus(assemblyResource, reconciliation, kafkaMirrorMakerStatus).onComplete(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well
                             // If one or both of them failed, we prefer the reconciliation failure as the main error
                             if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -135,7 +135,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     Future<Void> updateStatus(KafkaMirrorMaker kafkaMirrorMakerAssembly, Reconciliation reconciliation, KafkaMirrorMakerStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
-        resourceOperator.getAsync(kafkaMirrorMakerAssembly.getMetadata().getNamespace(), kafkaMirrorMakerAssembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(kafkaMirrorMakerAssembly.getMetadata().getNamespace(), kafkaMirrorMakerAssembly.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
                 KafkaMirrorMaker mirrorMaker = getRes.result();
 
@@ -151,7 +151,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                         if (!ksDiff.isEmpty()) {
                             KafkaMirrorMaker resourceWithNewStatus = new KafkaMirrorMakerBuilder(mirrorMaker).withStatus(desiredStatus).build();
 
-                            ((CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            ((CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusPromise.complete();

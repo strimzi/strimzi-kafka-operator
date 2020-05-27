@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -15,6 +16,7 @@ import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

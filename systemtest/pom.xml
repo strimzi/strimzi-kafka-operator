@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.18.0-SNAPSHOT</version>
+        <version>0.19.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>systemtest</artifactId>
@@ -222,6 +222,12 @@
             <artifactId>jackson-databind</artifactId>
             <version>${fasterxml.jackson-databind.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>test-container</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -354,6 +360,13 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>oauth</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>cruisecontrol</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>cruisecontrol</groups>
             </properties>
         </profile>
     </profiles>

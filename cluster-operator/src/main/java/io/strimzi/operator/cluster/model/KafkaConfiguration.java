@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -31,12 +30,12 @@ public class KafkaConfiguration extends AbstractConfiguration {
     public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
     public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
 
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
     /**
@@ -46,11 +45,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    private KafkaConfiguration(String configuration, List<String> forbiddenOptions) {
-        super(configuration, forbiddenOptions);
+    private KafkaConfiguration(String configuration, List<String> forbiddenPrefixes) {
+        super(configuration, forbiddenPrefixes);
     }
 
 

@@ -158,7 +158,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
             updateStatus(resource, reconciliation, userStatus)
-                    .setHandler(result -> handler.handle(Future.failedFuture(e)));
+                    .onComplete(result -> handler.handle(Future.failedFuture(e)));
             return handler.future();
         }
 
@@ -196,11 +196,11 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
-                .setHandler(reconciliationResult -> {
+                .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getUserName());
 
-                    updateStatus(resource, reconciliation, userStatus).setHandler(statusResult -> {
+                    updateStatus(resource, reconciliation, userStatus).onComplete(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -238,7 +238,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     Future<Void> updateStatus(KafkaUser kafkaUserAssembly, Reconciliation reconciliation, KafkaUserStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
-        resourceOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
                 KafkaUser user = getRes.result();
 
@@ -254,7 +254,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                         if (!ksDiff.isEmpty()) {
                             KafkaUser resourceWithNewStatus = new KafkaUserBuilder(user).withStatus(desiredStatus).build();
 
-                            resourceOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            resourceOperator.updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusPromise.complete();

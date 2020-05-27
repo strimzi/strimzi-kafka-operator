@@ -211,7 +211,7 @@ public class JmxTrans extends AbstractModel {
      * @throws JsonProcessingException when JmxTrans config can't be created properly
      */
     public ConfigMap generateJmxTransConfigMap(JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new HashMap<>(1);
         String jmxConfig = generateJMXConfig(spec, numOfBrokers);
         data.put(JMXTRANS_CONFIGMAP_KEY, jmxConfig);
         configMapName = jmxTransConfigName(clusterName);
@@ -219,14 +219,14 @@ public class JmxTrans extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        List<Volume> volumes = new ArrayList<>();
+        List<Volume> volumes = new ArrayList<>(2);
         volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
         volumes.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
         return volumes;
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
+        List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         volumeMountList.add(VolumeUtils.createVolumeMount(JMXTRANS_VOLUME_NAME, JMX_FILE_PATH));
@@ -235,7 +235,7 @@ public class JmxTrans extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(1);
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
@@ -261,6 +261,9 @@ public class JmxTrans extends AbstractModel {
             varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD, KafkaCluster.jmxSecretName(cluster), KafkaCluster.SECRET_JMX_PASSWORD_KEY));
         }
         varList.add(buildEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getSharedEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

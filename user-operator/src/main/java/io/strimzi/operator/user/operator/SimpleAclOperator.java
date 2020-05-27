@@ -95,15 +95,15 @@ public class SimpleAclOperator {
                         future.complete(ReconcileResult.noop(desired));
                     } else {
                         log.debug("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
-                        internalDelete(username, current).setHandler(future);
+                        internalDelete(username, current).onComplete(future);
                     }
                 } else {
                     if (current.isEmpty())  {
                         log.debug("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
-                        internalCreate(username, desired).setHandler(future);
+                        internalCreate(username, desired).onComplete(future);
                     } else  {
                         log.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Reconciling rules", username, desired.size(), current.size());
-                        internalUpdate(username, desired, current).setHandler(future);
+                        internalUpdate(username, desired, current).onComplete(future);
                     }
                 }
             },
@@ -147,7 +147,7 @@ public class SimpleAclOperator {
 
         Promise<ReconcileResult<Set<SimpleAclRule>>> promise = Promise.promise();
 
-        CompositeFuture.all(updates).setHandler(res -> {
+        CompositeFuture.all(updates).onComplete(res -> {
             if (res.succeeded())    {
                 promise.complete(ReconcileResult.patched(desired));
             } else  {

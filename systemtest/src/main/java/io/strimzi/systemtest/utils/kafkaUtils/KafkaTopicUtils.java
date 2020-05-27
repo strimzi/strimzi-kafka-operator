@@ -13,13 +13,26 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaTopicUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
+    private static final String TOPIC_NAME_PREFIX = "my-topic-";
 
     private KafkaTopicUtils() {}
+
+    /**
+     * Generated random name for the KafkaTopic resource
+     * @return random name with additional salt
+     */
+    public static String generateRandomNameOfTopic() {
+        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        return  TOPIC_NAME_PREFIX + salt;
+    }
 
     /**
      * Method which return UID for specific topic

@@ -9,16 +9,17 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
@@ -93,7 +94,6 @@ public class TracingST extends BaseST {
     private static final String JAEGER_SAMPLER_TYPE = "const";
     private static final String JAEGER_SAMPLER_PARAM = "1";
 
-    private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
 
     private Stack<String> jaegerConfigs = new Stack<>();
@@ -214,7 +214,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -624,7 +623,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterTargetName)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -727,7 +725,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -741,9 +738,9 @@ public class TracingST extends BaseST {
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
         TracingUtils.verify(JAEGER_KAFKA_CONNECT_S2I_SERVICE, kafkaClientsPodName);
 
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, TEST_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
     }
 
     @Test
@@ -800,9 +797,9 @@ public class TracingST extends BaseST {
         String topicName = "topic-simple-send";
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        JsonObject records = HttpUtils.generateHttpMessages(MESSAGE_COUNT);
+        JsonObject records = BridgeUtils.generateHttpMessages(MESSAGE_COUNT);
 
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -811,7 +808,6 @@ public class TracingST extends BaseST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));

@@ -50,7 +50,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
 
     @Test
     void testTopicAvailable() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
 
@@ -108,7 +108,7 @@ class NamespaceDeletionRecoveryST extends BaseST {
 
     @Test
     void testTopicNotAvailable() throws InterruptedException {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
 

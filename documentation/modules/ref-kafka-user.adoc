@@ -3,30 +3,34 @@
 // assembly-using-the-user-operator.adoc
 
 [id='ref-kafka-user-{context}']
-= Kafka User resource
+= Kafka user resource
 
 The `KafkaUser` resource is used to configure the authentication mechanism, authorization mechanism, and access rights for a user.
 
 The full schema for `KafkaUser` is described in xref:type-KafkaUser-reference[`KafkaUser` schema reference].
 
-== Authentication
+== User authentication
 
 Authentication is configured using the `authentication` property in `KafkaUser.spec`.
-The authentication mechanism enabled for this user is specified using the `type` field.
-Currently, the only supported authentication mechanisms are the TLS Client Authentication mechanism and the SCRAM-SHA-512 mechanism.
+The authentication mechanism enabled for the user is specified using the `type` field.
 
-When no authentication mechanism is specified, User Operator will not create the user or its credentials.
+Supported authentication mechanisms:
+
+* TLS client authentication
+* SCRAM-SHA-512 authentication
+
+When no authentication mechanism is specified, the User Operator does not create the user or its credentials.
 
 .Additional resources
 
-* xref:con-mutual-tls-authentication-{context}[Mutual TLS Authentication]
-* xref:con-scram-sha-authentication-{context}[SCRAM-SHA Authentication]
+* xref:con-mutual-tls-authentication-deployment-configuration-kafka[When to use mutual TLS authentication for clients]
+* xref:con-scram-sha-authentication-deployment-configuration-kafka[When to use SCRAM-SHA Authentication authentication for clients]
 
 === TLS Client Authentication
 
-To use TLS client authentication, set the `type` field to `tls`.
+To use TLS client authentication, you set the `type` field to `tls`.
 
-.An example of `KafkaUser` with enabled TLS client authentication
+.An example `KafkaUser` with TLS client authentication enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -41,12 +45,16 @@ spec:
   # ...
 ----
 
-When the user is created by the User Operator, it will create a new secret with the same name as the `KafkaUser` resource.
-The secret will contain a public and private key which should be used for the TLS Client Authentication.
-Bundled with them will be the public key of the client certification authority which was used to sign the user certificate.
-All keys will be in X509 format.
+When the user is created by the User Operator, it creates a new Secret with the same name as the `KafkaUser` resource.
+The Secret contains a private and public key for TLS client authentication.
+The public key is contained in a user certificate, which is signed by the client Certificate Authority (CA).
 
-.An example of the `Secret` with user credentials
+All keys are in X.509 format.
+
+Secrets provide private keys and certificates in PEM and PKCS #12 formats.
+For more information on securing Kafka communication with Secrets, see xref:security-{context}[].
+
+.An example `Secret` with user credentials
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: v1
@@ -58,16 +66,18 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: # Public key of the Clients CA
-  user.crt: # Public key of the user
+  ca.crt: # Public key of the client CA
+  user.crt: # User certificate that contains the public key of the user
   user.key: # Private key of the user
+  user.p12: # PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the PKCS #12 archive file
 ----
 
 === SCRAM-SHA-512 Authentication
 
-To use SCRAM-SHA-512 authentication mechanism, set the `type` field to `scram-sha-512`.
+To use SCRAM-SHA-512 authentication mechanism, you set the `type` field to `scram-sha-512`.
 
-.An example of `KafkaUser` with enabled SCRAM-SHA-512 authentication
+.An example `KafkaUser` with SCRAM-SHA-512 authentication enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -82,10 +92,11 @@ spec:
   # ...
 ----
 
-When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
-The secret contains the generated password in the `password` key, which is encoded with base64. In order to use the password it must be decoded.
+When the user is created by the User Operator, it creates a new secret with the same name as the `KafkaUser` resource.
+The secret contains the generated password in the `password` key, which is encoded with base64.
+In order to use the password, it must be decoded.
 
-.An example of the `Secret` with user credentials
+.An example `Secret` with user credentials
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: v1
@@ -100,28 +111,26 @@ data:
   password: Z2VuZXJhdGVkcGFzc3dvcmQ= # Generated password
 ----
 
-For decode the generated password:
+Decoding the generated password:
 ----
 echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
 ----
 
 [id='simple-acl-{context}']
-== Authorization
+== User authorization
 
-Simple authorization is configured using the `authorization` property in `KafkaUser.spec`.
+User authorization is configured using the `authorization` property in `KafkaUser.spec`.
 The authorization type enabled for a user is specified using the `type` field.
 
 If no authorization is specified, the User Operator does not provision any access rights for the user.
 
-Additionally, if you are using {oauth} token based authentication, you can also xref:assembly-oauth-authorization_str[configure {oauth} authorization].
-
-=== Simple authorization
-
+To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec`.
 Simple authorization uses the default Kafka authorization plugin, `SimpleAclAuthorizer`.
 
-To use simple authorization, set the `type` property to `simple` in `KafkaUser.spec`.
+Alternatively, if you are using {oauth} token based authentication, you can also xref:assembly-oauth-authorization_str[configure {oauth} authorization].
 
-.ACL rules
+[discrete]
+=== ACL rules
 
 `SimpleAclAuthorizer` uses ACL rules to manage access to Kafka brokers.
 
@@ -219,7 +228,7 @@ spec:
 
 If a user is added to a list of super users in a Kafka broker configuration, the user is allowed unlimited access to the cluster regardless of any authorization constraints defined in ACLs.
 
-For more information on configuring super users, see xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[authentication and authorization] of Kafka brokers.
+For more information on configuring super users, see xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[authentication and authorization of Kafka brokers].
 
 == User quotas
 
@@ -245,4 +254,4 @@ spec:
 <2> Byte-per-second quota on the amount of data the user can fetch from a Kafka broker
 <3> CPU utilization limit as a percentage of time for a client group
 
-For more information on these properties, see xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference]
+For more information on these properties, see the xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference]

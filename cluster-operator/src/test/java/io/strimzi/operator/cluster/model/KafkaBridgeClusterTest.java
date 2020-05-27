@@ -120,6 +120,7 @@ public class KafkaBridgeClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_HOST).withValue(KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_PORT).withValue(String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED).withValue(String.valueOf(false)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED).withValue(String.valueOf(false)).build());
         return expected;
     }
@@ -957,5 +958,27 @@ public class KafkaBridgeClusterTest {
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is("jaeger"));
+    }
+
+    @Test
+    public void testCorsConfiguration() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .editHttp()
+                        .withNewCors()
+                            .withAllowedOrigins("https://strimzi.io", "https://cncf.io")
+                            .withAllowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
+                        .endCors()
+                    .endHttp()
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
+        Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED), is("true"));
+        assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS), is("https://strimzi.io,https://cncf.io"));
+        assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS), is("GET,POST,PUT,DELETE,PATCH"));
     }
 }

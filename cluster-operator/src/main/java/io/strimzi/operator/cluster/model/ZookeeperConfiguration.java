@@ -12,22 +12,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Zookeeper configuration passed by the user
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
 
-    private static final List<String> FORBIDDEN_OPTIONS;
-    private static final List<String> EXCEPTIONS;
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        Map<String, String> config = new HashMap<>();
+        Map<String, String> config = new HashMap<>(4);
         config.put("tickTime", "2000");
         config.put("initLimit", "5");
         config.put("syncLimit", "2");
@@ -42,6 +40,6 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }

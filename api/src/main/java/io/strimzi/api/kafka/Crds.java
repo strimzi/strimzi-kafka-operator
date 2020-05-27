@@ -22,11 +22,13 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -56,7 +58,8 @@ public class Crds {
         KafkaMirrorMaker.class,
         KafkaBridge.class,
         KafkaConnector.class,
-        KafkaMirrorMaker2.class
+        KafkaMirrorMaker2.class,
+        KafkaRebalance.class
     };
 
     private Crds() {
@@ -93,6 +96,8 @@ public class Crds {
             version = KafkaConnector.VERSIONS.get(0);
         } else if (cls.equals(KafkaMirrorMaker2.class)) {
             version = KafkaMirrorMaker2.VERSIONS.get(0);
+        } else if (cls.equals(KafkaRebalance.class)) {
+            version = KafkaRebalance.VERSIONS.get(0);
         } else {
             throw new RuntimeException();
         }
@@ -100,7 +105,7 @@ public class Crds {
         return crd(cls, version);
     }
 
-    @SuppressWarnings("checkstyle:JavaNCSS")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:JavaNCSS"})
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
         String scope, crdApiVersion, plural, singular, group, kind, listKind;
         CustomResourceSubresourceStatus status = null;
@@ -211,7 +216,19 @@ public class Crds {
             status = new CustomResourceSubresourceStatus();
             if (!KafkaMirrorMaker2.VERSIONS.contains(version)) {
                 throw new RuntimeException();
-            }                
+            }
+        } else if (cls.equals(KafkaRebalance.class)) {
+            scope = KafkaRebalance.SCOPE;
+            crdApiVersion = KafkaRebalance.CRD_API_VERSION;
+            plural = KafkaRebalance.RESOURCE_PLURAL;
+            singular = KafkaRebalance.RESOURCE_SINGULAR;
+            group = KafkaRebalance.RESOURCE_GROUP;
+            kind = KafkaRebalance.RESOURCE_KIND;
+            listKind = KafkaRebalance.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
+            if (!KafkaRebalance.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else {
             throw new RuntimeException();
         }
@@ -313,6 +330,14 @@ public class Crds {
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client) {
         return client.customResources(kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class);
+    }
+
+    public static CustomResourceDefinition kafkaRebalance() {
+        return crd(KafkaRebalance.class);
+    }
+
+    public static MixedOperation<KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>> kafkaRebalanceOperation(KubernetesClient client) {
+        return client.customResources(kafkaRebalance(), KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>>
