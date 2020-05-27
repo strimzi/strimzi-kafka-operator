@@ -43,7 +43,14 @@ public class CruiseControlIsolatedST extends BaseST {
 
         assertThrows(WaitException.class, CruiseControlUtils::verifyThatKafkaCruiseControlMetricReporterTopicIsPresent);
 
-        KafkaTopicResource.topic(CLUSTER_NAME, CRUISE_CONTROL_METRICS_TOPIC).done();
+        // Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must
+        // be configured with cleanup.policy=delete to disable log compaction.
+        // More in docs 8.5.2. Topic creation and configuration
+        KafkaTopicResource.topic(CLUSTER_NAME, CRUISE_CONTROL_METRICS_TOPIC)
+            .editSpec()
+                .addToConfig("cleanup.policy", "delete")
+            .endSpec()
+            .done();
 
         CruiseControlUtils.verifyThatKafkaCruiseControlMetricReporterTopicIsPresent();
     }
