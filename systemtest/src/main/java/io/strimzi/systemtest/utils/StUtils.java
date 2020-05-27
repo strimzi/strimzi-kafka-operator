@@ -39,7 +39,6 @@ public class StUtils {
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private static final Pattern JSON_PATTERN = Pattern.compile("}[\\n]+\\{");
-    private static Matcher jsonMatcher;
 
     private StUtils() { }
 
@@ -205,17 +204,18 @@ public class StUtils {
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
-        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "20");
+        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "5");
 
         for (String podName : pods.keySet()) {
-            String log = cmdKubeClient().exec(true, false, "logs", podName, "-c", containerName, tail).out();
-            jsonMatcher = JSON_PATTERN.matcher(log);
-            log = "[" + jsonMatcher.replaceAll("}, \\{").replaceAll("\n", " ").replaceFirst("(.*\\s)}, \\{", "{") + "]";
+            String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+            Matcher matcher = JSON_PATTERN.matcher(log);
+            log = "[" + matcher.replaceAll("}, \\{").replaceAll("\n", " ").replaceFirst("(.*\\s)}, \\{", "{") + "]";
             try {
                 new JsonArray(log);
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
                 isJSON = true;
             } catch (Exception e) {
+                LOGGER.info(log);
                 LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
                 isJSON = false;
                 break;

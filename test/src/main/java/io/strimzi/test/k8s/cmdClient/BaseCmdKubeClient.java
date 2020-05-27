@@ -253,6 +253,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         return Exec.exec(namespacedCommand(commands));
     }
 
+    @Override
+    public ExecResult execInCurrentNamespace(boolean logToOutput, String... commands) {
+        return Exec.exec(null, namespacedCommand(commands), 0, logToOutput);
+    }
+
     enum ExType {
         BREAK,
         CONTINUE,
