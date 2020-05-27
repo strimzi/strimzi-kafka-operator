@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class CruiseControlUtils {
@@ -29,7 +31,35 @@ public class CruiseControlUtils {
     private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
+    private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
+    private static final String CRUISE_CONTROL_ENDPOINT = "/kafkacruisecontrol/";
+
     private CruiseControlUtils() { }
+
+    public enum SupportedHttpMethods {
+        GET,
+        POST
+    }
+
+    public enum CruiseControlEndpoints {
+        STATE,
+        REBALANCE,
+        STOP_PROPOSAL_EXECUTION,
+        USER_TASKS
+    }
+
+    public static String call(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
+        String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
+
+        return
+            cmdKubeClient().execInPodContainer(
+            ccPodName,
+            "cruise-control",
+            "/bin/bash",
+            "-c",
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_ENDPOINT + endpoint.name()).out();
+    }
+
 
     @SuppressWarnings("BooleanExpressionComplexity")
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
