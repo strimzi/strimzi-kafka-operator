@@ -459,7 +459,7 @@ class LogSettingST extends BaseST {
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
 
-        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ""), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, "strimzi-cluster-operator"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
