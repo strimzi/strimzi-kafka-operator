@@ -18,6 +18,7 @@ Strimzi uses git to manage repositories.
 
 https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: The public GitHub repo hosts all of the Strimzi code and documentation.
 https://github.com/strimzi/strimzi-kafka-bridge[`strimzi-kafka-bridge`^] (GitHub):: The public GitHub repo hosts all of the Strimzi Kafka Bridge code.
+https://github.com/strimzi/strimzi-kafka-oauth[`strimzi-kafka-oauth`^] (GitHub):: The public GitHub repo hosts all of the Strimzi {oauth} code.
 https://github.com/strimzi/strimzi-kafka-operator/tree/master/documentation[`strimzi-kafka-operator/documentation`^] (GitHub):: The _documentation_ folder is split into _category_ folders to manage the content.
 
 Documentation category folders contain files related to Strimzi guides (Deploying, Quickstart, Overview, Using), and the files that provide the content for one or more of these guides – _assemblies_ and _modules_.
