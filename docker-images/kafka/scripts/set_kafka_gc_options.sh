@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # expand gc options based upon java version
 function get_gc_opts {
@@ -12,7 +13,8 @@ function get_gc_opts {
 }
 
 if [ "${STRIMZI_KAFKA_GC_LOG_ENABLED}" == "true" ]; then
-    export KAFKA_GC_LOG_OPTS=$(get_gc_opts)
+    KAFKA_GC_LOG_OPTS=$(get_gc_opts)
+    export KAFKA_GC_LOG_OPTS
 else
     export KAFKA_GC_LOG_OPTS=" "
     export GC_LOG_ENABLED="false"

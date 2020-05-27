@@ -15,9 +15,9 @@ export TARGET_DIR=/tmp/kafka-plugins
 
 echo "Assembling plugins into custom plugin directory $TARGET_DIR"
 
-mkdir -p $TARGET_DIR
+mkdir -p "$TARGET_DIR"
 
-if [ -d "$S2I_SOURCE_DIR" ] && [ "$(ls -A $S2I_SOURCE_DIR)" ]; then
+if [ -d "$S2I_SOURCE_DIR" ] && [ "$(ls -A "$S2I_SOURCE_DIR")" ]; then
   echo "Moving plugins to $TARGET_DIR"
-  mv $S2I_SOURCE_DIR/* $TARGET_DIR
+  mv "$S2I_SOURCE_DIR"/* "$TARGET_DIR"
 fi

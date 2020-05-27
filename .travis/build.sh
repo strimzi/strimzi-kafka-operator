@@ -19,6 +19,7 @@ export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
+make shellcheck
 make docu_check
 make spotbugs
 
