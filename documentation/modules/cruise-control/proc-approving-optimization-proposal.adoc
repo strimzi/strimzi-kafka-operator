@@ -14,7 +14,7 @@ Cruise Control will then apply the optimization proposal to the Kafka cluster, r
 *This is not a dry run.* Before you approve an optimization proposal, you must:
 
 * Refresh the proposal in case it has become out of date.
-* Carefully review the link:#contents-optimization-proposals[contents of the proposal].
+* Carefully review the xref:#contents-optimization-proposals[contents of the proposal].
 ====
 
 .Prerequisites

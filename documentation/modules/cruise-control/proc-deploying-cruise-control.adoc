@@ -15,7 +15,7 @@ NOTE: Step one is only required if automatic topic creation is disabled in the K
 
 * A Kubernetes cluster
 * A running Cluster Operator
-* You are aware of the guidance on link:#auto-created-topics-logs[Auto-created topics and log compaction].
+* You are aware of the guidance on xref:#auto-created-topics-logs[Auto-created topics and log compaction].
 
 .Procedure
 

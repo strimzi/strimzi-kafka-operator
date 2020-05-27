@@ -13,7 +13,7 @@ You can then analyze the summary information in the optimization proposal and de
 
 * You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
 
-* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, link:#capacity-configuration[capacity limits on broker resources].
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:#capacity-configuration[capacity limits on broker resources].
 
 .Procedure
 
@@ -109,7 +109,7 @@ Status:
   Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
-For information about the different properties, see link:#contents-optimization-proposals[Contents of optimization proposals]. 
+For information about the different properties, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 
