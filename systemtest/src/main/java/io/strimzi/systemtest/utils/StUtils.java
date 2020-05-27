@@ -38,6 +38,9 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
+    private static final Pattern JSON_PATTERN = Pattern.compile("(\\{.*})\\{");
+    private static Matcher jsonMatcher;
+
     private StUtils() { }
 
     /**
@@ -202,14 +205,11 @@ public class StUtils {
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
 
-        String regex = "(\\{.*})\\{";
-        Pattern pattern = Pattern.compile(regex);
-
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().exec(true, false, "logs", podName, "-c", containerName, "--tail=100").out();
             log = log.replaceAll("[\n|\r]", "");
-            Matcher matcher = pattern.matcher(log);
-            if (matcher.find()) {
+            jsonMatcher = JSON_PATTERN.matcher(log);
+            if (jsonMatcher.find()) {
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
                 isJSON = true;
             } else {
