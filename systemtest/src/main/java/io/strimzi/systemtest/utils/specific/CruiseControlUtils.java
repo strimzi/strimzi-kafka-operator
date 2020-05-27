@@ -79,13 +79,10 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.truststore.password").equals("${CERTS_STORE_PASSWORD}"));
     }
 
-    public static void verifyThatCruiseControlTopicsArePresent() {
-        final int numberOfPartitionsMetricTopic = 1;
+    public static void verifyThatCruiseControlSamplesTopicsArePresent() {
         final int numberOfPartitionsSamplesTopic = 32;
-        final int numberOfReplicasMetricTopic = 1;
         final int numberOfReplicasSamplesTopic = 2;
 
-        KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
         KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
         KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
 
@@ -93,17 +90,39 @@ public class CruiseControlUtils {
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () -> {
 
                 boolean hasTopicCorrectPartitionsCount =
-                    metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic &&
-                    modelTrainingSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic &&
-                    partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
+                        modelTrainingSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic &&
+                        partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
 
                 boolean hasTopicCorrectReplicasCount =
-                    metrics.getSpec().getReplicas() == numberOfReplicasMetricTopic &&
-                    modelTrainingSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic &&
-                    partitionsMetricsSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic;
+                        modelTrainingSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic &&
+                        partitionsMetricsSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic;
 
                 return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
             });
+    }
+
+    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent() {
+        final int numberOfPartitionsMetricTopic = 1;
+        final int numberOfReplicasMetricTopic = 1;
+
+        KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
+
+        TestUtils.waitFor("Verify that kafka contains cruise control topics with related configuration.",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () -> {
+
+                boolean hasTopicCorrectPartitionsCount =
+                    metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic;
+
+                boolean hasTopicCorrectReplicasCount =
+                    metrics.getSpec().getReplicas() == numberOfReplicasMetricTopic;
+
+                return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
+            });
+    }
+
+    public static void verifyThatCruiseControlTopicsArePresent() {
+        verifyThatCruiseControlSamplesTopicsArePresent();
+        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent();
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String clusterName) throws IOException {
