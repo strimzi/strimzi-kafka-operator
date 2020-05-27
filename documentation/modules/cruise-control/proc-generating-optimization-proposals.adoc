@@ -49,6 +49,8 @@ spec:
     - RackAwareGoal
     - ReplicaCapacityGoal
 ----
++
+In the above example, if `RackAwareGoal` and `ReplicaCapacityGoal` are configured as the only master optimization goals (in `Kafka.spec.cruiseControl.config.goals`), you must add `skip_hard_goal_check=true` to the Cruise Control deployment configuration. Otherwise an error will occur. 
 
 . Create or update the resource:
 +
