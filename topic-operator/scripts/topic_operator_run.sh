@@ -23,7 +23,7 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
         mkdir -p /tmp/topic-operator
 
         # Import certificates into keystore and truststore
-        "${STRIMZI_HOME}"/bin/tls_prepare_certificates.sh
+        "${STRIMZI_HOME}/bin/tls_prepare_certificates.sh"
 
         export STRIMZI_TRUSTSTORE_LOCATION=/tmp/topic-operator/replication.truststore.p12
         export STRIMZI_TRUSTSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
@@ -35,4 +35,4 @@ fi
 
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.topic.Main
-exec "${STRIMZI_HOME}"/bin/launch_java.sh
+exec "${STRIMZI_HOME}/bin/launch_java.sh"
