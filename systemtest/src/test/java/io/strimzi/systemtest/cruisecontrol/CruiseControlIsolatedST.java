@@ -77,10 +77,6 @@ public class CruiseControlIsolatedST extends BaseST {
 
         assertThrows(WaitException.class, CruiseControlUtils::verifyThatKafkaCruiseControlMetricReporterTopicIsPresent);
 
-        LOGGER.info("Verifying that Cruise control pod is running and ready");
-
-        PodUtils.waitForPod(PodUtils.getFirstPodNameContaining("cruise-control"));
-
         // Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must
         // be configured with cleanup.policy=delete to disable log compaction.
         // More in docs 8.5.2. Topic creation and configuration
@@ -91,6 +87,11 @@ public class CruiseControlIsolatedST extends BaseST {
             .done();
 
         CruiseControlUtils.verifyThatKafkaCruiseControlMetricReporterTopicIsPresent();
+
+        LOGGER.info("Verifying that Cruise control pod is running and ready");
+
+        PodUtils.waitForPod(PodUtils.getFirstPodNameContaining("cruise-control"));
+
     }
 
     @BeforeAll
