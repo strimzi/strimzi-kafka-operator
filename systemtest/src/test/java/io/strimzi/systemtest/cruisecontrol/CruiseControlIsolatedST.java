@@ -16,10 +16,15 @@ import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag(REGRESSION)
+@Tag(CRUISE_CONTROL)
 public class CruiseControlIsolatedST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlIsolatedST.class);
@@ -71,6 +76,10 @@ public class CruiseControlIsolatedST extends BaseST {
         LOGGER.info("Verifying that metrics reporter topic is not present because of selected config 'auto.create.topics.enable=false'");
 
         assertThrows(WaitException.class, CruiseControlUtils::verifyThatKafkaCruiseControlMetricReporterTopicIsPresent);
+
+        LOGGER.info("Verifying that Cruise control pod is running and ready");
+
+        PodUtils.waitForPod(PodUtils.getFirstPodNameContaining("cruise-control"));
 
         // Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must
         // be configured with cleanup.policy=delete to disable log compaction.
