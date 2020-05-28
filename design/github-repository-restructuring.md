@@ -9,7 +9,7 @@ Currently, Strimzi has several Github repositories:
 * The Strimzi lab repo with some demos
 * The Strimzi website repo
 
-Despite us having multiple repositories, some things which are related to Strimzi it self seem to be only in the Operator repository.
+Despite us having multiple repositories, some things which are related to Strimzi itself seem to be only in the Operator repository.
 For example the design proposals or the governance documents are central and should apply to whole Strimzi, but are in the operator repository only.
 That might not be logical since some users might use only some parts and might miss these things.
 
@@ -32,8 +32,7 @@ Right now, the existing proposals focus on the operators.
 But it is expected that in the future we would have also proposals for the other components or proposals which include more than one repository.
 
 We should create a new repository called `proposals` which should be used for the proposals with changes for all our projects.
-The repository should contain an overview list of proposals with their state (Proposed, Approved, Implemented).
-For easier orientation, the proposals should be numbered starting from 0.
+The repository should contain an overview list of proposals and for easier orientation, the proposals should be numbered starting from 1.
 
 The existing proposals should be moved to the new repository and get the numbers assigned.
 Any proposals opened at the time of the move should be moved to the new repo as well.
