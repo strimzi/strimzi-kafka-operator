@@ -204,7 +204,7 @@ public class StUtils {
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
-        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "5");
+        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "10");
 
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
