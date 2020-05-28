@@ -119,11 +119,11 @@ You can do this using the following command:
 kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
 ----
 
-Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must be configured with `cleanup.policy=delete` to disable log compaction.
+Log compaction might remove records that are needed by Cruise Control; therefore, all auto-created topics must be configured with `cleanup.policy=delete` to disable log compaction. 
 Cruise Control will automatically disable log compaction for the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
-The Cruise Control metric reporters will attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic but will fail if they are started with a new Kafka cluster.
-This will only become a problem when log compaction is enabled in Kafka with the setting `log.cleanup.policy=compact` in the `spec.kafka.config`.
-In this situation, log compaction will be enabled for `strimzi.cruisecontrol.metrics` topic and will need to be overridden with a `cleanup.policy=delete` in the `strimzi.cruisecontrol.metrics` KafkaTopic.
+The Cruise Control metric reporters attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic, but fail if they are started with a new Kafka cluster.
+This is only a problem if log compaction is enabled in Kafka with the setting `log.cleanup.policy=compact` in `spec.kafka.config`. 
+In this situation, log compaction will be enabled for the `strimzi.cruisecontrol.metrics` topic and will need to be overridden with `cleanup.policy=delete` in the `strimzi.cruisecontrol.metrics` topic.
 
 Here is an example where log compaction is disabled in a topic that was auto-created by Cruise Control:
 
