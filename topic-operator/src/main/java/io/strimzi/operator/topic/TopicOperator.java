@@ -1206,7 +1206,7 @@ class TopicOperator {
             this.ktList = emptyList();
         }
 
-        public void addKafkaTopics(List<KafkaTopic> ktList) {
+        public void setKafkaTopics(List<KafkaTopic> ktList) {
             this.ktList = ktList;
         }
     }
@@ -1223,7 +1223,7 @@ class TopicOperator {
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
-                reconcileState.addKafkaTopics(ktList);
+                reconcileState.setKafkaTopics(ktList);
                 return reconcileState;
             });
         }).compose(reconcileState -> {

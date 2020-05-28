@@ -79,11 +79,7 @@ public class ClusterOperatorTest {
 
     @AfterAll
     public static void after() {
-        try {
-            vertx.close();
-        } catch (Exception e) {
-            log.warn("Failed to close vertx instance. ", e);
-        }
+        vertx.close();
     }
 
     @Test
