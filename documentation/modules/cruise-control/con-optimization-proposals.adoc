@@ -7,7 +7,7 @@
 = Optimization proposals overview
 
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
-Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured x-ref:#capacity-configuration[capacity limits on broker resources].
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:#capacity-configuration[capacity limits on broker resources].
 
 An optimization proposal is contained in the `status.summary` property of a `KafkaRebalance` custom resource. 
 The information provided is a summary of the full optimization proposal. 
@@ -58,7 +58,7 @@ m¦numReplicaMovements
 m¦onDemandBalancednessScoreBefore, onDemandBalancednessScoreAfter
 ¦A measurement of the overall _balancedness_ of a Kafka Cluster, before and after the optimization proposal was generated.
 
-The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority (the goal's position in the list of `default.goals` or user-provided goals).
+The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority--the goal's position in the list of `default.goals` or user-provided goals.
 
 The `Before` score is based on the current configuration of the Kafka cluster.
 The `After` score is based on the generated optimization proposal.

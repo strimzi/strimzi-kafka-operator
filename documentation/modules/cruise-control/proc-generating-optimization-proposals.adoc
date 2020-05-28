@@ -23,7 +23,7 @@ You can then analyze the summary information in the optimization proposal and de
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaApiVersionAlpha}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -38,7 +38,7 @@ In the following example, rack awareness and replica capacity are configured as 
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaApiVersionAlpha}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -109,7 +109,8 @@ Status:
   Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
-For information about the different properties, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
+The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
+For an explanation of each property, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 

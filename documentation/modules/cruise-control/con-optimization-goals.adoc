@@ -8,8 +8,8 @@
 To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.  
 
 Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster.
-With a few exceptions, {ProductName} supports all the optimization goals developed in the Cruise Control project.
-These are as follows, in the default descending priority order:
+With a few exceptions, {ProductName} supports all the optimization goals developed in the Cruise Control project. 
+The supported goals, in the default descending order of priority, are as follows:
 
 . Rack-awareness
 . Replica capacity
