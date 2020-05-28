@@ -107,8 +107,8 @@ Depending on how you apply {oauth} authentication, and the type of authorization
     type: oauth
     # ...
     checkIssuer: false <1>
-    fallbackUserNameClaim: _CLIENT-ID_ <2>
-    fallbackUserNamePrefix: _CLIENT-ACCOUNT_ <3>
+    fallbackUserNameClaim: __CLIENT-ID__ <2>
+    fallbackUserNamePrefix: __CLIENT-ACCOUNT__ <3>
     validTokenType: bearer <4>
     userInfoEndpointUri: __https://AUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <5>
 ----
