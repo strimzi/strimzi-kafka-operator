@@ -33,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CruiseControlApiST extends BaseST {
 
-    private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
+    private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String NAMESPACE = "cruise-control-api-test";
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
@@ -42,12 +42,12 @@ public class CruiseControlApiST extends BaseST {
     @Tag(ACCEPTANCE)
     @Test
     void testCruiseControlDeploymentStateEndpoint()  {
-        String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STATE);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STATE);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STATE);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STATE);
 
         LOGGER.info("Verifying that {} REST API is available", CRUISE_CONTROL_NAME);
 
@@ -61,12 +61,12 @@ public class CruiseControlApiST extends BaseST {
     @Order(2)
     @Test
     void testRebalance() {
-        String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
 
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
-        response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
 
         // all goals stats that contains
         assertThat(response, containsString("RackAwareGoal"));
@@ -91,12 +91,12 @@ public class CruiseControlApiST extends BaseST {
     @Order(3)
     @Test
     void testStopProposalExecution() {
-        String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
 
         assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
-        response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
 
         assertThat(response, containsString("Proposal execution stopped."));
     }
@@ -104,12 +104,12 @@ public class CruiseControlApiST extends BaseST {
     @Order(4)
     @Test
     void testUserTasks() {
-        String response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.call(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, containsString("GET"));
         assertThat(response, containsString("/kafkacruisecontrol/state"));

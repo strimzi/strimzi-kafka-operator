@@ -33,7 +33,7 @@ public class CruiseControlUtils {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
-    private static final String CRUISE_CONTROL_ENDPOINT = "/kafkacruisecontrol/";
+    private static final String CRUISE_CONTROL_BASE_ENDPOINT = "/kafkacruisecontrol/";
 
     private CruiseControlUtils() { }
 
@@ -51,7 +51,7 @@ public class CruiseControlUtils {
 
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String call(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
+    public static String callApi(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
 
         return
@@ -60,7 +60,7 @@ public class CruiseControlUtils {
             "cruise-control",
             "/bin/bash",
             "-c",
-            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_ENDPOINT + endpoint.name().toLowerCase()).out();
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_BASE_ENDPOINT + endpoint.name().toLowerCase()).out();
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
