@@ -23,7 +23,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS" ]; then
 
     SASL_AUTH_CONFIGURATION="# SASL"
 
-    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS"
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS" || true
     for cluster in "${CLUSTERS[@]}"
     do
         IFS='=' read -ra PASSWORD_FILE_CLUSTER <<< "${cluster}"
@@ -39,7 +39,7 @@ EOF
     done
 fi
 
-if [ "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS" ]; then
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS" ]; then
     OAUTH_TRUSTED_CERTS_CONFIGURATION=$(cat <<EOF
 # OAuth trusted certs
 oauth.ssl.truststore.password=${CERTS_STORE_PASSWORD}
@@ -51,7 +51,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS" ]; then
 
     OAUTH_CLIENT_SECRETS_CONFIGURATION="# OAuth client secrets"
 
-    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS"
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS" || true
     for cluster in "${CLUSTERS[@]}"
     do
         IFS='=' read -ra CLIENT_SECRET_CLUSTER <<< "${cluster}"
@@ -71,7 +71,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS" ]; then
 
     OAUTH_ACCESS_TOKENS_CONFIGURATION="# OAuth access tokens"
 
-    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS"
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS" || true
     for cluster in "${CLUSTERS[@]}"
     do
         IFS='=' read -ra ACCESS_TOKEN_CLUSTER <<< "${cluster}"
@@ -91,7 +91,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS" ]; then
 
     OAUTH_REFRESH_TOKENS_CONFIGURATION="# OAuth refresh tokens"
 
-    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS"
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS" || true
     for cluster in "${CLUSTERS[@]}"
     do
         IFS='=' read -ra REFRESH_TOKEN_CLUSTER <<< "${cluster}"

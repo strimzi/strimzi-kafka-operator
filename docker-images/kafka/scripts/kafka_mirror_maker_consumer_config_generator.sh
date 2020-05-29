@@ -33,12 +33,12 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" ]; then
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
     fi
 
-    PASSWORD=$(cat "/opt/kafka/consumer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER")
-
     if [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" = "xplain" ]; then
+        PASSWORD=$(cat "/opt/kafka/consumer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER")
         SASL_MECHANISM="PLAIN"
         JAAS_CONFIG="org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER}\" password=\"${PASSWORD}\";"
     elif [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" = "xscram-sha-512" ]; then
+        PASSWORD=$(cat "/opt/kafka/consumer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER")
         SASL_MECHANISM="SCRAM-SHA-512"
         JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER}\" password=\"${PASSWORD}\";"
     elif [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" = "xoauth" ]; then
