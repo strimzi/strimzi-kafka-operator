@@ -343,7 +343,7 @@ public class EntityUserOperator extends AbstractModel {
      */
     @Override
     public String createPropertiesString(OrderedProperties properties) {
-        properties.addPair("monitorInterval", "5");
+        properties.addPair("monitorInterval", "30");
         return super.createPropertiesString(properties);
     }
 }
