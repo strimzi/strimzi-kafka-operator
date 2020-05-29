@@ -138,4 +138,4 @@ spec:
 <19> xref:assembly-zookeeper-node-configuration-{context}[ZooKeeper-specific configuration], which contains properties similar to the Kafka configuration.
 <20> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <21> Kafka Exporter configuration, which is used xref:assembly-kafka-exporter-configuration-{context}[to expose data as Prometheus metrics].
-<22> Cruise Control configuration, which is used xref:proc-deploying-cruise-control-str[to monitor and balance data across the Kafka cluster].
+<22> Cruise Control configuration, which is used xref:cruise-control-concepts-str[to rebalance the Kafka cluster].

@@ -7,13 +7,13 @@
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
 
-You can then analyze the summary information in the optimization proposal and decide whether to approve it. 
+Analyze the summary information in the optimization proposal and decide whether to approve it. 
 
 .Prerequisites
 
 * You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
 
-* You have configured xref:con-optimization-goals-{context}[optimization goals].
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:#capacity-configuration[capacity limits on broker resources].
 
 .Procedure
 
@@ -23,7 +23,7 @@ You can then analyze the summary information in the optimization proposal and de
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -32,13 +32,13 @@ metadata:
 spec: {}
 ----
 
-.. To set _user-provided optimization goals_ instead of using the default goals, edit the `goals` property and enter one or more goals.
+.. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
 +
-In the following example, rack awareness and replica capacity are user-provided optimization goals:
+In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -72,7 +72,7 @@ Cruise Control returns one of two statuses:
 ** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
 
 ** `ProposalReady`: The optimization proposal is ready for review and, if desired, approval.
-The status contains the optimization proposal, in the `status.summary` property of the `KafkaRebalance` resource.
+The optimization proposal is contained in the `Status.Optimization Result` property of the `KafkaRebalance` resource.
 
 . Review the optimization proposal.
 +
@@ -107,7 +107,8 @@ Status:
   Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
-For information about the different properties, see link:#contents-optimization-proposals[Contents of optimization proposals]. 
+The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
+For descriptions of each property, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 
