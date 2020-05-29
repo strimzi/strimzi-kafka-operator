@@ -94,14 +94,6 @@ public class EntityOperatorTest {
     private final EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
     @Test
-    public void lala() {
-        OrderedProperties op = new OrderedProperties();
-        op.addPair("karel", "42");
-        String res = entityOperator.createPropertiesString(op);
-
-    }
-
-    @Test
     public void testGenerateDeployment() {
 
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
