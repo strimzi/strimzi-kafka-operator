@@ -21,6 +21,7 @@
 * Strimzi Kafka Bridge metrics integration:
   * enable/disable metrics in the KafkaBridge custom resource
   * new Grafana dashboard for the bridge metrics
+* Support dynamically changeable logging in the Entity Operator 
 
 ### Deprecations and removals
 
