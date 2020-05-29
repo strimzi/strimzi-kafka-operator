@@ -32,7 +32,7 @@ metadata:
 spec: {}
 ----
 
-.. To configure _user-provided optimization goals_ instead of using the default goals, edit the `goals` property and enter one or more goals.
+.. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
 +
 In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
 +
@@ -49,8 +49,6 @@ spec:
     - RackAwareGoal
     - ReplicaCapacityGoal
 ----
-+
-In the above example, if `RackAwareGoal` and `ReplicaCapacityGoal` are configured as the only master optimization goals (in `Kafka.spec.cruiseControl.config.goals`), you must add `skip_hard_goal_check=true` to the Cruise Control deployment configuration. Otherwise an error will occur. 
 
 . Create or update the resource:
 +
@@ -74,7 +72,7 @@ Cruise Control returns one of two statuses:
 ** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
 
 ** `ProposalReady`: The optimization proposal is ready for review and, if desired, approval.
-The status contains the optimization proposal, in the `status.summary` property of the `KafkaRebalance` resource.
+The optimization proposal is contained in the `Status.Optimization Result` property of the `KafkaRebalance` resource.
 
 . Review the optimization proposal.
 +
@@ -110,7 +108,7 @@ Status:
 ----
 +
 The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
-For an explanation of each property, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
+For descriptions of each property, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 

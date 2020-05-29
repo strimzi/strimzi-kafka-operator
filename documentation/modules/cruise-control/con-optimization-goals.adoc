@@ -92,7 +92,8 @@ spec:
 
 Increasing the number of configured hard goals will reduce the likelihood of Cruise Control generating valid optimization proposals.
 
-If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does not check that the list of user-provided optimization goals (`goals`) contains _all_ the configured hard goals (`hard.goals`). Therefore, if some, but not all, of the user-provided optimization goals are in the `hard.goals` list, Cruise Control will still treat them as hard goals even if `skipHardGoalCheck: true` is specified.
+If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does _not_ check that the list of user-provided optimization goals (in `KafkaRebalance.spec.goals`) contains _all_ the configured hard goals (`hard.goals`). 
+Therefore, if some, but not all, of the user-provided optimization goals are in the `hard.goals` list, Cruise Control will still treat them as hard goals even if `skipHardGoalCheck: true` is specified.
 
 [#master-goals]
 [discrete]
@@ -115,6 +116,8 @@ You configure master optimization goals, if necessary, in the Cruise Control dep
 * To accept the inherited master optimization goals, do not specify the `goals` property in `Kafka.spec.cruiseControl.config`.
 
 * If you need to modify the inherited master optimization goals, specify a list of goals, in descending priority order, in the `goals` configuration option.
+
+NOTE: If you change the inherited master optimization goals, you must ensure that the hard goals, if configured in the `hard.goals` property in `Kafka.spec.cruiseControl.config`, are a subset of the master optimization goals that you configured. Otherwise, errors will occur when generating optimization proposals.
 
 [#default-goals]
 [discrete]

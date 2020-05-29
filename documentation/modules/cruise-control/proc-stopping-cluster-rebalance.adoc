@@ -10,7 +10,7 @@ Once started, a cluster rebalance operation might take some time to complete and
 
 If you want to stop a cluster rebalance operation that is in progress, apply the `stop` annotation to the `KafkaRebalance` custom resource. 
 This instructs Cruise Control to finish the current batch of partition reassignments and then stop the rebalance.
-Any partition reassignments that have already finished will have been successfully applied; therefore, the Kafka cluster is in a different state compared to before the rebalance operation started.
+When the rebalance has stopped, completed partition reassignments have already been applied; therefore, the state of the Kafka cluster is different when compared to prior to the start of the rebalance operation.
 If further rebalancing is required, you should generate a new optimization proposal. 
 
 NOTE: The performance of the Kafka cluster in the intermediate (stopped) state might be worse than in the initial state.

@@ -6,16 +6,16 @@
 
 = Fixing problems with a `KafkaRebalance` resource
 
-If an issue occurs in the process of creating a `KafkaRebalance` resource, or when interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
+If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
 The resource also moves to the `NotReady` state.
 
 To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself. 
-Problems can include the following:
+Problems might include the following:
 
 * A misconfigured parameter.
 * The Cruise Control server is not reachable. 
 
-When you believe that you have fixed the issue, you need to add the `refresh` annotation to the resource.
+After fixing the issue, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
 During a “refresh”, a new optimization proposal is requested from the Cruise Control server.
 
 .Prerequisites
@@ -26,13 +26,20 @@ During a “refresh”, a new optimization proposal is requested from the Cruise
 
 .Procedure
 
-. Get information about the error from the `KafkaRebalance` status and resolve the issue if possible.
+. Get information about the error from the `KafkaRebalance` status:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka kafkarebalance -o jsonpath='{.status}'
+----
+
+. Attempt to resolve the issue in the `KafkaRebalance` resource.
 
 . Annotate the `KafkaRebalance` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _cluster-rebalance-name_ strimzi.io/rebalance=refresh
+kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=refresh
 ----
 
 . Check the status of the `KafkaRebalance` resource:
