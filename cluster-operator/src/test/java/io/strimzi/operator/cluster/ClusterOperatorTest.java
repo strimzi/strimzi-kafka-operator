@@ -168,21 +168,38 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        Checkpoint async = context.checkpoint();
+        Checkpoint checkpoint = context.checkpoint(vertx.deploymentIDs().size() + 1);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size()));
 
                 for (String deploymentId: vertx.deploymentIDs()) {
-                    vertx.undeploy(deploymentId, context.succeeding());
+                    vertx.undeploy(deploymentId, asyncResult -> {
+                        if (asyncResult.failed()) {
+                            log.error("Failed to undeploy {}", deploymentId);
+                            context.failNow(asyncResult.cause());
+                        }
+                        checkpoint.flag();
+                        context.succeeding();
+                    });
                 }
 
                 int maximumExpectedNumberOfWatchers = (openShift ? 9 : 7) * namespaceList.size(); // we do not have connectS2I on k8s
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
-                async.flag();
+                checkpoint.flag();
             })));
+        context.failing(b -> {
+            for (String deploymentId: vertx.deploymentIDs()) {
+                vertx.undeploy(deploymentId, asyncResult -> {
+                    context.succeeding();
+                    checkpoint.flag();
+                });
+            }
+            checkpoint.flag();
+            context.failNow(b);
+        });
     }
 
     /**
