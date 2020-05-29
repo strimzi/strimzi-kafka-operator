@@ -342,8 +342,8 @@ public class EntityUserOperator extends AbstractModel {
      * @return modified string with monitorInterval
      */
     @Override
-    public String createPropertiesString(OrderedProperties properties) {
+    public String createLog4jProperties(OrderedProperties properties) {
         properties.addPair("monitorInterval", "30");
-        return super.createPropertiesString(properties);
+        return super.createLog4jProperties(properties);
     }
 }

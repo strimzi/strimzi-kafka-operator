@@ -378,7 +378,7 @@ public abstract class AbstractModel {
      * @param properties map of log4j properties.
      * @return log4j properties as a String.
      */
-    public String createPropertiesString(OrderedProperties properties) {
+    public String createLog4jProperties(OrderedProperties properties) {
         return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
     }
 
@@ -408,8 +408,7 @@ public abstract class AbstractModel {
                 newSettings.addMapPairs(inlineLogging.getLoggers());
             }
 
-            return createPropertiesString(newSettings);
-
+            return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
                 return addMonitorIntervalToExternalLogging(externalCm.getData().get(getAncillaryConfigMapKeyLogConfig()));
@@ -417,12 +416,12 @@ public abstract class AbstractModel {
                 log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
                         ((ExternalLogging) getLogging()).getName(),
                         getAncillaryConfigMapKeyLogConfig());
-                return createPropertiesString(getDefaultLogConfig());
+                return createLog4jProperties(getDefaultLogConfig());
             }
 
         } else {
             log.debug("logging is not set, using default loggers");
-            return createPropertiesString(getDefaultLogConfig());
+            return createLog4jProperties(getDefaultLogConfig());
         }
     }
 
