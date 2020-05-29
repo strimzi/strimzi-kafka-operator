@@ -38,7 +38,8 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
-    private static final Pattern JSON_PATTERN = Pattern.compile("}[\\n]+\\{");
+    private static final Pattern BETWEEN_JSON_OBJECTS_PATTERN = Pattern.compile("}[\\n\\r]+\\{");
+    private static final Pattern ALL_BEFORE_JSON_PATTERN = Pattern.compile("(.*\\s)}, \\{", Pattern.DOTALL);
 
     private StUtils() { }
 
@@ -201,6 +202,18 @@ public class StUtils {
         return jsonArray;
     }
 
+    /**
+     * Method for checking if JSON format logging is set for the {@code pods}
+     * Steps:
+     * 1. get log from pod
+     * 2. find every occurrence of `}\n{` which will be replaced with `}, {` - by {@link #BETWEEN_JSON_OBJECTS_PATTERN}
+     * 3. replace everything from beginning to the first proper JSON object with `{`- by {@link #ALL_BEFORE_JSON_PATTERN}
+     * 4. also add `[` to beginning and `]` to the end of String to create proper JsonArray
+     * 5. try to parse the JsonArray
+     * @param pods snapshot of pods to be checked
+     * @param containerName name of container from which to take the log
+     * @return if JSON format was set up or not
+     */
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
@@ -208,8 +221,12 @@ public class StUtils {
 
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
-            Matcher matcher = JSON_PATTERN.matcher(log);
-            log = "[" + matcher.replaceAll("}, \\{").replaceAll("\n", " ").replaceFirst("(.*\\s)}, \\{", "{") + "]";
+            Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
+
+            log = matcher.replaceAll("}, \\{");
+            matcher = ALL_BEFORE_JSON_PATTERN.matcher(log);
+            log = "[" + matcher.replaceFirst("{") + "]";
+
             try {
                 new JsonArray(log);
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
