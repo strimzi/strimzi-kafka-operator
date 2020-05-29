@@ -2351,7 +2351,8 @@ spec:
                     standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort,
                     ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol,
                     ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols,
-                    ssl.ciphersuites, ssl.quorum.ciphersuites).'
+                    ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification,
+                    ssl.quorum.hostnameVerification).'
                 affinity:
                   type: object
                   properties:
