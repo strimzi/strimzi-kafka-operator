@@ -16,8 +16,6 @@ Otherwise, you have two connection options for your listener configuration when 
 * xref:example-1[Configuring fast local JWT token validation]
 * xref:example-2[Configuring token validation using an introspection endpoint]
 
-Configure the Kafka brokers using properties that support your chosen authorization server, and the type of authorization you are implementing.
-
 .Before you start
 
 For more information on the configuration of {oauth} authentication for Kafka broker listeners, see:
@@ -98,7 +96,7 @@ external:
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authorization server used.
 +
-Depending on how you apply {oauth} authentication, and the type of authorization server being used, add additional configuration settings:
+Depending on how you apply {oauth} authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -107,16 +105,16 @@ Depending on how you apply {oauth} authentication, and the type of authorization
     type: oauth
     # ...
     checkIssuer: false <1>
-    fallbackUserNameClaim: __CLIENT-ID__ <2>
-    fallbackUserNamePrefix: __CLIENT-ACCOUNT__ <3>
+    fallbackUserNameClaim: client_id <2>
+    fallbackUserNamePrefix: client-account- <3>
     validTokenType: bearer <4>
-    userInfoEndpointUri: __https://AUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <5>
+    userInfoEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/userinfo__> <5>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
-<2> An authorization server may not provide a single attribute to identify both regular users and clients. A client authenticating in its own name might provide a _client ID_. But a user authenticating using a username and password, to obtain a refresh token or an access token, might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available.
+<2> An authorization server may not provide a single attribute to identify both regular users and clients. A client authenticating in its own name might provide a `client_id`. But a user authenticating using a username and password, to obtain a refresh token or an access token, might provide a `username` attribute in addition to a `client_id`. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available.
 <3> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
-<4> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return a _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
-<5> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an introspection endpoint response. In order to obtain the user id, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
+<4> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the Introspection Endpoint may or may not return the `token_type` attribute., or it may contain different values. You can specify a valid token type value that the response from the Introspection Endpoint has to contain.
+<5> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an Introspection Endpoint response. In order to obtain the user ID, you can configure the URI of the User Info Endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of User Info Endpoint.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 
