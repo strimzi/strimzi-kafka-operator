@@ -34,7 +34,7 @@ kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=stop
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafka kafkarebalance -o jsonpath='{.status}'
+kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 
 . Wait until the status changes to `Stopped`.
