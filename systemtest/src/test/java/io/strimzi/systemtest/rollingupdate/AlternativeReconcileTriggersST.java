@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -49,6 +50,11 @@ class AlternativeReconcileTriggersST extends BaseST {
     @Test
     void testManualTriggeringRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        String continuousTopicName = "continuous-topic";
+        // 500 messages will take 500 seconds in that case
+        int continuousClientsMessageCount = 500;
+        String producerName = "hello-world-producer";
+        String consumerName = "hello-world-consumer";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -58,6 +64,15 @@ class AlternativeReconcileTriggersST extends BaseST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        // ##############################
+        // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
+        // ##############################
+        // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
+        KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+        String producerAdditionConfiguration = "retries=10\ndelivery.timeout.ms=60000\nrequest.timeout.ms=60000\nmax.in.flight.requests.per.connection=1";
+        KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
+        KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "").done();
+        // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
@@ -143,6 +158,12 @@ class AlternativeReconcileTriggersST extends BaseST {
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        // ##############################
     }
 
     /**

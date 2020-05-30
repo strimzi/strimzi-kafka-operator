@@ -6,8 +6,11 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
@@ -37,6 +40,14 @@ public class ClientUtils {
                 throw new RuntimeException(String.format("Consumer wasn't able to consume %s messages for 3 times", exceptedMessages));
             }
         }
+    }
+
+    public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
+        long timeout = (messageCount / 2) * 1000;
+        LOGGER.info("Waiting till producer {} and consumer {} finish for the following {} ms", producerName, consumerName, timeout);
+        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, (messageCount / 2) * 1000,
+            () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(producerName).get().getStatus().getSucceeded().equals(1) &&
+                    kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(consumerName).get().getStatus().getSucceeded().equals(1));
     }
 }
 

@@ -29,6 +29,7 @@ public interface Constants {
 
     long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(60).toMillis();
     long TIMEOUT_AVAILABILITY_TEST = Duration.ofMinutes(1).toMillis();
+    long DEFAULT_TIMEOUT_FOR_CONTINUOUS_CLIENTS_FINISH = Duration.ofMinutes(1).toMillis();
 
     long TIMEOUT_FOR_CLUSTER_STABLE = Duration.ofMinutes(20).toMillis();
     long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = Duration.ofMinutes(7).toMillis();
