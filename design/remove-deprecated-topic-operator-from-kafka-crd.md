@@ -2,7 +2,7 @@
 
 | State    |
 |----------|
-| Proposal |
+| Approved |
 
 When deploying Topic Operator (Topic Operator) through the Kafka custom resource, there are two different options:
 
