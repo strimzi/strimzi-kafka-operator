@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.19.0
+
+* Remove the code behind `Kafka.spec.topicOperator` which did not work anymore 
+
 ## 0.18.0
 
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.
