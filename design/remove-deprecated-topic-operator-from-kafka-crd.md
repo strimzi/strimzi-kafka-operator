@@ -1,8 +1,8 @@
 # Remove deprecated Topic Operator deployment in Kafka CRD
 
-| State    |
-|----------|
-| Approved |
+| State       |
+|-------------|
+| Implemented |
 
 When deploying Topic Operator (Topic Operator) through the Kafka custom resource, there are two different options:
 
