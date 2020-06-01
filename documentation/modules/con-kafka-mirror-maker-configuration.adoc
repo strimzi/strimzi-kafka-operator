@@ -25,7 +25,7 @@ You can specify and configure standard Kafka consumer and producer options:
 * {ApacheKafkaProducerConfig}
 * {ApacheKafkaConsumerConfig}
 
-However, there are exceptions for options automatically configured and managed directly by {ProductName} related to:
+However, there are exceptions for options automatically configured and managed directly by Strimzi related to:
 
 * Kafka cluster bootstrap address
 * Security (encryption, authentication, and authorization)

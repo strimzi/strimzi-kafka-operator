@@ -3,34 +3,34 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-authorization-broker-config-{context}']
-= Configuring {oauth} authorization support
+= Configuring OAuth 2.0 authorization support
 
-This procedure describes how to configure Kafka brokers to use {oauth} authorization using {keycloak-server} Authorization Services.
+This procedure describes how to configure Kafka brokers to use OAuth 2.0 authorization using Keycloak Authorization Services.
 
 .Before you begin
 Consider the access you require or want to limit for certain users.
-You can use a combination of {keycloak-server} _groups_, _roles_, _clients_, and _users_ to configure access in {keycloak-server}.
+You can use a combination of Keycloak _groups_, _roles_, _clients_, and _users_ to configure access in Keycloak.
 
 Typically, groups are used to match users based on organizational departments or geographical locations.
 And roles are used to match users based on their function.
 
-With {keycloak-server}, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
+With Keycloak, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
 Storage and access to user data may be a factor in how you choose to configure authorization policies.
 
 NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on the Kafka broker.
 
 .Prerequisites
 
-* {ProductName} must be configured to use {oauth} with {keycloak-server} for xref:assembly-oauth-authentication_str[token-based authentication].
-You use the same {keycloak-server} server endpoint when you set up authorization.
-* You need to understand how to manage policies and permissions for {keycloak-server} Authorization Services, as described in the {keycloak-server-doc}.
+* Strimzi must be configured to use OAuth 2.0 with Keycloak for xref:assembly-oauth-authentication_str[token-based authentication].
+You use the same Keycloak server endpoint when you set up authorization.
+* You need to understand how to manage policies and permissions for Keycloak Authorization Services, as described in the {keycloak-server-doc}.
 
 .Procedure
 
-. Access the {keycloak-server} Admin Console or use the {keycloak-server} Admin CLI to enable Authorization Services for the Kafka broker client you created when setting up {oauth} authentication.
+. Access the Keycloak Admin Console or use the Keycloak Admin CLI to enable Authorization Services for the Kafka broker client you created when setting up OAuth 2.0 authentication.
 . Use Authorization Services to define resources, authorization scopes, policies, and permissions for the client.
 . Bind the permissions to users and clients by assigning them roles and groups.
-. Configure the Kafka brokers to use {keycloak-server} authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
+. Configure the Kafka brokers to use Keycloak authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
 +
 [source,shell]
 ----
@@ -65,10 +65,10 @@ spec:
       certificate: ca.crt
   #...
 ----
-<1> Type `keycloak` enables {keycloak-server} authorization.
-<2> URI of the {keycloak-server} token endpoint. For production, always use HTTPs.
-<3> The client ID of the {oauth} client definition in {keycloak-server} that has Authorization Services enabled. Typically, `kafka` is used as the ID.
-<4> (Optional) Delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by {keycloak-server} Authorization Services policies.
+<1> Type `keycloak` enables Keycloak authorization.
+<2> URI of the Keycloak token endpoint. For production, always use HTTPs.
+<3> The client ID of the OAuth 2.0 client definition in Keycloak that has Authorization Services enabled. Typically, `kafka` is used as the ID.
+<4> (Optional) Delegate authorization to Kafka `SimpleACLAuthorizer` if access is denied by Keycloak Authorization Services policies.
 The default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
 <6> (Optional) Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
@@ -84,6 +84,6 @@ kubectl logs -f ${POD_NAME} -c kafka
 kubectl get po -w
 ----
 +
-The rolling update configures the brokers to use {oauth} authorization.
+The rolling update configures the brokers to use OAuth 2.0 authorization.
 
 . Verify the configured permissions by accessing Kafka brokers as clients or  users with specific roles, making sure they have the necessary access, or do not have the access they are not supposed to have.

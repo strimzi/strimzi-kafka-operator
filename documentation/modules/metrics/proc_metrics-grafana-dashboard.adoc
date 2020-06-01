@@ -47,7 +47,7 @@ image::grafana_import_dashboard.png[Add Grafana dashboard]
 
 After importing the dashboards, the Grafana dashboard homepage presents Kafka and ZooKeeper dashboards.
 
-When the Prometheus server has been collecting metrics for a {ProductName} cluster for some time, the dashboards are populated.
+When the Prometheus server has been collecting metrics for a Strimzi cluster for some time, the dashboards are populated.
 
 .Kafka dashboard
 [caption="Kafka dashboard"]

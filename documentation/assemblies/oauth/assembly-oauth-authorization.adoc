@@ -3,7 +3,7 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-oauth-authorization_{context}']
-= Using {oauth} token-based authorization
+= Using OAuth 2.0 token-based authorization
 
 include::modules/con-oauth-authorization-intro.adoc[leveloffset=+1]
 include::modules/con-oauth-authorization-mechanism.adoc[leveloffset=+1]

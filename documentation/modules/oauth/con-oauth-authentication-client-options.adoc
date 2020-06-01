@@ -3,7 +3,7 @@
 // assembly-oauth.adoc
 
 [id='con-oauth-authentication-client-options-{context}']
-= {oauth} client authentication flow
+= OAuth 2.0 client authentication flow
 
 In this section, we explain and visualize the communication flow between Kafka client, Kafka broker, and authorization server during Kafka session initiation.
 The flow depends on the client and server configuration.
@@ -13,11 +13,11 @@ When a Kafka client sends an access token as credentials to a Kafka broker, the 
 Depending on the authorization server used, and the configuration options available, you may prefer to use:
 
 * Fast local token validation based on JWT signature checking and local token introspection, without contacting the authorization server
-* An {oauth} introspection endpoint provided by the authorization server
+* An OAuth 2.0 introspection endpoint provided by the authorization server
 
 Using fast local token validation requires the authorization server to provide a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
 
-Another option is to use an {oauth} introspection endpoint on the authorization server.
+Another option is to use an OAuth 2.0 introspection endpoint on the authorization server.
 Each time a new Kafka broker connection is established, the broker passes the access token received from the client to the authorization server, and checks the response to confirm whether or not the token is valid.
 
 Kafka client credentials can also be configured for:

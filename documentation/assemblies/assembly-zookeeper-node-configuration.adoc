@@ -10,7 +10,7 @@
 
 = ZooKeeper configuration
 
-{ProductName} allows you to customize the configuration of Apache ZooKeeper nodes.
+Strimzi allows you to customize the configuration of Apache ZooKeeper nodes.
 You can specify and configure most of the options listed in the {ApacheZookeeperConfig}.
 
 Options which cannot be configured are those related to the following areas:
@@ -20,7 +20,7 @@ Options which cannot be configured are those related to the following areas:
 * Configuration of data directories
 * ZooKeeper cluster composition
 
-These options are automatically configured by {ProductName}.
+These options are automatically configured by Strimzi.
 
 include::../modules/ref-zookeeper-node-configuration.adoc[leveloffset=+1]
 

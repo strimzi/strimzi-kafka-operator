@@ -3,7 +3,7 @@
 // deploying/master.adoc
 
 [id="deploy-options_{context}"]
-= What is deployed with {ProductName}
+= What is deployed with Strimzi
 
 //Standard kafka deployment introduction
 include::../../shared/snip-intro-kafka-deployment.adoc[leveloffset=+1]

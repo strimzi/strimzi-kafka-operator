@@ -13,7 +13,7 @@
 Use the `metrics` property to enable and configure Prometheus metrics.
 
 The `metrics` property can also contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
-{ProductName} supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
+Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 
 To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
 

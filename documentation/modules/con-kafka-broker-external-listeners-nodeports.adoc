@@ -12,7 +12,7 @@ Each Kafka broker pod is then accessible on a separate port.
 
 An additional `NodePort` type of service is created to serve as a Kafka bootstrap address.
 
-When configuring the advertised addresses for the Kafka broker pods, {ProductName} uses the address of the node on which the given pod is running.
+When configuring the advertised addresses for the Kafka broker pods, Strimzi uses the address of the node on which the given pod is running.
 Nodes often have multiple addresses.
 The address type used is based on the first type found in the following order of priority:
 
@@ -25,7 +25,7 @@ The address type used is based on the first type found in the following order of
 You can use the `preferredAddressType` property in your listener configuration to specify the first address type checked as the node address.
 This property is useful, for example, if your deployment does not have DNS support, or you only want to expose a broker internally through an internal DNS or IP address.
 If an address of this type is found, it is used.
-If the preferred address type is not found, {ProductName} proceeds through the types in the standard order of priority.
+If the preferred address type is not found, Strimzi proceeds through the types in the standard order of priority.
 
 .Example of an external listener configured with a preferred address type
 [source,yaml,subs=attributes+]
@@ -55,7 +55,7 @@ NOTE: TLS hostname verification is not currently supported when exposing Kafka c
 
 By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
 However, you can override the assigned node ports by specifying the requested port numbers in the `overrides` property.
-{ProductName} does not perform any validation on the requested ports; you must ensure that they are free and available for use.
+Strimzi does not perform any validation on the requested ports; you must ensure that they are free and available for use.
 
 .Example of an external listener configured with overrides for node ports
 [source,yaml,subs="attributes+"]

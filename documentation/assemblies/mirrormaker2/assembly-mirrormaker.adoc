@@ -5,7 +5,7 @@
 [id='assembly-mirrormaker-{context}']
 = Kafka MirrorMaker 2.0 configuration
 
-This section describes how to configure a Kafka MirrorMaker 2.0 deployment in your {ProductName} cluster.
+This section describes how to configure a Kafka MirrorMaker 2.0 deployment in your Strimzi cluster.
 
 MirrorMaker 2.0 is used to replicate data between two or more active Kafka clusters, within or across data centers.
 

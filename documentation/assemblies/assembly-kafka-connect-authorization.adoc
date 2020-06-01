@@ -10,7 +10,7 @@
 If authorization is enabled for Kafka Connect, the Kafka Connect user must be configured to provide read/write access rights to the Kafka Connect consumer group and
 internal topics.
 
-The properties for the consumer group and internal topics are automatically configured by {ProductName}, or they can be specified explicitly in the `spec` for the `KafkaConnect` or `KafkaConnectS2I` configuration.
+The properties for the consumer group and internal topics are automatically configured by Strimzi, or they can be specified explicitly in the `spec` for the `KafkaConnect` or `KafkaConnectS2I` configuration.
 
 The following example shows the configuration of the properties in the `KafkaConnect` resource, which need to be represented in the Kafka Connect user configuration.
 

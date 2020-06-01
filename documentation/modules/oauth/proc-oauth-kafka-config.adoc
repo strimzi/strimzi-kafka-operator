@@ -3,9 +3,9 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-kafka-config-{context}']
-= Configuring {oauth} for Kafka components
+= Configuring OAuth 2.0 for Kafka components
 
-This procedure describes how to configure Kafka components to use {oauth} authentication using an authorization server.
+This procedure describes how to configure Kafka components to use OAuth 2.0 authentication using an authorization server.
 
 You can configure authentication for:
 
@@ -17,15 +17,15 @@ In this scenario, the Kafka component and the authorization server are running i
 
 .Before you start
 
-For more information on the configuration of {oauth} authentication for Kafka components, see:
+For more information on the configuration of OAuth 2.0 authentication for Kafka components, see:
 
 * xref:appendix_crds#type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference]
 
 .Prerequisites
 
-* {ProductName} and Kafka are running
-* An {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
-* Kafka brokers are configured for {oauth}
+* Strimzi and Kafka are running
+* An OAuth 2.0 authorization server is deployed and configured for OAuth access to Kafka brokers
+* Kafka brokers are configured for OAuth 2.0
 
 .Procedure
 
@@ -45,9 +45,9 @@ data:
 ----
 <1> The `clientSecret` key must be in base64 format.
 
-. Create or edit the resource for the Kafka component so that {oauth} authentication is configured for the authentication property.
+. Create or edit the resource for the Kafka component so that OAuth 2.0 authentication is configured for the authentication property.
 +
-For {oauth} authentication, you can use:
+For OAuth 2.0 authentication, you can use:
 +
 --
 * Client ID and secret
@@ -58,7 +58,7 @@ For {oauth} authentication, you can use:
 +
 xref:appendix_crds#type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference provides examples of each].
 +
-For example, here {oauth} is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
+For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -83,7 +83,7 @@ spec:
 <2> URI of the token endpoint for authentication.
 <3> Trusted certificates for TLS connection to the authorization server.
 +
-Depending on how you apply {oauth} authentication, and the type of authorization server, there are additional configuration options you can use:
+Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -117,4 +117,4 @@ kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
 kubectl get pod -w
 ----
 +
-The rolling updates configure the component for interaction with Kafka brokers using {oauth} authentication.
+The rolling updates configure the component for interaction with Kafka brokers using OAuth 2.0 authentication.

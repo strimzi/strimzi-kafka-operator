@@ -43,4 +43,4 @@ The application pods must be running in the same namespace as the Kafka broker.
 The syntax of the `networkPolicyPeers` field is the same as the `from` field in `NetworkPolicy` resources.
 For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
 
-NOTE: Your configuration of Kubernetes must support ingress NetworkPolicies in order to use network policies in {ProductName}.
+NOTE: Your configuration of Kubernetes must support ingress NetworkPolicies in order to use network policies in Strimzi.

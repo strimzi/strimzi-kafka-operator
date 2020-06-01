@@ -10,7 +10,7 @@
 [id='assembly-kafka-authentication-and-authorization-{context}']
 = Authentication and Authorization
 
-{ProductName} supports authentication and authorization.
+Strimzi supports authentication and authorization.
 Authentication can be configured independently for each xref:assembly-configuring-kafka-broker-listeners-{context}[listener].
 Authorization is always configured for the whole Kafka cluster.
 

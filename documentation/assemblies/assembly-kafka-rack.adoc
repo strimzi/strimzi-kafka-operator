@@ -10,7 +10,7 @@
 
 = Kafka rack awareness
 
-The rack awareness feature in {ProductName} helps to spread the Kafka broker pods and Kafka topic replicas across different racks.
+The rack awareness feature in Strimzi helps to spread the Kafka broker pods and Kafka topic replicas across different racks.
 Enabling rack awareness helps to improve availability of Kafka brokers and the topics they are hosting.
 
 NOTE: "Rack" might represent an availability zone, data center, or an actual rack in your data center.

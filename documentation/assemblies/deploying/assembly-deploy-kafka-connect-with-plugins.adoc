@@ -5,7 +5,7 @@
 [id='using-kafka-connect-with-plug-ins-{context}']
 = Extending Kafka Connect with connector plug-ins
 
-The {ProductName} container images for Kafka Connect include two built-in file connectors for moving file-based data into and out of your Kafka cluster.
+The Strimzi container images for Kafka Connect include two built-in file connectors for moving file-based data into and out of your Kafka cluster.
 
 [cols="2*",options="header",stripes="none",separator=¦]
 |===

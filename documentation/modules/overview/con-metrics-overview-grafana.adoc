@@ -8,4 +8,4 @@
 Grafana uses the metrics data exposed by Prometheus to present dashboard visualizations for monitoring.
 
 A deployment of Grafana is required, with Prometheus added as a data source.
-Example dashboards, supplied with {ProductName} as JSON files, are imported through the Grafana interface to present monitoring data.
+Example dashboards, supplied with Strimzi as JSON files, are imported through the Grafana interface to present monitoring data.

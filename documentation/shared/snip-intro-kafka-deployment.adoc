@@ -1,5 +1,5 @@
 //standard kafka deployment text
-Apache Kafka components are provided for deployment to Kubernetes with the {ProductName} distribution.
+Apache Kafka components are provided for deployment to Kubernetes with the Strimzi distribution.
 The Kafka components are generally run as clusters for availability.
 
 A typical deployment incorporating Kafka components might include:

@@ -3,26 +3,26 @@
 // deploying/assembly_deploy-tasks-prep.adoc
 
 [id='adding-users-the-strimzi-admin-role-{context}']
-= Designating {ProductName} administrators
+= Designating Strimzi administrators
 
-{ProductName} provides custom resources for configuration of your deployment.
+Strimzi provides custom resources for configuration of your deployment.
 By default, permission to view, create, edit, and delete these resources is limited to Kubernetes cluster administrators.
-{ProductName} provides two cluster roles that you can use to assign these rights to other users:
+Strimzi provides two cluster roles that you can use to assign these rights to other users:
 
-* `strimzi-view` allows users to view and list {ProductName} resources.
-* `strimzi-admin` allows users to also create, edit or delete {ProductName} resources.
+* `strimzi-view` allows users to view and list Strimzi resources.
+* `strimzi-admin` allows users to also create, edit or delete Strimzi resources.
 
 When you install these roles, they will automatically aggregate (add) these rights to the default Kubernetes cluster roles.
 `strimzi-view` aggregates to the `view` role, and `strimzi-admin` aggregates to the `edit` and `admin` roles.
 Because of the aggregation, you might not need to assign these roles to users who already have similar rights.
 
-The following procedure shows how to assign a `strimzi-admin` role that allows non-cluster administrators to manage {ProductName} resources.
+The following procedure shows how to assign a `strimzi-admin` role that allows non-cluster administrators to manage Strimzi resources.
 
-A system administrator can designate {ProductName} administrators after the Cluster Operator is deployed.
+A system administrator can designate Strimzi administrators after the Cluster Operator is deployed.
 
 .Prerequisites
 
-* The {ProductName} Custom Resource Definitions (CRDs) and role-based access control (RBAC) resources to manage the CRDs have been xref:cluster-operator-{context}[deployed with the Cluster Operator].
+* The Strimzi Custom Resource Definitions (CRDs) and role-based access control (RBAC) resources to manage the CRDs have been xref:cluster-operator-{context}[deployed with the Cluster Operator].
 
 .Procedure
 

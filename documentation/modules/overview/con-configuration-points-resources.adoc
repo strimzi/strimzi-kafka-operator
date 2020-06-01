@@ -7,7 +7,7 @@
 
 After a new custom resource type is added to your cluster by installing a CRD, you can create instances of the resource based on its specification.
 
-The custom resources for {ProductName} components have common configuration properties, which are defined under `spec`.
+The custom resources for Strimzi components have common configuration properties, which are defined under `spec`.
 
 In this fragment from a Kafka topic custom resource, the `apiVersion` and `kind` properties identify the associated CRD.
 The `spec` property shows configuration that defines the number of partitions and replicas for the topic.

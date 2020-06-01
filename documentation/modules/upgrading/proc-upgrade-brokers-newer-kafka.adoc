@@ -6,7 +6,7 @@
 
 = Upgrading Kafka brokers and client applications
 
-This procedure describes how to upgrade a {ProductName} Kafka cluster to a higher version of Kafka.
+This procedure describes how to upgrade a Strimzi Kafka cluster to a higher version of Kafka.
 
 .Prerequisites
 
@@ -147,4 +147,4 @@ The Kafka cluster and clients are now using the new Kafka version.
 
 .Additional resources
 
-* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version.
+* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a Strimzi Kafka cluster from one version to a lower version.

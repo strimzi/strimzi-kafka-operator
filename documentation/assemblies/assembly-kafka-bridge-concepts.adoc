@@ -5,7 +5,7 @@
 [id='kafka-bridge-concepts-{context}']
 = Kafka Bridge
 
-This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started using its REST API to interact with {ProductName}. To try out the Kafka Bridge in your local environment, see the xref:assembly-kafka-bridge-quickstart-{context}[] later in this chapter.
+This chapter provides an overview of the Strimzi Kafka Bridge and helps you get started using its REST API to interact with Strimzi. To try out the Kafka Bridge in your local environment, see the xref:assembly-kafka-bridge-quickstart-{context}[] later in this chapter.
 
 include::assembly-kafka-bridge-overview.adoc[leveloffset=+1]
 

@@ -11,7 +11,7 @@
 = TLS sidecar
 
 A sidecar is a container that runs in a pod but serves a supporting purpose.
-In {ProductName}, the TLS sidecar uses TLS to encrypt and decrypt all communication between the various components and ZooKeeper.
+In Strimzi, the TLS sidecar uses TLS to encrypt and decrypt all communication between the various components and ZooKeeper.
 ZooKeeper does not have native TLS support.
 
 The TLS sidecar is used in:

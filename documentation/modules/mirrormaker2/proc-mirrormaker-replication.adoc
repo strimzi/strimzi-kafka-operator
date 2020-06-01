@@ -49,7 +49,7 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* xref:cluster-operator-str[{ProductName} and Kafka is deployed]
+* xref:cluster-operator-str[Strimzi and Kafka is deployed]
 * Source and target Kafka clusters are available
 
 .Procedure
@@ -185,7 +185,7 @@ spec:
 <10> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <11> Bootstrap server for connection to the target Kafka cluster.
 <12> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
-Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}.
+Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
 <13> xref:type-KafkaMirrorMaker2ClusterSpec-reference[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
 <14> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <15> MirrorMaker 2.0 connectors.

@@ -13,14 +13,14 @@
 
 = CPU and memory resources
 
-For every deployed container, {ProductName} allows you to request specific resources and define the maximum consumption of those resources.
+For every deployed container, Strimzi allows you to request specific resources and define the maximum consumption of those resources.
 
-{ProductName} supports two types of resources:
+Strimzi supports two types of resources:
 
 * CPU
 * Memory
 
-{ProductName} uses the Kubernetes syntax for specifying CPU and memory resources.
+Strimzi uses the Kubernetes syntax for specifying CPU and memory resources.
 
 include::../modules/ref-resource-limits-and-requests.adoc[leveloffset=+1]
 

@@ -8,7 +8,7 @@
 To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.  
 
 Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster.
-With a few exceptions, {ProductName} supports all the optimization goals developed in the Cruise Control project. 
+With a few exceptions, Strimzi supports all the optimization goals developed in the Cruise Control project. 
 The supported goals, in the default descending order of priority, are as follows:
 
 . Rack-awareness
@@ -31,7 +31,7 @@ For more information on each optimization goal, see link:https://github.com/link
 NOTE: CPU goals, intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not yet supported.
 
 [discrete]
-== Goals configuration in {ProductName} custom resources
+== Goals configuration in Strimzi custom resources
 
 You configure optimization goals in `Kafka` and `KafkaRebalance` custom resources. Cruise Control has configurations for xref:#hard-soft-goals[_hard_] optimization goals that must be satisfied, as well as xref:#master-goals[_master_], xref:#default-goals[_default_], and xref:#user-provided-goals[_user-provided_] optimization goals. 
 Optimization goals are subject to any xref:#capacity-configuration[_capacity limits_] on broker resources.
@@ -102,7 +102,7 @@ Therefore, if some, but not all, of the user-provided optimization goals are in 
 The _master optimization goals_ are available to all users.
 Goals that are not listed in the master optimization goals are not available for use in Cruise Control operations.
 
-Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], {ProductName} will inherit the following master optimization goals from Cruise Control, in descending priority order:
+Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], Strimzi will inherit the following master optimization goals from Cruise Control, in descending priority order:
 
 [source]
 RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal

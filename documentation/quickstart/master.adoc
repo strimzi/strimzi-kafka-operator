@@ -2,7 +2,7 @@ include::shared/attributes.adoc[]
 
 :context: str
 
-= {ProductName} Quick Start
+= Strimzi Quick Start
 
 // common intro
 include::assemblies/assembly-quickstart-overview.adoc[leveloffset=+1]

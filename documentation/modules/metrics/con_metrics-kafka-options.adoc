@@ -6,7 +6,7 @@
 
 = Prometheus metrics configuration
 
-{ProductName} provides xref:ref-metrics-config-files-{context}[example configuration files for Grafana].
+Strimzi provides xref:ref-metrics-config-files-{context}[example configuration files for Grafana].
 
 Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for:
 

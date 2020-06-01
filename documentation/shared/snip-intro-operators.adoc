@@ -1,4 +1,4 @@
 //standard operator intro text
 Operators are a method of packaging, deploying, and managing a Kubernetes application.
-{ProductName} Operators extend Kubernetes functionality, automating common and complex tasks related to a Kafka deployment.
+Strimzi Operators extend Kubernetes functionality, automating common and complex tasks related to a Kafka deployment.
 By implementing knowledge of Kafka operations in code, Kafka administration tasks are simplified and require less manual intervention.
