@@ -3,7 +3,7 @@
 
 ## 0.19.0
 
-* Remove the code behind `Kafka.spec.topicOperator` which did not work anymore 
+* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic 
 
 ## 0.18.0
 
