@@ -124,4 +124,15 @@ public class CruiseControlUtils {
 
         return cruiseControlProperties;
     }
+
+    public static void waitForRebalanceEndpointIsReady() {
+        TestUtils.waitFor("Wait for rebalance endpoint is ready",
+            Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
+                String response = callApi(SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+                LOGGER.debug("API response {}", response);
+                return !response.contains("Error processing POST request '/rebalance' due to: " +
+                    "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
+                    "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
+            });
+    }
 }

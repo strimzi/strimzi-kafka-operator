@@ -66,6 +66,9 @@ public class CruiseControlApiST extends BaseST {
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
+        LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
+        CruiseControlUtils.waitForRebalanceEndpointIsReady();
+
         response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
 
         // all goals stats that contains
