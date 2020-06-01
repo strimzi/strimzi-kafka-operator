@@ -8,7 +8,7 @@
 
 In order to create your Kafka cluster, you deploy the Cluster Operator to manage the Kafka cluster, then deploy the Kafka cluster.
 
-When deploying the Kafka cluster using the `Kafka` resource, you can configure the deployment to deploy the Topic Operator and User Operator at the same time.
+When deploying the Kafka cluster using the `Kafka` resource, you can deploy the Topic Operator and User Operator at the same time.
 Alternatively, if you are using a non-{ProductName} Kafka cluster, you can deploy the Topic Operator and User Operator as standalone components.
 
 [discrete]

@@ -18,7 +18,7 @@ NOTE: By default, the Prometheus Operator only supports jobs that include an `en
 
 .Procedure
 
-. Modify the Prometheus installation file (`prometheus.yaml`) according to the namespace Prometheus is going to be installed in:
+. Modify the Prometheus installation file (`prometheus.yaml`) according to the namespace Prometheus is going to be installed into:
 +
 On Linux, use:
 +
