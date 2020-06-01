@@ -15,6 +15,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.json.JsonArray;
@@ -240,7 +241,9 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
         LOGGER.info("Scaling KafkaBridge to zero replicas");
         KafkaBridgeResource.replaceBridgeResource(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
-        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, 0);
+
+        KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
         bridgePods = kubeClient().listPodNames("type", "kafka-bridge");
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
