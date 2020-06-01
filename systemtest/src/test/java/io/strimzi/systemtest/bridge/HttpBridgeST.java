@@ -7,6 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
@@ -30,6 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -219,6 +221,32 @@ class HttpBridgeST extends HttpBridgeBaseST {
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none")));
+    }
+
+    @Test
+    void testScaleBridgeToZero() {
+        String bridgeName = "scaling-bridge";
+
+        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-bridge")
+            .endMetadata()
+            .done();
+
+        List<String> bridgePods = kubeClient().listPodNames("type", "kafka-bridge");
+        String deploymentName = KafkaBridgeResources.deploymentName(bridgeName);
+
+        assertThat(bridgePods.size(), is(1));
+
+        LOGGER.info("Scaling KafkaBridge to zero replicas");
+        KafkaBridgeResource.replaceBridgeResource(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
+        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, 0);
+
+        bridgePods = kubeClient().listPodNames("type", "kafka-bridge");
+        KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
+
+        assertThat(bridgePods.size(), is(0));
+        assertThat(bridgeStatus.getConditions().get(0).getType(), is("Ready"));
     }
 
     @BeforeAll
