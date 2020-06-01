@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class Util {
@@ -58,6 +59,11 @@ public class Util {
      * @return A future that completes when the given {@code completed} indicates readiness.
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
+        return waitFor(vertx, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
+    }
+
+    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
+                                       Predicate<Throwable> failOnError) {
         Promise<Void> promise = Promise.promise();
         LOGGER.debug("Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -84,14 +90,18 @@ public class Util {
                             LOGGER.debug("{} is {}", logContext, logState);
                             promise.complete();
                         } else {
-                            long timeLeft = deadline - System.currentTimeMillis();
-                            if (timeLeft <= 0) {
-                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                LOGGER.error(exceptionMessage);
-                                promise.fail(new TimeoutException(exceptionMessage));
+                            if (failOnError.test(res.cause())) {
+                                promise.fail(res.cause());
                             } else {
-                                // Schedule ourselves to run again
-                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                long timeLeft = deadline - System.currentTimeMillis();
+                                if (timeLeft <= 0) {
+                                    String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
+                                    LOGGER.error(exceptionMessage);
+                                    promise.fail(new TimeoutException(exceptionMessage));
+                                } else {
+                                    // Schedule ourselves to run again
+                                    vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                }
                             }
                         }
                     }
