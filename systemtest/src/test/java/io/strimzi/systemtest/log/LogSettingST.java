@@ -59,6 +59,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -370,32 +371,35 @@ class LogSettingST extends AbstractST {
 
     @Test
     @Order(14)
-    void testDynamicallySetEOloggingLevels() {
-        String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
+    void testDynamicallySetEOloggingLevels() throws InterruptedException {
+        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDeploymentName);
 
+        final String eoPodName = eoPods.keySet().iterator().next();
+
+        LOGGER.info("Setting log level of TO and UO to OFF - no records should appear in log");
         // change inline logging
         InlineLogging il = new InlineLogging();
-        il.setLoggers(Collections.singletonMap("rootLogger.level", INFO));
+        il.setLoggers(Collections.singletonMap("rootLogger.level", OFF));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(il);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(il);
         });
 
-        String eoPodName = eoPods.keySet().iterator().next();
-        String eoPodHash = eoPods.get(eoPodName);
-        String finalEoPodName = eoPodName;
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-                return cmdKubeClient().execInPodContainer(finalEoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
-                && cmdKubeClient().execInPodContainer(finalEoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO");
-            }
+        LOGGER.info("The EO shouldn't roll - verifying pod stability");
+        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
         );
 
-        eoPods = DeploymentUtils.depSnapshot(eoName);
-        String eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
-        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
-        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+        //wait some time if TO and UO will log something
+        Thread.sleep(60_000);
 
+        LOGGER.info("Asserting if log is without records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(""));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(""));
 
         ConfigMap configMapTo = new ConfigMapBuilder()
                 .withNewMetadata()
@@ -409,7 +413,7 @@ class LogSettingST extends AbstractST {
                         "appender.console.layout.type = PatternLayout\n" +
                         "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "\n" +
-                        "rootLogger.level = TRACE\n" +
+                        "rootLogger.level = INFO\n" +
                         "rootLogger.appenderRefs = stdout\n" +
                         "rootLogger.appenderRef.console.ref = STDOUT\n" +
                         "rootLogger.additivity = false"))
@@ -427,7 +431,7 @@ class LogSettingST extends AbstractST {
                         "appender.console.layout.type = PatternLayout\n" +
                         "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "\n" +
-                        "rootLogger.level = TRACE\n" +
+                        "rootLogger.level = INFO\n" +
                         "rootLogger.appenderRefs = stdout\n" +
                         "rootLogger.appenderRef.console.ref = STDOUT\n" +
                         "rootLogger.additivity = false"))
@@ -444,67 +448,27 @@ class LogSettingST extends AbstractST {
                 .withName("external-configmap-uo")
                 .build();
 
+        LOGGER.info("Setting log level of TO and UO to INFO - records should appear in log");
         // change to external logging
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(elTo);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
         });
 
-        String finalEoPodName1 = eoPodName;
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-                return cmdKubeClient().execInPodContainer(finalEoPodName1, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = TRACE")
-                        && cmdKubeClient().execInPodContainer(finalEoPodName1, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = TRACE");
-            }
+        LOGGER.info("The EO shouldn't roll - verifying pod stability");
+        DeploymentUtils.waitForNoRollingUpdate(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPods);
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = INFO")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = INFO")
         );
 
-        eoPodName = eoPods.keySet().iterator().next();
-        eoPodHash = eoPods.get(eoPodName);
-        eoPods = DeploymentUtils.depSnapshot(eoName);
-        eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
-        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
-        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
+        //wait some time if TO and UO will log something
+        Thread.sleep(60_000);
 
-
-        configMapTo.setData(Collections.singletonMap("log4j2.properties", "name = TOConfig\n" +
-                "\n" +
-                "appender.console.type = Console\n" +
-                "appender.console.name = STDOUT\n" +
-                "appender.console.layout.type = PatternLayout\n" +
-                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                "\n" +
-                "rootLogger.level = DEBUG\n" +
-                "rootLogger.appenderRefs = stdout\n" +
-                "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                "rootLogger.additivity = false"));
-
-        configMapUo.setData(Collections.singletonMap("log4j2.properties", "name = UOConfig\n" +
-                "\n" +
-                "appender.console.type = Console\n" +
-                "appender.console.name = STDOUT\n" +
-                "appender.console.layout.type = PatternLayout\n" +
-                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                "\n" +
-                "rootLogger.level = DEBUG\n" +
-                "rootLogger.appenderRefs = stdout\n" +
-                "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                "rootLogger.additivity = false"));
-
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
-
-        // update external configmap
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-                return cmdKubeClient().execInPodContainer(finalEoPodName1, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
-                        && cmdKubeClient().execInPodContainer(finalEoPodName1, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG");
-            }
-        );
-
-        eoPodHash = eoPods.get(eoPodName);
-        eoPods = DeploymentUtils.depSnapshot(eoName);
-        eoPodNameAfterLoggingChange = eoPods.keySet().iterator().next();
-        assertThat("Pod name should not be changed after dynamic logging changes", eoPodNameAfterLoggingChange.equals(eoPodName), is(true));
-        assertThat("Pod hash should not be changed after dynamic logging changes", eoPods.get(eoPodNameAfterLoggingChange).equals(eoPodHash), is(true));
-
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "3m"), is(not("")));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "3m"), is(not("")));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
