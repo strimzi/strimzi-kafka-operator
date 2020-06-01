@@ -45,7 +45,6 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
@@ -361,7 +360,6 @@ public class ResourceUtils {
                                            Map<String, Object> zooConfiguration,
                                            Storage kafkaStorage,
                                            SingleVolumeStorage zkStorage,
-                                           TopicOperatorSpec topicOperatorSpec,
                                            Logging kafkaLogging, Logging zkLogging,
                                            KafkaExporterSpec keSpec,
                                            CruiseControlSpec ccSpec) {
@@ -414,7 +412,6 @@ public class ResourceUtils {
             zk.setMetrics(metricsCm);
         }
 
-        spec.setTopicOperator(topicOperatorSpec);
         spec.setKafkaExporter(keSpec);
         spec.setCruiseControl(ccSpec);
 

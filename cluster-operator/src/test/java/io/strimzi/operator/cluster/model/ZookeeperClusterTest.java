@@ -99,7 +99,7 @@ public class ZookeeperClusterTest {
 
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
-    private final Kafka ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
+    private final Kafka ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
 
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 

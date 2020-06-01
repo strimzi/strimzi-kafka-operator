@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.19.0
+
+* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic 
+
 ## 0.18.0
 
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.

@@ -692,7 +692,7 @@ public class KafkaCluster extends AbstractModel {
                     result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
                 } else if (template.getPerPodService().getLoadBalancerSourceRanges() != null
                         && template.getPerPodService().getLoadBalancerSourceRanges().size() > 0) {
-                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
+                    // LoadBalancerSourceRanges have been set, but LoadBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
