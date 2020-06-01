@@ -100,7 +100,10 @@ spec:
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
 <2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
 <3> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
-<4> If the authorization server requires the client to specify the `scope` when requesting the token from the token endpoint, you can provide it - in this case it is `any`.
+<4> (Optional) The `scope` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the scope,
+which defines the endpoints that can be accessed in the authorization server.
+In this case it is `any`.
 
 . Apply the changes to the deployment of your Kafka resource.
 +
