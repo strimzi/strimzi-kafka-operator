@@ -124,6 +124,9 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 docu_check:
 	./.travis/check_docs.sh
 
+shellcheck:
+	./.travis/shellcheck.sh
+
 spotbugs: $(SUBDIRS) systemtest_make
 
 docu_pushtowebsite: docu_htmlnoheader docu_html

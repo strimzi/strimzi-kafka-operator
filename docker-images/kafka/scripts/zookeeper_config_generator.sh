@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Write the config file
 cat <<EOF
@@ -42,5 +43,5 @@ EOF
 NODE=1
 while [[ $NODE -le $ZOOKEEPER_NODE_COUNT ]]; do
     echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888:participant;127.0.0.1:12181"
-    let NODE=NODE+1
+    (( NODE=NODE+1 ))
 done

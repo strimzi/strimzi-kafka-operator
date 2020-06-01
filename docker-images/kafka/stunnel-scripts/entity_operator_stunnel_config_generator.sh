@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # path were the Secret with EO certificates is mounted
 EO_CERTS_KEYS=/etc/tls-sidecar/eo-certs

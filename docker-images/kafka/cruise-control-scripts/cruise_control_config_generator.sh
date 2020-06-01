@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 CC_CAPACITY_FILE="/tmp/capacity.json"
 CC_CLUSTER_CONFIG_FILE="/tmp/clusterConfig.json"
