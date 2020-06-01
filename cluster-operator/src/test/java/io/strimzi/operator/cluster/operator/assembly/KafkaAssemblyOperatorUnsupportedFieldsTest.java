@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
@@ -35,12 +36,13 @@ import java.text.ParseException;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaAssemblyOperatorWithDeprecatedTopicOperatorTest {
+public class KafkaAssemblyOperatorUnsupportedFieldsTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_11;
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
@@ -60,6 +62,10 @@ public class KafkaAssemblyOperatorWithDeprecatedTopicOperatorTest {
         vertx.close();
     }
 
+    /**
+     * This test checks that when the unsupported spec.topicOperator is not configured in the Kafka CR, no warning about
+     * it will be in the status.
+     */
     @Test
     public void testNoTopicOperatorWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
@@ -109,13 +115,26 @@ public class KafkaAssemblyOperatorWithDeprecatedTopicOperatorTest {
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-                    assertThat(status.getConditions().size(), is(1));
-                    assertThat(status.getConditions().get(0).getType(), is("Ready"));
+                    Condition ready = status.getConditions().stream()
+                            .filter(condition -> "Ready".equals(condition.getType()))
+                            .findFirst()
+                            .orElse(null);
+                    assertThat(ready, is(notNullValue()));
+                    assertThat(ready.getStatus(), is("True"));
+
+                    Condition toWarning = status.getConditions().stream()
+                            .filter(condition -> "Warning".equals(condition.getType()) && "TopicOperator".equals(condition.getReason()))
+                            .findFirst().orElse(null);
+                    assertThat(toWarning, is(nullValue()));
 
                     async.flag();
                 })));
     }
 
+    /**
+     * This test checks that when the unsupported spec.topicOperator is configured in the KAfka CR, a warning about it
+     * will be in the status.
+     */
     @Test
     public void testTopicOperatorWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
@@ -167,11 +186,18 @@ public class KafkaAssemblyOperatorWithDeprecatedTopicOperatorTest {
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-                    assertThat(status.getConditions().size(), is(2));
-                    assertThat(status.getConditions().get(0).getType(), is("Warning"));
-                    assertThat(status.getConditions().get(0).getReason(), is("TopicOperator"));
-                    assertThat(status.getConditions().get(0).getMessage(), containsString("Kafka.spec.topicOperator is not supported anymore. Topic operator should be configured at path spec.entityOperator.topicOperator."));
-                    assertThat(status.getConditions().get(1).getType(), is("Ready"));
+                    Condition ready = status.getConditions().stream()
+                            .filter(condition -> "Ready".equals(condition.getType()))
+                            .findFirst()
+                            .orElse(null);
+                    assertThat(ready, is(notNullValue()));
+                    assertThat(ready.getStatus(), is("True"));
+
+                    Condition toWarning = status.getConditions().stream()
+                            .filter(condition -> "Warning".equals(condition.getType()) && "TopicOperator".equals(condition.getReason()))
+                            .findFirst().orElse(null);
+                    assertThat(toWarning, is(notNullValue()));
+                    assertThat(toWarning.getMessage(), containsString("Kafka.spec.topicOperator is not supported anymore. Topic operator should be configured at path spec.entityOperator.topicOperator."));
 
                     async.flag();
                 })));
