@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 set +x
 
 if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
@@ -6,7 +7,8 @@ if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
 fi
 
 # Generate temporary keystore password
-export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+export CERTS_STORE_PASSWORD
 
 # Create dir where keystores and truststores will be stored
 mkdir -p /tmp/kafka
@@ -32,20 +34,22 @@ export LOG_DIR="$KAFKA_HOME"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
-    export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+    KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+    export KAFKA_OPTS
 fi
 
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-    export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent*.jar)=jaeger"
+    KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=jaeger"
+    export KAFKA_OPTS
 fi
 
-if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
+if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     . ./dynamic_resources.sh
     # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap
     # available to a jvm using 100% of the GCroup-aware memory
     # up to some optional DYNAMIC_HEAP_MAX
-    CALC_MAX_HEAP=$(get_heap_size ${DYNAMIC_HEAP_FRACTION} ${DYNAMIC_HEAP_MAX})
+    CALC_MAX_HEAP=$(get_heap_size "${DYNAMIC_HEAP_FRACTION}" "${DYNAMIC_HEAP_MAX}")
     if [ -n "$CALC_MAX_HEAP" ]; then
       export KAFKA_HEAP_OPTS="-Xms${CALC_MAX_HEAP} -Xmx${CALC_MAX_HEAP}"
     fi
@@ -58,4 +62,4 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Kafka server with final configuration
-exec /usr/bin/tini -w -e 143 -- ${KAFKA_HOME}/bin/connect-distributed.sh /tmp/strimzi-connect.properties
+exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/connect-distributed.sh" /tmp/strimzi-connect.properties

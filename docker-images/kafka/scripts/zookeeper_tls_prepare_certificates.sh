@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Parameters:
 # $1: Path to the new truststore
@@ -6,7 +7,7 @@
 # $3: Public key to be imported
 # $4: Alias of the certificate
 function create_truststore {
-   keytool -keystore $1 -storepass $2 -noprompt -alias $4 -import -file $3 -storetype PKCS12
+   keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
 }
 
 # Parameters:
@@ -17,7 +18,7 @@ function create_truststore {
 # $5: CA public key to be imported
 # $6: Alias of the certificate
 function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name $6 -password pass:$2 -out $1
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password pass:"$2" -out "$1"
 }
 
 # Parameters:
@@ -27,7 +28,7 @@ function create_keystore {
 # $4: Private key to be imported
 # $5: Alias of the certificate
 function create_keystore_without_ca_file {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $5 -password pass:$2 -out $1
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
 }
 
 # Searches the directory with the CAs and finds the CA matching our key.
@@ -37,11 +38,9 @@ function create_keystore_without_ca_file {
 # $1: The directory with the CA certificates
 # $2: Public key to be imported
 function find_ca {
-    for ca in $1/*; do
-        openssl verify -CAfile $ca $2 &> /dev/null
-
-        if [ $? -eq 0 ]; then
-            echo $ca
+    for ca in "$1"/*; do
+        if openssl verify -CAfile "$ca" "$2" &> /dev/null; then
+            echo "$ca"
         fi
     done
 }
@@ -57,7 +56,7 @@ done
 echo "Preparing truststore is complete"
 
 echo "Looking for the right CA"
-CA=$(find_ca /opt/kafka/cluster-ca-certs /opt/kafka/zookeeper-node-certs/$HOSTNAME.crt)
+CA=$(find_ca "/opt/kafka/cluster-ca-certs" "/opt/kafka/zookeeper-node-certs/$HOSTNAME.crt")
 
 if [ ! -f "$CA" ]; then
     echo "No CA found. Thus exiting."
@@ -66,9 +65,9 @@ fi
 echo "Found the right CA: $CA"
 
 echo "Preparing keystore for client and quorum listeners"
-create_keystore /tmp/zookeeper/cluster.keystore.p12 $CERTS_STORE_PASSWORD \
-    /opt/kafka/zookeeper-node-certs/$HOSTNAME.crt \
-    /opt/kafka/zookeeper-node-certs/$HOSTNAME.key \
-    $CA \
-    $HOSTNAME
+create_keystore /tmp/zookeeper/cluster.keystore.p12 "$CERTS_STORE_PASSWORD" \
+    "/opt/kafka/zookeeper-node-certs/$HOSTNAME.crt" \
+    "/opt/kafka/zookeeper-node-certs/$HOSTNAME.key" \
+    "$CA" \
+    "$HOSTNAME"
 echo "Preparing keystore for client and quorum listeners is complete"

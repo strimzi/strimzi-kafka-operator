@@ -21,6 +21,7 @@ export DOCKER_TAG=$COMMIT
 
 make docu_check
 make spotbugs
+make shellcheck
 
 make crd_install
 make helm_install

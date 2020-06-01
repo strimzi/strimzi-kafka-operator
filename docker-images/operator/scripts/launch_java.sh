@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+set -e
 set -x
-shift
 
 # expand gc options based upon java version
 function get_gc_opts {
@@ -26,4 +26,5 @@ JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/
 # Enable GC logging for memory tracking
 JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
-exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath $JAVA_CLASSPATH $JAVA_MAIN $@
+# shellcheck disable=SC2086
+exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath "$JAVA_CLASSPATH" "$JAVA_MAIN" "$@"

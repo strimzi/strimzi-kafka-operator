@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # path were the Secret with Cruise Control certificates is mounted
 CC_CERTS_KEYS=/etc/tls-sidecar/cc-certs
