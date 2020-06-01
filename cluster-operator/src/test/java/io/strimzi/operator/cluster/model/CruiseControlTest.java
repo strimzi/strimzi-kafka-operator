@@ -334,7 +334,7 @@ public class CruiseControlTest {
 
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
+                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         List<EnvVar> envVarList = cc.getEnvVars();
@@ -368,7 +368,7 @@ public class CruiseControlTest {
 
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
+                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         List<EnvVar> envVarList = cc.getEnvVars();
@@ -381,7 +381,7 @@ public class CruiseControlTest {
     public void testCruiseControlNotDeployed() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null,  null);
+                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null,  null);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         try {
@@ -412,7 +412,7 @@ public class CruiseControlTest {
     public void testGenerateServiceWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null, null);
+                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
 
         assertThrows(NullPointerException.class, () -> cc.generateService());

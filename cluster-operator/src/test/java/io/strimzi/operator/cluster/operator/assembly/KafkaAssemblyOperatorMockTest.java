@@ -38,7 +38,6 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -245,9 +244,12 @@ public class KafkaAssemblyOperatorMockTest {
                         .withStorage(zkStorage)
                         .withMetrics(singletonMap("foo", "bar"))
                     .endZookeeper()
-                    .withNewTopicOperator()
-                        .withImage("")
-                    .endTopicOperator()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
                 .endSpec()
                 .build();
 
@@ -307,7 +309,6 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat(zkSts.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntry(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "0"));
                 assertThat(zkSts.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
 
-                assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricAndLogConfigsName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertResourceRequirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
@@ -316,7 +317,6 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
     }
 
@@ -344,7 +344,6 @@ public class KafkaAssemblyOperatorMockTest {
                 KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME),
                 KafkaCluster.brokersSecretName(CLUSTER_NAME),
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
-                TopicOperator.secretName(CLUSTER_NAME),
                 ClusterOperator.secretName(CLUSTER_NAME));
     }
 
@@ -801,8 +800,12 @@ public class KafkaAssemblyOperatorMockTest {
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endZookeeper()
-                    .withNewTopicOperator()
-                    .endTopicOperator()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
                 .endSpec()
                 .build();
 

@@ -95,6 +95,7 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -321,12 +322,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaTlsListenerCertificatesToStatus())
                 .compose(state -> state.kafkaExternalListenerCertificatesToStatus())
 
-                .compose(state -> state.getTopicOperatorDescription())
-                .compose(state -> state.topicOperatorServiceAccount())
-                .compose(state -> state.topicOperatorRoleBinding())
-                .compose(state -> state.topicOperatorAncillaryCm())
-                .compose(state -> state.topicOperatorSecret(this::dateSupplier))
-                .compose(state -> state.topicOperatorDeployment())
+                .compose(state -> state.checkUnsupportedTopicOperator())
 
                 .compose(state -> state.getEntityOperatorDescription())
                 .compose(state -> state.entityOperatorServiceAccount())
@@ -404,11 +400,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private String zkLoggingHash = "";
         private String kafkaLoggingHash = "";
         private String kafkaBrokerConfigurationHash = "";
-
-        @SuppressWarnings("deprecation")
-        /* test */ io.strimzi.operator.cluster.model.TopicOperator topicOperator;
-        /* test */ Deployment toDeployment = null;
-        private ConfigMap toMetricsAndLogsConfigMap = null;
 
         /* test */ EntityOperator entityOperator;
         /* test */ Deployment eoDeployment = null;
@@ -730,7 +721,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(sts -> kafkaSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
                                 clusterCa.caCertSecret(),
                                 oldCoSecret))
-                        .compose(i -> rollDeploymentIfExists(io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), reasons))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reasons))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reasons))
                         .compose(i -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reasons))
@@ -2789,84 +2779,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         @SuppressWarnings("deprecation")
-        private final Future<ReconciliationState> getTopicOperatorDescription() {
-            this.topicOperator = io.strimzi.operator.cluster.model.TopicOperator.fromCrd(kafkaAssembly, versions);
-
-            if (topicOperator != null) {
-                this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-                if (topicOperator.getLogging() instanceof ExternalLogging) {
-                    return configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName())
-                            .compose(cm -> {
-                                ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(cm);
-                                this.toMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(logAndMetricsConfigMap);
-                                Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
-                                        Annotations.STRIMZI_LOGGING_ANNOTATION,
-                                        this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
-
-                                return Future.succeededFuture(this);
-                            });
-                } else {
-                    this.toMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(null);
-                }
-            } else {
-                this.toDeployment = null;
-                this.toMetricsAndLogsConfigMap = null;
+        Future<ReconciliationState> checkUnsupportedTopicOperator() {
+            if (kafkaAssembly.getSpec().getTopicOperator() != null) {
+                kafkaStatus.addCondition(StatusUtils.buildWarningCondition("TopicOperator",
+                        "Kafka.spec.topicOperator is not supported anymore. " +
+                                "Topic operator should be configured at path spec.entityOperator.topicOperator."));
             }
+
             return Future.succeededFuture(this);
         }
 
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
-                    io.strimzi.operator.cluster.model.TopicOperator.topicOperatorServiceAccountName(name),
-                    toDeployment != null ? topicOperator.generateServiceAccount() : null));
-        }
-
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorRoleBinding() {
-            if (topicOperator != null) {
-                String watchedNamespace = namespace;
-
-                if (topicOperator.getWatchedNamespace() != null
-                        && !topicOperator.getWatchedNamespace().isEmpty()) {
-                    watchedNamespace = topicOperator.getWatchedNamespace();
-                }
-
-                return withVoid(roleBindingOperations.reconcile(watchedNamespace, io.strimzi.operator.cluster.model.TopicOperator.roleBindingName(name), topicOperator.generateRoleBinding(namespace, watchedNamespace)));
-            } else {
-                return withVoid(roleBindingOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.roleBindingName(name), null));
-            }
-        }
-
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace,
-                    toDeployment != null ? topicOperator.getAncillaryConfigName() : io.strimzi.operator.cluster.model.TopicOperator.metricAndLogConfigsName(name),
-                    toMetricsAndLogsConfigMap));
-        }
-
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorDeployment() {
-            if (this.topicOperator != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.topicOperator.getName());
-                return future.compose(dep -> {
-                    // getting the current cluster CA generation from the current deployment, if exists
-                    int caCertGeneration = getCaCertGeneration(this.clusterCa);
-                    Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
-                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                    return withVoid(deploymentOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), toDeployment));
-                }).map(i -> this);
-            } else  {
-                return withVoid(deploymentOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), null));
-            }
-        }
-
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorSecret(Supplier<Date> dateSupplier) {
-            return withVoid(secretOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
-        }
-
-        @SuppressWarnings("deprecation")
         private final Future<ReconciliationState> getEntityOperatorDescription() {
             this.entityOperator = EntityOperator.fromCrd(kafkaAssembly, versions);
 
