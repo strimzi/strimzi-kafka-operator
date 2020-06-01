@@ -63,6 +63,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 
 @Tag(REGRESSION)
 @Tag(CONNECT)
@@ -407,17 +408,15 @@ class LogSettingST extends AbstractST {
                 .withName("external-configmap-to")
                 .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(Collections.singletonMap("log4j2.properties", "name = TOConfig\n" +
-                        "\n" +
-                        "appender.console.type = Console\n" +
-                        "appender.console.name = STDOUT\n" +
-                        "appender.console.layout.type = PatternLayout\n" +
-                        "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                        "\n" +
-                        "rootLogger.level = DEBUG\n" +
-                        "rootLogger.appenderRefs = stdout\n" +
-                        "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                        "rootLogger.additivity = false"))
+                .withData(Collections.singletonMap("log4j2.properties", "name=TOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=DEBUG\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
                 .build();
 
         ConfigMap configMapUo = new ConfigMapBuilder()
@@ -425,17 +424,15 @@ class LogSettingST extends AbstractST {
                 .withName("external-configmap-uo")
                 .withNamespace(NAMESPACE)
                 .endMetadata()
-                .addToData(Collections.singletonMap("log4j2.properties", "name = UOConfig\n" +
-                        "\n" +
-                        "appender.console.type = Console\n" +
-                        "appender.console.name = STDOUT\n" +
-                        "appender.console.layout.type = PatternLayout\n" +
-                        "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                        "\n" +
-                        "rootLogger.level = DEBUG\n" +
-                        "rootLogger.appenderRefs = stdout\n" +
-                        "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                        "rootLogger.additivity = false"))
+                .addToData(Collections.singletonMap("log4j2.properties", "name=UOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=DEBUG\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
                 .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
@@ -462,6 +459,8 @@ class LogSettingST extends AbstractST {
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
+                    && cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+                    && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         //wait some time if TO and UO will log something
@@ -471,8 +470,8 @@ class LogSettingST extends AbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, "my-topic");
 
         LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "3m"), is(not("")));
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "3m"), is(not("")));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "5m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "5m"), is(not(emptyString())));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
