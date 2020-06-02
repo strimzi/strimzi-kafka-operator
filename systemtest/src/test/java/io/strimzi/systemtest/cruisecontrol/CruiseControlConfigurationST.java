@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -11,12 +11,12 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
@@ -39,14 +39,12 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,39 +52,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CruiseControlST extends BaseST {
+public class CruiseControlConfigurationST extends BaseST {
 
-    private static final Logger LOGGER = LogManager.getLogger(CruiseControlST.class);
-    private static final String NAMESPACE = "cruise-control-test";
+    private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
+    private static final String NAMESPACE = "cruise-control-configuration-test";
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
-    private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
-    private static final String CRUISE_CONTROL_STATE_ENDPOINT = "/kafkacruisecontrol/state";
     private static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
 
     private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 
     @Order(1)
-    @Tag(ACCEPTANCE)
-    @Test
-    void testCruiseControlDeployment()  {
-        String ccStatusCommand = "curl -X GET localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_STATE_ENDPOINT;
-
-        String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
-
-        String result = cmdKubeClient().execInPodContainer(ccPodName, "cruise-control",
-            "/bin/bash", "-c", ccStatusCommand).out();
-
-        LOGGER.info("Verifying that {} is running inside the Pod {} and REST API is available", CRUISE_CONTROL_NAME, ccPodName);
-
-        assertThat(result, not(containsString("404")));
-        assertThat(result, containsString("RUNNING"));
-
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
-    }
-
-    @Order(2)
     @Test
     void testCapacityFile() {
 
@@ -117,7 +94,7 @@ public class CruiseControlST extends BaseST {
         assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
     }
 
-    @Order(3)
+    @Order(2)
     @Test
     void testDeployAndUnDeployCruiseControl() throws IOException {
 
@@ -159,7 +136,7 @@ public class CruiseControlST extends BaseST {
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
-    @Order(4)
+    @Order(3)
     @Test
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
@@ -193,7 +170,7 @@ public class CruiseControlST extends BaseST {
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
     }
 
-    @Order(5)
+    @Order(4)
     @Test
     void testConfigurationReflection() throws IOException {
 
@@ -240,7 +217,7 @@ public class CruiseControlST extends BaseST {
         assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
     }
 
-    @Order(6)
+    @Order(5)
     @Test
     void testConfigurationFileIsCreated() {
         String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
