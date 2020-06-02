@@ -94,7 +94,7 @@ When building the Docker images you can use an alternative JRE or use an alterna
 
 #### Alternative Docker image JRE
 
-The docker images can be built with an alternative java version by setting the environment variable `JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use `JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
+The docker images can be built with an alternative java version by setting the environment variable `JAVA_VERSION`.  For example, to build docker images that have the java 8 JRE installed use `JAVA_VERSION=1.8.0 make docker_build`.  If not present, JAVA_VERSION is defaulted to Java **11**.
 
 If `JAVA_VERSION` environment variable is set, a profile in the parent pom.xml will set the `maven.compiler.source` and `maven.compiler.target` properties.
 
