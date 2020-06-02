@@ -108,7 +108,7 @@ Depending on how you apply {oauth} authentication, and the type of authorization
     fallbackUserNameClaim: client_id <2>
     fallbackUserNamePrefix: client-account- <3>
     validTokenType: bearer <4>
-    userInfoEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/userinfo__> <5>
+    userInfoEndpointUri: __https://OAUTH-SEVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <5>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> An authorization server may not provide a single attribute to identify both regular users and clients. A client authenticating in its own name might provide a _client ID_. But a user authenticating using a username and password, to obtain a refresh token or an access token, might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available.
