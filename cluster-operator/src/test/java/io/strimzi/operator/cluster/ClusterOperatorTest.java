@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static Vertx vertx;
-    private static final Logger log = LogManager.getLogger(ClusterOperatorTest.class.getName());
+    private static final Logger log = LogManager.getLogger(ClusterOperatorTest.class);
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
