@@ -3,7 +3,8 @@
 
 ## 0.19.0
 
-* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic 
+* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
+* Use Java 11 as the Java runtime
 
 ## 0.18.0
 

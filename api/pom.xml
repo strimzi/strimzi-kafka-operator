@@ -129,6 +129,7 @@
                         <configuration>
                             <executable>java</executable>
                             <arguments>
+                                <argument>--illegal-access=deny</argument>
                                 <argument>-classpath</argument>
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
@@ -157,6 +158,7 @@
                         <configuration>
                             <executable>java</executable>
                             <arguments>
+                                <argument>--illegal-access=deny</argument>
                                 <argument>-classpath</argument>
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
