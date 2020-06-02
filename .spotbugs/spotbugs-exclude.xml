@@ -4,6 +4,10 @@
     <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
   </Match>
   <Match>
+    <!-- Java11 build throws false positives: https://github.com/spotbugs/spotbugs/issues/811 -->
+    <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
+  </Match>
+  <Match>
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     <Package name="io.strimzi.certs"/>
   </Match>

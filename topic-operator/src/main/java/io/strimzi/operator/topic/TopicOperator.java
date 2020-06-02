@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
+import static java.util.Collections.emptyList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -1202,9 +1203,10 @@ class TopicOperator {
             this.succeeded = succeeded;
             this.undetermined = undetermined;
             this.failed = failed;
+            this.ktList = emptyList();
         }
 
-        public void addKafkaTopics(List<KafkaTopic> ktList) {
+        public void setKafkaTopics(List<KafkaTopic> ktList) {
             this.ktList = ktList;
         }
     }
@@ -1221,7 +1223,7 @@ class TopicOperator {
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
-                reconcileState.addKafkaTopics(ktList);
+                reconcileState.setKafkaTopics(ktList);
                 return reconcileState;
             });
         }).compose(reconcileState -> {
