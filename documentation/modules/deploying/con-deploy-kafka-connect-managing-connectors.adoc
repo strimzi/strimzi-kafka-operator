@@ -17,7 +17,7 @@ You can create _source_ and _sink_ types of connector.
 Source connector:: A source connector is a runtime entity that fetches data from an external system and feeds it to Kafka as messages.
 Sink connector:: A sink connector is a runtime entity that fetches messages from Kafka topics and feeds them to an external system.
 
-{ProductName} provides two APIs for creating and managing connectors:
+Strimzi provides two APIs for creating and managing connectors:
 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
 * Kafka Connect REST API
@@ -39,11 +39,11 @@ Like other Kafka resources, you declare a connector’s desired state in a `Kafk
 
 You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates. You remove a connector by deleting its corresponding `KafkaConnector`.
 
-To ensure compatibility with earlier versions of {ProductName}, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must use annotations on the `KafkaConnect` resource. For instructions, see link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[Enabling `KafkaConnector` resources].
+To ensure compatibility with earlier versions of Strimzi, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must use annotations on the `KafkaConnect` resource. For instructions, see link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[Enabling `KafkaConnector` resources].
 
 When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for them. It updates the configurations of running connector instances to match the configurations defined in their `KafkaConnectors`.
 
-{ProductName} includes an example `KafkaConnector`, named `examples/connector/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector`.
+Strimzi includes an example `KafkaConnector`, named `examples/connector/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector`.
 
 == Availability of the Kafka Connect REST API
 

@@ -3,7 +3,7 @@
 // overview/master.adoc
 
 [id="kafka-components_{context}"]
-= {ProductName} deployment of Kafka
+= Strimzi deployment of Kafka
 
 //standard kafka deployment intro
 include::../../shared/snip-intro-kafka-deployment.adoc[leveloffset=+1]

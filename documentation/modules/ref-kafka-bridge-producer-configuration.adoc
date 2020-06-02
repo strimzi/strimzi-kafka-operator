@@ -13,7 +13,7 @@ The values can be one of the following JSON types:
 * Number
 * Boolean
 
-Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} with the exception of those options which are managed directly by {ProductName}.
+Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} with the exception of those options which are managed directly by Strimzi.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `ssl.`

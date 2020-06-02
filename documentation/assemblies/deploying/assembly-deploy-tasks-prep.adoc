@@ -4,13 +4,13 @@
 // assembly-getting-started.adoc
 
 [id="deploy-tasks-prereqs_{context}"]
-= Preparing for your {ProductName} deployment
+= Preparing for your Strimzi deployment
 
-This section shows how you prepare for a {ProductName} deployment, describing:
+This section shows how you prepare for a Strimzi deployment, describing:
 
-* xref:deploy-prereqs-{context}[The prerequisites you need before you can deploy {ProductName}]
-* xref:downloads-{context}[How to download the {ProductName} release artifacts to use in your deployment]
-* xref:container-images-{context}[How to push the {ProductName} container images into you own registry (if required)]
+* xref:deploy-prereqs-{context}[The prerequisites you need before you can deploy Strimzi]
+* xref:downloads-{context}[How to download the Strimzi release artifacts to use in your deployment]
+* xref:container-images-{context}[How to push the Strimzi container images into you own registry (if required)]
 * xref:adding-users-the-strimzi-admin-role-{context}[How to set up _admin_ roles for configuration of custom resources used in deployment]
 ifdef::InstallationAppendix[]
 * xref:deploy-alternatives_{context}[Alternative deployment options to Kubernetes using _Minikube_ or _Minishift_]

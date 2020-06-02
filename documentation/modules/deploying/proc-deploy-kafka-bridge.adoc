@@ -9,7 +9,7 @@ This procedure shows how to deploy a Kafka Bridge cluster to your Kubernetes clu
 
 The deployment uses a YAML file to provide the specification to create a `KafkaBridge` resource.
 
-In this procedure, we use the example file provided with {ProductName}:
+In this procedure, we use the example file provided with Strimzi:
 
 * `examples/kafka-bridge/kafka-bridge.yaml`
 

@@ -15,9 +15,9 @@
 
 :context: deployment-configuration-kafka-mirror-maker
 
-This chapter describes how to configure a Kafka MirrorMaker deployment in your {ProductName} cluster to replicate data between Kafka clusters.
+This chapter describes how to configure a Kafka MirrorMaker deployment in your Strimzi cluster to replicate data between Kafka clusters.
 
-You can use {ProductName} with MirrorMaker or xref:assembly-mirrormaker-str[MirrorMaker 2.0].
+You can use Strimzi with MirrorMaker or xref:assembly-mirrormaker-str[MirrorMaker 2.0].
 MirrorMaker 2.0 is the latest version, and offers a more efficient way to mirror data between Kafka clusters.
 
 If you are using MirrorMaker, you configure the `KafkaMirrorMaker` resource.

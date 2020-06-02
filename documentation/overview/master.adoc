@@ -4,7 +4,7 @@ include::shared/attributes.adoc[]
 :context: str
 
 [id="overview-book_{context}"]
-= {ProductName} Overview
+= Strimzi Overview
 
 // Add include directives to include modules and assemblies here
 

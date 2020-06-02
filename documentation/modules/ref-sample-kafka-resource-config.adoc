@@ -127,14 +127,14 @@ spec:
 <8> External listener configuration specifies xref:assembly-kafka-broker-external-listeners-{context}[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
 <9> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
 <10> Authorization xref:ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
-<11> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}].
+<11> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
 <12> xref:ref-kafka-broker-configuration-{context}[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
 <13> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
 <14> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <15> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
 <16> Rack awareness is configured to xref:assembly-kafka-rack-{context}[spread replicas across different racks]. A `topology` key must match the label of a cluster node.
 <17> Kafka link:{BookURLDeploying}#assembly-metrics-setup-str[metrics configuration for use with Prometheus].
-<18> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with {productName} may be copied to your Kafka resource configuration.
+<18> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with Strimzi may be copied to your Kafka resource configuration.
 <19> xref:assembly-zookeeper-node-configuration-{context}[ZooKeeper-specific configuration], which contains properties similar to the Kafka configuration.
 <20> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <21> Kafka Exporter configuration, which is used xref:assembly-kafka-exporter-configuration-{context}[to expose data as Prometheus metrics].

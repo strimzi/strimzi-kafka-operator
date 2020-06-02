@@ -1,8 +1,8 @@
-<productname>{ProductLongName}</productname>
+<productname>Strimzi</productname>
 <productnumber>{ProductVersion}</productnumber>
-<subtitle>For Use with {ProductName} {ProductVersion}</subtitle>
+<subtitle>For Use with Strimzi {ProductVersion}</subtitle>
 <abstract>
-    <para>This Overview provides a brief introduction to the features, components, and functions of {ProductName} {ProductVersion}</para>
+    <para>This Overview provides a brief introduction to the features, components, and functions of Strimzi {ProductVersion}</para>
 </abstract>
 <authorgroup>
 </authorgroup>

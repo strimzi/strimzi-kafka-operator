@@ -3,9 +3,9 @@
 // deploying/master.adoc
 
 [id="deploy-tasks_{context}"]
-= Deploying {ProductName}
+= Deploying Strimzi
 
-Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of {ProductName}], this section shows:
+Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of Strimzi], this section shows:
 
 * xref:deploy-create-cluster_{context}[How to create the Kafka cluster]
 * Optional procedures to deploy other Kafka components according to your requirements:

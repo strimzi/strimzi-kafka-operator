@@ -11,10 +11,10 @@
 
 = JMX Options
 
-{ProductName} supports obtaining JMX metrics from the Kafka brokers by opening a JMX port on 9999.
+Strimzi supports obtaining JMX metrics from the Kafka brokers by opening a JMX port on 9999.
 You can obtain various metrics about each Kafka broker, for example, usage data such as the `BytesPerSecond` value
 or the request rate of the network of the broker.
-{ProductName} supports opening a password and username protected JMX port or a non-protected JMX port.
+Strimzi supports opening a password and username protected JMX port or a non-protected JMX port.
 
 
 include::../modules/proc-configuring-kafka-jmx-options.adoc[leveloffset=+1]

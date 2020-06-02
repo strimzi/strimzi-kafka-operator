@@ -6,7 +6,7 @@
 
 = Downgrading Kafka brokers and client applications
 
-This procedure describes how you can downgrade a {ProductName} Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
+This procedure describes how you can downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
 
 [IMPORTANT]
 ====

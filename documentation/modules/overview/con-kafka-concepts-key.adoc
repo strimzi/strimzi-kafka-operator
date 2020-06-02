@@ -5,7 +5,7 @@
 [id="kafka-concepts-key_{context}"]
 = Kafka concepts
 
-Knowledge of the key concepts of Kafka is important in understanding how {ProductName} works.
+Knowledge of the key concepts of Kafka is important in understanding how Strimzi works.
 
 A Kafka cluster comprises multiple brokers
 Topics are used to receive and store data in a Kafka cluster.

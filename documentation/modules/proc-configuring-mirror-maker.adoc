@@ -12,7 +12,7 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* xref:cluster-operator-str[{ProductName} and Kafka is deployed]
+* xref:cluster-operator-str[Strimzi and Kafka is deployed]
 * Source and target Kafka clusters are available
 
 .Procedure

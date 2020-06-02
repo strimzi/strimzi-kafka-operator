@@ -4,15 +4,15 @@
 
 [id='assembly-evaluation-{context}']
 
-= Evaluate {ProductName}
+= Evaluate Strimzi
 
-The procedures in this chapter provide a quick way to evaluate the functionality of {ProductName}.
+The procedures in this chapter provide a quick way to evaluate the functionality of Strimzi.
 
-Follow the steps in the order provided to install {ProductName}, and start sending and receiving messages from a topic:
+Follow the steps in the order provided to install Strimzi, and start sending and receiving messages from a topic:
 
 * Ensure you have the required prerequisites
 * Install and start Minikube
-* Install {ProductName}
+* Install Strimzi
 * Create a Kafka cluster
 * Access the Kafka cluster to send and receive messages
 

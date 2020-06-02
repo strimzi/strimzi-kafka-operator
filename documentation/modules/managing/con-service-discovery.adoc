@@ -5,7 +5,7 @@
 [id='proc-add-service-discovery-{context}']
 = Discovering services using labels and annotations
 
-Service discovery makes it easier for client applications running in the same Kubernetes cluster as {ProductName} to interact with a Kafka cluster.
+Service discovery makes it easier for client applications running in the same Kubernetes cluster as Strimzi to interact with a Kafka cluster.
 
 A _service discovery_ label and annotation is generated for services used to access the Kafka cluster:
 

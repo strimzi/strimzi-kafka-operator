@@ -5,7 +5,7 @@
 [id="security-overview_{context}"]
 = Securing Kafka
 
-A secure deployment of {ProductName} can encompass:
+A secure deployment of Strimzi can encompass:
 
 * Encryption for data exchange
 * Authentication to prove identity

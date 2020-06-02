@@ -13,7 +13,7 @@ The `config` property in `Kafka.spec.cruiseControl` contains configuration optio
 
 NOTE: Strings that look like JSON or YAML will need to be explicitly quoted.
 
-You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by {ProductName}.
+You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by Strimzi.
 Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the following strings:
 
 * `bootstrap.servers`
@@ -73,7 +73,7 @@ Capacity limits can be set for the following broker resources in the described u
 * `inboundNetwork`  - Inbound network throughput in bytes per second
 * `outboundNetwork` - Outbound network throughput in bytes per second
 
-Because {ProductName} Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
+Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
 .An example Cruise Control brokerCapacity configuration
 [source,yaml,subs="attributes+"]
@@ -107,7 +107,7 @@ Cruise Control requires the following three topics in order to work:
 * `strimzi.cruisecontrol.modeltrainingsamples`
 * `strimzi.cruisecontrol.metrics`
 
-These three topics are usually auto-created by {ProductName} and Cruise Control. First, the metric reporters create the `strimzi.cruisecontrol.metrics` topic. 
+These three topics are usually auto-created by Strimzi and Cruise Control. First, the metric reporters create the `strimzi.cruisecontrol.metrics` topic. 
 Then, Cruise Control creates the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
 
 However, if automatic topic creation is _disabled_ in Kafka (`auto.create.topics.enable: false` is configured in `spec.kafka.config` when starting a new Kafka cluster) the Cruise Control metric reporters are unable to create the `strimzi.cruisecontrol.metrics` topic.

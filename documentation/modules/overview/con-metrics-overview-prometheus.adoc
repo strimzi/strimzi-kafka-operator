@@ -13,5 +13,5 @@ Kafka resources must also be deployed or redeployed with Prometheus configuratio
 Prometheus scrapes the exposed metrics data for monitoring.
 Alertmanager issues notifications on conditions that indicate potential issues based on pre-defined alerting rules.
 
-Sample metrics and alerting rules configuration files are provided with {ProductName}.
-The sample alerting mechanism provided with {ProductName} is configured to send notifications to a Slack channel.
+Sample metrics and alerting rules configuration files are provided with Strimzi.
+The sample alerting mechanism provided with Strimzi is configured to send notifications to a Slack channel.

@@ -5,7 +5,7 @@
 [id='con-scram-sha-authentication-{context}']
 = SCRAM-SHA authentication
 
-SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. {ProductName} can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and TLS-encrypted client connections. TLS authentication is always used internally between Kafka brokers and ZooKeeper nodes. When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
+SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and TLS-encrypted client connections. TLS authentication is always used internally between Kafka brokers and ZooKeeper nodes. When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
 
 The following properties of SCRAM make it safe to use SCRAM-SHA even on unencrypted connections:
 
@@ -17,7 +17,7 @@ This means that the exchange is resilient against replay attacks.
 
 == Supported SCRAM credentials
 
-{ProductName} supports SCRAM-SHA-512 only.
+Strimzi supports SCRAM-SHA-512 only.
 When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12 character password consisting of upper and lowercase ASCII letters and numbers.
 
 == When to use SCRAM-SHA authentication for clients

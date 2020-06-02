@@ -10,7 +10,7 @@
 
 JmxTrans is a way of retrieving JMX metrics data from Java processes and pushing that data in various formats to remote sinks inside or outside of the cluster.
 JmxTrans can communicate with a secure JMX port.
-{ProductName} supports using JmxTrans to read JMX data from Kafka brokers.
+Strimzi supports using JmxTrans to read JMX data from Kafka brokers.
 
 include::../modules/con-jmxtrans.adoc[leveloffset=+1]
 

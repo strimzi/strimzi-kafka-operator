@@ -3,13 +3,13 @@
 // assembly-management-tasks.adoc
 
 [id='uninstalling-{context}']
-= Uninstalling {ProductName}
+= Uninstalling Strimzi
 
-This procedure describes how to uninstall {ProductName} and remove resources related to the deployment.
+This procedure describes how to uninstall Strimzi and remove resources related to the deployment.
 
 .Prerequisites
 
-In order to perform this procedure, identify resources created specifically for a deployment and referenced from the {ProductName} resource.
+In order to perform this procedure, identify resources created specifically for a deployment and referenced from the Strimzi resource.
 
 Such resources include:
 

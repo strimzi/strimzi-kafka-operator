@@ -3,17 +3,17 @@
 // assembly-oauth-authorization.adoc
 
 [id='con-oauth-authorization-mechanism_{context}']
-= {oauth} authorization mechanism
+= OAuth 2.0 authorization mechanism
 
-{oauth} authorization in {ProductName} uses {keycloak-server} server Authorization Services REST endpoints to extend token-based authentication with {keycloak-server} by applying defined security policies on a particular user,
+OAuth 2.0 authorization in Strimzi uses Keycloak server Authorization Services REST endpoints to extend token-based authentication with Keycloak by applying defined security policies on a particular user,
 and providing a list of permissions granted on different resources for that user.
 Policies use roles and groups to match permissions to users.
-{oauth} authorization enforces permissions locally based on the received list of grants for the user from {keycloak-server} Authorization Services.
+OAuth 2.0 authorization enforces permissions locally based on the received list of grants for the user from Keycloak Authorization Services.
 
 == Kafka broker custom authorizer
 
-A {keycloak-server} _authorizer_ (`KeycloakRBACAuthorizer`) is provided with {ProductName}.
-To be able to use the {keycloak-server} REST endpoints for Authorization Services provided by {keycloak-server},
+A Keycloak _authorizer_ (`KeycloakRBACAuthorizer`) is provided with Strimzi.
+To be able to use the Keycloak REST endpoints for Authorization Services provided by Keycloak,
 you configure a custom authorizer on the Kafka broker.
 
 The authorizer fetches a list of granted permissions from the authorization server as needed,

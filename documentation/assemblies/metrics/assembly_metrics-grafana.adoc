@@ -8,7 +8,7 @@
 
 Grafana provides visualizations of Prometheus metrics.
 
-You can deploy and enable the example Grafana dashboards provided with {ProductName}.
+You can deploy and enable the example Grafana dashboards provided with Strimzi.
 
 include::modules/con_metrics-grafana-options.adoc[leveloffset=+1]
 

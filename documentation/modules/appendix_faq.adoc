@@ -8,11 +8,11 @@
 == Questions related to the Cluster Operator
 
 [id='co-faq-admin-privileges_{context}']
-=== Why do I need cluster administrator privileges to install {ProductName}?
+=== Why do I need cluster administrator privileges to install Strimzi?
 
-To install {ProductName}, you need to be able to create the following cluster-scoped resources:
+To install Strimzi, you need to be able to create the following cluster-scoped resources:
 
-* Custom Resource Definitions (CRDs) to instruct Kubernetes about resources that are specific to {ProductName}, such as `Kafka` and `KafkaConnect`
+* Custom Resource Definitions (CRDs) to instruct Kubernetes about resources that are specific to Strimzi, such as `Kafka` and `KafkaConnect`
 * `ClusterRoles` and `ClusterRoleBindings`
 
 Cluster-scoped resources, which are not scoped to a particular Kubernetes namespace, typically require _cluster administrator_ privileges to install.
@@ -38,7 +38,7 @@ The Cluster Operator needs to be able to grant access so that:
 
 * The Topic Operator can manage  `KafkaTopics`, by creating `Roles` and `RoleBindings` in the namespace that the operator runs in
 * The User Operator can manage `KafkaUsers`, by creating `Roles` and `RoleBindings` in the namespace that the operator runs in
-* The failure domain of a `Node` is discovered by {ProductName}, by creating a `ClusterRoleBinding`
+* The failure domain of a `Node` is discovered by Strimzi, by creating a `ClusterRoleBinding`
 
 When using rack-aware partition assignment, the broker pod needs to be able to get information about the `Node` it is running on,
 for example, the Availability Zone in Amazon AWS.

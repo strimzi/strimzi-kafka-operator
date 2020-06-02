@@ -7,7 +7,7 @@
 [id='overview-components-cluster-operator-{context}']
 = Cluster Operator
 
-{ProductName} uses the Cluster Operator to deploy and manage clusters for:
+Strimzi uses the Cluster Operator to deploy and manage clusters for:
 
 * Kafka (including ZooKeeper, Entity Operator, Kafka Exporter, and Cruise Control)
 * Kafka Connect

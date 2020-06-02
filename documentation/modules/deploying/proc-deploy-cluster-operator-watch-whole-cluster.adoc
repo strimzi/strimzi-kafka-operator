@@ -5,7 +5,7 @@
 [id='deploying-cluster-operator-to-watch-whole-cluster-{context}']
 = Deploying the Cluster Operator to watch all namespaces
 
-This procedure shows how to deploy the Cluster Operator to watch {ProductName} resources across all namespaces in your Kubernetes cluster.
+This procedure shows how to deploy the Cluster Operator to watch Strimzi resources across all namespaces in your Kubernetes cluster.
 
 When running in this mode, the Cluster Operator automatically manages clusters in any new namespaces that are created.
 
@@ -16,7 +16,7 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 .Procedure
 
-. Edit the {ProductName} installation files to use the namespace the Cluster Operator is going to be installed into.
+. Edit the Strimzi installation files to use the namespace the Cluster Operator is going to be installed into.
 +
 For example, in this procedure the Cluster Operator is installed into the namespace `_my-cluster-operator-namespace_`.
 +
