@@ -179,7 +179,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     public Future<Map<String, Object>> createOrUpdatePutRequest(
             String host, int port,
             String connectorName, JsonObject configJson) {
-        Future<Map<String, Object>> result = Future.future();
+        Promise<Map<String, Object>> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
@@ -216,7 +216,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .putHeader("Content-Length", String.valueOf(data.length()))
                 .write(data)
                 .end();
-        return result;
+        return result.future();
     }
 
     @Override
@@ -230,7 +230,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @SuppressWarnings("unchecked")
     private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
-        Future<T> result = Future.future();
+        Promise<T> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         log.debug("Making GET request to {}", path);
         vertx.createHttpClient(options)
@@ -262,7 +262,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end();
-        return result;
+        return result.future();
     }
 
     @Override
@@ -282,7 +282,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> delete(String host, int port, String connectorName) {
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         String path = "/connectors/" + connectorName;
         vertx.createHttpClient(options)
@@ -302,7 +302,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .putHeader("Accept", "application/json")
                 .putHeader("Content-Type", "application/json")
                 .end();
-        return result;
+        return result.future();
     }
 
     @Override
@@ -382,7 +382,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> pauseResume(String host, int port, String path) {
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         vertx.createHttpClient(options)
                 .put(port, host, path, response -> {
@@ -400,13 +400,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end();
-        return result;
+        return result.future();
     }
 
     @Override
     public Future<List<String>> list(String host, int port) {
         String path = "/connectors";
-        Future<List<String>> result = Future.future();
+        Promise<List<String>> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
 
         vertx.createHttpClient(options)
@@ -435,12 +435,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end();
-        return result;
+        return result.future();
     }
 
     @Override
     public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
-        Future<List<ConnectorPlugin>> result = Future.future();
+        Promise<List<ConnectorPlugin>> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         String path = "/connector-plugins";
         vertx.createHttpClient(options)
@@ -467,6 +467,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end();
-        return result;
+        return result.future();
     }
 }
