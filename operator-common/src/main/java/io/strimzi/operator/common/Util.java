@@ -50,6 +50,8 @@ public class Util {
     }
 
     /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
      * @param vertx The vertx instance.
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
@@ -62,6 +64,19 @@ public class Util {
         return waitFor(vertx, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
     }
 
+    /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param vertx The vertx instance.
+     * @param logContext A string used for context in logging.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param completed Determines when the wait is complete by returning true.
+     * @param failOnError Determine whether a given error thrown by {@code completed},
+     *                    should result in the immediate completion of the returned Future.
+     * @return A future that completes when the given {@code completed} indicates readiness.
+     */
     public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
                                        Predicate<Throwable> failOnError) {
         Promise<Void> promise = Promise.promise();
