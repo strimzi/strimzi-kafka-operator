@@ -2018,7 +2018,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     String routeName = KafkaCluster.serviceName(name);
-                    //Future future = Future.future();
                     Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
 
                     address.onComplete(res -> {
