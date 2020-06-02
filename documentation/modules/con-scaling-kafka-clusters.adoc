@@ -20,7 +20,7 @@ Once the partitions have been redistributed between all the brokers, the resourc
 
 == Removing brokers from a cluster
 
-Because {ProductName} uses `StatefulSets` to manage broker pods, you cannot remove _any_ pod from the cluster. 
+Because Strimzi uses `StatefulSets` to manage broker pods, you cannot remove _any_ pod from the cluster. 
 You can only remove one or more of the highest numbered pods from the cluster. 
 For example, in a cluster of 12 brokers the pods are named `_cluster-name_-kafka-0` up to `_cluster-name_-kafka-11`.
 If you decide to scale down by one broker, the `_cluster-name_-kafka-11` will be removed.

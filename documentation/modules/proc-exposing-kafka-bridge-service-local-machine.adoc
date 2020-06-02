@@ -5,7 +5,7 @@
 [id='proc-exposing-kafka-bridge-service-local-machine-{context}']
 = Exposing the Kafka Bridge service to your local machine
 
-Next, use port forwarding to expose the {ProductName} Kafka Bridge service to your local machine on http://localhost:8080.
+Next, use port forwarding to expose the Strimzi Kafka Bridge service to your local machine on http://localhost:8080.
 
 NOTE: Port forwarding is only suitable for development and testing purposes.
 

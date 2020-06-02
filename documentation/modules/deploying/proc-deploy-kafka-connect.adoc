@@ -11,7 +11,7 @@ A Kafka Connect cluster is implemented as a `Deployment` with a configurable num
 
 The deployment uses a YAML file to provide the specification to create a `KafkaConnect` resource.
 
-In this procedure, we use the example file provided with {ProductName}:
+In this procedure, we use the example file provided with Strimzi:
 
 * `examples/kafka-connect/kafka-connect.yaml`
 

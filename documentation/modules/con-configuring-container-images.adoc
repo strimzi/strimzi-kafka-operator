@@ -14,8 +14,8 @@ Use the `image` property to configure the container image used by the component.
 
 Overriding container images is recommended only in special situations where you need to use a different container registry or a customized image.
 
-For example, if your network does not allow access to the container repository used by {ProductName}, you can copy the {ProductName} images or build them from the source.
-However, if the configured image is not compatible with {ProductName} images, it might not work properly.
+For example, if your network does not allow access to the container repository used by Strimzi, you can copy the Strimzi images or build them from the source.
+However, if the configured image is not compatible with Strimzi images, it might not work properly.
 
 A copy of the container image might also be customized and used for debugging.
 

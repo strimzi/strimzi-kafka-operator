@@ -11,7 +11,7 @@ Analyze the summary information in the optimization proposal and decide whether 
 
 .Prerequisites
 
-* You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your {ProductName} cluster.
+* You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
 
 * You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:#capacity-configuration[capacity limits on broker resources].
 

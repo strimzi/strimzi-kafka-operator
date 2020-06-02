@@ -14,16 +14,16 @@
 
 = JVM Options
 
-The following components of {ProductName} run inside a Virtual Machine (VM):
+The following components of Strimzi run inside a Virtual Machine (VM):
 
 * Apache Kafka
 * Apache ZooKeeper
 * Apache Kafka Connect
 * Apache Kafka MirrorMaker
-* {ProductName} Kafka Bridge
+* Strimzi Kafka Bridge
 
 JVM configuration options optimize the performance for different platforms and architectures.
-{ProductName} allows you to configure some of these options.
+Strimzi allows you to configure some of these options.
 
 include::../modules/ref-jvm-options.adoc[leveloffset=+1]
 

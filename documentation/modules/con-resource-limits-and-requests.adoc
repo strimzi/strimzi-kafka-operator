@@ -12,14 +12,14 @@
 
 Use the `reources.requests` and `resources.limits` properties to configure resource requests and limits.
 
-For every deployed container, {ProductName} allows you to request specific resources and define the maximum consumption of those resources.
+For every deployed container, Strimzi allows you to request specific resources and define the maximum consumption of those resources.
 
-{ProductName} supports requests and limits for the following types of resources:
+Strimzi supports requests and limits for the following types of resources:
 
 * `cpu`
 * `memory`
 
-{ProductName} uses the Kubernetes syntax for specifying these resources.
+Strimzi uses the Kubernetes syntax for specifying these resources.
 
 For more information about managing computing resources on Kubernetes, see {K8sManagingComputingResources}.
 

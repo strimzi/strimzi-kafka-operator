@@ -5,7 +5,7 @@
 [id='proc-deploying-cruise-control-{context}']
 = Deploying Cruise Control
 
-To deploy Cruise Control to your {ProductName} cluster, define the configuration using the `cruiseControl` property in the `Kafka` resource, and then create or update the resource.
+To deploy Cruise Control to your Strimzi cluster, define the configuration using the `cruiseControl` property in the `Kafka` resource, and then create or update the resource.
 
 Deploy one instance of Cruise Control per Kafka cluster.
 
@@ -82,7 +82,7 @@ spec:
 ----
 <1> Specifies capacity limits for broker resources. For more information, see xref:#capacity-configuration[Capacity configuration].
 <2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the master optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
-You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by {ProductName}. 
+You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by Strimzi. 
 For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[]. 
 <3> CPU and memory resources reserved for Cruise Control. For more information, see xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[].
 <4> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger named `cruisecontrol.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:#logging-configuration[Logging configuration].

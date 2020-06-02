@@ -3,7 +3,7 @@ include::shared/attributes.adoc[]
 
 :context: str
 
-= Using {ProductLongName}
+= Using Strimzi
 
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
 

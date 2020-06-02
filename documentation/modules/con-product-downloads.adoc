@@ -3,17 +3,17 @@
 // getting-started.adoc
 
 [id='downloads-{context}']
-= Installing {ProductName} and deploying components
+= Installing Strimzi and deploying components
 
 ifdef::Downloading[]
-To install {ProductName}, download the release artefacts from {ReleaseDownload}.
+To install Strimzi, download the release artefacts from {ReleaseDownload}.
 endif::Downloading[]
 
 ifndef::Downloading[]
-To install {ProductName}, download and extract the `amq-streams-x.y.z-ocp-install-examples.zip` file from the {ZipDownload}.
+To install Strimzi, download and extract the `amq-streams-x.y.z-ocp-install-examples.zip` file from the {ZipDownload}.
 endif::Downloading[]
 
-The folder contains several YAML files to help you deploy the components of {ProductName} to Kubernetes, perform common operations, and configure your Kafka cluster. The YAML files are referenced throughout this documentation.
+The folder contains several YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations, and configure your Kafka cluster. The YAML files are referenced throughout this documentation.
 
 ifdef::Downloading[]
 Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
@@ -21,4 +21,4 @@ endif::Downloading[]
 
 The remainder of this chapter provides an overview of each component and instructions for deploying the components to Kubernetes using the YAML files provided.
 
-NOTE: Although container images for {ProductName} are available in the {DockerRepository}, we recommend that you use the YAML files provided instead.
+NOTE: Although container images for Strimzi are available in the {DockerRepository}, we recommend that you use the YAML files provided instead.

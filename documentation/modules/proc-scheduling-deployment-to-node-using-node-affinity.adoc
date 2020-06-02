@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Label the nodes where {ProductName} components should be scheduled.
+. Label the nodes where Strimzi components should be scheduled.
 +
 This can be done using `kubectl label`:
 [source,shell,subs="+quotes,attributes+"]

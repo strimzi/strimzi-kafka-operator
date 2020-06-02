@@ -17,8 +17,8 @@ This chapter describes how to configure different aspects of the supported deplo
 * Kafka Connect clusters with _Source2Image_ support
 * Kafka MirrorMaker
 * Kafka Bridge
-* {oauth} token-based authentication
-* {oauth} token-based authorization
+* OAuth 2.0 token-based authentication
+* OAuth 2.0 token-based authorization
 * Cruise Control
 
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]

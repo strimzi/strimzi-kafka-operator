@@ -14,7 +14,7 @@ You can choose to deploy the Cluster Operator to watch Kafka resources from:
 * Multiple namespaces
 * All namespaces
 
-NOTE: {ProductName} provides example YAML files to make the deployment process easier.
+NOTE: Strimzi provides example YAML files to make the deployment process easier.
 
 The Cluster Operator watches for changes to the following resources:
 

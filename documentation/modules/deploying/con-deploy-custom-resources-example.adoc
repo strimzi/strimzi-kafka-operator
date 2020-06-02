@@ -3,15 +3,15 @@
 // assembly_deploy-intro-custom-resources.adoc
 
 [id='con-custom-resources-example-{context}']
-= {ProductName} custom resource example
+= Strimzi custom resource example
 
-CRDs require a one-time installation in a cluster to define the schemas used to instantiate and manage {ProductName}-specific resources.
+CRDs require a one-time installation in a cluster to define the schemas used to instantiate and manage Strimzi-specific resources.
 
 After a new custom resource type is added to your cluster by installing a CRD, you can create instances of the resource based on its specification.
 
 Depending on the cluster setup, installation typically requires cluster admin privileges.
 
-NOTE: Access to manage custom resources is limited to xref:adding-users-the-strimzi-admin-role-{context}[{ProductName} administrators].
+NOTE: Access to manage custom resources is limited to xref:adding-users-the-strimzi-admin-role-{context}[Strimzi administrators].
 
 A CRD defines a new `kind` of resource, such as `kind:Kafka`, within a Kubernetes cluster.
 
@@ -19,8 +19,8 @@ The Kubernetes API server allows custom resources to be created based on the `ki
 
 WARNING: When CRDs are deleted, custom resources of that type are also deleted. Additionally, the resources created by the custom resource, such as pods and statefulsets are also deleted.
 
-Each {ProductName}-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
-The custom resources for {ProductName} components have common configuration properties, which are defined under `spec`.
+Each Strimzi-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
+The custom resources for Strimzi components have common configuration properties, which are defined under `spec`.
 
 To understand the relationship between a CRD and a custom resource, let's look at a sample of the CRD for a Kafka topic.
 
@@ -70,7 +70,7 @@ spec: <2>
 <5> The current status of the CRD as described in the link:{BookURLUsing}#type-Kafka-reference[schema reference^] for the resource.
 <6> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 
-NOTE: You can identify the CRD YAML files supplied with the {ProductName} installation files, because the file names contain an index number followed by ‘Crd’.
+NOTE: You can identify the CRD YAML files supplied with the Strimzi installation files, because the file names contain an index number followed by ‘Crd’.
 
 Here is a corresponding example of a `KafkaTopic` custom resource.
 
@@ -107,4 +107,4 @@ status:
 Custom resources can be applied to a cluster through the platform CLI.
 When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 
-After a `KafkaTopic` custom resource is created, the Topic Operator is notified and corresponding Kafka topics are created in {Productname}.
+After a `KafkaTopic` custom resource is created, the Topic Operator is notified and corresponding Kafka topics are created in Strimzi.

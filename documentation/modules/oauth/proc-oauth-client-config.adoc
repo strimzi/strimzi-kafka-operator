@@ -3,21 +3,21 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-client-config-{context}']
-= Configuring Kafka Java clients to use {oauth}
+= Configuring Kafka Java clients to use OAuth 2.0
 
-This procedure describes how to configure Kafka producer and consumer APIs to use {oauth} for interaction with Kafka brokers.
+This procedure describes how to configure Kafka producer and consumer APIs to use OAuth 2.0 for interaction with Kafka brokers.
 
 Add a client callback plugin to your _pom.xml_ file, and configure the system properties.
 
 .Prerequisites
 
-* {ProductName} and Kafka are running
-* An {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
-* Kafka brokers are configured for {oauth}
+* Strimzi and Kafka are running
+* An OAuth 2.0 authorization server is deployed and configured for OAuth access to Kafka brokers
+* Kafka brokers are configured for OAuth 2.0
 
 .Procedure
 
-. Add the client library with {oauth} support to the `pom.xml` file for the Kafka client:
+. Add the client library with OAuth 2.0 support to the `pom.xml` file for the Kafka client:
 +
 [source,xml,subs="+attributes"]
 ----
@@ -59,4 +59,4 @@ props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.Ja
 
 .What to do next
 
-* xref:proc-oauth-kafka-config-{context}[Configure Kafka components to use {oauth}]
+* xref:proc-oauth-kafka-config-{context}[Configure Kafka components to use OAuth 2.0]

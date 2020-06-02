@@ -6,11 +6,11 @@
 = Customizing containers with environment variables
 
 You can set custom environment variables for a container by using the relevant `template` container property. 
-The following table lists the {ProductName} containers and the relevant template configuration property (defined under `spec`) for each custom resource.
+The following table lists the Strimzi containers and the relevant template configuration property (defined under `spec`) for each custom resource.
 
 .Table Container environment variable properties
 |===
-|{ProductName} Element |Container |Configuration property
+|Strimzi Element |Container |Configuration property
 
 |Kafka 
 |Kafka Broker 
@@ -76,8 +76,8 @@ spec:
 # ...
 ----
 
-Environment variables prefixed with `KAFKA_` are internal to {ProductName} and should be avoided.
-If you set a custom environment variable that is already in use by {ProductName}, it is ignored and a warning is recorded in the log.
+Environment variables prefixed with `KAFKA_` are internal to Strimzi and should be avoided.
+If you set a custom environment variable that is already in use by Strimzi, it is ignored and a warning is recorded in the log.
 
 .Additional resources
 

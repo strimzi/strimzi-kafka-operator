@@ -5,19 +5,19 @@
 [id="metrics-overview_{context}"]
 = Monitoring
 
-Monitoring data allows you to monitor the performance and health of {ProductName}.
+Monitoring data allows you to monitor the performance and health of Strimzi.
 You can configure your deployment to capture metrics data for analysis and notifications.
 
 Metrics data is useful when investigating issues with connectivity and data delivery.
 For example, metrics data can identify under-replicated partitions or the rate at which messages are consumed.
 Alerting rules can provide time-critical notifications on such metrics through a specified communications channel.
 Monitoring visualizations present real-time metrics data to help determine when and how to update the configuration of your deployment.
-Example metrics configuration files are provided with {ProductName}.
+Example metrics configuration files are provided with Strimzi.
 
-Distributed tracing complements the gathering of metrics data by providing a facility for end-to-end tracking of messages through {ProductName}.
+Distributed tracing complements the gathering of metrics data by providing a facility for end-to-end tracking of messages through Strimzi.
 
 .Metrics and monitoring tools
-{ProductName} can employ the following tools for metrics and monitoring:
+Strimzi can employ the following tools for metrics and monitoring:
 
 * *Prometheus* pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
 * *Kafka Exporter* adds additional Prometheus metrics

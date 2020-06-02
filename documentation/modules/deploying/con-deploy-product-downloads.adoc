@@ -3,20 +3,20 @@
 // deploying/assembly_deploy-tasks-prep.adoc
 
 [id='downloads-{context}']
-= Downloading {ProductName} release artifacts
+= Downloading Strimzi release artifacts
 
 ifdef::Downloading[]
-To install {ProductName}, download the release artifacts from {ReleaseDownload}.
+To install Strimzi, download the release artifacts from {ReleaseDownload}.
 endif::Downloading[]
 
 ifndef::Downloading[]
-To install {ProductName}, download and extract the release artifacts from the `amq-streams-__<version>__-ocp-install-examples.zip` file from the {ZipDownload}.
+To install Strimzi, download and extract the release artifacts from the `amq-streams-__<version>__-ocp-install-examples.zip` file from the {ZipDownload}.
 endif::Downloading[]
 
-{ProductName} release artifacts include sample YAML files to help you deploy the components of {ProductName} to Kubernetes, perform common operations,
+Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,
 and configure your Kafka cluster.
 
-You deploy {ProductName} to a Kubernetes cluster using the `kubectl` command-line tool.
+You deploy Strimzi to a Kubernetes cluster using the `kubectl` command-line tool.
 
-NOTE: Additionally, {ProductName} container images are available through the {DockerRepository}.
-However, we recommend that you use the YAML files provided to deploy {ProductName}.
+NOTE: Additionally, Strimzi container images are available through the {DockerRepository}.
+However, we recommend that you use the YAML files provided to deploy Strimzi.

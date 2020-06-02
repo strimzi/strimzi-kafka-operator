@@ -11,7 +11,7 @@ The `config` property in `Kafka.spec.kafka` contains Kafka broker configuration 
 * Number
 * Boolean
 
-You can specify and configure all of the options in the "Broker Configs" section of the {ApacheKafkaBrokerConfig} apart from those managed directly by {ProductName}.
+You can specify and configure all of the options in the "Broker Configs" section of the {ApacheKafkaBrokerConfig} apart from those managed directly by Strimzi.
 Specifically, you are prevented from modifying all configuration options with keys equal to or starting with one of the following strings:
 
 * `listeners`

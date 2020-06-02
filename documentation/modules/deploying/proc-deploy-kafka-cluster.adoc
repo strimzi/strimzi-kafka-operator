@@ -9,7 +9,7 @@ This procedure shows how to deploy a Kafka cluster to your Kubernetes using the 
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
-{ProductName} provides example YAMLs files for deployment in `examples/kafka/`:
+Strimzi provides example YAMLs files for deployment in `examples/kafka/`:
 
 `kafka-persistent.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
 `kafka-jbod.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).

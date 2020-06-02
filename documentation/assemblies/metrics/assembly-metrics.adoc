@@ -5,7 +5,7 @@
 [id='assembly-metrics-{context}']
 = Introducing Metrics to Kafka
 
-This section describes setup options for monitoring your {ProductName} deployment.
+This section describes setup options for monitoring your Strimzi deployment.
 
 Depending on your requirements, you can:
 

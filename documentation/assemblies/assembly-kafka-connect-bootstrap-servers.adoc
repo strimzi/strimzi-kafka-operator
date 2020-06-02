@@ -17,6 +17,6 @@ On Kubernetes, the list must ideally contain the Kafka cluster bootstrap service
 
 The list of bootstrap servers is configured in the `bootstrapServers` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`. The servers must be defined as a comma-separated list specifying one or more Kafka brokers, or a service pointing to Kafka brokers specified as a `_hostname_:_port_` pairs.
 
-When using Kafka Connect with a Kafka cluster not managed by {ProductName}, you can specify the bootstrap servers list according to the configuration of the cluster.
+When using Kafka Connect with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the cluster.
 
 include::../modules/proc-configuring-kafka-connect-bootstrap-servers.adoc[leveloffset=+1]

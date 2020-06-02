@@ -5,14 +5,14 @@
 [id='certificates-{context}']
 = Certificates
 
-Each {ProductName} component needs its own private keys and public key certificates in order to support encryption.
+Each Strimzi component needs its own private keys and public key certificates in order to support encryption.
 All component certificates are signed by a Certification Authority (CA) called _cluster CA_, while the _clients CA_, is used to sign the certificates for the Kafka clients.
 The CAs themselves use self-signed certificates.
 
 All of the generated certificates are saved as `Secrets` in the Kubernetes cluster, named as follows:
 
 `_cluster-name_-cluster-ca`::
-Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and {ProductName} components (Kafka brokers, ZooKeeper nodes, and so on).
+Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and Strimzi components (Kafka brokers, ZooKeeper nodes, and so on).
 `_cluster-name_-cluster-ca-cert`::
 Contains only the public key of the cluster CA which is used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
 `_cluster-name_-clients-ca`::

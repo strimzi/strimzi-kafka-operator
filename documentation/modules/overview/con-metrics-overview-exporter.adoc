@@ -9,4 +9,4 @@ Kafka Exporter is an open source project to enhance monitoring of Apache Kafka b
 Kafka Exporter is deployed with a Kafka cluster to extract additional Prometheus metrics data from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
 You can use the Grafana dashboard provided to visualize the data collected by Prometheus from Kafka Exporter.
 
-A sample configuration file, alerting rules and Grafana dashboard for Kafka Exporter are provided with {ProductName}.
+A sample configuration file, alerting rules and Grafana dashboard for Kafka Exporter are provided with Strimzi.

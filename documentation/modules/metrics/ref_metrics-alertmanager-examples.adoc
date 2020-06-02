@@ -6,7 +6,7 @@
 
 = Alerting rule examples
 
-Example alerting rules for Kafka and ZooKeeper metrics are provided with {ProductName} for use in a xref:proc-metrics-deploying-prometheus-{context}[Prometheus deployment].
+Example alerting rules for Kafka and ZooKeeper metrics are provided with Strimzi for use in a xref:proc-metrics-deploying-prometheus-{context}[Prometheus deployment].
 
 General points about the alerting rule definitions:
 

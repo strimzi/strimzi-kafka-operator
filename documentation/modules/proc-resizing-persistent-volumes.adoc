@@ -5,7 +5,7 @@
 [id='proc-resizing-persistent-volumes-{context}']
 = Resizing persistent volumes
 
-You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing {ProductName} cluster.
+You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing Strimzi cluster.
 Resizing persistent volumes is supported in clusters that use either a single persistent volume or multiple persistent volumes in a JBOD storage configuration.
 
 NOTE: You can increase but not decrease the size of persistent volumes.

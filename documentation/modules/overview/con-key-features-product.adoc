@@ -4,11 +4,11 @@
 // deploying/assembly_deploy-intro.adoc
 
 [id="key-features-product_{context}"]
-= How {ProductName} supports Kafka
+= How Strimzi supports Kafka
 
-{ProductName} provides container images and Operators for running Kafka on Kubernetes.
-{ProductName} Operators are fundamental to the running of {ProductName}.
-The Operators provided with {ProductName} are purpose-built with specialist operational knowledge to effectively manage Kafka.
+Strimzi provides container images and Operators for running Kafka on Kubernetes.
+Strimzi Operators are fundamental to the running of Strimzi.
+The Operators provided with Strimzi are purpose-built with specialist operational knowledge to effectively manage Kafka.
 
 Operators simplify the process of:
 

@@ -3,7 +3,7 @@
 // // assembly-upgrade.adoc
 
 [id='assembly-upgrade-resources-{context}']
-= {ProductName} resource upgrades
+= Strimzi resource upgrades
 
 The `{KafkaApiVersionPrev}` API version is deprecated.
 Resources that use the API version `{KafkaApiVersionPrev}` must be updated to use `{KafkaApiVersion}`.

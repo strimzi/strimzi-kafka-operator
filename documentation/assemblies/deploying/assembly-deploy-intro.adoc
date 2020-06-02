@@ -15,7 +15,7 @@ As well as describing the deployment steps, the guide also provides pre- and pos
 Additional deployment options described include the steps to introduce metrics.
 Upgrade instructions are provided for Strimzi and Kafka upgrades.
 
-{ProductName} is designed to work on all types of Kubernetes cluster regardless of distribution,
+Strimzi is designed to work on all types of Kubernetes cluster regardless of distribution,
 from public and private clouds to local deployments intended for development.
 
 //Description of Operator support for managing a deployment
