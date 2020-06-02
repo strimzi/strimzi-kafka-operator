@@ -457,21 +457,18 @@ class LogSettingST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPods);
 
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
-                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level = DEBUG")
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                     && cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
                     && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        //wait some time if TO and UO will log something
-        Thread.sleep(RECONCILIATION_INTERVAL * 2);
-
-        KafkaUserResource.defaultUser(CLUSTER_NAME, "my-user");
-        KafkaTopicResource.topic(CLUSTER_NAME, "my-topic");
+        // wait some time if TO and UO will log something
+        Thread.sleep(RECONCILIATION_INTERVAL * 6);
 
         LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "5m"), is(not(emptyString())));
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "5m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "5m"), is(not(emptyString())));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
