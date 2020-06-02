@@ -40,7 +40,7 @@ public class ZookeeperUpgradeST extends BaseST {
     public static final String NAMESPACE = "zookeeper-upgrade-test";
 
     private String continuousTopicName = "continuous-topic";
-    private int continuousClientsMessageCount = 1800;
+    private int continuousClientsMessageCount = 1300;
     private String producerName = "hello-world-producer";
     private String consumerName = "hello-world-consumer";
 
