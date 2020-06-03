@@ -37,13 +37,13 @@ The following types of listener are supported:
 External listeners expose Kafka by specifying a `type`:
 +
 --
-* `route` to use OpenShift Routes and HAProxy router
+* `route` to use OpenShift routes and the default HAProxy router
 * `loadbalancer` to use loadbalancer services
-* `nodeport` to use ports on the Kubernetes nodes
-* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}.
+* `nodeport` to use ports on Kubernetes nodes
+* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
 --
 
-If you are using xref:security-configuration-authentication_{context}[{oauth} for token-based authentication], you can configure listeners to use the authorization server.  
+If you are using xref:security-configuration-authentication_{context}[{oauth} for token-based authentication], you can configure listeners to use the authorization server.
 
 Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
 
