@@ -49,7 +49,9 @@ public interface Constants {
 
     long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
     long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
-    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofSeconds(20).toMillis();
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(1).toMillis();
+    long GLOBAL_CRUISE_CONTROL_EXCEPT_FAIL_TIMEOUT = Duration.ofSeconds(10).toMillis();
+
 
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
