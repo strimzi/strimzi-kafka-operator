@@ -94,7 +94,7 @@ public class EntityUserOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
@@ -292,7 +292,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     private List<VolumeMount> getVolumeMounts() {

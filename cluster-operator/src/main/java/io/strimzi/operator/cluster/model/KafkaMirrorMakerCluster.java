@@ -116,7 +116,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMakerResources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
-        this.ancillaryConfigName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
+        this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -239,7 +239,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(1);
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         createClientSecretVolume(producer, volumeList, "producer-oauth-certs", isOpenShift);
         createClientSecretVolume(consumer, volumeList, "consumer-oauth-certs", isOpenShift);

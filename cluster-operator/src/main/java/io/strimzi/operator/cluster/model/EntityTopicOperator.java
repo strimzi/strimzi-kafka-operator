@@ -91,7 +91,7 @@ public class EntityTopicOperator extends AbstractModel {
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
     }
@@ -273,7 +273,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     private List<VolumeMount> getVolumeMounts() {

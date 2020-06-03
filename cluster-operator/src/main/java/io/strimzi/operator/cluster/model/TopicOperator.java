@@ -112,7 +112,7 @@ public class TopicOperator extends AbstractModel {
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
         this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
     }
@@ -381,7 +381,7 @@ public class TopicOperator extends AbstractModel {
 
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(3);
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;

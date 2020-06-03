@@ -88,40 +88,50 @@ public abstract class AbstractModel {
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
+
+    public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
+
     public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
-    public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
-    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
-    /** Annotation on PVCs storing the original configuration (so we can revert changes). */
+    /**
+     * Annotation on PVCs storing the original configuration
+     * Used to revert changes
+     */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
+    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
+    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
+
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
 
-    public static final String ANNO_STRIMZI_CM_GENERATION = Annotations.STRIMZI_DOMAIN + "cm-generation";
-    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
-
+    private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
+    private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
+    private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
+    /**
+     * Configure HTTP/HTTPS Proxy env vars
+     * These are set in the Cluster Operator and then passed to all created containers
+     */
     protected static final List<EnvVar> PROXY_ENV_VARS;
-
     static {
         List<EnvVar> envVars = new ArrayList<>(3);
 
-        if (System.getenv("HTTP_PROXY") != null)    {
-            envVars.add(buildEnvVar("HTTP_PROXY", System.getenv("HTTP_PROXY")));
+        if (System.getenv(ENV_VAR_HTTP_PROXY) != null)    {
+            envVars.add(buildEnvVar(ENV_VAR_HTTP_PROXY, System.getenv(ENV_VAR_HTTP_PROXY)));
         }
 
-        if (System.getenv("HTTPS_PROXY") != null)    {
-            envVars.add(buildEnvVar("HTTPS_PROXY", System.getenv("HTTPS_PROXY")));
+        if (System.getenv(ENV_VAR_HTTPS_PROXY) != null)    {
+            envVars.add(buildEnvVar(ENV_VAR_HTTPS_PROXY, System.getenv(ENV_VAR_HTTPS_PROXY)));
         }
 
-        if (System.getenv("NO_PROXY") != null)    {
-            envVars.add(buildEnvVar("NO_PROXY", System.getenv("NO_PROXY")));
+        if (System.getenv(ENV_VAR_NO_PROXY) != null)    {
+            envVars.add(buildEnvVar(ENV_VAR_NO_PROXY, System.getenv(ENV_VAR_NO_PROXY)));
         }
 
         if (envVars.size() > 0) {
@@ -134,50 +144,71 @@ public abstract class AbstractModel {
     protected final String cluster;
     protected final String namespace;
 
+    protected String name;
+    protected String serviceName;
+    protected String headlessServiceName;
+
     // Docker image configuration
     protected String image;
     // Number of replicas
     protected int replicas;
 
-    protected String readinessPath;
-    protected String livenessPath;
-
-    protected String serviceName;
-    protected String headlessServiceName;
-    protected String name;
-
-    protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "tcp-prometheus";
-    protected boolean isMetricsEnabled;
-
-    protected static final int JMX_PORT = 9999;
-    protected static final String JMX_PORT_NAME = "jmx";
-
-    protected Iterable<Map.Entry<String, Object>> metricsConfig;
-    protected String ancillaryConfigName;
-
-    protected Storage storage;
-
-    protected AbstractConfiguration configuration;
-
-    protected String mountPath;
-    public static final String VOLUME_NAME = "data";
-    protected String logAndMetricsConfigMountPath;
-
-    protected String logAndMetricsConfigVolumeName;
-
-    private JvmOptions jvmOptions;
-    private ResourceRequirements resources;
-    private Affinity userAffinity;
-    private List<Toleration> tolerations;
-
-    private Logging logging;
-    protected boolean gcLoggingEnabled = true;
-    protected List<SystemProperty> javaSystemProperties = null;
+    // Owner Reference information
+    private String ownerApiVersion;
+    private String ownerKind;
+    private String ownerUid;
 
     protected Labels labels;
 
-    // Templates
+    /**
+     * Application configuration
+     */
+    protected AbstractConfiguration configuration;
+    private Logging logging;
+    protected boolean gcLoggingEnabled = true;
+    private JvmOptions jvmOptions;
+    protected List<SystemProperty> javaSystemProperties = null;
+
+    /**
+     * Volume and Storage configuration
+     */
+    protected Storage storage;
+    public static final String VOLUME_NAME = "data";
+    protected String mountPath;
+
+    /**
+     * Metrics configuration
+     */
+    protected boolean isMetricsEnabled;
+    protected static final String METRICS_PORT_NAME = "tcp-prometheus";
+    protected static final int METRICS_PORT = 9404;
+    protected static final String METRICS_PATH = "/metrics";
+    protected Iterable<Map.Entry<String, Object>> metricsConfig;
+    protected String ancillaryConfigMapName;
+    protected String logAndMetricsConfigMountPath;
+    protected String logAndMetricsConfigVolumeName;
+
+    /**
+     * JMX configuration used for components such as Kafka and JMX Trans
+     */
+    protected static final String JMX_PORT_NAME = "jmx";
+    protected static final int JMX_PORT = 9999;
+
+    /**
+     * Container configuration
+     */
+    private ResourceRequirements resources;
+    protected String readinessPath;
+    protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
+    protected String livenessPath;
+    protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
+    private Affinity userAffinity;
+    private List<Toleration> tolerations;
+
+    /**
+     * Template configuration
+     * Used to allow all components to have configurable labels, annotations, security context etc
+     */
     protected Map<String, String> templateStatefulSetLabels;
     protected Map<String, String> templateStatefulSetAnnotations;
     protected Map<String, String> templateDeploymentLabels;
@@ -199,14 +230,6 @@ public abstract class AbstractModel {
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
-
-    // Owner Reference information
-    private String ownerApiVersion;
-    private String ownerKind;
-    private String ownerUid;
-
-    protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
-    protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -243,21 +266,21 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return the Docker image which should be used by this cluster
+     * @return the default Kubernetes resource name.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @return The service name.
+     * @return The Kubernetes service name.
      */
     public String getServiceName() {
         return serviceName;
     }
 
     /**
-     * @return The name of the headless service.
+     * @return The Kubernetes headless service name.
      */
     public String getHeadlessServiceName() {
         return headlessServiceName;
@@ -314,16 +337,17 @@ public abstract class AbstractModel {
     protected abstract String getDefaultLogConfigFileName();
 
     /**
-     * Returns map with all available loggers for current pod and default values.
-     * @return
+     * @return OrderedProperties map with all available loggers for current pod and default values.
      */
     protected OrderedProperties getDefaultLogConfig() {
         return getOrderedProperties(getDefaultLogConfigFileName());
     }
 
     /**
-     * @param configFileName The filename
-     * @return The OrderedProperties
+     * Read a config file and returns the properties in a deterministic order.
+     *
+     * @param configFileName The filename.
+     * @return The OrderedProperties of the inputted file.
      */
     public static OrderedProperties getOrderedProperties(String configFileName) {
         OrderedProperties properties = new OrderedProperties();
@@ -349,12 +373,13 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Transforms map to log4j properties file format
-     * @param properties map with properties
-     * @return
+     * Transforms map to log4j properties file format.
+     *
+     * @param properties map of log4j properties.
+     * @return log4j properties as a String.
      */
     protected static String createPropertiesString(OrderedProperties properties) {
-        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
+        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes/OpenShift resource.");
     }
 
     /**
@@ -369,8 +394,8 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @param logging The logging to parse.
-     * @param externalCm The external ConfigMap.
+     * @param logging The Logging to parse.
+     * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
@@ -384,11 +409,14 @@ public abstract class AbstractModel {
             }
 
             return createPropertiesString(newSettings);
+
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
                 return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
-                log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.", ((ExternalLogging) getLogging()).getName(), getAncillaryConfigMapKeyLogConfig());
+                log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
+                        ((ExternalLogging) getLogging()).getName(),
+                        getAncillaryConfigMapKeyLogConfig());
                 return createPropertiesString(getDefaultLogConfig());
             }
 
@@ -400,12 +428,12 @@ public abstract class AbstractModel {
 
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
-     * @param cm The ConfigMap.
+     * @param externalConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
      * @return The generated ConfigMap.
      */
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalConfigMap) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalConfigMap));
         if (isMetricsEnabled()) {
             HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
@@ -414,10 +442,10 @@ public abstract class AbstractModel {
             data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
         }
 
-        return createConfigMap(getAncillaryConfigName(), data);
+        return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    protected Iterable<Map.Entry<String, Object>>  getMetricsConfig() {
+    protected Iterable<Map.Entry<String, Object>> getMetricsConfig() {
         return metricsConfig;
     }
 
@@ -429,21 +457,26 @@ public abstract class AbstractModel {
      * Returns name of config map used for storing metrics and logging configuration.
      * @return The name of config map used for storing metrics and logging configuration.
      */
-    public String getAncillaryConfigName() {
-        return ancillaryConfigName;
+    public String getAncillaryConfigMapName() {
+        return ancillaryConfigMapName;
     }
 
     /**
      * Returns a lit of environment variables which should be shared by all containers.
      * Currently contains the mirrored HTTP Proxy environment variables
      *
-     * @return  List with environment variables
+     * @return  List of environment variables
      */
     protected List<EnvVar> getSharedEnvVars() {
         // HTTP Proxy configuration should be passed to all images
         return PROXY_ENV_VARS;
     }
 
+    /**
+     * To be overridden by implementing classes
+     *
+     * @return null
+     */
     protected List<EnvVar> getEnvVars() {
         return null;
     }
@@ -456,9 +489,9 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Set Storage
+     * Set the Storage
      *
-     * @param storage   Persistent Storage configuration
+     * @param storage Persistent Storage configuration
      */
     protected void setStorage(Storage storage) {
         validatePersistentStorage(storage);
@@ -473,7 +506,8 @@ public abstract class AbstractModel {
     protected static void validatePersistentStorage(Storage storage)   {
         if (storage instanceof PersistentClaimStorage) {
             PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
-            checkPersistentStorageSize(persistentClaimStorage);
+            checkPersistentStorageSizeIsValid(persistentClaimStorage);
+
         } else if (storage instanceof JbodStorage)  {
             JbodStorage jbodStorage = (JbodStorage) storage;
 
@@ -484,31 +518,35 @@ public abstract class AbstractModel {
             for (Storage jbodVolume : jbodStorage.getVolumes()) {
                 if (jbodVolume instanceof PersistentClaimStorage) {
                     PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;
-                    checkPersistentStorageSize(persistentClaimStorage);
+                    checkPersistentStorageSizeIsValid(persistentClaimStorage);
                 }
             }
         }
     }
 
-    private static void checkPersistentStorageSize(PersistentClaimStorage storage)   {
+    /**
+     * Checks if the supplied PersistentClaimStorage has a valid size
+     * @param storage
+     *
+     * @throws InvalidResourceException if the persistent storage size is not valid
+     */
+    private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage)   {
         if (storage.getSize() == null || storage.getSize().isEmpty()) {
             throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
         }
     }
 
     /**
-     * Returns the Configuration object which is passed to the cluster as EnvVar
-     *
-     * @return  Configuration object with cluster configuration
+     * @return an implementation of AbstractConfiguration configured by a user for a component.
      */
     public AbstractConfiguration getConfiguration() {
         return configuration;
     }
 
     /**
-     * Set the configuration object which might be passed to the cluster as EnvVar
+     * Set the configuration object which may be configured by the user for some components.
      *
-     * @param configuration Configuration object with cluster configuration
+     * @param configuration Configuration settings for a component.
      */
     protected void setConfiguration(AbstractConfiguration configuration) {
         this.configuration = configuration;
@@ -518,18 +556,18 @@ public abstract class AbstractModel {
      * @return The image name.
      */
     public String getImage() {
-        return this.image;
+        return image;
     }
 
     /**
-     * @return the service account used by the deployed cluster for Kubernetes/OpenShift API operations
+     * @return the name of the service account used by the deployed cluster for Kubernetes/OpenShift API operations.
      */
     protected String getServiceAccountName() {
         return null;
     }
 
     /**
-     * @return the cluster name
+     * @return the cluster name.
      */
     public String getCluster() {
         return cluster;
@@ -537,7 +575,8 @@ public abstract class AbstractModel {
 
     /**
      * Gets the name of a given pod in a StatefulSet.
-     * @param podId The Id of the pod.
+     *
+     * @param podId The Id (ordinal) of the pod.
      * @return The name of the pod with the given name.
      */
     public String getPodName(int podId) {
@@ -545,7 +584,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Sets the affinity as configured by the user in the cluster CR
+     * Sets the affinity as configured by the user in the cluster CR.
      * @param affinity
      */
     protected void setUserAffinity(Affinity affinity) {
@@ -553,14 +592,15 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Gets the affinity as configured by the user in the cluster CR
+     * Gets the affinity as configured by the user in the cluster CR.
      */
     protected Affinity getUserAffinity() {
         return this.userAffinity;
     }
 
     /**
-     * Gets the tolerations as configured by the user in the cluster CR
+     * Gets the tolerations as configured by the user in the cluster CR.
+     *
      * @return The tolerations.
      */
     public List<Toleration> getTolerations() {
@@ -568,7 +608,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Sets the tolerations as configured by the user in the cluster CR
+     * Sets the tolerations as configured by the user in the cluster CR.
      *
      * @param tolerations The tolerations.
      */
@@ -577,8 +617,9 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Gets the affinity to use in a template Pod (in a StatefulSet, or Deployment).
+     * Gets the affinity to use in a Pod template (nested in a StatefulSet, or Deployment).
      * In general this may include extra rules than just the {@link #userAffinity}.
+     *
      * By default it is just the {@link #userAffinity}.
      */
     protected Affinity getMergedAffinity() {
@@ -586,6 +627,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Default null, to be overridden by implementing classes
+     *
      * @return a list of init containers to add to the StatefulSet/Deployment
      */
     protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
@@ -593,6 +636,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * To be overridden by implementing classes
+     *
      * @return a list of containers to add to the StatefulSet/Deployment
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
@@ -627,7 +672,17 @@ public abstract class AbstractModel {
         return servicePort;
     }
 
-    protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
+    /**
+     * createPersistentVolumeClaim is called uniquely for each ordinal (Broker ID) of a stateful set
+     *
+     * @param ordinalId the ordinal of the pod/broker for which the persistent volume claim is being created
+     *                  used to retrieve the optional broker storage overrides for each broker
+     * @param name      the name of the persistent volume claim to be created
+     * @param storage   the user supplied configuration of the PersistentClaimStorage
+     *
+     * @return PersistentVolumeClaim
+     */
+    protected PersistentVolumeClaim createPersistentVolumeClaim(int ordinalId, String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
@@ -638,9 +693,14 @@ public abstract class AbstractModel {
 
         String storageClass = storage.getStorageClass();
         if (storage.getOverrides() != null) {
-            storageClass = storage.getOverrides().stream().filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == podNumber && broker.getStorageClass() != null)
+            storageClass = storage.getOverrides().stream()
+                    .filter(broker -> broker != null &&
+                            broker.getBroker() != null &&
+                            broker.getBroker() == ordinalId &&
+                            broker.getStorageClass() != null)
                     .map(PersistentClaimStorageOverride::getStorageClass)
                     .findAny()
+                    // if none are found for broker do not change storage class from overrides
                     .orElse(storageClass);
         }
 
@@ -648,7 +708,7 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    // labels with the Strimzi name set to that of the component
+                    // labels with the Strimzi name label of the component (this.name)
                     .withLabels(getLabelsWithStrimziName(this.name, templatePersistentVolumeClaimLabels).toMap())
                     .withAnnotations(mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
@@ -662,6 +722,7 @@ public abstract class AbstractModel {
                 .endSpec()
                 .build();
 
+        // if the persistent volume claim has to be deleted when the cluster is un-deployed then set an owner reference of the CR
         if (storage.isDeleteClaim())    {
             pvc.getMetadata().setOwnerReferences(Collections.singletonList(createOwnerReference()));
         }
@@ -670,7 +731,6 @@ public abstract class AbstractModel {
     }
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
-
         return new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -720,6 +780,12 @@ public abstract class AbstractModel {
         return service;
     }
 
+    /**
+     * Creates a headless service
+     *
+     * Uses Alpha annotation service.alpha.kubernetes.io/tolerate-unready-endpoints for older versions of Kubernetes still supported by Strimzi,
+     * replaced by the publishNotReadyAddresses field in the spec,  annotation is ignored in later versions of Kubernetes
+     */
     protected Service createHeadlessService(List<ServicePort> ports) {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
         Service service = new ServiceBuilder()
@@ -755,8 +821,9 @@ public abstract class AbstractModel {
 
         PodSecurityContext securityContext = templateSecurityContext;
 
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one and we have no user configured PodSecurityContext
-        // we set the security context
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
+        // have no user configured PodSecurityContext we set the podSecurityContext.
+        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
         if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
             securityContext = new PodSecurityContextBuilder()
                     .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
@@ -852,23 +919,24 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Build an environment variable instance with the provided name and value
+     * Build an environment variable with the provided name and value
      *
      * @param name The name of the environment variable
      * @param value The value of the environment variable
-     * @return The environment variable instance
+     * @return The environment variable object
      */
     protected static EnvVar buildEnvVar(String name, String value) {
         return new EnvVarBuilder().withName(name).withValue(value).build();
     }
 
     /**
-     * Build an environment variable instance which will use a value from a secret
+     * Build an environment variable which will use a value from a secret
      *
      * @param name The name of the environment variable
-     * @param secret The name of the secret which should be used
+     * @param secret The name of the secret where the value is stored
      * @param key The key under which the value is stored in the secret
-     * @return The environment variable instance
+     *
+     * @return The environment variable object
      */
     protected static EnvVar buildEnvVarFromSecret(String name, String secret, String key) {
         return new EnvVarBuilder()
@@ -884,11 +952,12 @@ public abstract class AbstractModel {
 
     /**
      * Build an environment variable instance with the provided name from a field reference
-     * using Downward API
+     * using the Downward API
      *
      * @param name The name of the environment variable
-     * @param field The field path from which getting the value
-     * @return The environment variable instance
+     * @param field The field path from which the value is set
+     *
+     * @return The environment variable object
      */
     protected static EnvVar buildEnvVarFromFieldRef(String name, String field) {
 
@@ -898,25 +967,36 @@ public abstract class AbstractModel {
                 .endFieldRef()
                 .build();
 
-        return new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build();
+        return new EnvVarBuilder()
+                .withName(name)
+                .withValueFrom(envVarSource)
+                .build();
     }
 
     /**
-     * Gets the given container's environment.
-     * @param container The container
-     * @return The environment of the given container.
+     * Gets the given container's environment as a Map
+     *
+     * @param container The container to retrieve the EnvVars from
+     *
+     * @return Map<String, String> The environment variables of the given container of Environmental variable values indexed by their names
      */
     public static Map<String, String> containerEnvVars(Container container) {
         return container.getEnv().stream().collect(
             Collectors.toMap(EnvVar::getName, EnvVar::getValue,
-                // On duplicates, last in wins
+                // On duplicates, last-in wins
                 (u, v) -> v));
     }
 
+    /**
+     * @return The Labels object.
+     */
     public Labels getLabels() {
         return labels;
     }
 
+    /**
+     * @param labels The Labels object.
+     */
     public void setLabels(Labels labels) {
         this.labels = labels;
     }
@@ -942,30 +1022,37 @@ public abstract class AbstractModel {
         this.jvmOptions = jvmOptions;
     }
 
+    /**
+     * @return The JVM options.
+     */
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
 
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
+     * NOTE: If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set
      *
-     * @param envVars List of Environment Variables
+     * @param envVars List of Environment Variables to add to
+     * @param dynamicHeapFraction List of Environment Variables
+     * @param dynamicHeapMaxBytes List of Environment Variables
      */
     protected void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
         StringBuilder kafkaHeapOpts = new StringBuilder();
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
 
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
         if (xms != null) {
-            kafkaHeapOpts.append("-Xms").append(xms);
+            kafkaHeapOpts.append("-Xms")
+                    .append(xms);
         }
 
         String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
         if (xmx != null) {
-            // Honour explicit max heap
+            // Honour user provided explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
             ResourceRequirements resources = getResources();
-            Map<String, Quantity> cpuMemory = resources == null ? null : resources.getRequests();
+            Map<String, Quantity> cpuMemory = resources != null ? resources.getRequests() : null;
             // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
             // too much memory on the kubelet.
             if (cpuMemory != null && cpuMemory.get("memory") != null) {
@@ -980,22 +1067,22 @@ public abstract class AbstractModel {
             }
         }
 
-        String trim = kafkaHeapOpts.toString().trim();
-        if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
+        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
+        if (!kafkaHeapOptsString.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
         }
     }
 
     /**
      * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
      *
-     * @param envVars List of Environment Variables
+     * @param envVars List of Environment Variables to add to
      */
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
-        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
 
-        if (server != null && server) {
+        Boolean isServer = jvmOptions != null ? jvmOptions.isServer() : null;
+        if (isServer != null && isServer) {
             jvmPerformanceOpts.append("-server");
         }
 
@@ -1014,16 +1101,16 @@ public abstract class AbstractModel {
             });
         }
 
-        String trim = jvmPerformanceOpts.toString().trim();
-        if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
+        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
+        if (!jvmPerformanceOptsString.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
         }
     }
 
     /**
      * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
      *
-     * @return
+     * @return The OwnerReference object
      */
     protected OwnerReference createOwnerReference() {
         return new OwnerReferenceBuilder()
@@ -1048,17 +1135,17 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generated a Map with Prometheus annotations
+     * Generate a Map with Prometheus annotations
      *
      * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
      */
-    protected Map<String, String> getPrometheusAnnotations()    {
+    protected Map<String, String> prometheusAnnotations()    {
         if (isMetricsEnabled) {
-            Map<String, String> annotations = new HashMap<String, String>(3);
+            Map<String, String> annotations = new HashMap<>(3);
 
             annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
             annotations.put("prometheus.io/scrape", "true");
-            annotations.put("prometheus.io/path", "/metrics");
+            annotations.put("prometheus.io/path", METRICS_PATH);
 
             return annotations;
         } else {
@@ -1069,7 +1156,7 @@ public abstract class AbstractModel {
     /**
      * Creates the PodDisruptionBudget
      *
-     * @return
+     * @return The default PodDisruptionBudget
      */
     protected PodDisruptionBudget createPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
@@ -1089,14 +1176,17 @@ public abstract class AbstractModel {
 
     /**
      * When ImagePullPolicy is not specified by the user, Kubernetes will automatically set it based on the image
-     *    :latest results in Always
-     *    anything else results in IfNotPresent
-     * This causes issues in diffing. So we emulate here the Kubernetes defaults and set the policy accordingly
-     * already on our side. This is applied also to our Kafka images which use the tag :latest-kafka-x.y.z but have
-     * the same function as if they were :latest and should behave the same.
+     *    :latest results in        Always
+     *    anything else results in  IfNotPresent
+     * This causes issues in diffing. To work around this we emulate here the Kubernetes defaults and set the policy accordingly on our side.
+     *
+     * This is applied to the Strimzi Kafka images which use the tag format :latest-kafka-x.y.z but have the same function
+     * as if they were :latest
+     * Therefore they should behave the same with an ImagePullPolicy of Always.
      *
      * @param requestedImagePullPolicy  The imagePullPolicy requested by the user (is always preferred when set, ignored when null)
-     * @param image The image used for the container. From its tag we determine the default policy
+     * @param image The image used for the container, from its tag we determine the default policy if requestedImagePullPolicy is null
+     *
      * @return  The Image Pull Policy: Always, Never or IfNotPresent
      */
     protected String determineImagePullPolicy(ImagePullPolicy requestedImagePullPolicy, String image)  {
@@ -1131,37 +1221,46 @@ public abstract class AbstractModel {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
+    /**
+     * Merge two or more Maps together, should be used for merging multiple collections of Kubernetes labels or annotations
+     *
+     * @param base The base set of key value pairs that will be merged, if no overrides are present this will be returned.
+     * @param overrides One or more Maps to merge with base, duplicate keys will be overwritten by last-in priority.
+     *                  These are normally user configured labels/annotations that need to be merged with the base.
+     *
+     * @return A single Map of all the supplied maps merged together.
+     */
     @SafeVarargs
-    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
+    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> base, Map<String, String>... overrides) {
         Map<String, String> merged = new HashMap<>();
 
-        if (internal != null) {
-            merged.putAll(internal);
+        if (base != null) {
+            merged.putAll(base);
         }
 
-        if (templates != null) {
-            for (Map<String, String> template : templates) {
+        if (overrides != null) {
+            for (Map<String, String> toMerge : overrides) {
 
-                if (template == null) {
+                if (toMerge == null) {
                     continue;
                 }
-                List<String> invalidAnnotations = template
+                List<String> bannedLabelsOrAnnotations = toMerge
                     .keySet()
                     .stream()
                     .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
                     .collect(Collectors.toList());
-                if (invalidAnnotations.size() > 0) {
-                    throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + invalidAnnotations.toString());
+                if (bannedLabelsOrAnnotations.size() > 0) {
+                    throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations.toString());
                 }
 
-                // Remove Kubernetes Domain specific labels
-                Map<String, String> filteredTemplate = template
+                Map<String, String> filteredToMerge = toMerge
                     .entrySet()
                     .stream()
+                // Remove Kubernetes Domain specific labels
                     .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-                merged.putAll(filteredTemplate);
+                merged.putAll(filteredToMerge);
             }
         }
 
@@ -1183,21 +1282,21 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Adds the supplied list of container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
-     * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar}, checking first if the
-     * environment variable key has already been set in the existing list and then converts them. If a key is already in
-     * use then the container environment variable will not be added to the environment variable list and a warning will
-     * be logged.
+     * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
+     * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar},
+     * checking first if the environment variable key has already been set in the existing list and then converts them.
      *
-     * @param existingEnvs The list of fabric8 environment variable object that will be modified.
+     * If a key is already in use then the container environment variable will not be added to the environment variable
+     * list and a warning will be logged.
+     *
+     * @param existingEnvs  The list of fabric8 environment variable object that will be added to.
      * @param containerEnvs The list of container environment variable objects to be converted and added to the existing
      *                      environment variable list
      **/
     protected void addContainerEnvsToExistingEnvs(List<EnvVar> existingEnvs, List<ContainerEnvVar> containerEnvs) {
-
         if (containerEnvs != null) {
             // Create set of env var names to test if any user defined template env vars will conflict with those set above
-            Set<String> predefinedEnvs = new HashSet<String>();
+            Set<String> predefinedEnvs = new HashSet<>();
             for (EnvVar envVar : existingEnvs) {
                 predefinedEnvs.add(envVar.getName());
             }
@@ -1205,8 +1304,7 @@ public abstract class AbstractModel {
             // Set custom env vars from the user defined template
             for (ContainerEnvVar containerEnvVar : containerEnvs) {
                 if (predefinedEnvs.contains(containerEnvVar.getName())) {
-                    log.warn("User defined container template environment variable " + containerEnvVar.getName() +
-                            " is already in use and will be ignored");
+                    log.warn("User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
                 } else {
                     existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
                 }
@@ -1215,20 +1313,20 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Adds warning condition to the list
+     * Adds warning condition to the list of warning conditions
      *
-     * @param warning   Condition which will be added to the warning
+     * @param warning  Condition which will be added to the warning conditions
      */
-    public void addWarningCondition(Condition warning)  {
+    public void addWarningCondition(Condition warning) {
         warningConditions.add(warning);
     }
 
     /**
-     * Returns a list of warning conditions set by the model. Returns empty list if no warning conditions were set.
+     * Returns a list of warning conditions set by the model. Returns an empty list if no warning conditions were set.
      *
      * @return  List of warning conditions.
      */
-    public List<Condition> getWarningConditions()   {
+    public List<Condition> getWarningConditions() {
         return warningConditions;
     }
 }
