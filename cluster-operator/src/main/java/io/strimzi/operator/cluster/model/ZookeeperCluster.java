@@ -162,14 +162,14 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private ZookeeperCluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = zookeeperClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = zookeeperMetricAndLogConfigsName(cluster);
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
@@ -356,7 +356,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
     }
 
     public static String policyName(String cluster) {
@@ -597,7 +597,7 @@ public class ZookeeperCluster extends AbstractModel {
             String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
             volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit));
         }
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
