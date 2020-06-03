@@ -289,7 +289,7 @@ public class KafkaCluster extends AbstractModel {
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -876,7 +876,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createDiscoverableService("ClusterIP", getServicePorts(),
-                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(),
+                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
                 templateServiceAnnotations));
     }
 
@@ -1517,7 +1517,7 @@ public class KafkaCluster extends AbstractModel {
 
             volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         if (listeners != null) {

@@ -186,7 +186,7 @@ public class KafkaExporter extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(1);
 
         ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {
