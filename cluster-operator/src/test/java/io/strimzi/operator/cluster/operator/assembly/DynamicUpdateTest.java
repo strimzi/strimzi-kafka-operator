@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -57,7 +61,7 @@ public class DynamicUpdateTest {
 
     @Test
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
-    public void simpleTest() throws InterruptedException {
+    public void simpleTest(VertxTestContext context) throws InterruptedException {
         Kafka kafka = new KafkaBuilder().withNewMetadata()
                 .withName("k")
                 .withNamespace("ns")
@@ -85,20 +89,17 @@ public class DynamicUpdateTest {
             protected Future<Admin> adminClient(AdminClientProvider adminClientProvider, String namespace, String cluster, int podId) {
                 Properties p = new Properties();
                 String bootstrap = DynamicUpdateTest.this.kafkaCluster.brokerList();
-                System.err.println("Using " + bootstrap);
                 p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
                 p.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "30000");
-                System.err.println(p.toString());
                 return Future.succeededFuture(Admin.create(p));
             }
         }.kafkaBrokerDynamicConfiguration();
         CountDownLatch l = new CountDownLatch(1);
-        f.setHandler(ar -> {
-            if (ar.failed()) {
-                ar.cause().printStackTrace();
-            }
+        f.onComplete(ar -> {
+            assertThat(ar.succeeded(), is(notNullValue()));
             l.countDown();
         });
         l.await();
+        context.completeNow();
     }
 }
