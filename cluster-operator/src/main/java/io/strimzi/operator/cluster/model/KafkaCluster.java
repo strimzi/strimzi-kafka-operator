@@ -282,14 +282,14 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaCluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -692,7 +692,7 @@ public class KafkaCluster extends AbstractModel {
                     result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
                 } else if (template.getPerPodService().getLoadBalancerSourceRanges() != null
                         && template.getPerPodService().getLoadBalancerSourceRanges().size() > 0) {
-                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
+                    // LoadBalancerSourceRanges have been set, but LoadBalancers are not used
                     log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
                 }
             }
@@ -876,7 +876,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createDiscoverableService("ClusterIP", getServicePorts(),
-                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(),
+                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
                 templateServiceAnnotations));
     }
 
@@ -1517,7 +1517,7 @@ public class KafkaCluster extends AbstractModel {
 
             volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         if (listeners != null) {

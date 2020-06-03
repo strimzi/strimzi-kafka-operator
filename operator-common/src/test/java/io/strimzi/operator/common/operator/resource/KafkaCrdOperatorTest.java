@@ -105,7 +105,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .setHandler(context.succeeding(kafka -> async.flag()));
+            .onComplete(context.succeeding(kafka -> async.flag()));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .setHandler(context.succeeding(kafka -> async.flag()));
+            .onComplete(context.succeeding(kafka -> async.flag()));
 
     }
 
@@ -146,7 +146,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));
@@ -170,7 +170,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));
@@ -193,7 +193,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));

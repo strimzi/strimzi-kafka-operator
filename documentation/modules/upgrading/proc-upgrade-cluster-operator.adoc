@@ -42,11 +42,11 @@ Wait for the rolling updates to complete.
 kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new {ProductName} version followed by the Kafka version. For example, `_<New {ProductName} version>_-kafka-_<Current Kafka version>_`.
+The image tag shows the new Strimzi version followed by the Kafka version. For example, `_<New Strimzi version>_-kafka-_<Current Kafka version>_`.
 
 . Update existing resources to handle deprecated custom resource properties.
 +
-* xref:assembly-upgrade-resources-{context}[{ProductName} resource upgrades]
+* xref:assembly-upgrade-resources-{context}[Strimzi resource upgrades]
 
 You now have an updated Cluster Operator, but the version of Kafka running in the cluster it manages is unchanged.
 

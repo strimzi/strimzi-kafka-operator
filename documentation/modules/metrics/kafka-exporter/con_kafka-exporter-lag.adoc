@@ -36,6 +36,6 @@ Typical actions to reduce lag include:
 * Increasing the retention time for a message to remain in a topic
 * Adding more disk capacity to increase the message buffer
 
-Actions to reduce consumer lag depend on the underlying infrastructure and the use cases {ProductName} is supporting.
+Actions to reduce consumer lag depend on the underlying infrastructure and the use cases Strimzi is supporting.
 For instance, a lagging consumer is less likely to benefit from the broker being able to service a fetch request from its disk cache.
 And in certain cases, it might be acceptable to automatically drop messages until a consumer has caught up.

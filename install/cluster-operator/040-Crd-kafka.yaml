@@ -1010,7 +1010,7 @@ spec:
                   description: Authorization configuration for Kafka brokers.
                 config:
                   type: object
-                  description: 'The kafka broker config. Properties with the following
+                  description: 'Kafka broker config properties with the following
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
@@ -2351,7 +2351,8 @@ spec:
                     standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort,
                     ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol,
                     ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols,
-                    ssl.ciphersuites, ssl.quorum.ciphersuites).'
+                    ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification,
+                    ssl.quorum.hostnameVerification).'
                 affinity:
                   type: object
                   properties:

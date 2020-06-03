@@ -22,7 +22,7 @@ public class ZkTopicWatcher extends ZkWatcher {
         LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child);
         log.info("{}: Partitions change", logContext);
         topicOperator.onTopicPartitionsChanged(logContext,
-            new TopicName(child)).setHandler(ar -> {
+            new TopicName(child)).onComplete(ar -> {
                 log.info("{}: Reconciliation result due to topic partitions change on topic {}: {}", logContext, child, ar);
             });
     }

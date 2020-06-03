@@ -1,0 +1,56 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-fixing-problems-with-kafkarebalance-{context}']
+
+= Fixing problems with a `KafkaRebalance` resource
+
+If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
+The resource also moves to the `NotReady` state.
+
+To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself. 
+Problems might include the following:
+
+* A misconfigured parameter.
+* The Cruise Control server is not reachable. 
+
+After fixing the issue, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
+During a “refresh”, a new optimization proposal is requested from the Cruise Control server.
+
+.Prerequisites
+
+* You have xref:proc-approving-optimization-proposal-{context}[approved an optimization proposal].
+
+* The status of the `KafkaRebalance` custom resource for the rebalance operation is `NotReady`.
+
+.Procedure
+
+. Get information about the error from the `KafkaRebalance` status:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance _rebalance-cr-name_
+----
+
+. Attempt to resolve the issue in the `KafkaRebalance` resource.
+
+. Annotate the `KafkaRebalance` resource in Kubernetes:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=refresh
+----
+
+. Check the status of the `KafkaRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance _rebalance-cr-name_
+----
+
+. Wait until the status changes to `PendingProposal`, or directly to `ProposalReady`.
+
+.Additional resources
+
+* xref:con-optimization-proposals-{context}[]

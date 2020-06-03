@@ -3,14 +3,14 @@
 // deploying/master.adoc
 
 [id="deploy-verify_{context}"]
-= Verifying the {ProductName} deployment
+= Verifying the Strimzi deployment
 
-Having xref:deploy-tasks_{context}[deployed {ProductName}], the procedures in this section show how to:
+Having xref:deploy-tasks_{context}[deployed Strimzi], the procedures in this section show how to:
 
 * Deploy example producer and consumer clients
 * How to set up an external client to access the Kafka cluster
 
-You can use the procedures to check to verify your deployment.
+You can use the procedures to verify your deployment.
 
 //how to create clients that can access and use the deployment
 include::modules/proc-deploy-example-clients.adoc[leveloffset=+1]

@@ -13,11 +13,11 @@ The authorization method is defined in the `type` field.
 You can configure:
 
 * Simple authorization
-* xref:assembly-oauth-authorization_str[{oauth} authorization] (if you are using {oauth} token based authentication)
+* xref:assembly-oauth-authorization_str[OAuth 2.0 authorization] (if you are using OAuth 2.0 token based authentication)
 
 == Simple authorization
 
-Simple authorization in {ProductName} uses the `SimpleAclAuthorizer` plugin, the default Access Control Lists (ACLs) authorization plugin provided with Apache Kafka. ACLs allow you to define which users have access to which resources at a granular level.
+Simple authorization in Strimzi uses the `SimpleAclAuthorizer` plugin, the default Access Control Lists (ACLs) authorization plugin provided with Apache Kafka. ACLs allow you to define which users have access to which resources at a granular level.
 To enable simple authorization, set the `type` field to `simple`.
 
 .An example of Simple authorization

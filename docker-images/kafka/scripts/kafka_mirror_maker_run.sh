@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set +x
+set -e
 
 # Generate temporary keystore password
-export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+export CERTS_STORE_PASSWORD
 
 # Create dir where keystores and truststores will be stored
 mkdir -p /tmp/kafka
@@ -43,7 +44,7 @@ echo ""
 export GC_LOG_ENABLED="false"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
+  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a
@@ -51,32 +52,36 @@ fi
 export LOG_DIR="$KAFKA_HOME"
 
 # Enabling the Mirror Maker agent which monitors readiness / liveness
-rm /tmp/mirror-maker-ready /tmp/mirror-maker-alive 2> /dev/null
-export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/mirror-maker-agent*.jar)=/tmp/mirror-maker-ready:/tmp/mirror-maker-alive:${STRIMZI_READINESS_PERIOD:-10}:${STRIMZI_LIVENESS_PERIOD:-10}"
+rm -f /tmp/mirror-maker-ready /tmp/mirror-maker-alive 2> /dev/null
+KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/mirror-maker-agent*.jar)=/tmp/mirror-maker-ready:/tmp/mirror-maker-alive:${STRIMZI_READINESS_PERIOD:-10}:${STRIMZI_LIVENESS_PERIOD:-10}"
+export KAFKA_OPTS
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS
 fi
 
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent*.jar)=jaeger"
+  KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=jaeger"
+  export KAFKA_OPTS
 fi
 
-if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
+if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     . ./dynamic_resources.sh
     # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap
     # available to a jvm using 100% of the GCroup-aware memory
     # up to some optional DYNAMIC_HEAP_MAX
-    CALC_MAX_HEAP=$(get_heap_size ${DYNAMIC_HEAP_FRACTION} ${DYNAMIC_HEAP_MAX})
+    CALC_MAX_HEAP=$(get_heap_size "${DYNAMIC_HEAP_FRACTION}" "${DYNAMIC_HEAP_MAX}")
     if [ -n "$CALC_MAX_HEAP" ]; then
       export KAFKA_HEAP_OPTS="-Xms${CALC_MAX_HEAP} -Xmx${CALC_MAX_HEAP}"
     fi
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
-    whitelist="--whitelist \""${KAFKA_MIRRORMAKER_WHITELIST}"\""
+    # shellcheck disable=SC2089
+    whitelist="--whitelist \"${KAFKA_MIRRORMAKER_WHITELIST}\""
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
@@ -96,7 +101,8 @@ if [ -n "$KAFKA_MIRRORMAKER_MESSAGE_HANDLER" ]; then
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS" ]; then
-    message_handler_args="--message.handler.args \""${$KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS}"\""
+    # shellcheck disable=SC2089
+    message_handler_args="--message.handler.args \"${KAFKA_MIRRORMAKER_MESSAGE_HANDLER_ARGS}\""
 fi
 
 if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
@@ -106,7 +112,8 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Kafka Mirror Maker with final configuration
-exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
+# shellcheck disable=SC2086,SC2090
+exec /usr/bin/tini -w -e 143 -- "$KAFKA_HOME"/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
 $whitelist \

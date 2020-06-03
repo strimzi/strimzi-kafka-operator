@@ -7,7 +7,7 @@
 
 To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
-You can use {ProductName} with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
+You can use Strimzi with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
 
 [discrete]
 == MirrorMaker 2.0

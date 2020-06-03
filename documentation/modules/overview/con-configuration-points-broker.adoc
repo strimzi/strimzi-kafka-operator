@@ -12,7 +12,7 @@ You can configure a Kafka cluster to run with multiple broker nodes across _rack
 Storage::
 Kafka and ZooKeeper store data on disks.
 +
-{ProductName} requires block storage provisioned through `StorageClass`.
+Strimzi requires block storage provisioned through `StorageClass`.
 The file system format for storage must be _XFS_ or _EXT4_.
 Three types of data storage are supported:
 +
@@ -43,7 +43,7 @@ External listeners expose Kafka by specifying a `type`:
 * `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
 --
 
-If you are using xref:security-configuration-authentication_{context}[{oauth} for token-based authentication], you can configure listeners to use the authorization server.
+If you are using xref:security-configuration-authentication_{context}[OAuth 2.0 for token-based authentication], you can configure listeners to use the authorization server.  
 
 Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
 

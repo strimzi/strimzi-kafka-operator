@@ -3,14 +3,14 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-authentication-broker-config-{context}']
-= Configuring {oauth} support for Kafka brokers
+= Configuring OAuth 2.0 support for Kafka brokers
 
-This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
+This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use OAuth 2.0 authentication using an authorization server.
 
-We advise use of {oauth} over an encrypted interface through configuration of TLS listeners.
+We advise use of OAuth 2.0 over an encrypted interface through configuration of TLS listeners.
 Plain listeners are not recommended.
 
-If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection works using the default settings.
+If the authorization server is using certificates signed by the trusted CA and matching the OAuth 2.0 server hostname, TLS connection works using the default settings.
 Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
 
 * xref:example-1[Configuring fast local JWT token validation]
@@ -18,7 +18,7 @@ Otherwise, you have two connection options for your listener configuration when 
 
 .Before you start
 
-For more information on the configuration of {oauth} authentication for Kafka broker listeners, see:
+For more information on the configuration of OAuth 2.0 authentication for Kafka broker listeners, see:
 
 * xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
 * xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
@@ -26,8 +26,8 @@ For more information on the configuration of {oauth} authentication for Kafka br
 
 .Prerequisites
 
-* {ProductName} and Kafka are running
-* An {oauth} authorization server is deployed
+* Strimzi and Kafka are running
+* An OAuth 2.0 authorization server is deployed
 
 .Procedure
 
@@ -96,7 +96,7 @@ external:
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authorization server used.
 +
-Depending on how you apply {oauth} authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
+Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -126,8 +126,8 @@ kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
 kubectl get po -w
 ----
 +
-The rolling update configures the brokers to use {oauth} authentication.
+The rolling update configures the brokers to use OAuth 2.0 authentication.
 
 .What to do next
 
-* xref:proc-oauth-client-config-{context}[Configure your Kafka clients to use {oauth}]
+* xref:proc-oauth-client-config-{context}[Configure your Kafka clients to use OAuth 2.0]

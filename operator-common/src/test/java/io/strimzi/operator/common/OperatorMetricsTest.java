@@ -74,7 +74,7 @@ public class OperatorMetricsTest {
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .setHandler(context.succeeding(v -> context.verify(() -> {
+                .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -113,7 +113,7 @@ public class OperatorMetricsTest {
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .setHandler(context.failing(v -> context.verify(() -> {
+                .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -152,7 +152,7 @@ public class OperatorMetricsTest {
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .setHandler(context.failing(v -> context.verify(() -> {
+                .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -201,7 +201,7 @@ public class OperatorMetricsTest {
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .setHandler(context.succeeding(v -> context.verify(() -> {
+                .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -251,7 +251,7 @@ public class OperatorMetricsTest {
         operator.reconcileAll("test", "my-namespace", reconcileAllPromise);
 
         Checkpoint async = context.checkpoint();
-        reconcileAllPromise.future().setHandler(context.succeeding(v -> context.verify(() -> {
+        reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));

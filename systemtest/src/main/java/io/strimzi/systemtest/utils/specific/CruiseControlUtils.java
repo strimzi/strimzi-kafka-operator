@@ -4,10 +4,12 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class CruiseControlUtils {
@@ -29,7 +32,36 @@ public class CruiseControlUtils {
     private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
+    private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
+    private static final String CRUISE_CONTROL_BASE_ENDPOINT = "/kafkacruisecontrol/";
+
     private CruiseControlUtils() { }
+
+    public enum SupportedHttpMethods {
+        GET,
+        POST
+    }
+
+    public enum CruiseControlEndpoints {
+        STATE,
+        REBALANCE,
+        STOP_PROPOSAL_EXECUTION,
+        USER_TASKS
+    }
+
+    @SuppressWarnings("Regexp")
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static String callApi(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
+        String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
+
+        return
+            cmdKubeClient().execInPodContainer(
+            ccPodName,
+            "cruise-control",
+            "/bin/bash",
+            "-c",
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_BASE_ENDPOINT + endpoint.name().toLowerCase()).out();
+    }
 
     @SuppressWarnings("BooleanExpressionComplexity")
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
@@ -91,5 +123,16 @@ public class CruiseControlUtils {
         }
 
         return cruiseControlProperties;
+    }
+
+    public static void waitForRebalanceEndpointIsReady() {
+        TestUtils.waitFor("Wait for rebalance endpoint is ready",
+            Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
+                String response = callApi(SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+                LOGGER.debug("API response {}", response);
+                return !response.contains("Error processing POST request '/rebalance' due to: " +
+                    "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
+                    "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
+            });
     }
 }

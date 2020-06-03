@@ -5,7 +5,7 @@
 [id='con-customizing-pod-disruption-budgets-{context}']
 = Customizing Pod Disruption Budgets
 
-{ProductName} creates a pod disruption budget for every new `StatefulSet` or `Deployment`.
+Strimzi creates a pod disruption budget for every new `StatefulSet` or `Deployment`.
 By default, these pod disruption budgets only allow a single pod to be unavailable at a given time by setting the `maxUnavailable` value in the `PodDisruptionBudget.spec` resource to 1.
 You can change the amount of unavailable pods allowed by changing the default value of `maxUnavailable` in the pod disruption budget template.
 This template applies to each type of cluster (Kafka and ZooKeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka MirrorMaker).

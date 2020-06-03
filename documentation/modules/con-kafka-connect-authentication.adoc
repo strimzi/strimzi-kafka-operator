@@ -12,7 +12,7 @@ The supported authentication types are:
 * TLS client authentication
 * SASL-based authentication using the SCRAM-SHA-512 mechanism
 * SASL-based authentication using the PLAIN mechanism
-* xref:assembly-oauth-authentication_str[{oauth} token based authentication]
+* xref:assembly-oauth-authentication_str[OAuth 2.0 token based authentication]
 
 == TLS Client Authentication
 

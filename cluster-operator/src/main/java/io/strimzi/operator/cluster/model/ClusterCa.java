@@ -25,7 +25,6 @@ public class ClusterCa extends Ca {
 
     private final String clusterName;
     private Secret entityOperatorSecret;
-    private Secret topicOperatorSecret;
     private Secret clusterOperatorSecret;
     private Secret kafkaExporterSecret;
     private Secret cruiseControlSecret;
@@ -88,8 +87,6 @@ public class ClusterCa extends Ca {
                 brokersSecret = secret;
             } else if (EntityOperator.secretName(clusterName).equals(name)) {
                 entityOperatorSecret = secret;
-            } else if (TopicOperator.secretName(clusterName).equals(name)) {
-                topicOperatorSecret = secret;
             } else if (ZookeeperCluster.nodesSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
             } else if (ClusterOperator.secretName(clusterName).equals(name)) {
@@ -100,10 +97,6 @@ public class ClusterCa extends Ca {
                 cruiseControlSecret = secret;
             }
         }
-    }
-
-    public Secret topicOperatorSecret() {
-        return topicOperatorSecret;
     }
 
     public Secret entityOperatorSecret() {

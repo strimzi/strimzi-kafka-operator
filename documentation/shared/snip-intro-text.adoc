@@ -1,2 +1,2 @@
 //standard product intro text
-{ProductName} simplifies the process of running Apache Kafka in a Kubernetes cluster.
+Strimzi simplifies the process of running Apache Kafka in a Kubernetes cluster.

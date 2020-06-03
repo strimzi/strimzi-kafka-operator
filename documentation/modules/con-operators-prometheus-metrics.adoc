@@ -6,7 +6,7 @@
 
 = Prometheus metrics
 
-{ProductName} operators expose Prometheus metrics.
+Strimzi operators expose Prometheus metrics.
 The metrics are automatically enabled and contain information about:
 
 * Number of reconciliations

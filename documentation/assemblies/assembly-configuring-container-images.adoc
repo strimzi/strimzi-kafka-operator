@@ -13,11 +13,11 @@
 
 = Container images
 
-{ProductName} allows you to configure container images which will be used for its components.
+Strimzi allows you to configure container images which will be used for its components.
 Overriding container images is recommended only in special situations, where you need to use a different container registry.
-For example, because your network does not allow access to the container repository used by {ProductName}.
-In such a case, you should either copy the {ProductName} images or build them from the source.
-If the configured image is not compatible with {ProductName} images, it might not work properly.
+For example, because your network does not allow access to the container repository used by Strimzi.
+In such a case, you should either copy the Strimzi images or build them from the source.
+If the configured image is not compatible with Strimzi images, it might not work properly.
 
 include::../modules/ref-configuring-container-images.adoc[leveloffset=+1]
 

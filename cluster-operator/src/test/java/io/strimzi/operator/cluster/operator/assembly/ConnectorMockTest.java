@@ -275,7 +275,7 @@ public class ConnectorMockTest {
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
         kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
-            .setHandler(testContext.succeeding())
+            .onComplete(testContext.succeeding())
             .compose(watch -> {
                 kafkaConnectS2iOperator = new KafkaConnectS2IAssemblyOperator(vertx,
                     pfa,
@@ -285,9 +285,9 @@ public class ConnectorMockTest {
                 // Fail test if watcher closes for any reason
                 return kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.failNow(e));
             })
-            .setHandler(testContext.succeeding())
+            .onComplete(testContext.succeeding())
             .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE))
-            .setHandler(testContext.succeeding(v -> async.flag()));
+            .onComplete(testContext.succeeding(v -> async.flag()));
     }
 
     private static <T extends HasMetadata & HasStatus<?>> Predicate<T> statusIsForCurrentGeneration() {
@@ -802,7 +802,7 @@ public class ConnectorMockTest {
         // Force reconciliation to assert connector deletion request occurs for first cluster
         Checkpoint async = context.checkpoint();
         kafkaConnectOperator.reconcile(new Reconciliation("test", "KafkaConnect", NAMESPACE, oldConnectClusterName))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(api, times(1)).delete(
                         eq(KafkaConnectResources.qualifiedServiceName(oldConnectClusterName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                         eq(connectorName));

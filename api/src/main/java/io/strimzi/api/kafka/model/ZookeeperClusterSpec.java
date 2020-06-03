@@ -47,7 +47,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
             "quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, " +
             "reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, " +
-            "ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites";
+            "ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification";
 
     public static final int DEFAULT_REPLICAS = 3;
 

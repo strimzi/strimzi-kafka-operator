@@ -3,9 +3,9 @@
 // master.adoc
 
 [id="configuration-points_{context}"]
-= Managing {ProductName}
+= Managing Strimzi
 
-This chapter covers tasks to maintain a deployment of {ProductName}.
+This chapter covers tasks to maintain a deployment of Strimzi.
 
 //Discover internal bootstrap service and HTTP Bridge
 include::modules/con-service-discovery.adoc[leveloffset=+1]

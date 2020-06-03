@@ -8,7 +8,7 @@
 
 To deploy Alertmanager, apply the xref:ref-metrics-config-files-{context}[example configuration files].
 
-The sample configuration provided with {ProductName} configures the Alertmanager to send notifications to a Slack channel.
+The sample configuration provided with Strimzi configures the Alertmanager to send notifications to a Slack channel.
 
 The following resources are defined on deployment:
 

@@ -6,7 +6,7 @@
 
 = Healthchecks
 
-Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in {ProductName}.
+Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
 
 Healthchecks are periodical tests which verify the health of an application.
 When a Healthcheck probe fails, Kubernetes assumes that the application is not healthy and attempts to fix it.

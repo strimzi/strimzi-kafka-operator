@@ -6,4 +6,4 @@
 = Prerequisites
 
 * {Minikube}.
-* You need to be able to access {ProductName} {ReleaseDownload}.
+* You need to be able to access Strimzi {ReleaseDownload}.

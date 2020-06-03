@@ -5,9 +5,9 @@
 [id='proc-kafka-cluster-{context}']
 = Creating a cluster
 
-With {ProductName} installed, you create a Kafka cluster, then a topic within the cluster.
+With Strimzi installed, you create a Kafka cluster, then a topic within the cluster.
 
-When you create a cluster, the Cluster Operator you deployed when installing {ProductName} watches for new Kafka resources.
+When you create a cluster, the Cluster Operator you deployed when installing Strimzi watches for new Kafka resources.
 
 .Prerequisites
 

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -44,7 +45,6 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
@@ -360,7 +360,6 @@ public class ResourceUtils {
                                            Map<String, Object> zooConfiguration,
                                            Storage kafkaStorage,
                                            SingleVolumeStorage zkStorage,
-                                           TopicOperatorSpec topicOperatorSpec,
                                            Logging kafkaLogging, Logging zkLogging,
                                            KafkaExporterSpec keSpec,
                                            CruiseControlSpec ccSpec) {
@@ -413,7 +412,6 @@ public class ResourceUtils {
             zk.setMetrics(metricsCm);
         }
 
-        spec.setTopicOperator(topicOperatorSpec);
         spec.setKafkaExporter(keSpec);
         spec.setCruiseControl(ccSpec);
 
@@ -756,5 +754,15 @@ public class ResourceUtils {
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
         return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()));
+    }
+
+    /**
+     * Find the first resource in the given resources with the given name.
+     * @param resources The secrets to search.
+     * @param name The secret name.
+     * @return The secret with that name.
+     */
+    public static <T extends HasMetadata> T findResourceWithName(List<T> resources, String name) {
+        return resources.stream().filter(s -> s.getMetadata().getName().equals(name)).findFirst().orElse(null);
     }
 }

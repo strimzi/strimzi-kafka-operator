@@ -5,15 +5,15 @@
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing
 
-This chapter outlines the support for distributed tracing in {ProductName}, using Jaeger.
+This chapter outlines the support for distributed tracing in Strimzi, using Jaeger.
 
-How you configure distributed tracing varies by {ProductName} client and component.
+How you configure distributed tracing varies by Strimzi client and component.
 
 * You __instrument__ Kafka Producer, Consumer, and Streams API applications for distributed tracing using an OpenTracing client library. This involves adding instrumentation code to these clients, which monitors the execution of individual transactions in order to generate trace data.
 
-* Distributed tracing support is built in to the Kafka Connect, MirrorMaker, and Kafka Bridge components of {ProductName}. To configure these components for distributed tracing, you configure and update the relevant custom resources.
+* Distributed tracing support is built in to the Kafka Connect, MirrorMaker, and Kafka Bridge components of Strimzi. To configure these components for distributed tracing, you configure and update the relevant custom resources.
 
-Before configuring distributed tracing in {ProductName} clients and components, you must first initialize and configure a Jaeger tracer in the Kafka cluster, as described in xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initializing a Jaeger tracer for Kafka clients].
+Before configuring distributed tracing in Strimzi clients and components, you must first initialize and configure a Jaeger tracer in the Kafka cluster, as described in xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initializing a Jaeger tracer for Kafka clients].
 
 NOTE: Distributed tracing is not supported for Kafka brokers.
 
@@ -21,7 +21,7 @@ include::../modules/con-overview-distributed-tracing.adoc[leveloffset=+1]
 
 .Outline of procedures
 
-To set up distributed tracing for {ProductName}, follow these procedures:
+To set up distributed tracing for Strimzi, follow these procedures:
 
 * xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
 
@@ -31,11 +31,11 @@ To set up distributed tracing for {ProductName}, follow these procedures:
 
 * xref:assembly-setting-up-tracing-mirror-maker-connect-bridge-{context}[Set up tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
 
-This chapter covers setting up distributed tracing for {ProductName} clients and components only. Setting up distributed tracing for applications and systems beyond {ProductName} is outside the scope of this chapter. To learn more about this subject, see the {OpenTracingDocs} and search for "inject and extract".
+This chapter covers setting up distributed tracing for Strimzi clients and components only. Setting up distributed tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, see the {OpenTracingDocs} and search for "inject and extract".
 
 .Before you start
 
-Before you set up distributed tracing for {ProductName}, it is helpful to understand:
+Before you set up distributed tracing for Strimzi, it is helpful to understand:
 
 * The basics of OpenTracing, including key concepts such as traces, spans, and tracers. Refer to the {OpenTracingDocs}.
 * The components of the {JaegerArch}. 

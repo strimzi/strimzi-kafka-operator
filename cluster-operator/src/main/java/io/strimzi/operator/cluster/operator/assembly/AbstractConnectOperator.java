@@ -399,7 +399,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
 
         reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, connector)
-                .setHandler(result -> {
+                .onComplete(result -> {
                     connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer);
 
                     if (result.succeeded())    {
@@ -435,13 +435,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             } else {
                 Promise<Void> promise = Promise.promise();
                 maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec())
-                        .setHandler(result -> {
+                        .onComplete(result -> {
                             if (result.succeeded()) {
                                 maybeUpdateConnectorStatus(reconciliation, connector, result.result(), null)
-                                    .setHandler(promise);
+                                    .onComplete(promise);
                             } else {
                                 maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
-                                    .setHandler(promise);
+                                    .onComplete(promise);
                             }
                         });
                 return promise.future();
@@ -612,7 +612,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 BiFunction<T, S, T> copyWithStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
-        resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
                 T fetchedResource = getRes.result();
 
@@ -631,7 +631,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         if (!ksDiff.isEmpty()) {
                             T resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
 
-                            resourceOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            resourceOperator.updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusPromise.complete();

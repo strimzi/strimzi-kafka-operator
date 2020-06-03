@@ -5,7 +5,7 @@
 [id='deploying-cluster-operator-to-watch-whole-cluster-{context}']
 = Deploying the Cluster Operator to watch all namespaces
 
-This procedure shows how to deploy the Cluster Operator to watch {ProductName} resources across all namespaces in your Kubernetes cluster.
+This procedure shows how to deploy the Cluster Operator to watch Strimzi resources across all namespaces in your Kubernetes cluster.
 
 When running in this mode, the Cluster Operator automatically manages clusters in any new namespaces that are created.
 
@@ -15,6 +15,12 @@ When running in this mode, the Cluster Operator automatically manages clusters i
 Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means that permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators, such as `system:admin`.
 
 .Procedure
+
+. Edit the Strimzi installation files to use the namespace the Cluster Operator is going to be installed into.
++
+For example, in this procedure the Cluster Operator is installed into the namespace `_my-cluster-operator-namespace_`.
++
+include::snip-cluster-operator-namespace-sed.adoc[]
 
 . Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file to set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
 +
@@ -45,7 +51,7 @@ kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterr
 kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
 kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
 +
-Replace `_my-cluster-operator-namespace_` with the namespace you want to install the Cluster Operator to.
+Replace `_my-cluster-operator-namespace_` with the namespace you want to install the Cluster Operator into.
 
 . Deploy the Cluster Operator to your Kubernetes cluster.
 +

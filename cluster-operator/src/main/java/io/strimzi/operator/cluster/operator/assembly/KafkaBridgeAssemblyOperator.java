@@ -91,25 +91,28 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
 
+        boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
-            .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigName(), logAndMetricsConfigMap))
+            .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), logAndMetricsConfigMap))
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .compose(i -> deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .setHandler(reconciliationResult -> {
+            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
+            .onComplete(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
-                int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
-                if (bridge.getHttp() != null) {
-                    port = bridge.getHttp().getPort();
+                if (!bridgeHasZeroReplicas) {
+                    int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
+                    if (bridge.getHttp() != null) {
+                        port = bridge.getHttp().getPort();
+                    }
+                    kafkaBridgeStatus.setUrl(KafkaBridgeResources.url(bridge.getCluster(), namespace, port));
                 }
-                kafkaBridgeStatus.setUrl(KafkaBridgeResources.url(bridge.getCluster(), namespace, port));
 
-                updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).setHandler(statusResult -> {
+                updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).onComplete(statusResult -> {
                     // If both features succeeded, createOrUpdate succeeded as well
                     // If one or both of them failed, we prefer the reconciliation failure as the main error
                     if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -138,7 +141,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     Future<Void> updateStatus(KafkaBridge kafkaBridgeAssembly, Reconciliation reconciliation, KafkaBridgeStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
-        resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
                 KafkaBridge kafkaBridge = getRes.result();
 
@@ -149,7 +152,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
                     if (!ksDiff.isEmpty()) {
                         KafkaBridge resourceWithNewStatus = new KafkaBridgeBuilder(kafkaBridge).withStatus(desiredStatus).build();
-                        ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                        ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                             if (updateRes.succeeded()) {
                                 log.debug("{}: Completed status update", reconciliation);
                                 updateStatusPromise.complete();

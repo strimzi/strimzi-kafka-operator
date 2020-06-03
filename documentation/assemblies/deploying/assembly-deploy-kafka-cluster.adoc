@@ -18,7 +18,7 @@ The procedures in this section show:
 ** xref:deploying-the-topic-operator-standalone-{context}[Deploy the standalone Topic Operator]
 ** xref:deploying-the-user-operator-standalone-{context}[Deploy the standalone User Operator]
 
-When installing Kafka, {ProductName} also installs a ZooKeeper cluster and adds the necessary configuration to connect Kafka with ZooKeeper.
+When installing Kafka, Strimzi also installs a ZooKeeper cluster and adds the necessary configuration to connect Kafka with ZooKeeper.
 
 //Deploy Kafka cluster with storage option
 include::modules/proc-deploy-kafka-cluster.adoc[leveloffset=+1]

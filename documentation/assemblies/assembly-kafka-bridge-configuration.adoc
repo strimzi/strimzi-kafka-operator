@@ -10,7 +10,7 @@
 
 = Kafka Bridge configuration
 
-{ProductName} allows you to customize the configuration of Apache Kafka Bridge nodes by editing certain options listed in {ApacheKafkaConsumerConfig} and {ApacheKafkaProducerConfig}.
+Strimzi allows you to customize the configuration of Apache Kafka Bridge nodes by editing certain options listed in {ApacheKafkaConsumerConfig} and {ApacheKafkaProducerConfig}.
 
 Configuration options that can be configured relate to:
 

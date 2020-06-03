@@ -22,7 +22,7 @@ def downloadOcOrigin() {
 
 def downloadCRC() {
     downloadOcOrigin()
-    def crcBundleUrl = "https://mirror.openshift.com/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz"
+    def crcBundleUrl = "https://mirror.openshift.com/pub/openshift-v4/clients/crc/1.6.0/crc-linux-amd64.tar.xz"
     withCredentials([string(credentialsId: 'crc-secret', variable: 'secret')]) {
         sh(script: "echo \'${secret}\' > ${WORKSPACE}/crcSecret")
     }

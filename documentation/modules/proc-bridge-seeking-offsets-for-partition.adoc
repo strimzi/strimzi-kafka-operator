@@ -60,7 +60,7 @@ NOTE: You can also use the link:https://strimzi.io/docs/bridge/latest/#_seektobe
 
 .What to do next
 
-In this quickstart, you have used the {ProductName} Kafka Bridge to perform several common operations on a Kafka cluster. You can now xref:proc-bridge-deleting-consumer-{context}[delete the Kafka Bridge consumer] that you created earlier. 
+In this quickstart, you have used the Strimzi Kafka Bridge to perform several common operations on a Kafka cluster. You can now xref:proc-bridge-deleting-consumer-{context}[delete the Kafka Bridge consumer] that you created earlier. 
 
 .Additional resources
 

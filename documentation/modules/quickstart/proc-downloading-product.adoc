@@ -3,9 +3,9 @@
 // assembly-evaluation.adoc
 
 [id='proc-product-downloads-{context}']
-= Downloading {ProductName}
+= Downloading Strimzi
 
-The resources and artifacts required to install {ProductName}, along with examples for configuration, are provided in a ZIP file.
+The resources and artifacts required to install Strimzi, along with examples for configuration, are provided in a ZIP file.
 
 .Procedure
 

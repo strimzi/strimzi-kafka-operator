@@ -5,7 +5,7 @@
 [id='proc-accessing-kafka-using-nodeports-{context}']
 = Accessing Kafka using node ports
 
-This procedure describes how to access a {ProductName} Kafka cluster from an external client using node ports.
+This procedure describes how to access a Strimzi Kafka cluster from an external client using node ports.
 
 To connect to a broker, you need the hostname (advertised address) and port number for the Kafka _bootstrap_ address,
 as well as the certificate used for authentication.
@@ -45,7 +45,7 @@ spec:
     # ...
 ----
 <1> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
-<2> Optional configuration to xref:con-kafka-broker-external-listeners-nodeports-{context}[specify a preference for the first address type used by {ProductName} as the node address].
+<2> Optional configuration to xref:con-kafka-broker-external-listeners-nodeports-{context}[specify a preference for the first address type used by Strimzi as the node address].
 
 . Create or update the resource.
 +

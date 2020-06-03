@@ -72,10 +72,10 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
 
         if (delay < 1) {
             // vertx won't tolerate a zero delay
-            vertx.runOnContext(timerId -> kafka.topicMetadata(topicName).setHandler(this));
+            vertx.runOnContext(timerId -> kafka.topicMetadata(topicName).onComplete(this));
         } else {
             vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                timerId -> kafka.topicMetadata(topicName).setHandler(this));
+                timerId -> kafka.topicMetadata(topicName).onComplete(this));
         }
     }
 

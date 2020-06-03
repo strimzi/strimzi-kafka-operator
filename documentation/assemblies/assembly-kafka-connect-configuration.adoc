@@ -11,7 +11,7 @@
 
 = Kafka Connect configuration
 
-{ProductName} allows you to customize the configuration of Apache Kafka Connect nodes by editing certain options listed in {ApacheKafkaConnectConfig}.
+Strimzi allows you to customize the configuration of Apache Kafka Connect nodes by editing certain options listed in {ApacheKafkaConnectConfig}.
 
 Configuration options that cannot be configured relate to:
 
@@ -20,7 +20,7 @@ Configuration options that cannot be configured relate to:
 * Listener / REST interface configuration
 * Plugin path configuration
 
-These options are automatically configured by {ProductName}.
+These options are automatically configured by Strimzi.
 
 include::../modules/ref-kafka-connect-configuration.adoc[leveloffset=+1]
 include::../modules/con-kafka-connect-multiple-instances.adoc[leveloffset=+1]

@@ -7,7 +7,7 @@
 
 Update the configuration of `KafkaMirrorMaker`, `KafkaConnect`, `KafkaConnectS2I`, and `KafkaBridge` custom resources to specify and configure a Jaeger tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
 
-* Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, Kafka Connect, or the {ProductName} Kafka Bridge.
+* Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, Kafka Connect, or the Strimzi Kafka Bridge.
 
 * For MirrorMaker and Kafka Connect, the tracing agent initializes a Jaeger tracer based on the tracing configuration defined in the resource.
 

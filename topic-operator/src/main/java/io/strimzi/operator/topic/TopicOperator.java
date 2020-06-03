@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
+import static java.util.Collections.emptyList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -122,7 +123,7 @@ class TopicOperator {
                     LOGGER.warn("{}", message);
                     break;
             }
-            k8s.createEvent(event).setHandler(handler);
+            k8s.createEvent(event).onComplete(handler);
         }
 
         public String toString() {
@@ -151,7 +152,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
-            k8s.createResource(kafkaTopic).setHandler(handler);
+            k8s.createResource(kafkaTopic).onComplete(handler);
         }
 
         @Override
@@ -181,7 +182,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            k8s.deleteResource(resourceName).setHandler(handler);
+            k8s.deleteResource(resourceName).onComplete(handler);
             statusUpdateGeneration.remove(resourceName.toString());
         }
 
@@ -213,7 +214,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
-            k8s.updateResource(kafkaTopic).setHandler(handler);
+            k8s.updateResource(kafkaTopic).onComplete(handler);
         }
 
         @Override
@@ -247,7 +248,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.createTopic(topic).setHandler(ar -> {
+            kafka.createTopic(topic).onComplete(ar -> {
                 if (ar.succeeded()) {
                     LOGGER.debug("{}: Created topic '{}' for KafkaTopic '{}'",
                             logContext, topic.getTopicName(), topic.getResourceName());
@@ -289,7 +290,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.updateTopicConfig(topic).setHandler(ar -> {
+            kafka.updateTopicConfig(topic).onComplete(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -322,7 +323,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.increasePartitions(topic).setHandler(ar -> {
+            kafka.increasePartitions(topic).onComplete(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -359,7 +360,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             LOGGER.info("{}: Deleting topic '{}'", logContext, topicName);
-            kafka.deleteTopic(topicName).setHandler(handler);
+            kafka.deleteTopic(topicName).onComplete(handler);
         }
 
         @Override
@@ -468,11 +469,11 @@ class TopicOperator {
             if (lockResult.succeeded()) {
                 LOGGER.debug("{}: Lock acquired", logContext);
                 LOGGER.debug("{}: Executing action {} on topic {}", logContext, action, lockName);
-                action.execute().setHandler(actionResult -> {
+                action.execute().onComplete(actionResult -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
                     action.result = actionResult;
                     // Update status with lock held so that event is ignored via statusUpdateGeneration
-                    action.updateStatus(logContext).setHandler(statusResult -> {
+                    action.updateStatus(logContext).onComplete(statusResult -> {
                         if (statusResult.failed()) {
                             LOGGER.error("{}: Error updating KafkaTopic.status for action {}", logContext, action,
                                     statusResult.cause());
@@ -801,7 +802,7 @@ class TopicOperator {
                 Reconciliation self = this;
                 Promise<Void> promise = Promise.promise();
                 // getting topic information from the private store
-                topicStore.read(topicName).setHandler(topicResult -> {
+                topicStore.read(topicName).onComplete(topicResult -> {
 
                     TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
                         @Override
@@ -817,7 +818,7 @@ class TopicOperator {
                                     } else {
                                         LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
                                         reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
-                                            .setHandler(promise);
+                                            .onComplete(promise);
                                     }
 
                                 } else {
@@ -836,7 +837,7 @@ class TopicOperator {
                             promise.complete();
                         }
                     };
-                    kafka.topicMetadata(topicName).setHandler(handler);
+                    kafka.topicMetadata(topicName).onComplete(handler);
                 });
                 return promise.future();
             }
@@ -886,7 +887,7 @@ class TopicOperator {
                                 // resource...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
                                 reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
-                                        .setHandler(promise);
+                                        .onComplete(promise);
                             }
                         } else {
                             promise.fail(metadataResult.cause());
@@ -898,7 +899,7 @@ class TopicOperator {
                         promise.fail(e);
                     }
                 };
-                kafka.topicMetadata(topicName).setHandler(handler);
+                kafka.topicMetadata(topicName).onComplete(handler);
                 return promise.future();
             }
         };
@@ -955,7 +956,7 @@ class TopicOperator {
                     if (!ksDiff.isEmpty()) {
                         Promise<Void> promise = Promise.promise();
                         statusFuture = promise.future();
-                        k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).setHandler(ar -> {
+                        k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).onComplete(ar -> {
                             if (ar.succeeded() && ar.result() != null) {
                                 ObjectMeta metadata = ar.result().getMetadata();
                                 LOGGER.debug("{}: status was set rv={}, generation={}, observedGeneration={}",
@@ -1079,7 +1080,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            topicStore.update(topic).setHandler(ar -> {
+            topicStore.update(topic).onComplete(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -1116,7 +1117,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             LOGGER.debug("Executing {}", this);
-            topicStore.create(topic).setHandler(ar -> {
+            topicStore.create(topic).onComplete(ar -> {
                 LOGGER.debug("Completing {}", this);
                 if (ar.failed()) {
                     LOGGER.debug("{} failed", this);
@@ -1157,7 +1158,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            topicStore.delete(topicName).setHandler(ar -> {
+            topicStore.delete(topicName).onComplete(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -1202,9 +1203,10 @@ class TopicOperator {
             this.succeeded = succeeded;
             this.undetermined = undetermined;
             this.failed = failed;
+            this.ktList = emptyList();
         }
 
-        public void addKafkaTopics(List<KafkaTopic> ktList) {
+        public void setKafkaTopics(List<KafkaTopic> ktList) {
             this.ktList = ktList;
         }
     }
@@ -1221,7 +1223,7 @@ class TopicOperator {
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
-                reconcileState.addKafkaTopics(ktList);
+                reconcileState.setKafkaTopics(ktList);
                 return reconcileState;
             });
         }).compose(reconcileState -> {
@@ -1368,7 +1370,7 @@ class TopicOperator {
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
                     return reconcile(reconciliation, logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
                 })
-                .setHandler(ar -> {
+                .onComplete(ar -> {
                     if (ar.failed()) {
                         reconciliation.failed();
                         LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());

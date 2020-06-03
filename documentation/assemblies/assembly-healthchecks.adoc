@@ -21,7 +21,7 @@ Kubernetes supports two types of Healthcheck probes:
 * Readiness probes
 
 For more details about the probes, see {K8sLivenessReadinessProbes}.
-Both types of probes are used in {ProductName} components.
+Both types of probes are used in Strimzi components.
 
 Users can configure selected options for liveness and readiness probes.
 

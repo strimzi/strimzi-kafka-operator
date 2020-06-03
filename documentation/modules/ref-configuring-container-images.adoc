@@ -85,9 +85,9 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 . `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in special situations, where you need to use a different container registry.
-For example, because your network does not allow access to the container repository used by {ProductName}.
-In such case, you should either copy the {ProductName} images or build them from source.
-In case the configured image is not compatible with {ProductName} images, it might not work properly.
+For example, because your network does not allow access to the container repository used by Strimzi.
+In such case, you should either copy the Strimzi images or build them from source.
+In case the configured image is not compatible with Strimzi images, it might not work properly.
 
 .Example of container image configuration
 [source,yaml,subs=attributes+]

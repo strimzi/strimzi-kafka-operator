@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
+set -e
 
 echo "Waiting for the TLS sidecar to get ready"
 
 while true; do
-  netstat -ntl | grep -q :2181
-  RESULT=$?
-
-  if [ "$RESULT" -eq "0" ]; then
+  if netstat -ntl | grep -q :2181; then
+    echo "TLS sidecar should be ready"
     break
   fi
 

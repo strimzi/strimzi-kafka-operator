@@ -3,26 +3,26 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-server-config-{context}']
-= Configuring an {oauth} authorization server
+= Configuring an OAuth 2.0 authorization server
 
-This procedure describes in general what you need to do to configure an authorization server for integration with {ProductName}.
+This procedure describes in general what you need to do to configure an authorization server for integration with Strimzi.
 
 These instructions are not product specific.
 
 The steps are dependent on the chosen authorization server.
-Consult the product documentation for the authorization server for information on how to set up {oauth} access.
+Consult the product documentation for the authorization server for information on how to set up OAuth 2.0 access.
 
 NOTE: If you already have an authorization server deployed, you can skip the deployment step and use your current deployment.
 
 .Procedure
 
 . Deploy the authorization server to your cluster.
-. Access the CLI or admin console for the authorization server to configure {oauth} for {ProductName}.
+. Access the CLI or admin console for the authorization server to configure OAuth 2.0 for Strimzi.
 +
-Now prepare the authorization server to work with {ProductName}.
+Now prepare the authorization server to work with Strimzi.
 
 . Configure a `kafka-broker` client.
 . Configure clients for each Kafka client component of your application.
 
 .What to do next
-After deploying and configuring the authorization server, xref:proc-oauth-authentication-broker-config-{context}[configure the Kafka brokers to use {oauth}].
+After deploying and configuring the authorization server, xref:proc-oauth-authentication-broker-config-{context}[configure the Kafka brokers to use OAuth 2.0].

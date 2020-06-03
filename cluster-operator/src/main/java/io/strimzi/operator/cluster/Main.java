@@ -78,13 +78,13 @@ public class Main {
         
         KubernetesClient client = new DefaultKubernetesClient();
 
-        maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
+        maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
             if (crs.succeeded())    {
-                PlatformFeaturesAvailability.create(vertx, client).setHandler(pfa -> {
+                PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
                     if (pfa.succeeded()) {
                         log.info("Environment facts gathered: {}", pfa.result());
 
-                        run(vertx, client, pfa.result(), config).setHandler(ar -> {
+                        run(vertx, client, pfa.result(), config).onComplete(ar -> {
                             if (ar.failed()) {
                                 log.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
@@ -200,7 +200,7 @@ public class Main {
             }
 
             Promise<Void> returnPromise = Promise.promise();
-            CompositeFuture.all(futures).setHandler(res -> {
+            CompositeFuture.all(futures).onComplete(res -> {
                 if (res.succeeded())    {
                     returnPromise.complete();
                 } else  {

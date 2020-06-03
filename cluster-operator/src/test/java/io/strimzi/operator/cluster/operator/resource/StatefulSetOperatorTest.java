@@ -181,7 +181,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint a = context.checkpoint();
         op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
-            .setHandler(context.succeeding(v -> a.flag()));
+            .onComplete(context.succeeding(v -> a.flag()));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint a = context.checkpoint();
         op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 a.flag();
             })));
@@ -278,7 +278,7 @@ public class StatefulSetOperatorTest
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll").setHandler(context.failing(e -> context.verify(() -> {
+        op.maybeRestartPod(resource, "my-pod-0", pod -> "roll").onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             a.flag();
         })));
@@ -324,7 +324,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint a = context.checkpoint();
         op.maybeRestartPod(resource, "my-pod-0", pod -> "roll")
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e.getMessage(), is("reconcile failed"));
                 a.flag();
             })));
@@ -426,7 +426,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2)
-            .setHandler(context.succeeding(rrState -> {
+            .onComplete(context.succeeding(rrState -> {
                 verify(mockDeletable).delete();
                 async.flag();
             }));
@@ -470,7 +470,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, true)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cascadingCaptor.getValue(), is(true));
                 async.flag();
             })));
@@ -514,7 +514,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint a = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cascadingCaptor.getValue(), is(false));
                 a.flag();
             })));
@@ -554,7 +554,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint a = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
-            .setHandler(context.failing(e -> a.flag()));
+            .onComplete(context.failing(e -> a.flag()));
     }
 
     @Test
@@ -594,7 +594,7 @@ public class StatefulSetOperatorTest
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(MockitoException.class));
                 assertThat(e.getMessage(), is("Something failed"));
                 async.flag();

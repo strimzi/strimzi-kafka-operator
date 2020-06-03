@@ -42,7 +42,7 @@ public class InitWriterTest {
         envVars.put(InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone");
         envVars.put(InitWriterConfig.EXTERNAL_ADDRESS, "true");
 
-        // metadata labels related to the Kubernetes/OpenShift cluster node
+        // metadata labels related to the Kubernetes cluster node
         labels.put("beta.kubernetes.io/arch", "amd64");
         labels.put("beta.kubernetes.io", "linux");
         labels.put("kubernetes.io/hostname", "localhost");

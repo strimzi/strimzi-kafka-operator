@@ -9,6 +9,7 @@ import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,6 +24,7 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
     private final String topic;
     private String clientName;
     private final Integer partition;
+    private KafkaProducer<String, String> producer;
 
     Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
              String topic, String clientName, Integer partition) {
@@ -32,6 +34,7 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
         this.topic = topic;
         this.clientName = clientName;
         this.vertx = Vertx.vertx();
+        this.producer = KafkaProducer.create(vertx, properties.getProperties());
     }
 
     Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
@@ -42,6 +45,7 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
         this.partition = null;
         this.clientName = clientName;
         this.vertx = Vertx.vertx();
+        this.producer = KafkaProducer.create(vertx, properties.getProperties());
     }
 
     @Override
@@ -50,8 +54,6 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
 
         LOGGER.info("Producer is starting with following properties: {}", properties.getProperties().toString());
 
-        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties.getProperties());
-
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
                 if (msg.body().equals("stop")) {
@@ -59,21 +61,27 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
                     resultPromise.complete(numSent.get());
                 }
             });
-            vertx.setPeriodic(1000, id -> sendNext(producer, topic));
+            vertx.setPeriodic(1000, id -> sendNext(topic));
         } else {
-            sendNext(producer, topic);
+            sendNext(topic);
         }
     }
 
     @Override
     public void close() {
-        LOGGER.info("Closing Vert.x instance for the client {}", this.getClass().getName());
         if (vertx != null) {
+
+            if (producer != null) {
+                LOGGER.info("Closing Producer instance {} with client.id {}", producer.getClass().getName(), properties.getProperties().get(ProducerConfig.CLIENT_ID_CONFIG));
+                producer.close();
+            }
+
+            LOGGER.info("Closing Vert.x instance {}", this.getClass().getName());
             vertx.close();
         }
     }
 
-    private void sendNext(KafkaProducer<String, String> producer, String topic) {
+    private void sendNext(String topic) {
         if (msgCntPredicate.negate().test(numSent.get())) {
 
             KafkaProducerRecord<String, String> record;
@@ -100,15 +108,13 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
                     }
 
                     if (msgCntPredicate.negate().test(-1)) {
-                        sendNext(producer, topic);
+                        sendNext(topic);
                     }
-
                 } else {
-                    LOGGER.warn("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
-                    sendNext(producer, topic);
+                    LOGGER.debug("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
+                    sendNext(topic);
                 }
             });
-
         }
     }
 

@@ -12,7 +12,7 @@
 
 ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven.
 
-The majority of nodes must be available in order to maintain an effective quorum. If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working. Having a stable and highly available ZooKeeper cluster is crucial for {ProductName}.
+The majority of nodes must be available in order to maintain an effective quorum. If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working. Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 
 Three-node cluster::
 A three-node ZooKeeper cluster requires at least two nodes to be up and running in order to maintain the quorum.

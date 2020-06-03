@@ -83,7 +83,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
                     return del;
                 });
 
-        podReconcileFuture.setHandler(deleteResult -> {
+        podReconcileFuture.onComplete(deleteResult -> {
             if (deleteResult.succeeded()) {
                 log.debug("{}: Pod {} was deleted", logContext, podName);
             }

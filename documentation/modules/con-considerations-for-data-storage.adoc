@@ -6,7 +6,7 @@
 
 = Data storage considerations
 
-An efficient data storage infrastructure is essential to the optimal performance of {ProductName}.
+An efficient data storage infrastructure is essential to the optimal performance of Strimzi.
 
 Block storage is required.
 File storage, such as NFS, does not work with Kafka.
@@ -23,7 +23,7 @@ NOTE: Strimzi does not require Kubernetes raw block volumes.
 == File systems
 
 It is recommended that you configure your storage system to use the _XFS_ file system.
-{ProductName} is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
+Strimzi is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
 
 == Apache Kafka and ZooKeeper storage
 Use separate disks for Apache Kafka and ZooKeeper.

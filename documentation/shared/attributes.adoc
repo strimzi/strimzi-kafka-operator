@@ -12,10 +12,7 @@
 :linkattrs:
 :toclevels: 3
 
-// Name and version placeholders
-:ProductLongName: Strimzi
-:ProductName: Strimzi
-:ContextProduct: strimzi
+// Kubernetes and OpenShift versions
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
 
@@ -39,15 +36,13 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
-:oauth: OAuth 2.0
-:oauth2-site: link:https://oauth.net/2/[{oauth} site^]
-:oauth-artifact-version: 0.2.0
-:keycloak-server: Keycloak
+:oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
+:oauth-artifact-version: 0.5.0
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
-:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}^]
-:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the {oauth} authorization server^]
-:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the {oauth} authorization server^]
+:oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
+:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the OAuth 2.0 authorization server^]
+:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
@@ -86,7 +81,7 @@
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka configuration documentation for producers^]
 :ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]
 :ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
-:CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control]
+:CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control^]
 :CruiseControlConfigDocs: link:https://github.com/linkedin/cruise-control/wiki/Configurations[Cruise Control documentation]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
@@ -99,6 +94,7 @@
 :JaegerArch: link:https://www.jaegertracing.io/docs/1.14/architecture/[Jaeger architecure^]
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
+:external-cors-link: https://www.w3.org/TR/cors/
 
 
 // Container image names and repositories

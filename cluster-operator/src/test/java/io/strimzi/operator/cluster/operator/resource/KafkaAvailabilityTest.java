@@ -296,7 +296,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 if (brokerId == 4) {
                     assertTrue(canRoll,
                             "broker " + brokerId + " should be rollable, having no partitions");
@@ -335,7 +335,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 if (brokerId == 2) {
                     assertTrue(canRoll,
                             "broker " + brokerId + " should be rollable, having no partitions");
@@ -374,7 +374,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
                 a.flag();
@@ -400,7 +400,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
 
@@ -427,7 +427,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
 
@@ -453,7 +453,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
 
@@ -488,7 +488,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaSorted.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaSorted.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 if (brokerId == 0) {
                     assertFalse(canRoll,
                             "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
@@ -525,7 +525,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
                 a.flag();
@@ -561,7 +561,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 a.flag();
             })));
@@ -595,7 +595,7 @@ public class KafkaAvailabilityTest {
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+            kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
                 a.flag();
             })));
@@ -630,12 +630,12 @@ public class KafkaAvailabilityTest {
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
             if (brokerId <= 2) {
-                kafkaAvailability.canRoll(brokerId).setHandler(context.failing(e -> context.verify(() -> {
+                kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
                     a.flag();
                 })));
             } else {
-                kafkaAvailability.canRoll(brokerId).setHandler(context.succeeding(canRoll -> a.flag()));
+                kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> a.flag()));
             }
         }
     }

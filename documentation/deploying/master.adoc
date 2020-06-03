@@ -4,7 +4,7 @@ include::shared/attributes.adoc[]
 :context: str
 
 [id="deploying-book_{context}"]
-= Deploying and Upgrading {ProductName}
+= Deploying and Upgrading Strimzi
 
 //Introduction to the install process
 include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]

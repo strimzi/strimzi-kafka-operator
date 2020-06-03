@@ -103,7 +103,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource()).setHandler(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
@@ -134,7 +134,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> context.verify(() -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             async.flag();
         })));
@@ -159,7 +159,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(resource).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.flag();
@@ -187,7 +187,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -211,7 +211,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockResource).get();
                 verify(mockResource, never()).delete();
                 async.flag();
@@ -243,7 +243,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
             })));
@@ -274,7 +274,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
             })));
@@ -307,7 +307,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, is(ex));
                 async.flag();
             })));

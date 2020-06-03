@@ -6,7 +6,7 @@
 
 = ZooKeeper connection
 
-ZooKeeper services are secured with encryption and authentication and are not intended to be used by external applications that are not part of {ProductName}.
+ZooKeeper services are secured with encryption and authentication and are not intended to be used by external applications that are not part of Strimzi.
 
 However, if you want to use Kafka CLI tools that require a connection to ZooKeeper, such as the `kafka-topics` tool, you can use a terminal inside a Kafka container and connect to the local end of the TLS tunnel to ZooKeeper by using `localhost:2181` as the ZooKeeper address.
 

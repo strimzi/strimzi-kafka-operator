@@ -9,7 +9,7 @@ This procedure shows how to create a custom image and add it to the `/opt/kafka/
 
 You can use the Kafka container image on {DockerRepository} as a base image for creating your own custom image with additional connector plug-ins.
 
-At startup, the {ProductName} version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
+At startup, the Strimzi version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
 
 .Prerequisites
 

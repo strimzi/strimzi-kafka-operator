@@ -53,14 +53,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -78,7 +75,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("mirrorMakerDefaultLoggingProperties")
-            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
+            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private final String producerBootstrapServers = "foo-kafka:9092";
     private final String consumerBootstrapServers = "bar-kafka:9092";
@@ -149,8 +146,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
-            .setHandler(context.succeeding(createResult -> {
-
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
                 if (mirror.isMetricsEnabled()) {
@@ -159,29 +155,29 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
                 // Verify Deployment
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
-                context.verify(() -> assertThat(capturedDc.size(), is(1)));
+                assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
-                context.verify(() -> assertThat(dc.getMetadata().getName(), is(mirror.getName())));
+                assertThat(dc.getMetadata().getName(), is(mirror.getName()));
                 Map annotations = new HashMap();
                 annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
-                context.verify(() -> assertThat("Deployments are not equal", dc, is(mirror.generateDeployment(annotations, true, null, null))));
+                assertThat("Deployments are not equal", dc, is(mirror.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-                context.verify(() -> assertThat(capturedPdb.size(), is(1)));
+                assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                context.verify(() -> assertThat(pdb.getMetadata().getName(), is(mirror.getName())));
-                context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget())));
+                assertThat(pdb.getMetadata().getName(), is(mirror.getName()));
+                assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget()));
 
                 // Verify status
                 List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
-                context.verify(() -> assertThat(capturedMM.size(), is(1)));
+                assertThat(capturedMM, hasSize(1));
                 KafkaMirrorMaker mm = capturedMM.get(0);
-                context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready")));
-                context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True")));
+                assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready"));
+                assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
 
                 async.flag();
-            }));
+            })));
     }
 
     @Test
@@ -239,26 +235,25 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                // Verify Deployment Config
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                assertThat(capturedDc, hasSize(1));
 
-            // Verify Deployment Config
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                assertThat(capturedPdb, hasSize(1));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                assertThat(pdb.getMetadata().getName(), is(mirror.getName()));
+                assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget()));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(mirror.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget())));
+                // Verify scaleDown / scaleUp were not called
+                assertThat(dcScaleDownNameCaptor.getAllValues(), hasSize(1));
+                assertThat(dcScaleUpNameCaptor.getAllValues(), hasSize(1));
 
-            // Verify scaleDown / scaleUp were not called
-            context.verify(() -> assertThat(dcScaleDownNameCaptor.getAllValues().size(), is(1)));
-            context.verify(() -> assertThat(dcScaleUpNameCaptor.getAllValues().size(), is(1)));
-
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test
@@ -344,36 +339,35 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(clusterCm,
+                        VERSIONS);
 
-            KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(clusterCm,
-                    VERSIONS);
+                // Verify Deployment
+                List<Deployment> capturedDc = dcCaptor.getAllValues();
+                assertThat(capturedDc, hasSize(1));
+                Deployment dc = capturedDc.get(0);
+                assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
+                Map<String, String> annotations = new HashMap();
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+                assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedDc.size(), is(1)));
-            Deployment dc = capturedDc.get(0);
-            context.verify(() -> assertThat(dc.getMetadata().getName(), is(compareTo.getName())));
-            Map<String, String> annotations = new HashMap();
-            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
-            context.verify(() -> assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null))));
+                // Verify PodDisruptionBudget
+                List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                assertThat(capturedPdb, hasSize(1));
+                PodDisruptionBudget pdb = capturedPdb.get(0);
+                assertThat(pdb.getMetadata().getName(), is(compareTo.getName()));
+                assertThat("PodDisruptionBudgets are not equal", pdb, is(compareTo.generatePodDisruptionBudget()));
 
-            // Verify PodDisruptionBudget
-            List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
-            PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(compareTo.getName())));
-            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(compareTo.generatePodDisruptionBudget())));
+                // Verify scaleDown / scaleUp were not called
+                assertThat(dcScaleDownNameCaptor.getAllValues(), hasSize(1));
+                assertThat(dcScaleUpNameCaptor.getAllValues(), hasSize(1));
 
-            // Verify scaleDown / scaleUp were not called
-            context.verify(() -> assertThat(dcScaleDownNameCaptor.getAllValues().size(), is(1)));
-            context.verify(() -> assertThat(dcScaleUpNameCaptor.getAllValues().size(), is(1)));
-
-            // No metrics config  => no CMs created
-            verify(mockCmOps, never()).createOrUpdate(any());
-            async.flag();
-        });
+                // No metrics config  => no CMs created
+                verify(mockCmOps, never()).createOrUpdate(any());
+                async.flag();
+            })));
     }
 
     @Test
@@ -436,11 +430,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
-
-            async.flag();
-        });
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.failing(v -> context.verify(() -> async.flag())));
     }
 
     @Test
@@ -497,13 +488,11 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
-
-            verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
-
-            async.flag();
-        });
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
+                async.flag();
+            })));
     }
 
     @Test
@@ -560,17 +549,15 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
-
-            verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
-
-            async.flag();
-        });
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
+                async.flag();
+            })));
     }
 
     @Test
-    public void testReconcile(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -617,7 +604,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
-        CountDownLatch async = new CountDownLatch(2);
+        Checkpoint createdOrUpdateAsync = context.checkpoint(2);
 
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -628,21 +615,23 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMakerAssembly) {
                 createdOrUpdated.add(kafkaMirrorMakerAssembly.getMetadata().getName());
-                async.countDown();
+                createdOrUpdateAsync.flag();
                 return Future.succeededFuture();
             }
         };
 
+        Checkpoint async = context.checkpoint();
         // Now try to reconcile all the Kafka Mirror Maker clusters
-        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
+        ops.reconcileAll("test", clusterCmNamespace,
+            context.succeeding(v -> context.verify(() -> {
+                assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar"))));
+                async.flag();
+            })));
 
-        async.await(60, TimeUnit.SECONDS);
-        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
-        context.completeNow();
     }
 
     @Test
-    public void testCreateClusterStatusNotReady(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testCreateClusterStatusNotReady(VertxTestContext context) throws InterruptedException {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -683,23 +672,18 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        CountDownLatch async = new CountDownLatch(1);
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
+        Checkpoint async = context.checkpoint();
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+            .onComplete(context.failing(e -> context.verify(() -> {
+                // Verify status
+                List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
+                assertThat(capturedMM, hasSize(1));
+                KafkaMirrorMaker mm = capturedMM.get(0);
+                assertThat(mm.getStatus().getConditions().get(0).getType(), is("NotReady"));
+                assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
+                assertThat(mm.getStatus().getConditions().get(0).getMessage(), is(failureMsg));
 
-            // Verify status
-            List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
-            context.verify(() -> assertThat(capturedMM.size(), is(1)));
-            KafkaMirrorMaker mm = capturedMM.get(0);
-            context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getType(), is("NotReady")));
-            context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True")));
-            context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getMessage(), is(failureMsg)));
-
-            async.countDown();
-        });
-        if (!async.await(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
-        context.completeNow();
+                async.flag();
+            })));
     }
 }

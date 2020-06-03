@@ -119,7 +119,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         String namespace = sts.getMetadata().getNamespace();
         Promise<Void> promise = Promise.promise();
         Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
-        r.setHandler(h -> {
+        r.onComplete(h -> {
             if (h.succeeded()) {
                 promise.complete();
             } else {
@@ -253,7 +253,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
             .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
-            .setHandler(result);
+            .onComplete(result);
 
         return result.future();
     }
@@ -331,7 +331,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 return sts == null;
             });
 
-            deletedFut.setHandler(res -> {
+            deletedFut.onComplete(res -> {
                 if (res.succeeded())    {
                     StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
                     log.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);

@@ -10,7 +10,7 @@
 [id='assembly-storage-{context}']
 = Kafka and ZooKeeper storage types
 
-As stateful applications, Kafka and ZooKeeper need to store data on disk. {ProductName} supports three storage types for this data:
+As stateful applications, Kafka and ZooKeeper need to store data on disk. Strimzi supports three storage types for this data:
 
 * Ephemeral
 * Persistent

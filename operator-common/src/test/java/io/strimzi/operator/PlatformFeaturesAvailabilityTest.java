@@ -75,7 +75,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint a = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_9));
             stopMockApi(context, mockHttp);
             a.flag();
@@ -102,7 +102,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_14));
             stopMockApi(context, mockHttp);
             async.flag();
@@ -121,7 +121,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(false));
@@ -145,7 +145,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(true));
@@ -163,7 +163,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(false));
             assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(false));

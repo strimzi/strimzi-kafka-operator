@@ -5,7 +5,7 @@
 [id='assembly-kafka-broker-external-listeners-{context}']
 = External listeners
 
-Use an external listener to expose your {ProductName} Kafka cluster to a client outside a Kubernetes environment.
+Use an external listener to expose your Strimzi Kafka cluster to a client outside a Kubernetes environment.
 
 .Additional resources
 
