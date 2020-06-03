@@ -585,6 +585,7 @@ public abstract class AbstractModel {
 
     /**
      * Sets the affinity as configured by the user in the cluster CR.
+     *
      * @param affinity
      */
     protected void setUserAffinity(Affinity affinity) {
@@ -694,10 +695,10 @@ public abstract class AbstractModel {
         String storageClass = storage.getStorageClass();
         if (storage.getOverrides() != null) {
             storageClass = storage.getOverrides().stream()
-                    .filter(broker -> broker != null &&
-                            broker.getBroker() != null &&
-                            broker.getBroker() == ordinalId &&
-                            broker.getStorageClass() != null)
+                    .filter(broker -> broker != null
+                            && broker.getBroker() != null
+                            && broker.getBroker() == ordinalId
+                            && broker.getStorageClass() != null)
                     .map(PersistentClaimStorageOverride::getStorageClass)
                     .findAny()
                     // if none are found for broker do not change storage class from overrides
