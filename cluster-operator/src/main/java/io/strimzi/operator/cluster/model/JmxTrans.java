@@ -79,7 +79,7 @@ public class JmxTrans extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected JmxTrans(HasMetadata resource) {
         super(resource, APPLICATION_NAME);

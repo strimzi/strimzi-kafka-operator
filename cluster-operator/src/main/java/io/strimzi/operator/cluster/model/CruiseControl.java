@@ -147,7 +147,7 @@ public class CruiseControl extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource  Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected CruiseControl(HasMetadata resource) {
         super(resource, APPLICATION_NAME);

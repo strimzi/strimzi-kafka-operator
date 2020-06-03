@@ -87,7 +87,7 @@ public class KafkaConnectAssemblyOperatorTest {
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaConnectDefaultLoggingProperties")
-            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes/OpenShift resource.");
+            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 

@@ -236,7 +236,7 @@ public abstract class AbstractModel {
     /**
      * Constructor
      *
-     * @param resource         Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource         Kubernetes resource with metadata containing the namespace and cluster name
      * @param applicationName  Name of the application that the extending class is deploying
      */
     protected AbstractModel(HasMetadata resource, String applicationName) {
@@ -379,7 +379,7 @@ public abstract class AbstractModel {
      * @return log4j properties as a String.
      */
     protected static String createPropertiesString(OrderedProperties properties) {
-        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes/OpenShift resource.");
+        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
     }
 
     /**
@@ -560,7 +560,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return the name of the service account used by the deployed cluster for Kubernetes/OpenShift API operations.
+     * @return the name of the service account used by the deployed cluster for Kubernetes API operations.
      */
     protected String getServiceAccountName() {
         return null;

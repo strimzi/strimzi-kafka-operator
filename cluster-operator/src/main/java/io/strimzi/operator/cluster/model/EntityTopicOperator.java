@@ -72,7 +72,7 @@ public class EntityTopicOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
 
     /**
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected EntityTopicOperator(HasMetadata resource) {
         super(resource, APPLICATION_NAME);

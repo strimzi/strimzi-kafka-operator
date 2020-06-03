@@ -115,7 +115,7 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaConnectCluster(HasMetadata resource) {
         this(resource, APPLICATION_NAME);
@@ -124,7 +124,7 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param applicationName configurable allow other classes to extend this class
      */
     protected KafkaConnectCluster(HasMetadata resource, String applicationName) {
