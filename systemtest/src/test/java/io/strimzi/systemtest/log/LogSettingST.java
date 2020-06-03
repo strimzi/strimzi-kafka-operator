@@ -373,6 +373,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     @Order(14)
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels() throws InterruptedException {
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDeploymentName);
@@ -381,28 +382,81 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Setting log level of TO and UO to OFF - no records should appear in log");
         // change inline logging
-        InlineLogging il = new InlineLogging();
-        il.setLoggers(Collections.singletonMap("rootLogger.level", OFF));
+        InlineLogging ilOff = new InlineLogging();
+        ilOff.setLoggers(Collections.singletonMap("rootLogger.level", OFF));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setLogging(il);
-            k.getSpec().getEntityOperator().getUserOperator().setLogging(il);
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilOff);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilOff);
         });
 
         LOGGER.info("The EO shouldn't roll - verifying pod stability");
         DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
 
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
                 && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
         );
 
+        LOGGER.info("Waiting {} ms for INFO log will disappear", RECONCILIATION_INTERVAL * 2);
         //wait some time if TO and UO will log something
         Thread.sleep(RECONCILIATION_INTERVAL * 2);
 
         LOGGER.info("Asserting if log is without records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(""));
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(""));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(emptyString()));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(emptyString()));
 
+        LOGGER.info("Changing rootLogger level to INFO with inline logging");
+        InlineLogging ilInfo = new InlineLogging();
+        ilInfo.setLoggers(Collections.singletonMap("rootLogger.level", INFO));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilInfo);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilInfo);
+        });
+
+        LOGGER.info("The EO shouldn't roll - verifying pod stability");
+        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+                && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+        );
+
+        LOGGER.info("Waiting {} ms for INFO log will appear", RECONCILIATION_INTERVAL * 6);
+        //wait some time if TO and UO will log something
+        Thread.sleep(RECONCILIATION_INTERVAL * 6);
+
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "5m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "5m"), is(not(emptyString())));
+
+        LOGGER.info("Setting log level of TO and UO to OFF - no records should appear in log");
+        // change inline logging
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilOff);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilOff);
+        });
+
+        LOGGER.info("The EO shouldn't roll - verifying pod stability");
+        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+        );
+
+        LOGGER.info("Waiting {} ms for INFO log will disappear", RECONCILIATION_INTERVAL * 2);
+        //wait some time if TO and UO will log something
+        Thread.sleep(RECONCILIATION_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log is without records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(emptyString()));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(emptyString()));
+
+        LOGGER.info("Setting external logging INFO");
         ConfigMap configMapTo = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName("external-configmap-to")
@@ -456,6 +510,7 @@ class LogSettingST extends AbstractST {
         LOGGER.info("The EO shouldn't roll - verifying pod stability");
         DeploymentUtils.waitForNoRollingUpdate(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPods);
 
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
@@ -463,6 +518,7 @@ class LogSettingST extends AbstractST {
                     && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
+        LOGGER.info("Waiting {}ms for INFO log will appear", RECONCILIATION_INTERVAL * 6);
         // wait some time if TO and UO will log something
         Thread.sleep(RECONCILIATION_INTERVAL * 6);
 
