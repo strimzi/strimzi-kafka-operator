@@ -10,8 +10,8 @@ https://brew.sh/
 #### Install git
 `brew install git`
 
-#### Install java 8
-`brew cask install adoptopenjdk/openjdk/adoptopenjdk8`
+#### Install java 11
+`brew cask install adoptopenjdk/openjdk/adoptopenjdk11`
 
 #### Install maven
 `brew install maven`
