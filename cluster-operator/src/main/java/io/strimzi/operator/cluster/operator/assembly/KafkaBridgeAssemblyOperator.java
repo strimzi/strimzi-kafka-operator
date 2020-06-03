@@ -96,7 +96,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
-            .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigName(), logAndMetricsConfigMap))
+            .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), logAndMetricsConfigMap))
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))

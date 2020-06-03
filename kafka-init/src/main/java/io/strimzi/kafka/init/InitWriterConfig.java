@@ -62,14 +62,14 @@ public class InitWriterConfig {
     }
 
     /**
-     * @return Kubernetes/OpenShift cluster node name from which getting the rack related label
+     * @return Kubernetes cluster node name from which getting the rack related label
      */
     public String getNodeName() {
         return nodeName;
     }
 
     /**
-     * @return the Kubernetes/OpenShift cluster node label to use as topology key for rack definition
+     * @return the Kubernetes cluster node label to use as topology key for rack definition
      */
     public String getRackTopologyKey() {
         return rackTopologyKey;

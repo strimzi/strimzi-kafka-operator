@@ -56,13 +56,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaMirrorMaker2Cluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
-        this.ancillaryConfigName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
+        this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
     }
 
     /**

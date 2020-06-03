@@ -1364,7 +1364,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace, zkCluster.getAncillaryConfigName(), zkMetricsAndLogsConfigMap));
+            return withVoid(configMapOperations.reconcile(namespace, zkCluster.getAncillaryConfigMapName(), zkMetricsAndLogsConfigMap));
         }
 
         /**
@@ -2236,7 +2236,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigName(), getKafkaAncialiaryCm()));
+            return withVoid(configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigMapName(), getKafkaAncialiaryCm()));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -2894,14 +2894,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
                     eoDeployment != null && entityOperator.getTopicOperator() != null ?
-                            entityOperator.getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
+                            entityOperator.getTopicOperator().getAncillaryConfigMapName() : EntityTopicOperator.metricAndLogConfigsName(name),
                     topicOperatorMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> entityOperatorUserOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
                     eoDeployment != null && entityOperator.getUserOperator() != null ?
-                            entityOperator.getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
+                            entityOperator.getUserOperator().getAncillaryConfigMapName() : EntityUserOperator.metricAndLogConfigsName(name),
                     userOperatorMetricsAndLogsConfigMap));
         }
 
@@ -2994,7 +2994,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> cruiseControlAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
                     ccDeployment != null && cruiseControl != null ?
-                            cruiseControl.getAncillaryConfigName() : CruiseControl.metricAndLogConfigsName(name),
+                            cruiseControl.getAncillaryConfigMapName() : CruiseControl.metricAndLogConfigsName(name),
                     cruiseControlMetricsAndLogsConfigMap));
         }
 
