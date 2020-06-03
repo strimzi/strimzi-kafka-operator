@@ -1,0 +1,149 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloakbackups.keycloak.org
+spec:
+  group: keycloak.org
+  names:
+    kind: KeycloakBackup
+    listKind: KeycloakBackupList
+    plural: keycloakbackups
+    singular: keycloakbackup
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: KeycloakBackup is the Schema for the keycloakbackups API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KeycloakBackupSpec defines the desired state of KeycloakBackup
+          properties:
+            aws:
+              description: If provided, an automatic database backup will be created
+                on AWS S3 instead of a local Persistent Volume. If this property is
+                not provided - a local Persistent Volume backup will be chosen.
+              properties:
+                credentialsSecretName:
+                  description: "Provides a secret name used for connecting to AWS
+                    S3 Service. The secret needs to be in the following form: \n     apiVersion:
+                    v1     kind: Secret     metadata:       name: <Secret name>     type:
+                    Opaque     stringData:       AWS_S3_BUCKET_NAME: <S3 Bucket Name>
+                    \      AWS_ACCESS_KEY_ID: <AWS Access Key ID>       AWS_SECRET_ACCESS_KEY:
+                    <AWS Secret Key> \n For more information, please refer to the
+                    Operator documentation."
+                  type: string
+                encryptionKeySecretName:
+                  description: "If provided, the database backup will be encrypted.
+                    Provides a secret name used for encrypting database data. The
+                    secret needs to be in the following form: \n     apiVersion: v1
+                    \    kind: Secret     metadata:       name: <Secret name>     type:
+                    Opaque     stringData:       GPG_PUBLIC_KEY: <GPG Public Key>
+                    \      GPG_TRUST_MODEL: <GPG Trust Model>       GPG_RECIPIENT:
+                    <GPG Recipient> \n For more information, please refer to the Operator
+                    documentation."
+                  type: string
+                schedule:
+                  description: If specified, it will be used as a schedule for creating
+                    a CronJob
+                  type: string
+              type: object
+            instanceSelector:
+              description: Selector for looking up Keycloak Custom Resources.
+              properties:
+                matchExpressions:
+                  description: matchExpressions is a list of label selector requirements.
+                    The requirements are ANDed.
+                  items:
+                    description: A label selector requirement is a selector that contains
+                      values, a key, and an operator that relates the key and values.
+                    properties:
+                      key:
+                        description: key is the label key that the selector applies
+                          to.
+                        type: string
+                      operator:
+                        description: operator represents a key's relationship to a
+                          set of values. Valid operators are In, NotIn, Exists and
+                          DoesNotExist.
+                        type: string
+                      values:
+                        description: values is an array of string values. If the operator
+                          is In or NotIn, the values array must be non-empty. If the
+                          operator is Exists or DoesNotExist, the values array must
+                          be empty. This array is replaced during a strategic merge
+                          patch.
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - key
+                    - operator
+                    type: object
+                  type: array
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  description: matchLabels is a map of {key,value} pairs. A single
+                    {key,value} in the matchLabels map is equivalent to an element
+                    of matchExpressions, whose key field is "key", the operator is
+                    "In", and the values array contains only "value". The requirements
+                    are ANDed.
+                  type: object
+              type: object
+            restore:
+              description: "Controls automatic restore behavior. Currently not implemented.
+                \n In the future this will be used to trigger automatic restore for
+                a given KeycloakBackup. Each backup will correspond to a single snapshot
+                of the database (stored either in a Persistent Volume or AWS). If
+                a user wants to restore it, all he/she needs to do is to change this
+                flag to true. Potentially, it will be possible to restore a single
+                backup multiple times."
+              type: boolean
+          type: object
+        status:
+          description: KeycloakBackupStatus defines the observed state of KeycloakBackup
+          properties:
+            message:
+              description: Human-readable message indicating details about current
+                operator phase or error.
+              type: string
+            phase:
+              description: Current phase of the operator.
+              type: string
+            ready:
+              description: True if all resources are in a ready state and all work
+                is done.
+              type: boolean
+            secondaryResources:
+              additionalProperties:
+                items:
+                  type: string
+                type: array
+              description: 'A map of all the secondary resources types and names created
+                for this CR. e.g "Deployment": [ "DeploymentName1", "DeploymentName2"
+                ]'
+              type: object
+          required:
+          - message
+          - phase
+          - ready
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

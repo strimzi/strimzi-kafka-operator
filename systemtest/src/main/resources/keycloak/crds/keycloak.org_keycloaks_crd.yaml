@@ -1,0 +1,144 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloaks.keycloak.org
+spec:
+  group: keycloak.org
+  names:
+    kind: Keycloak
+    listKind: KeycloakList
+    plural: keycloaks
+    singular: keycloak
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Keycloak is the Schema for the keycloaks API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KeycloakSpec defines the desired state of Keycloak
+          properties:
+            extensions:
+              description: A list of extensions, where each one is a URL to a JAR
+                files that will be deployed in Keycloak.
+              items:
+                type: string
+              type: array
+            externalAccess:
+              description: Controls external Ingress/Route settings.
+              properties:
+                enabled:
+                  description: If set to true, the Operator will create an Ingress
+                    or a Route pointing to Keycloak.
+                  type: boolean
+                tlsTermination:
+                  description: TLS Termination type for the external access. Setting
+                    this field to "reencrypt" will terminate TLS on the Ingress/Route
+                    level. Setting this field to "passthrough" will send encrypted
+                    traffic to the Pod. If unspecified, defaults to "reencrypt". Note,
+                    that this setting has no effect on Ingress as Ingress TLS settings
+                    are not reconciled by this operator. In other words, Ingress TLS
+                    configuration is the same in both cases and it is up to the user
+                    to configure TLS section of the Ingress.
+                  type: string
+              type: object
+            externalDatabase:
+              description: "Controls external database settings. Using an external
+                database requires providing a secret containing credentials as well
+                as connection details. Here's an example of such secret: \n     apiVersion:
+                v1     kind: Secret     metadata:         name: keycloak-db-secret
+                \        namespace: keycloak     stringData:         POSTGRES_DATABASE:
+                <Database Name>         POSTGRES_EXTERNAL_ADDRESS: <External Database
+                IP or URL (resolvable by K8s)>         POSTGRES_EXTERNAL_PORT: <External
+                Database Port>         # Strongly recommended to use <'Keycloak CR
+                Name'-postgresql>         POSTGRES_HOST: <Database Service Name>         POSTGRES_PASSWORD:
+                <Database Password>         # Required for AWS Backup functionality
+                \        POSTGRES_SUPERUSER: true         POSTGRES_USERNAME: <Database
+                Username>      type: Opaque \n Both POSTGRES_EXTERNAL_ADDRESS and
+                POSTGRES_EXTERNAL_PORT are specifically required for creating connection
+                to the external database. The secret name is created using the following
+                convention:       <Custom Resource Name>-db-secret \n For more information,
+                please refer to the Operator documentation."
+              properties:
+                enabled:
+                  description: If set to true, the Operator will use an external database.
+                    pointing to Keycloak.
+                  type: boolean
+              type: object
+            instances:
+              description: Number of Keycloak instances in HA mode. Default is 1.
+              type: integer
+            podDisruptionBudget:
+              description: Specify PodDisruptionBudget configuration
+              properties:
+                enabled:
+                  description: If set to true, the operator will create a PodDistruptionBudget
+                    for the Keycloak deployment and set its `maxUnavailable` value
+                    to 1
+                  type: boolean
+              type: object
+            profile:
+              description: Profile used for controlling Operator behavior. Default
+                is empty.
+              type: string
+          type: object
+        status:
+          description: KeycloakStatus defines the observed state of Keycloak
+          properties:
+            credentialSecret:
+              description: The secret where the admin credentials are to be found
+              type: string
+            internalURL:
+              description: Service IP and Port for in-cluster access to the keycloak
+                instance
+              type: string
+            message:
+              description: Human-readable message indicating details about current
+                operator phase or error.
+              type: string
+            phase:
+              description: Current phase of the operator.
+              type: string
+            ready:
+              description: True if all resources are in a ready state and all work
+                is done.
+              type: boolean
+            secondaryResources:
+              additionalProperties:
+                items:
+                  type: string
+                type: array
+              description: 'A map of all the secondary resources types and names created
+                for this CR. e.g "Deployment": [ "DeploymentName1", "DeploymentName2"
+                ]'
+              type: object
+            version:
+              description: Version of Keycloak or RHSSO running on the cluster
+              type: string
+          required:
+          - credentialSecret
+          - internalURL
+          - message
+          - phase
+          - ready
+          - version
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

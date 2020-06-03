@@ -4,11 +4,14 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
+import io.strimzi.systemtest.resources.KeycloakResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.executor.Exec;
@@ -21,12 +24,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -82,16 +85,20 @@ public class OauthAbstractST extends AbstractST {
     }
 
     private void deployTestSpecificResources() throws InterruptedException {
+        LOGGER.info("Deploying Keycloak Operator");
+        KeycloakResource.keycloakOperator(NAMESPACE);
+
         LOGGER.info("Deploying keycloak...");
+        KeycloakResource.deployKeycloak(NAMESPACE);
         KafkaClientsResource.deployKeycloak().done();
 
         // https
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
-
+//
         KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
-
-        // http
+//
+//        // http
         Service keycloakHttpService = KubernetesResource.deployKeycloakNodePortHttpService(NAMESPACE);
 
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
@@ -102,9 +109,14 @@ public class OauthAbstractST extends AbstractST {
         keycloakIpWithPortHttps = clusterHost + ":" + Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT;
         keycloakIpWithPortHttp = clusterHost + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT;
 
+        Secret keycloakCredentials = kubeClient().getSecret("credential-keycloak");
+
+        String username = new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME")), StandardCharsets.US_ASCII);
+        String password = new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD")), StandardCharsets.US_ASCII);
+
         LOGGER.info("Importing new realm");
-        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm.sh", "admin", "admin", keycloakIpWithPortHttps);
-        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm_authorization.sh", "admin", "admin", keycloakIpWithPortHttps);
+        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm.sh", username, password, keycloakIpWithPortHttps);
+        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm_authorization.sh", username, password, keycloakIpWithPortHttps);
 
         validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal";
         jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";

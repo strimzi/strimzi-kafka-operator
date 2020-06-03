@@ -1,0 +1,253 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloakclients.keycloak.org
+spec:
+  group: keycloak.org
+  names:
+    kind: KeycloakClient
+    listKind: KeycloakClientList
+    plural: keycloakclients
+    singular: keycloakclient
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: KeycloakClient is the Schema for the keycloakclients API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KeycloakClientSpec defines the desired state of KeycloakClient
+          properties:
+            client:
+              description: Keycloak Client REST object.
+              properties:
+                access:
+                  additionalProperties:
+                    type: boolean
+                  description: Access options.
+                  type: object
+                adminUrl:
+                  description: Application Admin URL.
+                  type: string
+                attributes:
+                  additionalProperties:
+                    type: string
+                  description: Client Attributes.
+                  type: object
+                baseUrl:
+                  description: Application base URL.
+                  type: string
+                bearerOnly:
+                  description: True if a client supports only Bearer Tokens.
+                  type: boolean
+                clientAuthenticatorType:
+                  description: What Client authentication type to use.
+                  type: string
+                clientId:
+                  description: Client ID.
+                  type: string
+                consentRequired:
+                  description: True if Consent Screen is required.
+                  type: boolean
+                defaultRoles:
+                  description: Default Client roles.
+                  items:
+                    type: string
+                  type: array
+                description:
+                  description: Client description.
+                  type: string
+                directAccessGrantsEnabled:
+                  description: True if Direct Grant is enabled.
+                  type: boolean
+                enabled:
+                  description: Client enabled flag.
+                  type: boolean
+                frontchannelLogout:
+                  description: True if this client supports Front Channel logout.
+                  type: boolean
+                fullScopeAllowed:
+                  description: True if Full Scope is allowed.
+                  type: boolean
+                id:
+                  description: Client ID. If not specified, automatically generated.
+                  type: string
+                implicitFlowEnabled:
+                  description: True if Implicit flow is enabled.
+                  type: boolean
+                name:
+                  description: Client name.
+                  type: string
+                nodeReRegistrationTimeout:
+                  description: Node registration timeout.
+                  type: integer
+                notBefore:
+                  description: Not Before setting.
+                  type: integer
+                protocol:
+                  description: Protocol used for this Client.
+                  type: string
+                protocolMappers:
+                  description: Protocol Mappers.
+                  items:
+                    properties:
+                      config:
+                        additionalProperties:
+                          type: string
+                        description: Config options.
+                        type: object
+                      consentRequired:
+                        description: True if Consent Screen is required.
+                        type: boolean
+                      consentText:
+                        description: Text to use for displaying Consent Screen.
+                        type: string
+                      id:
+                        description: Protocol Mapper ID.
+                        type: string
+                      name:
+                        description: Protocol Mapper Name.
+                        type: string
+                      protocol:
+                        description: Protocol to use.
+                        type: string
+                      protocolMapper:
+                        description: Protocol Mapper to use
+                        type: string
+                    type: object
+                  type: array
+                publicClient:
+                  description: True if this is a public Client.
+                  type: boolean
+                redirectUris:
+                  description: A list of valid Redirection URLs.
+                  items:
+                    type: string
+                  type: array
+                rootUrl:
+                  description: Application root URL.
+                  type: string
+                secret:
+                  description: Client Secret. The Operator will automatically create
+                    a Secret based on this value.
+                  type: string
+                serviceAccountsEnabled:
+                  description: True if Service Accounts are enabled.
+                  type: boolean
+                standardFlowEnabled:
+                  description: True if Standard flow is enabled.
+                  type: boolean
+                surrogateAuthRequired:
+                  description: Surrogate Authentication Required option.
+                  type: boolean
+                useTemplateConfig:
+                  description: True to use a Template Config.
+                  type: boolean
+                useTemplateMappers:
+                  description: True to use Template Mappers.
+                  type: boolean
+                useTemplateScope:
+                  description: True to use Template Scope.
+                  type: boolean
+                webOrigins:
+                  description: A list of valid Web Origins.
+                  items:
+                    type: string
+                  type: array
+              required:
+              - clientId
+              type: object
+            realmSelector:
+              description: Selector for looking up KeycloakRealm Custom Resources.
+              properties:
+                matchExpressions:
+                  description: matchExpressions is a list of label selector requirements.
+                    The requirements are ANDed.
+                  items:
+                    description: A label selector requirement is a selector that contains
+                      values, a key, and an operator that relates the key and values.
+                    properties:
+                      key:
+                        description: key is the label key that the selector applies
+                          to.
+                        type: string
+                      operator:
+                        description: operator represents a key's relationship to a
+                          set of values. Valid operators are In, NotIn, Exists and
+                          DoesNotExist.
+                        type: string
+                      values:
+                        description: values is an array of string values. If the operator
+                          is In or NotIn, the values array must be non-empty. If the
+                          operator is Exists or DoesNotExist, the values array must
+                          be empty. This array is replaced during a strategic merge
+                          patch.
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - key
+                    - operator
+                    type: object
+                  type: array
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  description: matchLabels is a map of {key,value} pairs. A single
+                    {key,value} in the matchLabels map is equivalent to an element
+                    of matchExpressions, whose key field is "key", the operator is
+                    "In", and the values array contains only "value". The requirements
+                    are ANDed.
+                  type: object
+              type: object
+          required:
+          - client
+          - realmSelector
+          type: object
+        status:
+          description: KeycloakClientStatus defines the observed state of KeycloakClient
+          properties:
+            message:
+              description: Human-readable message indicating details about current
+                operator phase or error.
+              type: string
+            phase:
+              description: Current phase of the operator.
+              type: string
+            ready:
+              description: True if all resources are in a ready state and all work
+                is done.
+              type: boolean
+            secondaryResources:
+              additionalProperties:
+                items:
+                  type: string
+                type: array
+              description: 'A map of all the secondary resources types and names created
+                for this CR. e.g "Deployment": [ "DeploymentName1", "DeploymentName2"
+                ]'
+              type: object
+          required:
+          - message
+          - phase
+          - ready
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

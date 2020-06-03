@@ -1,0 +1,132 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: keycloak-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - services/finalizers
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
+  verbs:
+  - list
+  - get
+  - create
+  - patch
+  - update
+  - watch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - list
+  - get
+  - create
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+    - cronjobs
+    - jobs
+  verbs:
+    - list
+    - get
+    - create
+    - update
+    - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - list
+  - get
+  - create
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - list
+  - get
+  - create
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - prometheusrules
+  - podmonitors
+  verbs:
+  - list
+  - get
+  - create
+  - update
+  - watch
+- apiGroups:
+  - integreatly.org
+  resources:
+  - grafanadashboards
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resourceNames:
+  - keycloak-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - watch
+- apiGroups:
+  - keycloak.org
+  resources:
+  - keycloaks
+  - keycloaks/status
+  - keycloaks/finalizers
+  - keycloakrealms
+  - keycloakrealms/status
+  - keycloakrealms/finalizers
+  - keycloakclients
+  - keycloakclients/status
+  - keycloakclients/finalizers
+  - keycloakbackups
+  - keycloakbackups/status
+  - keycloakbackups/finalizers
+  - keycloakusers
+  - keycloakusers/status
+  - keycloakusers/finalizers
+  verbs:
+  - get
+  - list
+  - update
+  - watch
