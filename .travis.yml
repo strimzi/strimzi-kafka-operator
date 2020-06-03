@@ -10,7 +10,7 @@ jdk:
 services:
 - docker
 before_install:
-- if [ $(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p') -gt 1 ] ; then export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p'); else export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9]).*$/\1.\2/p'); fi;
+- if [ $(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p') -gt 1 ] ; then export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p'); else export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2.\3/p'); fi;
 - gem install asciidoctor
 - "./.travis/install_yq.sh"
 install:
