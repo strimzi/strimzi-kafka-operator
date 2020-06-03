@@ -46,6 +46,10 @@ public class CruiseControlIsolatedST extends BaseST {
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
+        LOGGER.info("Verifying that metrics reporter topic is not present because of selected config 'auto.create.topics.enable=false'");
+
+        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(Constants.GLOBAL_CRUISE_CONTROL_EXCEPT_FAIL_TIMEOUT));
+
         PodUtils.waitUntilPodIsPresent(CruiseControlResources.deploymentName(CLUSTER_NAME));
         PodUtils.waitUntilPodIsInCrashLoopBackOff(kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName());
 
@@ -53,10 +57,6 @@ public class CruiseControlIsolatedST extends BaseST {
             "'Cruise Control cannot find partitions for the metrics reporter that topic matches strimzi.cruisecontrol.metrics in the target cluster'");
 
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyThatCruiseControlSamplesTopicsArePresent(Constants.GLOBAL_CRUISE_CONTROL_EXCEPT_FAIL_TIMEOUT));
-
-        LOGGER.info("Verifying that metrics reporter topic is not present because of selected config 'auto.create.topics.enable=false'");
-
-        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(Constants.GLOBAL_CRUISE_CONTROL_EXCEPT_FAIL_TIMEOUT));
 
         // Since log compaction may remove records needed by Cruise Control, all topics created by Cruise Control must
         // be configured with cleanup.policy=delete to disable log compaction.
