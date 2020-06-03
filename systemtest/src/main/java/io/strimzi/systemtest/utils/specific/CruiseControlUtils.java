@@ -123,8 +123,8 @@ public class CruiseControlUtils {
     }
 
     public static void verifyThatCruiseControlTopicsArePresent() {
-        verifyThatCruiseControlSamplesTopicsArePresent(Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
         verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        verifyThatCruiseControlSamplesTopicsArePresent(Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String clusterName) throws IOException {
