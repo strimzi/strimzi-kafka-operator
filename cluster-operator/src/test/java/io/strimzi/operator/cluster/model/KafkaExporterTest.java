@@ -302,7 +302,7 @@ public class KafkaExporterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.METRICS_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(ke.prometheusAnnotations()));
+        assertThat(svc.getMetadata().getAnnotations(), is(ke.getPrometheusAnnotations()));
 
         checkOwnerReference(ke.createOwnerReference(), svc);
     }

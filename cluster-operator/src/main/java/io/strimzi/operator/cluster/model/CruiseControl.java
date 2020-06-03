@@ -147,13 +147,13 @@ public class CruiseControl extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource  Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     protected CruiseControl(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = CruiseControlResources.deploymentName(cluster);
         this.serviceName = CruiseControlResources.serviceName(cluster);
-        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/kafkacruisecontrol/state";
         this.livenessPath = "/kafkacruisecontrol/state";
@@ -387,7 +387,7 @@ public class CruiseControl extends AbstractModel {
     protected List<Volume> getVolumes(boolean isOpenShift) {
         return Arrays.asList(createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
-                createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+                createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     protected List<VolumeMount> getVolumeMounts() {

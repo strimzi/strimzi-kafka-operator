@@ -49,7 +49,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     private KafkaConnectS2ICluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);

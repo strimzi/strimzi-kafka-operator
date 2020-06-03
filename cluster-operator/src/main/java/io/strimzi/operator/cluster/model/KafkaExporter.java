@@ -69,7 +69,7 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     protected KafkaExporter(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
@@ -186,7 +186,7 @@ public class KafkaExporter extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(1);
 
         ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {

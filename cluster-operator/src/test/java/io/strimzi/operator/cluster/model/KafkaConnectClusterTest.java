@@ -191,7 +191,7 @@ public class KafkaConnectClusterTest {
         assertThat(svc.getSpec().getPorts().get(1).getName(), is(AbstractModel.METRICS_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
         assertThat(svc.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(kc.prometheusAnnotations()));
+        assertThat(svc.getMetadata().getAnnotations(), is(kc.getPrometheusAnnotations()));
 
         checkOwnerReference(kc.createOwnerReference(), svc);
     }

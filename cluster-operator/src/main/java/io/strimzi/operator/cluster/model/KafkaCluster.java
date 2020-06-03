@@ -282,14 +282,14 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Constructor
      *
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     private KafkaCluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -876,7 +876,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createDiscoverableService("ClusterIP", getServicePorts(),
-                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
+                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(),
                 templateServiceAnnotations));
     }
 
@@ -1517,7 +1517,7 @@ public class KafkaCluster extends AbstractModel {
 
             volumeList.add(VolumeUtils.createSecretVolume("custom-tls-9093-certs", this.secretSourceTls.getSecretName(), items, isOpenShift));
         }
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         if (listeners != null) {

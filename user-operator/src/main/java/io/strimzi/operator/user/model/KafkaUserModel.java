@@ -70,7 +70,7 @@ public class KafkaUserModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes namespace where Kafka Connect cluster resources are going to be created
+     * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
      * @param name   User name
      * @param labels   Labels
      */
