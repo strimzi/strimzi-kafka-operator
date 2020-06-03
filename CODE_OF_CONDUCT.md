@@ -1,3 +1,3 @@
 # Strimzi Community Code of Conduct
 
-Strimzi project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+Strimzi Community Code of Conduct is defined in the [governance repository](https://github.com/strimzi/governance/blob/master/CODE_OF_CONDUCT.md).
