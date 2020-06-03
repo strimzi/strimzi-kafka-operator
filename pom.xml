@@ -1046,12 +1046,12 @@
             <id>java-version</id>
             <activation>
                 <property>
-                    <name>env.JAVA_VERSION</name>
+                    <name>env.JAVA_VERSION_BUILD</name>
                 </property>
             </activation>
             <properties>
-                <maven.compiler.source>${env.JAVA_VERSION}</maven.compiler.source>
-                <maven.compiler.target>${env.JAVA_VERSION}</maven.compiler.target>
+                <maven.compiler.source>${env.JAVA_VERSION_BUILD}</maven.compiler.source>
+                <maven.compiler.target>${env.JAVA_VERSION_BUILD}</maven.compiler.target>
             </properties>
         </profile>
         <profile>
