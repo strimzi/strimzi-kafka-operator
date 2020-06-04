@@ -120,6 +120,39 @@ public class ModelUtils {
     }
 
     /**
+     * Generates the wildcard DNS name of the service without the cluster domain suffix
+     * (i.e. usually without the cluster.local - but can be different on different clusters)
+     * Example: *.my-service.my-ns.svc
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the service
+     *
+     * @return              Wildcard DNS name of the service without the cluster domain suffix
+     */
+    public static String wildcardServiceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
+        return String.format("*.%s.%s.svc",
+                serviceName,
+                namespace);
+    }
+
+    /**
+     * Generates the wildcard DNS name of the service including the cluster suffix
+     * (i.e. usually with the cluster.local - but can be different on different clusters)
+     * Example: *.my-service.my-ns.svc.cluster.local
+     *
+     * @param namespace     Namespace of the pod
+     * @param serviceName   Name of the cluster
+     *
+     * @return              Wildcard DNS name of the service
+     */
+    public static String wildcardServiceDnsName(String namespace, String serviceName) {
+        return String.format("*.%s.%s.svc.%s",
+                serviceName,
+                namespace,
+                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+    }
+
+    /**
      * Generates the DNS name of the service without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
      * Example: my-service.my-ns.svc
