@@ -27,7 +27,8 @@ In this procedure:
 . An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ enabled
 . A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_
 
-You can configure your listener to use TLS or SCRAM-SHA authentication.
+You can configure your listener to use TLS or SCRAM-SHA authentication,
+both of which can be used with TLS encryption.
 If you are using an authorization server, you can use token-based link:{BookURLUsing}#assembly-oauth-authentication_str[{oauth} authentication] and link:{BookURLUsing}#assembly-oauth-authorization_str[{oauth} authorization].
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
@@ -237,8 +238,6 @@ NOTE: Use `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over
 ----
 bootstrap.servers: _BOOTSTRAP-ADDRESS:PORT_
 ----
-+
-The port number is 443 for connecting using `route` external listeners.
 
 .. Add the authentication details for the public user certificates:
 +
