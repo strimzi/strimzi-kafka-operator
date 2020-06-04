@@ -1250,7 +1250,7 @@ class TopicOperator {
                     }));
                 } else {
                     // Topic exists in kube, but not in Kafka
-                    LOGGER.debug("{}: Topic {} exists in Kafka, but not Kubernetes", logContext, topicName, logTopic(kt));
+                    LOGGER.debug("{}: Topic {} exists in Kubernetes, but not Kafka", logContext, topicName, logTopic(kt));
                     futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
                         // if success then add to success
                         reconcileState.succeeded.add(topicName);
