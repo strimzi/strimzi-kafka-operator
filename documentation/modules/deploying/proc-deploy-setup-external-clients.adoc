@@ -4,15 +4,14 @@
 // getting-started.adoc
 
 [id='setup-external-clients-{context}']
-= Setting up external clients
+= Setting up access for clients outside of Kubernetes
 
 This procedure shows how to configure client access to a Kafka cluster from outside Kubernetes.
-The process is the same for consumer and producer clients that need to read or write to the Kafka cluster.
 
 Using the address of the Kafka cluster, you can provide external access to a client on a different Kubernetes namespace or outside Kubernetes entirely.
 
 You configure an external Kafka listener to provide the access.
-External listeners use port _9094_ to provide access from outside of Kubernetes.
+
 The following external listener types are supported:
 
 * `route` to use OpenShift `Route` and the default HAProxy router
@@ -20,12 +19,12 @@ The following external listener types are supported:
 * `nodeport` to use ports on Kubernetes nodes
 * `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
 
-The type chosen depends on your requirements and approach to security.
+The type chosen depends on your requirements, and your environment and infrastructure.
 For example, `nodeport` is the least secure, so you might not wish to use it in a production environment.
 
 In this procedure:
 
-. An external listener is configured for the Kafka cluster, with TLS authentication and encryption, and Kafka _simple authorization_ enabled
+. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ enabled
 . A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_
 
 You can configure your listener to use TLS or SCRAM-SHA authentication.
@@ -87,15 +86,7 @@ spec:
               matchLabels:
                 project: my-project
         overrides: <7>
-          bootstrap:
-            nodePort: 32100
-          brokers:
-            - broker: 0
-              nodePort: 32000
-            - broker: 1
-              nodePort: 32001
-            - broker: 2
-              nodePort: 32002
+          # ...
       authorization: <8>
         type: simple
         superUsers:
