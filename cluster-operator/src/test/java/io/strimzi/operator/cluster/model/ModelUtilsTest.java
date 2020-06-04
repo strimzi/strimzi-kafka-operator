@@ -327,4 +327,16 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.serviceDnsNameWithoutClusterDomain("my-ns", "my-service"),
                 is("my-service.my-ns.svc"));
     }
+
+    @Test
+    public void testWildcardServiceDnsName()  {
+        assertThat(ModelUtils.wildcardServiceDnsName("my-ns", "my-service"),
+                is("*.my-service.my-ns.svc.cluster.local"));
+    }
+
+    @Test
+    public void testWildcardServiceDnsNameWithoutClusterDomain()  {
+        assertThat(ModelUtils.wildcardServiceDnsNameWithoutClusterDomain("my-ns", "my-service"),
+                is("*.my-service.my-ns.svc"));
+    }
 }
