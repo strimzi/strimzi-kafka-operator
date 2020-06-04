@@ -35,6 +35,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
@@ -142,6 +143,50 @@ class ManualRollingUpdateST extends BaseST {
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
+    }
+
+    @Test
+    void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
+
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(USER_NAME)
+            .build();
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+
+        int sent = internalKafkaClient.sendMessagesTls();
+        assertThat(sent, is(MESSAGE_COUNT));
+
+        String zkCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
+        String kCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
+
+        // some kind of accident happened and the CA secret has been deleted
+        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zkCrtBeforeAccident)));
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kCrtBeforeAccident)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
+
+        int sentAfter = internalKafkaClient.sendMessagesTls();
+        assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
     @Override
