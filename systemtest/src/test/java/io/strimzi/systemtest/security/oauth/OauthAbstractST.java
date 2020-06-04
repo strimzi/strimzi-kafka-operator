@@ -10,11 +10,15 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
+import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.KeycloakResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.KeycloakUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ExecResult;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
@@ -27,10 +31,19 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Base64;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
@@ -56,6 +69,8 @@ public class OauthAbstractST extends AbstractST {
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KEY = "clientSecret";
+
+    protected KeycloakInstance keycloakInstance;
 
     protected static String oauthTokenEndpointUri;
     protected static String validIssuerUri;
@@ -90,44 +105,35 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Deploying keycloak...");
         KeycloakResource.deployKeycloak(NAMESPACE);
-        KafkaClientsResource.deployKeycloak().done();
 
         // https
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
-//
         KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
-//
-//        // http
+        // http
         Service keycloakHttpService = KubernetesResource.deployKeycloakNodePortHttpService(NAMESPACE);
-
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
-        clusterHost = kubeClient(NAMESPACE).getNodeAddress();
-
-        keycloakIpWithPortHttps = clusterHost + ":" + Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT;
-        keycloakIpWithPortHttp = clusterHost + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT;
-
         Secret keycloakCredentials = kubeClient().getSecret("credential-keycloak");
 
-        String username = new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME")), StandardCharsets.US_ASCII);
-        String password = new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD")), StandardCharsets.US_ASCII);
+        KeycloakInstance keycloakInstance = new KeycloakInstance(
+            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME")), StandardCharsets.US_ASCII),
+            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD")), StandardCharsets.US_ASCII));
 
-        LOGGER.info("Importing new realm");
-        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm.sh", username, password, keycloakIpWithPortHttps);
-        Exec.exec(true, "/bin/bash", "../systemtest/src/test/resources/oauth2/create_realm_authorization.sh", username, password, keycloakIpWithPortHttps);
+        LOGGER.info("Importing basic realm");
+        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
 
-        validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal";
-        jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";
-        oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token";
-        introspectionEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token/introspect";
-        userNameClaim = "preferred_username";
+        LOGGER.info("Importing authorization realm");
+        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
 
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
 
         String pubKey = cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-                "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
+                "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key"
+            , "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
+
+//        keytool -exportcert -keystore https-keystore.pk12 -alias keycloak-https-key -storepass AFnK8nQ2683uG56BCGdw2EG8VVnJYWjlBUFOXxHshDc= -rfc
 
         SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
@@ -137,11 +143,11 @@ public class OauthAbstractST extends AbstractST {
                         .editListeners()
                             .withNewTls()
                                 .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                     .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
                                     .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withUserNameClaim(userNameClaim)
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
                                             .withSecretName(SECRET_OF_KEYCLOAK)
@@ -152,11 +158,11 @@ public class OauthAbstractST extends AbstractST {
                             .endTls()
                             .withNewKafkaListenerExternalNodePort()
                                 .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                     .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
                                     .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withUserNameClaim(userNameClaim)
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
                                             .withSecretName(SECRET_OF_KEYCLOAK)

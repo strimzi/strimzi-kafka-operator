@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +21,8 @@ public class KeycloakResource {
     private static final Logger LOGGER = LogManager.getLogger(KeycloakResource.class);
 
     private static final String KEYCLOAK_OPERATOR_DEPLOYMENT_NAME = "keycloak-operator";
-    private static final String KEYCLOAK_INSTANCE_NAME = "keycloak";
+    private static final String KEYCLOAK_CUSTOM_RESOURCE_NAME = "keycloak";
+    private static final String KEYCLOAK_POD_NAME = "keycloak-0";
 
     public static void keycloakOperator(String namespace) {
 
@@ -55,10 +57,12 @@ public class KeycloakResource {
         waitForKeycloak(namespace);
 
         // schedule deletion after teardown
-        ResourceManager.getPointerResources().push(() -> deleteKeycloakOperator(KEYCLOAK_INSTANCE_NAME, namespace));
+        ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
     }
 
     private static void deleteKeycloakOperator(String deploymentName, String namespace) {
+        // TODO: remove CRDs from the resource and apply it from the github with specific version 9.0.2
+
         ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakbackups_crd.yaml").getFile());
         ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakclients_crd.yaml").getFile());
         ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakrealms_crd.yaml").getFile());
@@ -74,6 +78,12 @@ public class KeycloakResource {
         DeploymentUtils.waitForDeploymentDeletion(deploymentName);
     }
 
+    private static void deleteKeycloak(String namespace) {
+        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/keycloak_instance.yaml").getFile());
+
+        KeycloakUtils.waitUntilKeycloakCustomResourceDeletion(namespace, KEYCLOAK_CUSTOM_RESOURCE_NAME);
+    }
+
     private static void waitForKeycloakOperator(String deploymentName, String namespace, int replicas) {
         LOGGER.info("Waiting for deployment {} in namespace {}", deploymentName, namespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, replicas);
@@ -81,10 +91,10 @@ public class KeycloakResource {
     }
 
     private static void waitForKeycloak(String namespace) {
-        LOGGER.info("Waiting for keycloak pod {} in namespace {}", KEYCLOAK_INSTANCE_NAME, namespace);
-        PodUtils.waitUntilPodIsPresent(KEYCLOAK_INSTANCE_NAME);
-        LOGGER.info("Waiting for keycloak pod {} iin namespace {} is ready", KEYCLOAK_INSTANCE_NAME, namespace);
-        PodUtils.verifyThatRunningPodsAreStable(KEYCLOAK_INSTANCE_NAME);
-        LOGGER.info("Pod {} in namespace {} is ready", KEYCLOAK_INSTANCE_NAME, namespace);
+        LOGGER.info("Waiting for keycloak pod {} in namespace {}", KEYCLOAK_POD_NAME, namespace);
+        PodUtils.waitUntilPodIsPresent(KEYCLOAK_POD_NAME);
+        LOGGER.info("Waiting for keycloak pod {} in namespace {} is ready", KEYCLOAK_POD_NAME, namespace);
+        PodUtils.verifyThatRunningPodsAreStable(KEYCLOAK_POD_NAME);
+        LOGGER.info("Pod {} in namespace {} is ready", KEYCLOAK_POD_NAME, namespace);
     }
 }
