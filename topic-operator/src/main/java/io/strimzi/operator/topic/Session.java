@@ -110,8 +110,6 @@ public class Session extends AbstractVerticle {
             };
             longHandler.handle(null);
             promise.future().compose(ignored -> {
-                LOGGER.debug("Stopping kafka {}", kafka);
-                kafka.stop();
 
                 LOGGER.debug("Disconnecting from zookeeper {}", zk);
                 zk.disconnect(zkResult -> {
