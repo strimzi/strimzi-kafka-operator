@@ -40,11 +40,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-class ManualRollingUpdateST extends BaseST {
+class AlternativeReconcileTriggersST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 
-    static final String NAMESPACE = "manual-rolling-update-cluster-test";
+    static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";
 
     @Test
     void testManualTriggeringRollingUpdate() {
@@ -146,12 +146,14 @@ class ManualRollingUpdateST extends BaseST {
     }
 
     /**
-     * Scenario of the test:
-     * Firstly customer tries to send messages and checks if he is able to consume the messages,
-     * then he delete the cluster CA key. Now should Kafka and Zookeper pods roll.
-     * After the rolling update is done, the CA key/certificate should be renewed,
-     * but should be different than the previous one. Then, again, he tries to
-     * send messages with new generated cluster certificate.
+     * Scenario:
+     *  1. Setup Kafka persistent with 3 replicas
+     *  2. Create KafkaUser
+     *  3. Run producer and consumer to see if cluster is working
+     *  4. Remove cluster CA key
+     *  5. Kafka and ZK pods should roll, wiat until rolling update finish
+     *  6. Check that CA certificates were renewed
+     *  7. Try consumer, producer and consume rmeessages again with new certificates
      */
     @Test
     void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
