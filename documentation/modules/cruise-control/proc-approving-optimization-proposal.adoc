@@ -30,7 +30,7 @@ Perform these steps for the optimization proposal that you want to approve:
 . Unless the optimization proposal is newly generated, check that it is based on current information about the state of the Kafka cluster.
 To do so, refresh the optimization proposal to make sure it uses the latest cluster metrics:
 
-.. Annotate the `KafkaRebalance` resource in Kubernetes:
+.. Annotate the `KafkaRebalance` resource in Kubernetes with `refresh`:
 +
 [source,shell,subs="+quotes"]
 ----

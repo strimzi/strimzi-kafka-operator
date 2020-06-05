@@ -22,7 +22,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `bootstrap.servers`
 * `group.id`
 
-When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Custer Operator log file.
+When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Cluster Operator log file.
 All other options will be passed to Kafka
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
