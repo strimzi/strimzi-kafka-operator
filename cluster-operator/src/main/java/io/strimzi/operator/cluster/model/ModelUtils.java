@@ -445,6 +445,14 @@ public class ModelUtils {
                 model.templatePodAnnotations = pod.getMetadata().getAnnotations();
             }
 
+            if (pod.getAffinity() != null)  {
+                model.setUserAffinity(pod.getAffinity());
+            }
+
+            if (pod.getTolerations() != null)   {
+                model.setTolerations(pod.getTolerations());
+            }
+
             model.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
             model.templateImagePullSecrets = pod.getImagePullSecrets();
             model.templateSecurityContext = pod.getSecurityContext();

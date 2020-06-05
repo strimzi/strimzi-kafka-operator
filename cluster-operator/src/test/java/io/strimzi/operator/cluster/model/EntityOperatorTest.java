@@ -147,15 +147,17 @@ public class EntityOperatorTest {
     }
 
     @Test
-    public void withOldAffinity() throws IOException {
-        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withOldAffinity");
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    public void withOldAffinityAndTolerations() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withOldAffinityAndTolerations");
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
-    public void withAffinity() throws IOException {
-        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    public void withAffinityAndTolerations() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinityAndTolerations");
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
