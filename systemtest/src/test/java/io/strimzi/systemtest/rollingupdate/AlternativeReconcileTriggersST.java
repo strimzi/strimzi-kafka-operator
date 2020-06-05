@@ -35,15 +35,16 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-class ManualRollingUpdateST extends BaseST {
+class AlternativeReconcileTriggersST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 
-    static final String NAMESPACE = "manual-rolling-update-cluster-test";
+    static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";
 
     @Test
     void testManualTriggeringRollingUpdate() {
@@ -142,6 +143,59 @@ class ManualRollingUpdateST extends BaseST {
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
+    }
+
+    /**
+     * Scenario:
+     *  1. Setup Kafka persistent with 3 replicas
+     *  2. Create KafkaUser
+     *  3. Run producer and consumer to see if cluster is working
+     *  4. Remove cluster CA key
+     *  5. Kafka and ZK pods should roll, wiat until rolling update finish
+     *  6. Check that CA certificates were renewed
+     *  7. Try consumer, producer and consume rmeessages again with new certificates
+     */
+    @Test
+    void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
+
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(USER_NAME)
+            .build();
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+
+        int sent = internalKafkaClient.sendMessagesTls();
+        assertThat(sent, is(MESSAGE_COUNT));
+
+        String zookeeperDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
+        String kafkaDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
+
+        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zookeeperDeletedCert)));
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kafkaDeletedCert)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
+
+        int sentAfter = internalKafkaClient.sendMessagesTls();
+        assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
     @Override
