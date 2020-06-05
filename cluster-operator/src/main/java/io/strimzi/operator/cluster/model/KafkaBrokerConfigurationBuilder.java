@@ -78,7 +78,7 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
             writer.println("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS");
-            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.bootstrapServiceName(clusterName) + ":9091");
+            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
             writer.println("cruise.control.metrics.reporter.security.protocol=SSL");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
