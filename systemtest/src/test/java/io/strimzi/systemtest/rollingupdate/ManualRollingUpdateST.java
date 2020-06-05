@@ -145,6 +145,14 @@ class ManualRollingUpdateST extends BaseST {
         assertThat(received, is(sent));
     }
 
+    /**
+     * Scenario of the test:
+     * Firstly customer tries to send messages and checks if he is able to consume the messages,
+     * then he delete the cluster CA key. Now should Kafka and Zookeper pods roll.
+     * After the rolling update is done, the CA key/certificate should be renewed,
+     * but should be different than the previous one. Then, again, he tries to
+     * send messages with new generated cluster certificate.
+     */
     @Test
     void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
@@ -172,16 +180,15 @@ class ManualRollingUpdateST extends BaseST {
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
 
-        String zkCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
-        String kCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
+        String zookeeperDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
+        String kafkaDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
 
-        // some kind of accident happened and the CA secret has been deleted
         kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zkCrtBeforeAccident)));
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kCrtBeforeAccident)));
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zookeeperDeletedCert)));
+        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kafkaDeletedCert)));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
 
