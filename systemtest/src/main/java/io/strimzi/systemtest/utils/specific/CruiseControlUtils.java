@@ -69,7 +69,7 @@ public class CruiseControlUtils {
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
             kafkaProperties.getProperty("cruise.control.metrics.topic").equals("strimzi.cruisecontrol.metrics") &&
             kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm").equals("HTTPS") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.bootstrap.servers").equals("my-cluster-kafka-bootstrap:9091") &&
+            kafkaProperties.getProperty("cruise.control.metrics.reporter.bootstrap.servers").equals("my-cluster-kafka-brokers:9091") &&
             kafkaProperties.getProperty("cruise.control.metrics.reporter.security.protocol").equals("SSL") &&
             kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.keystore.type").equals("PKCS12") &&
             kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.keystore.location").equals("/tmp/kafka/cluster.keystore.p12") &&

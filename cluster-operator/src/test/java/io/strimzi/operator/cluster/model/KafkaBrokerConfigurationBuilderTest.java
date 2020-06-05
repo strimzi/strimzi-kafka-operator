@@ -73,7 +73,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent(
                 "cruise.control.metrics.topic=strimzi.cruisecontrol.metrics\n" +
                 "cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS\n" +
-                "cruise.control.metrics.reporter.bootstrap.servers=my-cluster-kafka-bootstrap:9091\n" +
+                "cruise.control.metrics.reporter.bootstrap.servers=my-cluster-kafka-brokers:9091\n" +
                 "cruise.control.metrics.reporter.security.protocol=SSL\n" +
                 "cruise.control.metrics.reporter.ssl.keystore.type=PKCS12\n" +
                 "cruise.control.metrics.reporter.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12\n" +
