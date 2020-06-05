@@ -39,7 +39,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `bootstrap.servers`
 * `group.id`
 
-When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Custer Operator log file.
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other options are passed to Kafka MirrorMaker.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
