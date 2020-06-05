@@ -223,14 +223,51 @@
   },
   {
     "fromVersion":"0.17.0",
-    "toVersion":"HEAD",
+    "toVersion":"0.18.0",
     "fromExamples":"strimzi-0.17.0",
-    "toExamples":"HEAD",
+    "toExamples":"strimzi-0.18.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
+    "imagesBeforeKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.18.0-kafka-2.4.0",
+      "kafka": "strimzi/kafka:0.18.0-kafka-2.4.0",
+      "topicOperator": "strimzi/operator:0.18.0",
+      "userOperator": "strimzi/operator:0.18.0"
+    },
+    "imagesAfterKafkaUpdate": {
+      "zookeeper": "strimzi/kafka:0.18.0-kafka-2.5.0",
+      "kafka": "strimzi/kafka:0.18.0-kafka-2.5.0",
+      "topicOperator": "strimzi/operator:0.18.0",
+      "userOperator": "strimzi/operator:0.18.0"
+    },
+    "proceduresBefore": {
+      "kafkaVersion": "",
+      "logMessageVersion": ""
+    },
+    "proceduresAfter": {
+      "kafkaVersion": "2.5.0",
+      "logMessageVersion": "2.5"
+    },
+    "client": {
+      "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
+      "afterKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0"
+    },
+    "environmentInfo": {
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
+    "fromVersion":"0.18.0",
+    "toVersion":"HEAD",
+    "fromExamples":"strimzi-0.18.0",
+    "toExamples":"HEAD",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "urlTo":"HEAD",
     "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.4.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.4.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.5.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -245,11 +282,11 @@
       "logMessageVersion": ""
     },
     "proceduresAfter": {
-      "kafkaVersion": "2.5.0",
-      "logMessageVersion": "2.5"
+      "kafkaVersion": "",
+      "logMessageVersion": ""
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
+      "beforeKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.5.0"
     },
     "environmentInfo": {

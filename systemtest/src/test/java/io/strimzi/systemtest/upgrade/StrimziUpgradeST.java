@@ -80,7 +80,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -178,7 +178,7 @@ public class StrimziUpgradeST extends BaseST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.17.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.18.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
