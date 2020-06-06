@@ -1938,6 +1938,10 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
+|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
+|replicas            1.2+<.<|Total number of pods representing this resource.
+|integer
 |====
 
 [id='type-ConnectorPlugin-{context}']
@@ -1955,6 +1959,38 @@ Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xre
 |string
 |class    1.2+<.<|The class of the connector plugin.
 |string
+|====
+
+[id='type-LabelSelector-{context}']
+### `LabelSelector` schema reference
+
+Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|matchExpressions  1.2+<.<|
+|xref:type-LabelSelectorRequirement-{context}[`LabelSelectorRequirement`] array
+|matchLabels       1.2+<.<|
+|map
+|====
+
+[id='type-LabelSelectorRequirement-{context}']
+### `LabelSelectorRequirement` schema reference
+
+Used in: xref:type-LabelSelector-{context}[`LabelSelector`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|key       1.2+<.<|
+|string
+|operator  1.2+<.<|
+|string
+|values    1.2+<.<|
+|string array
 |====
 
 [id='type-KafkaConnectS2I-{context}']
@@ -2048,6 +2084,10 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
+|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
+|replicas            1.2+<.<|Total number of pods representing this resource.
+|integer
 |====
 
 [id='type-KafkaTopic-{context}']
@@ -2672,6 +2712,8 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |integer
 |connectorStatus     1.2+<.<|The connector status, as reported by the Kafka Connect REST API.
 |map
+|tasksMax            1.2+<.<|The maximum number of tasks for the Kafka Connector.
+|integer
 |====
 
 [id='type-KafkaMirrorMaker2-{context}']
@@ -2838,6 +2880,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
+|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
+|replicas            1.2+<.<|Total number of pods representing this resource.
+|integer
 |====
 
 [id='type-KafkaRebalance-{context}']

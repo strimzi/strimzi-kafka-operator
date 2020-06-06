@@ -254,11 +254,27 @@ public class CrdGenerator {
             result.set("additionalPrinterColumns", cols);
         }
         if (crd.subresources().status().length != 0) {
-            ObjectNode statusNode = nf.objectNode();
+            ObjectNode subresources = nf.objectNode();
+
             if (crd.subresources().status().length > 0) {
-                statusNode.set("status", nf.objectNode());
+                subresources.set("status", nf.objectNode());
             }
-            result.set("subresources", statusNode);
+
+            if (crd.subresources().scale().length > 0) {
+                Crd.Spec.Subresources.Scale scale = crd.subresources().scale()[0];
+
+                ObjectNode scaleNode = nf.objectNode();
+                scaleNode.put("specReplicasPath", scale.specReplicasPath());
+                scaleNode.put("statusReplicasPath", scale.statusReplicasPath());
+
+                if (!scale.labelSelectorPath().isEmpty()) {
+                    scaleNode.put("labelSelectorPath", scale.labelSelectorPath());
+                }
+
+                subresources.set("scale", scaleNode);
+            }
+
+            result.set("subresources", subresources);
         }
         result.set("validation", buildValidation(crdClass));
         return result;

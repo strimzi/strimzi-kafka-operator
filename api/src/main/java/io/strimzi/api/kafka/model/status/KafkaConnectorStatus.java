@@ -29,6 +29,7 @@ public class KafkaConnectorStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> connectorStatus;
+    private int tasksMax;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The connector status, as reported by the Kafka Connect REST API.")
@@ -38,5 +39,15 @@ public class KafkaConnectorStatus extends Status {
 
     public void setConnectorStatus(Map<String, Object> connectorStatus) {
         this.connectorStatus = connectorStatus;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The maximum number of tasks for the Kafka Connector")
+    public int getTasksMax() {
+        return tasksMax;
+    }
+
+    public void setTasksMax(int tasksMax) {
+        this.tasksMax = tasksMax;
     }
 }

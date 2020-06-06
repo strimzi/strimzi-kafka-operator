@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -163,6 +164,9 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
                         kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
                     }
+
+                    kafkaConnectS2Istatus.setReplicas(connect.getReplicas());
+                    kafkaConnectS2Istatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(connect.getSelectorLabels().toMap()).build());
 
                     updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).onComplete(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well

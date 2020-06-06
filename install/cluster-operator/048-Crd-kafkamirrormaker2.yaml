@@ -29,6 +29,10 @@ spec:
     type: integer
   subresources:
     status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.selector
   validation:
     openAPIV3Schema:
       properties:
@@ -1303,4 +1307,26 @@ spec:
                 type: object
               description: List of MirrorMaker 2.0 connector statuses, as reported
                 by the Kafka Connect REST API.
+            podSelector:
+              type: object
+              properties:
+                matchExpressions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type: string
+                matchLabels:
+                  type: object
+              description: Label selector for pods representing this resource.
+            replicas:
+              type: integer
+              description: Total number of pods representing this resource.
           description: The status of the Kafka MirrorMaker 2.0 cluster.

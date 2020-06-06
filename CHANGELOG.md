@@ -5,6 +5,7 @@
 
 * Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
 * Use Java 11 as the Java runtime
+* Add support for scale subresource for our components to make scaling easier
 
 ### Deprecations and removals
 

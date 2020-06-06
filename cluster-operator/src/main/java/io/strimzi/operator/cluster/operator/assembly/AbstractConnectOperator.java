@@ -565,6 +565,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
         StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
         status.setConnectorStatus(statusResult);
+        status.setTasksMax(connector.getSpec().getTasksMax());
 
         return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
             (connector1, status1) -> {

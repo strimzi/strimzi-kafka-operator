@@ -37,6 +37,10 @@ spec:
     type: integer
   subresources:
     status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.selector
   validation:
     openAPIV3Schema:
       properties:
@@ -1213,5 +1217,27 @@ spec:
             buildConfigName:
               type: string
               description: The name of the build configuration.
+            podSelector:
+              type: object
+              properties:
+                matchExpressions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type: string
+                matchLabels:
+                  type: object
+              description: Label selector for pods representing this resource.
+            replicas:
+              type: integer
+              description: Total number of pods representing this resource.
           description: The status of the Kafka Connect Source-to-Image (S2I) cluster.
 {{- end -}}
