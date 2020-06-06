@@ -6,9 +6,16 @@ Strimzi documentation is written in Asciidoc.
 
 == Documentation tools
 
+Following tools are needed to build the documentation:
+
 https://asciidoctor.org/[`asciidoctor`^]:: Documentation generation tool
-https://www.gnu.org/software/make/[`make`^]:: Make build system to build complete documentation including API reference
+https://www.gnu.org/software/make/[`make`^]:: Make build system to build complete documentation
 https://github.com/mikefarah/yq[`yq`^]:: YAML build tool to build documentation using _make_ targets
+
+Additionally, for generating the API reference you will also need:
+
+https://adoptopenjdk.net/[`java`^]:: Java for building code and generating the API reference
+https://maven.apache.org/[`mvn`^]:: Maven for running the Java build
 
 For most documentation updates, `asciidoctor` offers the simplest way to check the build.
 
@@ -16,10 +23,12 @@ For most documentation updates, `asciidoctor` offers the simplest way to check t
 
 Strimzi uses git to manage repositories.
 
-https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: The public GitHub repo hosts all of the Strimzi code and documentation.
+https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: The public GitHub repo hosts all of the Strimzi Operators code and documentation.
 https://github.com/strimzi/strimzi-kafka-bridge[`strimzi-kafka-bridge`^] (GitHub):: The public GitHub repo hosts all of the Strimzi Kafka Bridge code.
 https://github.com/strimzi/strimzi-kafka-oauth[`strimzi-kafka-oauth`^] (GitHub):: The public GitHub repo hosts all of the Strimzi OAuth 2.0 code.
-https://github.com/strimzi/strimzi-kafka-operator/tree/master/documentation[`strimzi-kafka-operator/documentation`^] (GitHub):: The _documentation_ folder is split into _category_ folders to manage the content.
+
+Most of the documentation is in the Strimzi Operators repository, in the https://github.com/strimzi/strimzi-kafka-operator/tree/master/documentation[`documentation` folder^].
+The _documentation_ folder is split into _category_ folders to manage the content.
 
 Documentation category folders contain files related to Strimzi guides (Deploying, Quickstart, Overview, Using), and the files that provide the content for one or more of these guides – _assemblies_ and _modules_.
 Assemblies, which usually encapsulate a feature or process, bring the related content contained in modules together.
@@ -29,6 +38,7 @@ For example, the _Deploying Strimzi_ guide has a chapter called _Verifying the S
 
 [source,options="nowrap",subs="+quotes"]
 ----
+contributing/                        # Documentation contributor guide (this book)
 deploying/                           # Deploying Strimzi
 quickstart/                          # Strimzi Quick Start guide
 overview/                            # Strimzi Overview guide
@@ -70,3 +80,4 @@ In contrast to the _Deploying_ guide, this guide provides a reduced set of instr
 
 The _Using Strimzi_ guide provides configuration instructions for Kafka components, and instructions for using Strimzi Operators.
 The majority of the content relates to how you might want to modify your deployment and introduce additional features, such as Cruise Control or distributed tracing.
+The _Using Strimzi_ guide also contains the API reference guide which is generated directly from the Java code of the operators.

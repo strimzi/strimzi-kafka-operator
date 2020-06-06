@@ -7,10 +7,20 @@ Make is a useful tool for building your documentation and pushing it to a public
 
 == Make commands to build documentation
 
-`make clean`:: Delete all temporary files
-`make check`:: Execute the custom checks in `.travis/check_docs.sh`
-`make build`:: Build the docs using asciidoc, excluding the generated documentation
-`make buildall`:: Build the docs using asciidoc, including the generated documentation (requires link:https://maven.apache.org/[`mvn`]).
-`make publish`:: Build the docs via `make build` and publish them using `rsync`. The publish destination is configured via a `Makefile.publish` (not included in this PR; provided by each user so they can publish to their own location). The `Makefile.publish` needs to configure a single `PUBLISH_DEST` variable which is the remote directory (`<host>:<dir>`) to copy the generated docs to.
+`make docu_clean`:: Delete all temporary files
+`make docu_check`:: Execute the documentation checks in `.travis/check_docs.sh`
+`make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
+`make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers which are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
 
-See the output in your browser at file in your project directory at: `documentation/html/index.html`
+== Generate the API Reference
+
+The API Reference is stored in `documentation/modules/appendix_crds.adoc` file.
+It is generated directly from the Java code.
+If you change the Strimzi API, you need to regenerate the API Reference with following command:
+
+[source,shell,subs=attributes+]
+----
+mvn clean -DskipTests install
+----
+
+NOTE: You have to generate the API Reference only if you changed anything in the `api` module of the Java code.
