@@ -4,12 +4,17 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -36,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -332,6 +338,27 @@ public class KafkaExporterTest {
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withNewKey("key1")
+                                    .withNewOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = singletonList(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -350,6 +377,8 @@ public class KafkaExporterTest {
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
+                                .withAffinity(affinity)
+                                .withTolerations(tolerations)
                             .endPod()
                             .withNewService()
                                 .withNewMetadata()
@@ -373,6 +402,8 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
 
         // Check Service
         Service svc = ke.generateService();

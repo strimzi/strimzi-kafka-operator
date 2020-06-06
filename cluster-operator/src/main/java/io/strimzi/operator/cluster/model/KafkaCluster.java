@@ -542,11 +542,7 @@ public class KafkaCluster extends AbstractModel {
 
         result.setDataVolumesClaimsAndMountPaths(result.getStorage());
 
-        result.setUserAffinity(affinity(kafkaClusterSpec));
-
         result.setResources(kafkaClusterSpec.getResources());
-
-        result.setTolerations(tolerations(kafkaClusterSpec));
 
         TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
         if (tlsSidecar == null) {
@@ -750,6 +746,10 @@ public class KafkaCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
+        // Kafka Cluster needs special treatment for Affinity and Tolerations because of deprecated fields in spec
+        result.setUserAffinity(affinity(kafkaClusterSpec));
+        result.setTolerations(tolerations(kafkaClusterSpec));
+
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
     }
@@ -774,7 +774,7 @@ public class KafkaCluster extends AbstractModel {
                 && kafkaClusterSpec.getTemplate().getPod() != null
                 && kafkaClusterSpec.getTemplate().getPod().getTolerations() != null) {
             if (kafkaClusterSpec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.kafka.tolerations and spec.kafka.template.statefulset.tolerations; latter takes precedence");
+                log.warn("Tolerations given on both spec.kafka.tolerations and spec.kafka.template.pod.tolerations; latter takes precedence");
             }
             return kafkaClusterSpec.getTemplate().getPod().getTolerations();
         } else {
@@ -788,7 +788,7 @@ public class KafkaCluster extends AbstractModel {
                 && kafkaClusterSpec.getTemplate().getPod() != null
                 && kafkaClusterSpec.getTemplate().getPod().getAffinity() != null) {
             if (kafkaClusterSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.kafka.affinity and spec.kafka.template.statefulset.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.kafka.affinity and spec.kafka.template.pod.affinity; latter takes precedence");
             }
             return kafkaClusterSpec.getTemplate().getPod().getAffinity();
         } else {

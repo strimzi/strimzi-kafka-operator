@@ -202,8 +202,7 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setMetricsEnabled(true);
             kafkaConnect.setMetricsConfig(metrics.entrySet());
         }
-        kafkaConnect.setUserAffinity(affinity(spec));
-        kafkaConnect.setTolerations(tolerations(spec));
+
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
@@ -248,6 +247,10 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
+        // Kafka Connect needs special treatment for Affinity and Tolerations because of deprecated fields in spec
+        kafkaConnect.setUserAffinity(affinity(spec));
+        kafkaConnect.setTolerations(tolerations(spec));
+
         return kafkaConnect;
     }
 
@@ -257,7 +260,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 && spec.getTemplate().getPod() != null
                 && spec.getTemplate().getPod().getTolerations() != null) {
             if (spec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+                log.warn("Tolerations given on both spec.tolerations and spec.template.pod.tolerations; latter takes precedence");
             }
             return spec.getTemplate().getPod().getTolerations();
         } else {
@@ -271,7 +274,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 && spec.getTemplate().getPod() != null
                 && spec.getTemplate().getPod().getAffinity() != null) {
             if (spec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.affinity and spec.template.pod.affinity; latter takes precedence");
             }
             return spec.getTemplate().getPod().getAffinity();
         } else {
