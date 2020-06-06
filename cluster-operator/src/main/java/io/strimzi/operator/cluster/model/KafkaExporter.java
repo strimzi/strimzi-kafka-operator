@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -15,7 +14,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -143,8 +141,6 @@ public class KafkaExporter extends AbstractModel {
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
             }
 
-            kafkaExporter.setUserAffinity(affinity(spec));
-            kafkaExporter.setTolerations(tolerations(spec));
             kafkaExporter.setVersion(versions.version(kafkaAssembly.getSpec().getKafka().getVersion()).version());
             kafkaExporter.setOwnerReference(kafkaAssembly);
         } else {
@@ -156,26 +152,6 @@ public class KafkaExporter extends AbstractModel {
 
     protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
         this.saramaLoggingEnabled = saramaLoggingEnabled;
-    }
-
-    static List<Toleration> tolerations(KafkaExporterSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getTolerations() != null) {
-            return spec.getTemplate().getPod().getTolerations();
-        } else {
-            return null;
-        }
-    }
-
-    static Affinity affinity(KafkaExporterSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getAffinity() != null) {
-            return spec.getTemplate().getPod().getAffinity();
-        } else {
-            return null;
-        }
     }
 
     public Service generateService() {

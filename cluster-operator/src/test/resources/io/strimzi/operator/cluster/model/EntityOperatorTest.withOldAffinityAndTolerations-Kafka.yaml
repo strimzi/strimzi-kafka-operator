@@ -24,5 +24,14 @@ spec:
               operator: In
               values:
               - another-node-label-value
+    tolerations:
+      - key: "key1"
+        operator: "Equal"
+        value: "value1"
+        effect: "NoSchedule"
+      - key: "key1"
+        operator: "Equal"
+        value: "value1"
+        effect: "NoExecute"
   kafka:
     replicas: 2

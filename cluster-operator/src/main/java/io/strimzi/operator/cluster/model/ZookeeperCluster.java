@@ -271,10 +271,6 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
 
-        zk.setUserAffinity(affinity(zookeeperClusterSpec));
-
-        zk.setTolerations(tolerations(zookeeperClusterSpec));
-
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
@@ -318,6 +314,10 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
+        // Zookeeper needs special treatment for Affinity and Tolerations because of deprecated fields in spec
+        zk.setUserAffinity(affinity(zookeeperClusterSpec));
+        zk.setTolerations(tolerations(zookeeperClusterSpec));
+
         return zk;
     }
 
@@ -327,7 +327,7 @@ public class ZookeeperCluster extends AbstractModel {
                 && zookeeperClusterSpec.getTemplate().getPod() != null
                 && zookeeperClusterSpec.getTemplate().getPod().getTolerations() != null) {
             if (zookeeperClusterSpec.getAffinity() != null) {
-                log.warn("Tolerations given on both spec.zookeeper.tolerations and spec.zookeeper.template.statefulset.tolerations; latter takes precedence");
+                log.warn("Tolerations given on both spec.zookeeper.tolerations and spec.zookeeper.template.pod.tolerations; latter takes precedence");
             }
             return zookeeperClusterSpec.getTemplate().getPod().getTolerations();
         } else {
@@ -341,7 +341,7 @@ public class ZookeeperCluster extends AbstractModel {
                 && zookeeperClusterSpec.getTemplate().getPod() != null
                 && zookeeperClusterSpec.getTemplate().getPod().getAffinity() != null) {
             if (zookeeperClusterSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.zookeeper.affinity and spec.zookeeper.template.statefulset.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.zookeeper.affinity and spec.zookeeper.template.pod.affinity; latter takes precedence");
             }
             return zookeeperClusterSpec.getTemplate().getPod().getAffinity();
         } else {

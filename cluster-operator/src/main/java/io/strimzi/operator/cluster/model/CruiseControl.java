@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -17,7 +16,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -239,9 +237,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
             cruiseControl.setJvmOptions(spec.getJvmOptions());
 
-            cruiseControl.setUserAffinity(affinity(spec));
             cruiseControl.setResources(spec.getResources());
-            cruiseControl.setTolerations(tolerations(spec));
             cruiseControl.setOwnerReference(kafkaAssembly);
             cruiseControl = updateTemplate(spec, cruiseControl);
         }
@@ -335,24 +331,6 @@ public class CruiseControl extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(cruiseControl, template.getPodDisruptionBudget());
         }
         return cruiseControl;
-    }
-
-    static List<Toleration> tolerations(CruiseControlSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getTolerations() != null) {
-            return spec.getTemplate().getPod().getTolerations();
-        }
-        return null;
-    }
-
-    static Affinity affinity(CruiseControlSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getAffinity() != null) {
-            return spec.getTemplate().getPod().getAffinity();
-        }
-        return null;
     }
 
     public static String cruiseControlName(String cluster) {

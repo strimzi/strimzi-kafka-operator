@@ -190,8 +190,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
             }
 
+            // Kafka Mirror Maker needs special treatment for Affinity and Tolerations because of deprecated fields in spec
             kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
             kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
+
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
 
@@ -206,7 +208,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 && spec.getTemplate().getPod() != null
                 && spec.getTemplate().getPod().getTolerations() != null) {
             if (spec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+                log.warn("Tolerations given on both spec.tolerations and spec.template.pod.tolerations; latter takes precedence");
             }
             return spec.getTemplate().getPod().getTolerations();
         } else {
@@ -220,7 +222,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 && spec.getTemplate().getPod() != null
                 && spec.getTemplate().getPod().getAffinity() != null) {
             if (spec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.affinity and spec.template.pod.affinity; latter takes precedence");
             }
             return spec.getTemplate().getPod().getAffinity();
         } else {
