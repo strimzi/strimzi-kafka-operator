@@ -46,7 +46,7 @@ The `image` and `version` for the different components can be configured in the 
 * For Kafka Connect, Kafka Connect S2I, and Kafka MirrorMaker in `spec.image` and `spec.version`.
 
 WARNING: It is recommended to provide only the `version` and leave the `image` property unspecified.
-This reduces the chance of making a mistake when configuring the custom resource. 
+This reduces the chance of making a mistake when configuring the custom resource.
 If you need to change the images used for different versions of Kafka, it is preferable to configure the Cluster Operator's environment variables.
 
 == Configuring the `image` property in other resources
@@ -58,10 +58,6 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 * For Kafka broker TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaStunnel}` container image.
-* For ZooKeeper nodes:
-* For ZooKeeper node TLS sidecar:
-. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerZookeeperStunnel}` container image.
 * For Topic Operator:
 . Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerTopicOperator}` container image.
