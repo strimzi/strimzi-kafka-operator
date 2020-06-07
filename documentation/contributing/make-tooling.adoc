@@ -15,7 +15,7 @@ Make is a useful tool for building your documentation and pushing it to a public
 == Generate the API Reference
 
 The API Reference is stored in `documentation/modules/appendix_crds.adoc` file.
-It is generated directly from the Java code.
+It is generated directly from the Java code when building the operators.
 If you change the Strimzi API, you need to regenerate the API Reference with following command:
 
 [source,shell,subs=attributes+]
