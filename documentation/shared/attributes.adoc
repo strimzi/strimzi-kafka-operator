@@ -147,7 +147,6 @@
 :InstallationAppendix:
 :Metrics:
 :Downloading:
-:SecurityImg:
 
 //EXCLUSIVE TO STRIMZI
 :sectlinks:
