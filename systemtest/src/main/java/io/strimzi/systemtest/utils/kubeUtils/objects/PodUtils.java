@@ -210,7 +210,7 @@ public class PodUtils {
                     stableCounter[0] = 0;
                     return false;
                 }
-                LOGGER.info("Pod replicas will be  ");
+                LOGGER.info("Pod replicas gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
                 return false;
             });
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
