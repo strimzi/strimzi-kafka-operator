@@ -190,6 +190,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;

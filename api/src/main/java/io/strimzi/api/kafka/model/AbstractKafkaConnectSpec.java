@@ -97,6 +97,7 @@ public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownP
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("The maximum limits for CPU and memory resources and the requested initial resources.")
     public ResourceRequirements getResources() {
         return resources;
