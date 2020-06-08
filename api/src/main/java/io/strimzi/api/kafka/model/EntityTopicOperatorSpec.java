@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -103,6 +104,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     }
 
     @Description("CPU and memory resources to reserve.")
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     public ResourceRequirements getResources() {
         return resources;
     }
