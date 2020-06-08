@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -99,6 +100,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
