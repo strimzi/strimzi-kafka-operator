@@ -193,13 +193,13 @@ public class PodUtils {
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
     }
 
-    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int exceptedPods) {
-        LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, exceptedPods);
+    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int expectedPods) {
+        LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, expectedPods);
         int[] stableCounter = {0};
-        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
+        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + expectedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                if (kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods) {
+                if (kubeClient().listPodsByPrefixInName(podNamePrefix).size() == expectedPods) {
                     stableCounter[0]++;
                     if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                         LOGGER.info("Pod replicas are stable for {} polls intervals", stableCounter[0]);
@@ -213,7 +213,7 @@ public class PodUtils {
                 LOGGER.info("Pod replicas gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
                 return false;
             });
-        LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
+        LOGGER.info("Pod {} has {} replicas", podNamePrefix, expectedPods);
     }
 
     public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
