@@ -194,10 +194,25 @@ public class PodUtils {
     }
 
     public static void waitUntilPodReplicasCount(String podNamePrefix, int exceptedPods) {
-        LOGGER.info("Wait until Pod {} will have {} replicas", podNamePrefix, exceptedPods);
+        LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, exceptedPods);
+        int[] stableCounter = {0};
         TestUtils.waitFor("Pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods);
+            () -> {
+                if (kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods) {
+                    stableCounter[0]++;
+                    if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                        LOGGER.info("Pod replicas are stable for {} polls intervals", stableCounter[0]);
+                        return true;
+                    }
+                } else {
+                    LOGGER.info("Pod replicas are not stable. Going to set the counter to zero.");
+                    stableCounter[0] = 0;
+                    return false;
+                }
+                LOGGER.info("Pod replicas gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                return false;
+            });
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
     }
 
