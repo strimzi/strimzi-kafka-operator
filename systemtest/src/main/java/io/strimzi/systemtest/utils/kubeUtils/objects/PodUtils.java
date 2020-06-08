@@ -193,7 +193,7 @@ public class PodUtils {
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
     }
 
-    public static void waitUntilPodReplicasCount(String podNamePrefix, int exceptedPods) {
+    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int exceptedPods) {
         LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, exceptedPods);
         int[] stableCounter = {0};
         TestUtils.waitFor("Pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
@@ -210,7 +210,7 @@ public class PodUtils {
                     stableCounter[0] = 0;
                     return false;
                 }
-                LOGGER.info("Pod replicas gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                LOGGER.info("Pod replicas will be  ");
                 return false;
             });
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);

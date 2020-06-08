@@ -112,7 +112,7 @@ public class CruiseControlConfigurationST extends BaseST {
         assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getCruiseControl(), nullValue());
 
         LOGGER.info("Verifying that {} pod is not present", CRUISE_CONTROL_POD_PREFIX);
-        PodUtils.waitUntilPodReplicasCount(CRUISE_CONTROL_POD_PREFIX, 0);
+        PodUtils.waitUntilPodStabilityReplicasCount(CRUISE_CONTROL_POD_PREFIX, 0);
 
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME)));
