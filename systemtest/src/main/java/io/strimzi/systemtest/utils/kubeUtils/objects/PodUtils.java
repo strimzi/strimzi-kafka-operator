@@ -187,7 +187,7 @@ public class PodUtils {
 
     public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
         LOGGER.info("Wait until Pod {} will have {} containers", podNamePrefix, numberOfContainers);
-        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
+        TestUtils.waitFor("Pod " + podNamePrefix + " will have " + numberOfContainers + " containers",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
