@@ -256,11 +256,13 @@ public class CrdGenerator {
         if (crd.subresources().status().length != 0) {
             ObjectNode subresources = nf.objectNode();
 
-            if (crd.subresources().status().length > 0) {
+            if (crd.subresources().status().length == 1) {
                 subresources.set("status", nf.objectNode());
+            } else if (crd.subresources().status().length > 1)  {
+                throw new RuntimeException("Each custom resource definition can have only one status sub-resource.");
             }
 
-            if (crd.subresources().scale().length > 0) {
+            if (crd.subresources().scale().length == 1) {
                 Crd.Spec.Subresources.Scale scale = crd.subresources().scale()[0];
 
                 ObjectNode scaleNode = nf.objectNode();
@@ -272,6 +274,8 @@ public class CrdGenerator {
                 }
 
                 subresources.set("scale", scaleNode);
+            } else if (crd.subresources().scale().length > 1)  {
+                throw new RuntimeException("Each custom resource definition can have only one scale sub-resource.");
             }
 
             result.set("subresources", subresources);

@@ -50,8 +50,7 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(),
-                        scale = {}
+                        status = @Crd.Spec.Subresources.Status()
                 )
         )
 )

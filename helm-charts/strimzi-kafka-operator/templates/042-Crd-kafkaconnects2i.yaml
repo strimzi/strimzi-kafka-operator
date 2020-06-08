@@ -1235,9 +1235,9 @@ spec:
                           type: string
                 matchLabels:
                   type: object
-              description: Label selector for pods representing this resource.
+              description: Label selector for pods providing this resource.
             replicas:
               type: integer
-              description: Total number of pods representing this resource.
+              description: The current number of pods being used to provide this resource.
           description: The status of the Kafka Connect Source-to-Image (S2I) cluster.
 {{- end -}}

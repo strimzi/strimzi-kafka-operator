@@ -1938,9 +1938,9 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
-|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|podSelector         1.2+<.<|Label selector for pods providing this resource.
 |xref:type-LabelSelector-{context}[`LabelSelector`]
-|replicas            1.2+<.<|Total number of pods representing this resource.
+|replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
 
@@ -2084,9 +2084,9 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
-|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|podSelector         1.2+<.<|Label selector for pods providing this resource.
 |xref:type-LabelSelector-{context}[`LabelSelector`]
-|replicas            1.2+<.<|Total number of pods representing this resource.
+|replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
 
@@ -2880,9 +2880,9 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
-|podSelector         1.2+<.<|Label selector for pods representing this resource.
+|podSelector         1.2+<.<|Label selector for pods providing this resource.
 |xref:type-LabelSelector-{context}[`LabelSelector`]
-|replicas            1.2+<.<|Total number of pods representing this resource.
+|replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
 
