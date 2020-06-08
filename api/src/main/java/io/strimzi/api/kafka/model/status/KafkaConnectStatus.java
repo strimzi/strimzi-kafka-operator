@@ -55,7 +55,7 @@ public class KafkaConnectStatus extends Status {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Total number of pods representing this resource.")
+    @Description("The current number of pods being used to provide this resource.")
     public int getReplicas() {
         return replicas;
     }
@@ -65,7 +65,7 @@ public class KafkaConnectStatus extends Status {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Label selector for pods representing this resource.")
+    @Description("Label selector for pods providing this resource.")
     public LabelSelector getPodSelector() {
         return podSelector;
     }

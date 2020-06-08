@@ -121,7 +121,7 @@ public @interface Crd {
          */
         @interface Subresources {
             Status[] status();
-            Scale[] scale();
+            Scale[] scale() default {};
 
             @interface Status {
             }
