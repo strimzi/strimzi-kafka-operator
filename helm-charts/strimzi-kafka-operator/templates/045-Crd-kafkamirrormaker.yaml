@@ -47,6 +47,10 @@ spec:
     priority: 1
   subresources:
     status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.selector
   validation:
     openAPIV3Schema:
       properties:
@@ -1286,5 +1290,27 @@ spec:
               type: integer
               description: The generation of the CRD that was last reconciled by the
                 operator.
+            podSelector:
+              type: object
+              properties:
+                matchExpressions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type: string
+                matchLabels:
+                  type: object
+              description: Label selector for pods providing this resource.
+            replicas:
+              type: integer
+              description: The current number of pods being used to provide this resource.
           description: The status of Kafka MirrorMaker.
 {{- end -}}

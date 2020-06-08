@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -65,6 +66,7 @@ public class KafkaConnectStatus extends Status {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "meta", version = "v1", kind = "labelselector")
     @Description("Label selector for pods providing this resource.")
     public LabelSelector getPodSelector() {
         return podSelector;

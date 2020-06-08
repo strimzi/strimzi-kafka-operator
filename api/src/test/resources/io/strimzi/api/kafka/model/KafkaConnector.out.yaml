@@ -26,3 +26,4 @@ status:
     - id: 1
       state: "PAUSED"
       worker_id: "whatever:8083"
+  tasksMax: 0
