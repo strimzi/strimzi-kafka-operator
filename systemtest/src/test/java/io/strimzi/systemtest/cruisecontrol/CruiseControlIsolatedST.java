@@ -98,7 +98,7 @@ public class CruiseControlIsolatedST extends BaseST {
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
         // attach the approve annotation -> RS
-        String response = cmdKubeClient().exec("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
+        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE).exec("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
 
         LOGGER.info("Response from the annotation process {}", response);
 
