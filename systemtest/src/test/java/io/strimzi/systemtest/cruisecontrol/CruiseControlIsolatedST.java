@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
