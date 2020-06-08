@@ -988,13 +988,7 @@ class KafkaST extends BaseST {
             k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
-        //Waiting when EO pod will be deleted
-        DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
-        ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.deletePodWithWait(eoPodName);
-
-        //Checking that EO was removed
-        assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
+        PodUtils.waitUntilPodReplicasCount(eoDeploymentName, 0);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
