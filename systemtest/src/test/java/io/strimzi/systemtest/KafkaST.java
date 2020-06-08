@@ -54,7 +54,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -981,20 +980,13 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(null);
             k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
-        //Waiting when EO pod will be deleted
-        DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
-        ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.deletePodWithWait(eoPodName);
-
-        //Checking that EO was removed
-        assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
+        PodUtils.waitUntilPodReplicasCount(eoDeploymentName, 0);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
