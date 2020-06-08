@@ -9,22 +9,12 @@ To deploy Cruise Control to your Strimzi cluster, define the configuration using
 
 Deploy one instance of Cruise Control per Kafka cluster.
 
-NOTE: Step one is only required if automatic topic creation is disabled in the Kafka cluster.
-
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
-* You are aware of the guidance on xref:#auto-created-topics-logs[Auto-created topics and log compaction].
 
 .Procedure
-
-. If automatic topic creation is disabled (`auto.create.topics.enable: false` is configured in `spec.kafka.config`), first create the `strimzi.cruisecontrol.metrics` topic:
-+
-[source,shell,subs="attributes+"]
-----
-kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
-----
 
 . Edit the `cruiseControl` property of the `Kafka` resource.
 +

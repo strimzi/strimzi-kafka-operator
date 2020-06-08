@@ -97,49 +97,6 @@ spec:
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 
-[#auto-created-topics-logs]
-[discrete]
-== Auto-created topics and log compaction
-
-Cruise Control requires the following three topics in order to work:
-
-* `strimzi.cruisecontrol.partitionmetricsamples`
-* `strimzi.cruisecontrol.modeltrainingsamples`
-* `strimzi.cruisecontrol.metrics`
-
-These three topics are usually auto-created by Strimzi and Cruise Control. First, the metric reporters create the `strimzi.cruisecontrol.metrics` topic. 
-Then, Cruise Control creates the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
-
-However, if automatic topic creation is _disabled_ in Kafka (`auto.create.topics.enable: false` is configured in `spec.kafka.config` when starting a new Kafka cluster) the Cruise Control metric reporters are unable to create the `strimzi.cruisecontrol.metrics` topic.
-In this situation, you need to manually create the `strimzi.cruisecontrol.metrics` topic before deploying Cruise Control. 
-You can do this using the following command:
-
-[source,shell,subs="attributes+"]
-----
-kubectl apply -f examples/cruise-control/cruise-control-topic.yaml
-----
-
-Log compaction might remove records that are needed by Cruise Control; therefore, all auto-created topics must be configured with `cleanup.policy=delete` to disable log compaction. 
-Cruise Control will automatically disable log compaction for the `strimzi.cruisecontrol.partitionmetricsamples` and `strimzi.cruisecontrol.modeltrainingsamples` topics.
-The Cruise Control metric reporters attempt to disable log compaction for the `strimzi.cruisecontrol.metrics` topic, but fail if they are started with a new Kafka cluster.
-This is only a problem if log compaction is enabled in Kafka with the setting `log.cleanup.policy=compact` in `spec.kafka.config`. 
-In this situation, log compaction will be enabled for the `strimzi.cruisecontrol.metrics` topic and will need to be overridden with `cleanup.policy=delete` in the `strimzi.cruisecontrol.metrics` topic.
-
-Here is an example where log compaction is disabled in a topic that was auto-created by Cruise Control:
-
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: kafka.strimzi.io/v1beta1
-kind: KafkaTopic
-metadata:
-  name: strimzi.cruisecontrol.metrics
-spec:
-  partitions: 1
-  replicas: 1
-  config:
-    cleanup.policy: delete
-----
-
 [#logging-configuration]
 [discrete]
 == Logging configuration

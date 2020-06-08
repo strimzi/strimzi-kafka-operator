@@ -485,7 +485,7 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testRebalancingCompletedWithError(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksFetchError(ccServer);
+        MockCruiseControl.setupCCUserTasksCompletedWithError(ccServer);
         checkTransition(vertx, context,
                 KafkaRebalanceAssemblyOperator.State.Rebalancing, KafkaRebalanceAssemblyOperator.State.NotReady,
                 KafkaRebalanceAssemblyOperator.RebalanceAnnotation.none, null,

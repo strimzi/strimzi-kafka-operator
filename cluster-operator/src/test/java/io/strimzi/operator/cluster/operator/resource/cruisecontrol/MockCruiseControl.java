@@ -370,11 +370,10 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }
 
-    public static void setupCCUserTasksFetchError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public static void setupCCUserTasksCompletedWithError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
-        // This simulates the current behaviour of the user tasks endpoint if you ask for the status of a task that
-        // Complete with error and fetch_completed_task=true
-        JsonBody fetchErrorJson = getJsonFromResource("CC-User-task-status-fetch-error.json");
+        // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
+        JsonBody compWithErrorJson = getJsonFromResource("CC-User-task-status-completed-with-error.json");
 
         ccServer
                 .when(
@@ -385,8 +384,8 @@ public class MockCruiseControl {
                                 .withPath(CruiseControlEndpoints.USER_TASKS.path))
                 .respond(
                         response()
-                                .withBody(fetchErrorJson)
-                                .withStatusCode(500)
+                                .withBody(compWithErrorJson)
+                                .withStatusCode(200)
                                 .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }

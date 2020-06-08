@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
-        <cruise-control.version>2.0.103</cruise-control.version>
+        <cruise-control.version>2.0.108</cruise-control.version>
     </properties>
 
     <repositories>

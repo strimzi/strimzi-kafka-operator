@@ -204,36 +204,36 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             JsonObject statusJson = new JsonObject();
                             String taskStatus = jsonUserTask.getString("Status");
                             statusJson.put("Status", taskStatus);
-                            // The status could be ACTIVE in which case there will not be a "summary" so we check that we are
-                            // in a state that actually has that key.
-                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) ||
-                                    taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
-                                // We now need to extract the original response which is in a raw string (not nicely formatted JSON)
+
+                            CruiseControlUserTaskResponse ccResponse;
+                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) || taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
+                                // Tasks in execution will be rebalance tasks, so their original response will contain the summary of the rebalance they are executing
+                                // Completed tasks likewise will have the original rebalance summary in their original response
                                 statusJson.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
+                                ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
+                            } else if (taskStatus.equals(CruiseControlUserTaskStatus.ACTIVE.toString())) {
+                                // If he status is ACTIVE there will not be a "summary" so we skip pulling the summary key
+                                ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
+                            } else if (taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR.toString())) {
+                                // If the task completed with error then there is no detail to return and we set the error flag on the response
+                                ccResponse = new CruiseControlUserTaskResponse(null, jsonUserTask);
+                                ccResponse.completedWithError();
+                            } else {
+                                throw new IllegalStateException("Unexpected user task status: " + taskStatus);
                             }
-                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
                             result.complete(ccResponse);
                         });
                     } else if (response.statusCode() == 500) {
                         response.bodyHandler(buffer -> {
                             JsonObject json = buffer.toJsonObject();
+                            String errorString;
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                if (json.getString(CC_REST_API_ERROR_KEY).contains("Error happened in fetching response for task")) {
-                                    // This is to deal with a bug in the CC rest API that will error out if you ask for fetch_completed_task=true
-                                    // for a task that has COMPLETED_WITH_ERROR. Upstream Bug: https://github.com/linkedin/cruise-control/issues/1187
-                                    CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(null, json);
-                                    ccResponse.setCompletedWithError(true);
-                                    result.complete(ccResponse);
-                                } else {
-                                    result.fail(new CruiseControlRestException(
-                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                    json.getString(CC_REST_API_ERROR_KEY)));
-                                }
+                                errorString = json.getString(CC_REST_API_ERROR_KEY);
                             } else {
-                                result.fail(new CruiseControlRestException(
-                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                json.toString()));
+                                errorString = json.toString();
                             }
+                            result.fail(new CruiseControlRestException(
+                                    "Error for request: " + host + ":" + port + path + ". Server returned: " + errorString));
                         });
                     } else {
                         result.fail(new CruiseControlRestException(
