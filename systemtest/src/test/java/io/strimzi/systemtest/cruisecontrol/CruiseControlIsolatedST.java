@@ -109,14 +109,6 @@ public class CruiseControlIsolatedST extends BaseST {
         LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceUtils.KafkaRebalanceState.Ready);
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.Ready);
-
-        LOGGER.info("Explicitly delete KafkaRebalance resource to invoke {} state", KafkaRebalanceUtils.KafkaRebalanceState.NotReady);
-
-        KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
-
-        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceUtils.KafkaRebalanceState.NotReady);
-
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.NotReady);
     }
 
     @BeforeAll
