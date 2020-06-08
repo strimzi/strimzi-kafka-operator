@@ -24,7 +24,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -185,9 +184,9 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
-    @Order(14)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels() throws InterruptedException {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1).done();
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDeploymentName);
 
@@ -236,9 +235,9 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
         );
 
-        LOGGER.info("Waiting {} ms for INFO log will appear", RECONCILIATION_INTERVAL * 6);
+        LOGGER.info("Waiting {} ms for INFO log will appear", RECONCILIATION_INTERVAL * 2);
         //wait some time if TO and UO will log something
-        Thread.sleep(RECONCILIATION_INTERVAL * 6);
+        Thread.sleep(RECONCILIATION_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "5m"), is(not(emptyString())));
@@ -331,9 +330,9 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {}ms for INFO log will appear", RECONCILIATION_INTERVAL * 6);
+        LOGGER.info("Waiting {}ms for INFO log will appear", RECONCILIATION_INTERVAL * 2);
         // wait some time if TO and UO will log something
-        Thread.sleep(RECONCILIATION_INTERVAL * 6);
+        Thread.sleep(RECONCILIATION_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "5m"), is(not(emptyString())));
