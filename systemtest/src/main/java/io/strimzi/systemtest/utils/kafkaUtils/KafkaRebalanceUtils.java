@@ -28,6 +28,7 @@ public class KafkaRebalanceUtils {
         Stopped
     }
 
+    // TODO: after revert of changes related to status we should you --> ResourceManager.waitForResourceStatus()
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         LOGGER.info("Waiting for KafkaRebalance will be in the {}", state);
 
