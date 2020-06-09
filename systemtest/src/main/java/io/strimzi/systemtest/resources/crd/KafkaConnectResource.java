@@ -24,7 +24,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import java.util.function.Consumer;
 
 public class KafkaConnectResource {
-    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../examples/connect/kafka-connect.yaml";
     public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../examples/metrics/kafka-connect-metrics.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectClient() {
