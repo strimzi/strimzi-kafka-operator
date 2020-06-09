@@ -23,7 +23,8 @@ public class KafkaRebalanceUtils {
         ProposalReady,
         Rebalancing,
         Ready,
-        NotReady
+        NotReady,
+        Stopped
     }
 
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
