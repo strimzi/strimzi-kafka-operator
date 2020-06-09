@@ -19,6 +19,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
+    private static final String STATUS_KEY = "Status";
+    private static final String SUMMARY_KEY = "summary";
 
     private final Vertx vertx;
     private final long idleTimeout;
@@ -172,9 +174,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlUserTaskResponse> getUserTaskStatus(String host, int port, String userTaskId) {
+    public Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskId) {
 
-        Promise<CruiseControlUserTaskResponse> result = Promise.promise();
+        Promise<CruiseControlResponse> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
@@ -202,26 +204,28 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                                 json.getString(CC_REST_API_ERROR_KEY)));
                             }
                             JsonObject statusJson = new JsonObject();
-                            String taskStatus = jsonUserTask.getString("Status");
-                            statusJson.put("Status", taskStatus);
-
-                            CruiseControlUserTaskResponse ccResponse;
-                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) || taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
-                                // Tasks in execution will be rebalance tasks, so their original response will contain the summary of the rebalance they are executing
-                                // Completed tasks likewise will have the original rebalance summary in their original response
-                                statusJson.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
-                                ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
-                            } else if (taskStatus.equals(CruiseControlUserTaskStatus.ACTIVE.toString())) {
-                                // If he status is ACTIVE there will not be a "summary" so we skip pulling the summary key
-                                ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
-                            } else if (taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR.toString())) {
-                                // If the task completed with error then there is no detail to return and we set the error flag on the response
-                                ccResponse = new CruiseControlUserTaskResponse(null, jsonUserTask);
-                                ccResponse.completedWithError();
-                            } else {
-                                throw new IllegalStateException("Unexpected user task status: " + taskStatus);
+                            String taskStatusStr = jsonUserTask.getString(STATUS_KEY);
+                            statusJson.put(STATUS_KEY, taskStatusStr);
+                            CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusStr);
+                            switch (taskStatus) {
+                                case ACTIVE:
+                                    // If the status is ACTIVE there will not be a "summary" so we skip pulling the summary key
+                                    break;
+                                case IN_EXECUTION:
+                                    // Tasks in execution will be rebalance tasks, so their original response will contain the summary of the rebalance they are executing
+                                    // We handle these in the same way as COMPLETED tasks so we drop down to that case.
+                                case COMPLETED:
+                                    // Completed tasks will have the original rebalance proposal summary in their original response
+                                    statusJson.put(SUMMARY_KEY, ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject(SUMMARY_KEY));
+                                    break;
+                                case COMPLETED_WITH_ERROR:
+                                    // Completed with error tasks will have "CompletedWithError" as their original response, which is not Json.
+                                    statusJson.put(SUMMARY_KEY, jsonUserTask.getString("originalResponse"));
+                                    break;
+                                default:
+                                    throw new IllegalStateException("Unexpected user task status: " + taskStatus);
                             }
-                            result.complete(ccResponse);
+                            result.complete(new CruiseControlResponse(userTaskID, statusJson));
                         });
                     } else if (response.statusCode() == 500) {
                         response.bodyHandler(buffer -> {

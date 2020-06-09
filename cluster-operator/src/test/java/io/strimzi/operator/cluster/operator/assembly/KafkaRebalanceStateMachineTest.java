@@ -28,6 +28,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +45,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -190,8 +192,8 @@ public class KafkaRebalanceStateMachineTest {
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
         when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
 
-        return kcrao.computeNextStatus(
-                recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions).compose(result -> {
+        return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
+                .compose(result -> {
                     context.verify(() -> {
                         assertTrue(expectedStatusCheck(result, nextState));
                     });
@@ -443,6 +445,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     @Test
+    @Timeout(value = 30, timeUnit = TimeUnit.SECONDS)
     public void testRebalancingCompleted(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);

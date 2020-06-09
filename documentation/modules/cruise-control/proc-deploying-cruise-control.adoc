@@ -16,7 +16,7 @@ Deploy one instance of Cruise Control per Kafka cluster.
 
 .Procedure
 
-. Edit the `cruiseControl` property of the `Kafka` resource.
+. Edit the `Kafka` resource and add the `cruiseControl` property.
 +
 The properties you can configure are shown in this example configuration:
 +
