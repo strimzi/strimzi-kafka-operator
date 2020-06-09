@@ -104,7 +104,7 @@ public class OauthTlsST extends OauthAbstractST {
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewKafkaClientAuthenticationOAuth()
-                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                         .withClientId("kafka-connect")
                         .withNewClientSecret()
                         .withSecretName("my-connect-oauth")
@@ -153,7 +153,7 @@ public class OauthTlsST extends OauthAbstractST {
                                 .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).build())
                     .endTls()
                     .withNewKafkaClientAuthenticationOAuth()
-                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                         .withClientId("kafka-bridge")
                         .withNewClientSecret()
                             .withSecretName(BRIDGE_OAUTH_SECRET)
@@ -227,11 +227,11 @@ public class OauthTlsST extends OauthAbstractST {
                     .editListeners()
                         .withNewTls()
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(validIssuerUri)
-                                .withJwksEndpointUri(jwksEndpointUri)
-                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                .withUserNameClaim(userNameClaim)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
                                         .withSecretName(SECRET_OF_KEYCLOAK)
@@ -242,11 +242,11 @@ public class OauthTlsST extends OauthAbstractST {
                         .endTls()
                         .withNewKafkaListenerExternalNodePort()
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(validIssuerUri)
-                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                .withJwksEndpointUri(jwksEndpointUri)
-                                .withUserNameClaim(userNameClaim)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
                                         .withSecretName(SECRET_OF_KEYCLOAK)
@@ -275,7 +275,7 @@ public class OauthTlsST extends OauthAbstractST {
                         .withGroupId(ClientUtils.generateRandomConsumerGroup())
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
@@ -299,7 +299,7 @@ public class OauthTlsST extends OauthAbstractST {
                                 .build())
                         .endTls()
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
@@ -339,13 +339,9 @@ public class OauthTlsST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
-        LOGGER.info("Replacing validIssuerUri: {} to pointing to internal realm", validIssuerUri);
-        LOGGER.info("Replacing jwksEndpointUri: {} to pointing to internal realm", jwksEndpointUri);
-        LOGGER.info("Replacing oauthTokenEndpointUri: {} to pointing to internal realm", oauthTokenEndpointUri);
+        keycloakInstance.setRealm("internal", true);
 
-        validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal";
-        jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/certs";
-        oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/internal/protocol/openid-connect/token";
+        LOGGER.info("Keycloak settings {}", keycloakInstance.toString());
 
         oauthExternalKafkaClientTls = new OauthExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -355,7 +351,7 @@ public class OauthTlsST extends OauthAbstractST {
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withKafkaUsername(OAUTH_CLIENT_NAME)
             .withClientSecretName(OAUTH_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         LOGGER.info("Oauth kafka client has following settings {}", oauthExternalKafkaClientTls.toString());
@@ -364,11 +360,11 @@ public class OauthTlsST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
                         .withTlsTrustedCertificates(
                             new CertSecretSourceBuilder()
                                 .withSecretName(SECRET_OF_KEYCLOAK)

@@ -85,8 +85,6 @@ public class OauthAbstractST extends AbstractST {
     protected static final String SECRET_OF_KEYCLOAK = "x509-https-secret";
 
     protected static String clusterHost;
-    protected static String keycloakIpWithPortHttp;
-    protected static String keycloakIpWithPortHttps;
     protected static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
     protected WebClient client;
 
@@ -100,26 +98,20 @@ public class OauthAbstractST extends AbstractST {
     }
 
     private void deployTestSpecificResources() throws InterruptedException {
-        LOGGER.info("Deploying Keycloak Operator");
-        KeycloakResource.keycloakOperator(NAMESPACE);
-
         LOGGER.info("Deploying keycloak...");
-        KeycloakResource.deployKeycloak(NAMESPACE);
+        KafkaClientsResource.deployKeycloak().done();
 
         // https
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
         KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
+
         // http
         Service keycloakHttpService = KubernetesResource.deployKeycloakNodePortHttpService(NAMESPACE);
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
-        Secret keycloakCredentials = kubeClient().getSecret("credential-keycloak");
-
-        KeycloakInstance keycloakInstance = new KeycloakInstance(
-            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME")), StandardCharsets.US_ASCII),
-            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD")), StandardCharsets.US_ASCII));
+        keycloakInstance = new KeycloakInstance("admin", "admin");
 
         LOGGER.info("Importing basic realm");
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
@@ -127,13 +119,10 @@ public class OauthAbstractST extends AbstractST {
         LOGGER.info("Importing authorization realm");
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
 
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
 
         String pubKey = cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key",
-            "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
-
-//        keytool -exportcert -keystore https-keystore.pk12 -alias keycloak-https-key -storepass AFnK8nQ2683uG56BCGdw2EG8VVnJYWjlBUFOXxHshDc= -rfc
+            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
 
         SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
@@ -144,8 +133,8 @@ public class OauthAbstractST extends AbstractST {
                             .withNewTls()
                                 .withNewKafkaListenerAuthenticationOAuth()
                                     .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
                                     .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withTlsTrustedCertificates(
@@ -159,8 +148,8 @@ public class OauthAbstractST extends AbstractST {
                             .withNewKafkaListenerExternalNodePort()
                                 .withNewKafkaListenerAuthenticationOAuth()
                                     .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
                                     .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withTlsTrustedCertificates(

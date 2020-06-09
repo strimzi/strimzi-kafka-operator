@@ -21,6 +21,8 @@ public class KeycloakInstance {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakInstance.class);
 
+    private final int jwksExpireSeconds = 500;
+    private final int jwksRefreshSeconds = 400;
     private final String username;
     private final String password;
     private final String httpsUri;
@@ -66,6 +68,25 @@ public class KeycloakInstance {
             });
     }
 
+    public void setRealm(String realmName, boolean tlsEnabled) {
+        LOGGER.info("Replacing validIssuerUri: {} to pointing to {} realm", validIssuerUri, realmName);
+        LOGGER.info("Replacing jwksEndpointUri: {} to pointing to {} realm", jwksEndpointUri, realmName);
+        LOGGER.info("Replacing oauthTokenEndpointUri: {} to pointing to {} realm", oauthTokenEndpointUri, realmName);
+
+        if (tlsEnabled) {
+            LOGGER.info("Using HTTPS endpoints");
+            validIssuerUri = "https://" + httpsUri + "/auth/realms/" + realmName;
+            jwksEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/certs";
+            oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/token";
+
+        } else {
+            LOGGER.info("Using HTTP endpoints");
+            validIssuerUri = "http://" + httpUri + "/auth/realms/" + realmName;
+            jwksEndpointUri = "http://" + httpUri + "/auth/realms/" + realmName + "/protocol/openid-connect/certs";
+            oauthTokenEndpointUri = "http://" + httpUri + "/auth/realms/" + realmName + "/protocol/openid-connect/token";
+        }
+    }
+
     public String getKeystorePassword() {
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
         String inputFile = ResourceManager.cmdKubeClient().execInPod(keycloakPodName,
@@ -99,25 +120,72 @@ public class KeycloakInstance {
     public String getPassword() {
         return password;
     }
-    public String getValidIssuerUri() {
-        return validIssuerUri;
-    }
-    public String getJwksEndpointUri() {
-        return jwksEndpointUri;
-    }
-    public String getOauthTokenEndpointUri() {
-        return oauthTokenEndpointUri;
-    }
-    public String getIntrospectionEndpointUri() {
-        return introspectionEndpointUri;
-    }
-    public String getUserNameClaim() {
-        return userNameClaim;
-    }
     public String getHttpsUri() {
         return httpsUri;
     }
     public String getHttpUri() {
         return httpUri;
+    }
+    public String getValidIssuerUri() {
+        return validIssuerUri;
+    }
+    public void setValidIssuerUri(String validIssuerUri) {
+        this.validIssuerUri = validIssuerUri;
+    }
+    public String getJwksEndpointUri() {
+        return jwksEndpointUri;
+    }
+    public void setJwksEndpointUri(String jwksEndpointUri) {
+        this.jwksEndpointUri = jwksEndpointUri;
+    }
+    public String getOauthTokenEndpointUri() {
+        return oauthTokenEndpointUri;
+    }
+    public void setOauthTokenEndpointUri(String oauthTokenEndpointUri) {
+        this.oauthTokenEndpointUri = oauthTokenEndpointUri;
+    }
+    public String getIntrospectionEndpointUri() {
+        return introspectionEndpointUri;
+    }
+    public void setIntrospectionEndpointUri(String introspectionEndpointUri) {
+        this.introspectionEndpointUri = introspectionEndpointUri;
+    }
+    public String getUserNameClaim() {
+        return userNameClaim;
+    }
+    public void setUserNameClaim(String userNameClaim) {
+        this.userNameClaim = userNameClaim;
+    }
+    public Pattern getKeystorePattern() {
+        return keystorePattern;
+    }
+    public void setKeystorePattern(Pattern keystorePattern) {
+        this.keystorePattern = keystorePattern;
+    }
+
+    public int getJwksExpireSeconds() {
+        return jwksExpireSeconds;
+    }
+    public int getJwksRefreshSeconds() {
+        return jwksRefreshSeconds;
+    }
+
+    @Override
+    public String toString() {
+        return "KeycloakInstance{" +
+            "jwksExpireSeconds=" + jwksExpireSeconds +
+            ", jwksRefreshSeconds=" + jwksRefreshSeconds +
+            ", username='" + username + '\'' +
+            ", password='" + password + '\'' +
+            ", httpsUri='" + httpsUri + '\'' +
+            ", httpUri='" + httpUri + '\'' +
+            ", validIssuerUri='" + validIssuerUri + '\'' +
+            ", jwksEndpointUri='" + jwksEndpointUri + '\'' +
+            ", oauthTokenEndpointUri='" + oauthTokenEndpointUri + '\'' +
+            ", introspectionEndpointUri='" + introspectionEndpointUri + '\'' +
+            ", userNameClaim='" + userNameClaim + '\'' +
+            ", keystorePattern=" + keystorePattern +
+            ", keystorePasswordPattern=" + keystorePasswordPattern +
+            '}';
     }
 }
