@@ -12,7 +12,7 @@ The deployment uses a YAML file to provide the specification to create a `KafkaM
 In this procedure, we use the example files provided with Strimzi:
 
 * `examples/mirror-maker/kafka-mirror-maker.yaml`
-* `examples/mirror-maker/kafka-mirror-maker.yaml`
+* `examples/mirror-maker/kafka-mirror-maker-2.yaml`
 
 For information about configuring `KafkaMirrorMaker` or `KafkaMirrorMaker2` resources,
 see link:{BookURLUsing}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker configuration^].
