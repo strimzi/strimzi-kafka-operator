@@ -986,7 +986,7 @@ class KafkaST extends BaseST {
             k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
-        PodUtils.waitUntilPodReplicasCount(eoDeploymentName, 0);
+        PodUtils.waitUntilPodStabilityReplicasCount(eoDeploymentName, 0);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());

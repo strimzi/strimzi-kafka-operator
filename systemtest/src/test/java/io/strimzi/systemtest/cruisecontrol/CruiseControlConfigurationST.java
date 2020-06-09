@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
@@ -110,8 +111,8 @@ public class CruiseControlConfigurationST extends BaseST {
         LOGGER.info("Verifying that in {} is not present in the Kafka cluster", CRUISE_CONTROL_NAME);
         assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getCruiseControl(), nullValue());
 
-        LOGGER.info("Verifying that {} pod is not present", CRUISE_CONTROL_NAME);
-        assertThat(kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).size(), is(0));
+        LOGGER.info("Verifying that {} pod is not present", CRUISE_CONTROL_POD_PREFIX);
+        PodUtils.waitUntilPodStabilityReplicasCount(CRUISE_CONTROL_POD_PREFIX, 0);
 
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(CLUSTER_NAME)));
