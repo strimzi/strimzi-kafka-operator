@@ -130,8 +130,8 @@ public class OauthAbstractST extends AbstractST {
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
 
         String pubKey = cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-                "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key"
-            , "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
+            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key",
+            "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
 
 //        keytool -exportcert -keystore https-keystore.pk12 -alias keycloak-https-key -storepass AFnK8nQ2683uG56BCGdw2EG8VVnJYWjlBUFOXxHshDc= -rfc
 

@@ -5,16 +5,15 @@
 package io.strimzi.systemtest.resources;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
 
 public class KeycloakResource {
 
@@ -28,11 +27,16 @@ public class KeycloakResource {
 
         LOGGER.info("Deploying CRDs for Keycloak Operator in {} namespace", ResourceManager.cmdKubeClient().namespace());
 
-        ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakbackups_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakclients_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakrealms_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloaks_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakusers_crd.yaml").getFile());
+        try {
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloak-operator.v9.0.2.clusterserviceversion.yaml"));
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakbackups.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakclients.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakrealms.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloaks.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().apply(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakusers.keycloak.org.crd.yaml"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/role.yaml").getFile());
         ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/role_binding.yaml").getFile());
@@ -61,13 +65,17 @@ public class KeycloakResource {
     }
 
     private static void deleteKeycloakOperator(String deploymentName, String namespace) {
-        // TODO: remove CRDs from the resource and apply it from the github with specific version 9.0.2
 
-        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakbackups_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakclients_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakrealms_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloaks_crd.yaml").getFile());
-        ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/crds/keycloak.org_keycloakusers_crd.yaml").getFile());
+        try {
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloak-operator.v9.0.2.clusterserviceversion.yaml"));
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakbackups.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakclients.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakrealms.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloaks.keycloak.org.crd.yaml"));
+            ResourceManager.cmdKubeClient().delete(FileUtils.downloadAndUnzip("https://raw.githubusercontent.com/keycloak/keycloak-operator/master/deploy/olm-catalog/keycloak-operator/9.0.2/keycloakusers.keycloak.org.crd.yaml"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/role.yaml").getFile());
         ResourceManager.cmdKubeClient().namespace(namespace).delete(KeycloakResource.class.getResource("/keycloak/role_binding.yaml").getFile());
