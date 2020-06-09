@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,14 +31,11 @@ public class KafkaRebalanceUtils {
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         LOGGER.info("Waiting for KafkaRebalance will be in the {}", state);
 
-        TestUtils.waitFor("Waiting for KafkaRebalance will be in the " + state.name(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> {
-                LOGGER.info("Comparing: " + KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
-                    .withName(resourceName).get().getStatus().getConditions().get(0).getStatus() + " - " + state.name());
-                return KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
-                    .withName(resourceName).get().getStatus().getConditions().get(0).getStatus().equals(state.name());
-            },
-            () -> LOGGER.info(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get())
+        TestUtils.waitFor("KafkaRebalance will be in the " + state.name(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
+                    .withName(resourceName).get().getStatus().getConditions().get(0).getStatus().equals(state.name()),
+            () -> ResourceManager.logCurrentResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
+                .withName(resourceName).get())
         );
     }
 
