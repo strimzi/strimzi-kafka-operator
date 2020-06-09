@@ -23,5 +23,5 @@ Changing the policy will result in a rolling update of all your Kafka, Kafka Con
 
 .Additional resources
 
-* For more information about Cluster Operator configuration, see xref:assembly-operators-cluster-operator-{context}[].
+* For more information about Cluster Operator configuration, see xref:using-the-cluster-operator-{context}[].
 * For more information about Image Pull Policies, see {K8sImagePullPolicies}.

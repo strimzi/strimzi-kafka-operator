@@ -1,10 +1,10 @@
 // Module included in the following assemblies:
 //
-// assembly-operators-monitoring.adoc
+// assembly-operators.adoc
 
 [id='con-operators-prometheus-metrics-{context}']
 
-= Prometheus metrics
+= Monitoring operators using Prometheus metrics
 
 Strimzi operators expose Prometheus metrics.
 The metrics are automatically enabled and contain information about:
