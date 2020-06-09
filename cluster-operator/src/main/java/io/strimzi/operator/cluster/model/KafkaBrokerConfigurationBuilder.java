@@ -78,7 +78,9 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
             writer.println("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS");
-            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.bootstrapServiceName(clusterName) + ":9091");
+            // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
+            // to the pods behind the bootstrap one when they are not ready during startup.
+            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
             writer.println("cruise.control.metrics.reporter.security.protocol=SSL");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
