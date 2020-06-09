@@ -565,12 +565,26 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
         StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
         status.setConnectorStatus(statusResult);
-        status.setTasksMax(connector.getSpec().getTasksMax());
+
+        status.setTasksMax(getActualTaskCount(connector, statusResult));
 
         return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
             (connector1, status1) -> {
                 return new KafkaConnectorBuilder(connector1).withStatus(status1).build();
             });
+    }
+
+    protected int getActualTaskCount(KafkaConnector connector, Map<String, Object> statusResult)  {
+        if (connector.getSpec() != null
+                && connector.getSpec().getTasksMax() != null)  {
+            return connector.getSpec().getTasksMax();
+        } else if (statusResult != null
+                && statusResult.containsKey("tasks")
+                && statusResult.get("tasks") instanceof List) {
+            return ((List) statusResult.get("tasks")).size();
+        } else {
+            return 0;
+        }
     }
 
     protected JsonObject asJson(KafkaConnectorSpec spec) {

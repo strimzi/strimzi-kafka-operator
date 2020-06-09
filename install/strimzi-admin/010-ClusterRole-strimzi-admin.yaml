@@ -17,9 +17,11 @@ rules:
   - kafkaconnects2is
   - kafkaconnects2is/scale
   - kafkamirrormakers
+  - kafkamirrormakers/scale
   - kafkausers
   - kafkatopics
   - kafkabridges
+  - kafkabridges/scale
   - kafkaconnectors
   - kafkaconnectors/scale
   - kafkamirrormaker2s

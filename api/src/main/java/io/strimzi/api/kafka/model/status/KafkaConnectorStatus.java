@@ -42,7 +42,7 @@ public class KafkaConnectorStatus extends Status {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The maximum number of tasks for the Kafka Connector")
+    @Description("The maximum number of tasks for the Kafka Connector.")
     public int getTasksMax() {
         return tasksMax;
     }
