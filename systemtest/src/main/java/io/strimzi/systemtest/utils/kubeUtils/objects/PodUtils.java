@@ -187,18 +187,33 @@ public class PodUtils {
 
     public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
         LOGGER.info("Wait until Pod {} will have {} containers", podNamePrefix, numberOfContainers);
-        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
+        TestUtils.waitFor("Pod " + podNamePrefix + " will have " + numberOfContainers + " containers",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
     }
 
-    public static void waitUntilPodReplicasCount(String podNamePrefix, int exceptedPods) {
-        LOGGER.info("Wait until Pod {} will have {} replicas", podNamePrefix, exceptedPods);
-        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + exceptedPods + " replicas",
+    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int expectedPods) {
+        LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, expectedPods);
+        int[] stableCounter = {0};
+        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + expectedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == exceptedPods);
-        LOGGER.info("Pod {} has {} replicas", podNamePrefix, exceptedPods);
+            () -> {
+                if (kubeClient().listPodsByPrefixInName(podNamePrefix).size() == expectedPods) {
+                    stableCounter[0]++;
+                    if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                        LOGGER.info("Pod replicas are stable for {} polls intervals", stableCounter[0]);
+                        return true;
+                    }
+                } else {
+                    LOGGER.info("Pod replicas are not stable. Going to set the counter to zero.");
+                    stableCounter[0] = 0;
+                    return false;
+                }
+                LOGGER.info("Pod replicas gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                return false;
+            });
+        LOGGER.info("Pod {} has {} replicas", podNamePrefix, expectedPods);
     }
 
     public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
