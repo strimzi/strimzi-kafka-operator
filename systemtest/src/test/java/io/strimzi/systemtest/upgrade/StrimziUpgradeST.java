@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -91,6 +92,7 @@ public class StrimziUpgradeST extends BaseST {
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
+
             // Tidy up
         } catch (KubeClusterException e) {
             e.printStackTrace();
@@ -195,6 +197,11 @@ public class StrimziUpgradeST extends BaseST {
     }
 
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
+        String continuousTopicName = "continuous-topic";
+        int continuousClientsMessageCount = testParameters.getJsonObject("client").getInt("continuousClientsMessages");
+        String producerName = "hello-world-producer";
+        String consumerName = "hello-world-consumer";
+
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -245,6 +252,18 @@ public class StrimziUpgradeST extends BaseST {
                     .endSpec()
                     .build());
             }
+        }
+
+        if (continuousClientsMessageCount != 0) {
+            // ##############################
+            // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
+            // ##############################
+            // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
+            KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+            String producerAdditionConfiguration = "retries=40\ndelivery.timeout.ms=60000\nrequest.timeout.ms=60000";
+            KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
+            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "group.id=continuous-consumer").done();
+            // ##############################
         }
 
         // Wait until user will be created
@@ -326,6 +345,14 @@ public class StrimziUpgradeST extends BaseST {
                 KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
                 assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
             }
+        }
+
+        if (continuousClientsMessageCount != 0) {
+            // ##############################
+            // Validate that continuous clients finished successfully
+            // ##############################
+            ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+            // ##############################
         }
 
         // Check errors in CO log
