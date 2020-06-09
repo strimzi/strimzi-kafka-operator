@@ -13,7 +13,7 @@ The deployment uses a YAML file to provide the specification to create a `KafkaC
 
 In this procedure, we use the example file provided with Strimzi:
 
-* `examples/kafka-connect/kafka-connect.yaml`
+* `examples/connect/kafka-connect.yaml`
 
 For more information about configuring the `KafkaConnect` resource, see:
 
@@ -30,7 +30,7 @@ For more information about configuring the `KafkaConnect` resource, see:
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f examples/kafka-connect/kafka-connect.yaml
+kubectl apply -f examples/connect/kafka-connect.yaml
 ----
 . Verify that Kafka Connect was successfully deployed:
 +

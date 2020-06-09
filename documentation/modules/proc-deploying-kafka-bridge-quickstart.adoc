@@ -9,7 +9,7 @@ Strimzi includes a YAML example that specifies the configuration of the Strimzi 
 
 .Procedure
 
-. Edit the `examples/kafka-bridge/kafka-bridge.yaml` file.
+. Edit the `examples/bridge/kafka-bridge.yaml` file.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -31,7 +31,7 @@ spec:
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
+kubectl apply -f examples/bridge/kafka-bridge.yaml
 ----
 +
 A `quickstart-bridge` deployment, service, and other related resources are created in your Kubernetes cluster.
