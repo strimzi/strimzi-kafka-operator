@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -97,7 +98,8 @@ public class CruiseControlIsolatedST extends BaseST {
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
         // attach the approve annotation -> RS
-        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE).exec("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
+        LOGGER.info("Executing command in the namespace {}", cmdKubeClient().namespace(NAMESPACE).namespace());
+        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE).execInCurrentNamespace("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
 
         LOGGER.info("Response from the annotation process {}", response);
 
