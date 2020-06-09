@@ -18,6 +18,7 @@ import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +40,7 @@ public class CruiseControlIsolatedST extends BaseST {
 
 
     @Test
+    @Disabled
     void testManuallyCreateMetricsReporterTopic() {
         KafkaResource.kafkaWithCruiseControlWithoutWaitAutoCreateTopicsDisable(CLUSTER_NAME, 3, 3);
 
