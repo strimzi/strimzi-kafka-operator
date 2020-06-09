@@ -11,7 +11,7 @@ The deployment uses a YAML file to provide the specification to create a `KafkaB
 
 In this procedure, we use the example file provided with Strimzi:
 
-* `examples/kafka-bridge/kafka-bridge.yaml`
+* `examples/bridge/kafka-bridge.yaml`
 
 For information about configuring the `KafkaBridge` resource,
 see link:{BookURLUsing}#assembly-deployment-configuration-kafka-bridge-str[Kafka Bridge configuration^].
@@ -26,7 +26,7 @@ see link:{BookURLUsing}#assembly-deployment-configuration-kafka-bridge-str[Kafka
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
+kubectl apply -f examples/bridge/kafka-bridge.yaml
 ----
 
 . Verify that Kafka Bridge was successfully deployed:

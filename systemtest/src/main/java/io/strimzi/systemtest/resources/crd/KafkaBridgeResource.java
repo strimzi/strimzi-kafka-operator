@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 public class KafkaBridgeResource {
 
-    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/kafka-bridge/kafka-bridge.yaml";
+    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/bridge/kafka-bridge.yaml";
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());

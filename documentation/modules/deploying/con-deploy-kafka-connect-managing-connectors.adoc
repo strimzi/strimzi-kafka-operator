@@ -43,7 +43,7 @@ To ensure compatibility with earlier versions of Strimzi, `KafkaConnectors` are 
 
 When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for them. It updates the configurations of running connector instances to match the configurations defined in their `KafkaConnectors`.
 
-Strimzi includes an example `KafkaConnector`, named `examples/connector/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector`.
+Strimzi includes an example `KafkaConnector`, named `examples/connect/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector`.
 
 == Availability of the Kafka Connect REST API
 
