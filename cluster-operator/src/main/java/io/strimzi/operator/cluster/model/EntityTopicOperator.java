@@ -324,7 +324,9 @@ public class EntityTopicOperator extends AbstractModel {
      */
     @Override
     public String createLog4jProperties(OrderedProperties properties) {
-        properties.addPair("monitorInterval", "30");
+        if (!properties.asMap().keySet().contains("monitorInterval")) {
+            properties.addPair("monitorInterval", "30");
+        }
         return super.createLog4jProperties(properties);
     }
 
