@@ -104,6 +104,34 @@ kubectl apply -f _kafka.yaml_
 kubectl get deployments -l app.kubernetes.io/name=strimzi
 ----
 
+[discrete]
+== Auto-created topics
+
+The following table shows the three topics that are automatically created when Cruise Control is deployed. These topics are required for Cruise Control to work properly and must not be deleted or changed.
+
+[cols="20,20,60",options="header",stripes="none",separator=¦]
+|===
+
+m¦Auto-created topic
+¦Created by
+¦Function
+
+m¦strimzi.cruisecontrol.metrics
+¦Strimzi Metrics Reporter
+¦Stores the raw metrics from the Metrics Reporter in each Kafka broker.
+
+m¦strimzi.cruisecontrol.partitionmetricsamples
+¦Cruise Control
+¦Stores the derived metrics for each partition. These are created by the link:https://github.com/linkedin/cruise-control/wiki/Overview#metric-sample-aggregator[Metric Sample Aggregator^].
+
+m¦strimzi.cruisecontrol.modeltrainingsamples
+¦Cruise Control
+¦Stores the metrics samples used to create the link:https://github.com/linkedin/cruise-control/wiki/Overview#cluster-workload-model[Cluster Workload Model^].
+
+|===
+
+To prevent the removal of records that are needed by Cruise Control, log compaction is disabled in the auto-created topics.
+
 .What to do next
 After configuring and deploying Cruise Control, you can xref:proc-generating-optimization-proposals-{context}[generate optimization proposals]. 
 
