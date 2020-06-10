@@ -48,7 +48,7 @@ public interface CruiseControlApi {
      *                   This is used to retrieve the task's current state.
      * @return A future for the state of the specified task.
      */
-    Future<CruiseControlUserTaskResponse> getUserTaskStatus(String host, int port, String userTaskID);
+    Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskID);
 
     /**
      *  Issue a stop command to the Cruise Control server. This will halt any task (e.g. a rebalance) which is currently
