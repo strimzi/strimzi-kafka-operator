@@ -43,7 +43,6 @@ public class Session extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private static  final PrometheusMeterRegistry METRICS_REGISTRY = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
 
     private final Config config;
     private final KubernetesClient kubeClient;
@@ -56,6 +55,7 @@ public class Session extends AbstractVerticle {
     /*test*/ ZkTopicsWatcher topicsWatcher;
     /*test*/ TopicConfigsWatcher topicConfigsWatcher;
     /*test*/ ZkTopicWatcher topicWatcher;
+    /*test*/ PrometheusMeterRegistry metricsRegistry;
     /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
     private volatile Long timerId;
     private volatile boolean stopped = false;
@@ -240,11 +240,12 @@ public class Session extends AbstractVerticle {
     }
 
     public void setupMetrics() {
-        new ClassLoaderMetrics().bindTo(METRICS_REGISTRY);
-        new JvmMemoryMetrics().bindTo(METRICS_REGISTRY);
-        new ProcessorMetrics().bindTo(METRICS_REGISTRY);
-        new JvmThreadMetrics().bindTo(METRICS_REGISTRY);
-        new JvmGcMetrics().bindTo(METRICS_REGISTRY);
+        this.metricsRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        new ClassLoaderMetrics().bindTo(metricsRegistry);
+        new JvmMemoryMetrics().bindTo(metricsRegistry);
+        new ProcessorMetrics().bindTo(metricsRegistry);
+        new JvmThreadMetrics().bindTo(metricsRegistry);
+        new JvmGcMetrics().bindTo(metricsRegistry);
     }
 
     /**
@@ -260,7 +261,7 @@ public class Session extends AbstractVerticle {
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/metrics")) {
-                        request.response().setStatusCode(200).end(METRICS_REGISTRY.scrape());
+                        request.response().setStatusCode(200).end(metricsRegistry.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);

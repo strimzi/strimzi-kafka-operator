@@ -93,8 +93,10 @@ public class TopicOperatorTest {
     }
 
     @AfterAll
-    public static void after() {
-        vertx.close();
+    public static void after() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        vertx.close(done -> latch.countDown());
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     @BeforeEach
@@ -117,6 +119,7 @@ public class TopicOperatorTest {
         mockTopicStore = null;
         mockK8s = null;
         topicOperator = null;
+        metrics = null;
     }
 
     private Map<String, String> map(String... pairs) {
@@ -465,7 +468,7 @@ public class TopicOperatorTest {
      * Test reconciliation when a resource has been created while the operator wasn't running
      */
     @Test
-    public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) {
+    public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) throws InterruptedException {
 
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = null;
@@ -483,6 +486,7 @@ public class TopicOperatorTest {
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, topicResource);
         mockK8s.createResource(topicResource).onComplete(ar -> async0.flag());
 
+        CountDownLatch latch = new CountDownLatch(1);
         Checkpoint async = context.checkpoint(1);
         topicOperator.reconcile(null, logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
@@ -493,8 +497,11 @@ public class TopicOperatorTest {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
                 async.flag();
+                latch.countDown();
             });
         });
+        latch.await(30, TimeUnit.SECONDS);
+        context.completeNow();
     }
 
     /**
@@ -1080,33 +1087,9 @@ public class TopicOperatorTest {
     }
 
     @Test
-    public void testFailedReconcileMetrics(VertxTestContext context) throws InterruptedException {
-        RuntimeException error = new RuntimeException("some failure");
-        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
-        mockK8s.setListMapsResult(() -> Future.failedFuture(error));
-
-        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
-        resourceAdded(context, null, null);
-
-
-        Checkpoint async = context.checkpoint();
-        reconcileFuture.onComplete(context.failing(e -> context.verify(() -> {
-            MeterRegistry registry = metrics.meterRegistry();
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-            async.flag();
-        })));
-    }
-
-    @Test
     public void testReconcileMetrics(VertxTestContext context) throws InterruptedException {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
         resourceAdded(context, null, null);
 
@@ -1128,6 +1111,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcileMetricsDeletedTopic(VertxTestContext context) throws InterruptedException {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
         resourceAdded(context, null, null);
         resourceRemoved(context, null, null);
