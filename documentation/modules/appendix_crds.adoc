@@ -1938,10 +1938,10 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[meta/v1 labelselector].
+|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
 
 
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2054,10 +2054,10 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[meta/v1 labelselector].
+|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
 
 
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2470,10 +2470,10 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[meta/v1 labelselector].
+|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
 
 
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2641,10 +2641,10 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |integer
 |url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
 |string
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[meta/v1 labelselector].
+|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
 
 
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2864,10 +2864,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[meta/v1 labelselector].
+|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
 
 
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
