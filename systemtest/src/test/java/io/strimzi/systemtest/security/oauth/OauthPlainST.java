@@ -357,6 +357,7 @@ public class OauthPlainST extends OauthAbstractST {
     void testIntrospectionEndpointWithPlainCommunication() {
         LOGGER.info("Deploying kafka...");
 
+        keycloakInstance.setIntrospectionEndpointUri("http://" + keycloakInstance.getHttpUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
         String introspectionKafka = CLUSTER_NAME + "-intro";
 
         KafkaResource.kafkaEphemeral(introspectionKafka, 1)
@@ -396,7 +397,6 @@ public class OauthPlainST extends OauthAbstractST {
     @BeforeAll
     void setUp() {
         keycloakInstance.setRealm("internal", false);
-        keycloakInstance.setIntrospectionEndpointUri("http://" + keycloakInstance.getHttpsUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
 
         LOGGER.info("Setting producer and consumer properties");
 

@@ -96,6 +96,7 @@ public class OauthAbstractST extends AbstractST {
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
         keycloakInstance = new KeycloakInstance("admin", "admin");
+        clusterHost = kubeClient().getNodeAddress();
 
         LOGGER.info("Importing basic realm");
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
