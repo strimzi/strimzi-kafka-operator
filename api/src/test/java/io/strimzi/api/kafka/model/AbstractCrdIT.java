@@ -90,7 +90,8 @@ public abstract class AbstractCrdIT {
                     if (resource != null
                             && resource.hasNonNull("metadata")
                             && resource.get("metadata").hasNonNull("resourceVersion")
-                            && !resource.get("metadata").get("resourceVersion").asText().isEmpty()) {
+                            && !resource.get("metadata").get("resourceVersion").asText().isEmpty()
+                            && !resource.get("metadata").get("resourceVersion").asText().equals("0")) {
                         return true;
                     }
 
