@@ -5,9 +5,12 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -18,6 +21,11 @@ import org.junit.jupiter.api.Test;
 public class KafkaRebalanceCrdIT extends AbstractCrdIT {
 
     public static final String NAMESPACE = "kafkarebalance-crd-it";
+
+    @Test
+    void testKafkaRebalanceIsNotScaling() {
+        assertThrows(KubeClusterException.NotFound.class, () -> createScaleDelete(KafkaRebalance.class, "KafkaRebalance.yaml"));
+    }
 
     @Test
     void testKafkaRebalanceMinimal() {

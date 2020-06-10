@@ -214,6 +214,15 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public K scaleByName(String kind, String name, int replicas) {
+        try (Context context = defaultContext()) {
+            Exec.exec(null, namespacedCommand("scale", kind, name, "--replicas", Integer.toString(replicas)));
+            return (K) this;
+        }
+    }
+
+    @Override
     public ExecResult execInPod(String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));

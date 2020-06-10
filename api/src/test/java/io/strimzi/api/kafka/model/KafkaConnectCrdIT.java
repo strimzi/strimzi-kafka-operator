@@ -30,6 +30,11 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaConnectScaling() {
+        createScaleDelete(KafkaConnect.class, "KafkaConnect.yaml");
+    }
+
+    @Test
     void testKafkaConnectV1beta1() {
         createDelete(KafkaConnect.class, "KafkaConnectV1beta1.yaml");
     }

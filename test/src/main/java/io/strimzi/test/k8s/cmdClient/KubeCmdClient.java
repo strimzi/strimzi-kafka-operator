@@ -67,6 +67,16 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     K deleteNamespace(String name);
 
     /**
+     * Scale resource using the scale subresource
+     *
+     * @param kind      Kind of the resource which should be scaled
+     * @param name      Name of the resource which should be scaled
+     * @param replicas  Number of replicas to which the resource should be scaled
+     * @return          This kube client
+     */
+    K scaleByName(String kind, String name, int replicas);
+
+    /**
      * Execute the given {@code command} in the given {@code pod}.
      * @param pod The pod
      * @param command The command

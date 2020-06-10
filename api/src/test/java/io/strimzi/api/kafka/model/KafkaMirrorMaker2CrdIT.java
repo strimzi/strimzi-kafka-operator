@@ -31,6 +31,11 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaMirrorMaker2Scaling() {
+        createScaleDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2.yaml");
+    }
+
+    @Test
     void testKafkaMirrorMaker2Minimal() {
         createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-minimal.yaml");
     }
