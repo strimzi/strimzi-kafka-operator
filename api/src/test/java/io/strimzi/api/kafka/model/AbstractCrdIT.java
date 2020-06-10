@@ -86,18 +86,18 @@ public abstract class AbstractCrdIT {
         try {
             try {
                 cmdKubeClient().applyContent(ssStr);
-                cmdKubeClient().waitFor(kind, name, resource -> {
-                    System.out.println("JSON Resource: \r\n" + resource.toPrettyString());
-                    if (resource != null
-                            && resource.hasNonNull("metadata")
-                            && resource.get("metadata").hasNonNull("resourceVersion")
-                            && !resource.get("metadata").get("resourceVersion").asText().isEmpty()
-                            && !resource.get("metadata").get("resourceVersion").asText().equals("0")) {
-                        return true;
-                    }
-
-                    return false;
-                });
+//                cmdKubeClient().waitFor(kind, name, resource -> {
+//                    System.out.println("JSON Resource: \r\n" + resource.toPrettyString());
+//                    if (resource != null
+//                            && resource.hasNonNull("metadata")
+//                            && resource.get("metadata").hasNonNull("resourceVersion")
+//                            && !resource.get("metadata").get("resourceVersion").asText().isEmpty()
+//                            && !resource.get("metadata").get("resourceVersion").asText().equals("0")) {
+//                        return true;
+//                    }
+//
+//                    return false;
+//                });
                 cmdKubeClient().scaleByName(kind, name, 10);
             } catch (RuntimeException t) {
                 creationOrScaleException = t;
