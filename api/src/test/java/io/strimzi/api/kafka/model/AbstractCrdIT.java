@@ -87,6 +87,7 @@ public abstract class AbstractCrdIT {
             try {
                 cmdKubeClient().applyContent(ssStr);
                 cmdKubeClient().waitFor(kind, name, resource -> {
+                    System.out.println("JSON Resource: \r\n" + resource.toPrettyString());
                     if (resource != null
                             && resource.hasNonNull("metadata")
                             && resource.get("metadata").hasNonNull("resourceVersion")
