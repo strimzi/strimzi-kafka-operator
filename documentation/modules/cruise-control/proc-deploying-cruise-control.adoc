@@ -118,14 +118,15 @@ m¦Auto-created topic
 
 m¦strimzi.cruisecontrol.metrics
 ¦Strimzi Metrics Reporter
-¦Reports broker metrics to Cruise Control.
+¦Stores the raw metrics from the Metrics Reporter in each Kafka broker.
 
 m¦strimzi.cruisecontrol.partitionmetricsamples
 ¦Cruise Control
-.2+¦Obtains metric samples from partitions every two minutes to generate workload snapshots. To change the sampling interval, edit `metric.sampling.interval.ms` in the Cruise Control deployment configuration. 
+¦Stores the derived metrics for each partition. These are created by the link:https://github.com/linkedin/cruise-control/wiki/Overview#metric-sample-aggregator[Metric Sample Aggregator^].
 
 m¦strimzi.cruisecontrol.modeltrainingsamples
 ¦Cruise Control
+¦Stores the metrics samples used to create the link:https://github.com/linkedin/cruise-control/wiki/Overview#cluster-workload-model[Cluster Workload Model^].
 
 |===
 
