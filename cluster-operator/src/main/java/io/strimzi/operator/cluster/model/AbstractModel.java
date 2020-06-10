@@ -411,7 +411,7 @@ public abstract class AbstractModel {
             return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
-                return addMonitorIntervalToExternalLogging(externalCm.getData().get(getAncillaryConfigMapKeyLogConfig()));
+                return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(getAncillaryConfigMapKeyLogConfig()));
             } else {
                 log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
                         ((ExternalLogging) getLogging()).getName(),
@@ -426,13 +426,12 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Adds 'monitorInterval=5' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
-     * This property is ignored by log4j but used by log4j2.
-     * @param data
+     * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     * @param data String with log4j(2) properties in format key=value separated by new lines
      * @return
      */
-    protected String addMonitorIntervalToExternalLogging(String data) {
-        if (!data.contains("monitorInterval")) {
+    protected String maybeAddMonitorIntervalToExternalLogging(String data) {
+        if (getAncillaryConfigMapKeyLogConfig().equals("log4j2.properties") && !data.contains("monitorInterval")) {
             // do not override custom value
             return data + "\nmonitorInterval=30\n";
         } else {
