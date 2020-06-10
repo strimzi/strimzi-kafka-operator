@@ -274,7 +274,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @SuppressWarnings("unchecked")
-    public K waitFor(String resource, String name, Predicate<JsonNode> ready) {
+    public K waitFor(String resource, String name, Predicate<JsonNode> condition) {
         long timeoutMs = 570_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();
@@ -283,7 +283,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
                 String jsonString = Exec.exec(namespacedCommand("get", resource, name, "-o", "json")).out();
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
-                return ready.test(actualObj);
+                return condition.test(actualObj);
             } catch (KubeClusterException.NotFound e) {
                 return false;
             } catch (IOException e) {

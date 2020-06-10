@@ -127,10 +127,10 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * Wait for the resource with the given {@code name} to be reach the state defined by the predicate.
      * @param resource The resource type.
      * @param name The resource name.
-     * @param ready Predicate to test if the resource is or isn't "ready"
+     * @param condition Predicate to test if the desired state was achieved
      * @return This kube client.
      */
-    K waitFor(String resource, String name, Predicate<JsonNode> ready);
+    K waitFor(String resource, String name, Predicate<JsonNode> condition);
 
     /**
      * Wait for the resource with the given {@code name} to be created.
