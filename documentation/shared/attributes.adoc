@@ -46,8 +46,8 @@
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
-:docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]
-:docs-okd-s2i: link:https://docs.okd.io/3.9/creating_images/s2i.html[Source-to-Image (S2I)^]
+:docs-okd: link:https://docs.okd.io/3.11/dev_guide/builds/index.html[builds^]
+:docs-okd-s2i: link:https://docs.okd.io/3.11/creating_images/s2i.html[Source-to-Image (S2I)^]
 :kafkaDoc: https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
@@ -63,7 +63,8 @@
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
 :K8sPullingImagesFromPrivateRegistries: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/[Pull an Image from a Private Registry^]
 :K8sConfigureSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Configure a Security Context for a Pod or Container^]
-:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
+:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
+:K8sResourceRequirementsAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements API reference^]
 :K8sPodDisruptionBudgets: link:https://kubernetes.io/docs/concepts/workloads/pods/disruptions/[Disruptions^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
@@ -75,10 +76,10 @@
 :NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
 :ApacheKafkaBrokerConfig: link:http://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
-:ApacheKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
-:ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[ZooKeeper documentation^]
-:ApacheKafkaConsumerConfig: link:http://kafka.apache.org/20/documentation.html#newconsumerconfigs[Apache Kafka configuration documentation for consumers^]
-:ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka configuration documentation for producers^]
+:ApacheKafkaConnectConfig: link:http://kafka.apache.org/documentation/#connectconfigs[Apache Kafka documentation^]
+:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/r3.5.8/zookeeperAdmin.html[ZooKeeper documentation^]
+:ApacheKafkaConsumerConfig: link:http://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
+:ApacheKafkaProducerConfig: link:http://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]
 :ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]
 :ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
 :CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control^]
@@ -91,7 +92,7 @@
 :OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
 :OpenTelemetryHome: link:https://opentelemetry.io/[OpenTelemetry^]
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
-:JaegerArch: link:https://www.jaegertracing.io/docs/1.14/architecture/[Jaeger architecure^]
+:JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
@@ -159,7 +160,7 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.17.x
+:ProductVersion: 0.18.0
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
