@@ -115,7 +115,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        cluster.cmdClient().waitForResourceCreation("crd", "kafkaconnects.kafka.strimzi.io");
+        waitForCrd("crd", "kafkaconnects.kafka.strimzi.io");
     }
 
     @AfterAll

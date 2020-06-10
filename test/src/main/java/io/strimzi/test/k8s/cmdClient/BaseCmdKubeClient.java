@@ -274,7 +274,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @SuppressWarnings("unchecked")
-    private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
+    public K waitFor(String resource, String name, Predicate<JsonNode> ready) {
         long timeoutMs = 570_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();

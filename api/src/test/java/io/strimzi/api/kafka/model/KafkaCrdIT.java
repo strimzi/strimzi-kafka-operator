@@ -179,7 +179,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA);
-        cluster.cmdClient().waitForResourceCreation("crd", "kafkas.kafka.strimzi.io");
+        waitForCrd("crd", "kafkas.kafka.strimzi.io");
     }
 
     @AfterAll

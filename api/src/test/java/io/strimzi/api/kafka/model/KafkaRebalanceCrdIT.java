@@ -46,6 +46,7 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
+        waitForCrd("crd", "kafkarebalances.kafka.strimzi.io");
     }
 
     @AfterAll

@@ -4,12 +4,14 @@
  */
 package io.strimzi.test.k8s.cmdClient;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.executor.ExecResult;
 
 import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -120,6 +122,15 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @return The process result.
      */
     ExecResult exec(boolean throwError, boolean logToOutput, String... command);
+
+    /**
+     * Wait for the resource with the given {@code name} to be reach the state defined by the predicate.
+     * @param resource The resource type.
+     * @param name The resource name.
+     * @param ready Predicate to test if the resource is or isn't "ready"
+     * @return This kube client.
+     */
+    K waitFor(String resource, String name, Predicate<JsonNode> ready);
 
     /**
      * Wait for the resource with the given {@code name} to be created.

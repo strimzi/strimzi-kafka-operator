@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -85,7 +86,16 @@ public abstract class AbstractCrdIT {
         try {
             try {
                 cmdKubeClient().applyContent(ssStr);
-                cmdKubeClient().waitForResourceCreation(kind, name);
+                cmdKubeClient().waitFor(kind, name, resource -> {
+                    if (resource != null
+                            && resource.hasNonNull("metadata")
+                            && resource.get("metadata").hasNonNull("resourceVersion")
+                            && !resource.get("metadata").get("resourceVersion").asText().isEmpty()) {
+                        return true;
+                    }
+
+                    return false;
+                });
                 cmdKubeClient().scaleByName(kind, name, 10);
             } catch (RuntimeException t) {
                 creationOrScaleException = t;
@@ -114,6 +124,19 @@ public abstract class AbstractCrdIT {
                     containsStringIgnoringCase(requiredProperty + ": Required value")
             ));
         }
+    }
+
+    protected void waitForCrd(String resource, String name) {
+        cluster.cmdClient().waitFor(resource, name, crd -> {
+            JsonNode json = (JsonNode) crd;
+            if (json != null
+                    && json.hasNonNull("status")
+                    && json.get("status").hasNonNull("conditions")) {
+                return true;
+            }
+
+            return false;
+        });
     }
 
     @BeforeEach
