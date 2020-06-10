@@ -85,6 +85,7 @@ public abstract class AbstractCrdIT {
         try {
             try {
                 cmdKubeClient().applyContent(ssStr);
+                cmdKubeClient().waitForResourceCreation(kind, name);
                 cmdKubeClient().scaleByName(kind, name, 10);
             } catch (RuntimeException t) {
                 creationOrScaleException = t;
