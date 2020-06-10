@@ -12,7 +12,7 @@ import io.strimzi.test.k8s.cmdClient.Kubectl;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 
 /**
- * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
+ * A {@link KubeCluster} implementation for any {@code Kubernetes} cluster.
  */
 public class Kubernetes implements KubeCluster {
 
