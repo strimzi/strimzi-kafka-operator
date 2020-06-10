@@ -236,12 +236,14 @@ public class StrimziUpgradeST extends BaseST {
             LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient().create(kafkaTopicYaml);
 
-            for (int x = 0; x < upgradeTopicCount; x++) {
-                KafkaTopicResource.topic(CLUSTER_NAME, topicName + "-" + x)
-                    .editSpec()
-                        .withTopicName(topicName + "-" + x)
-                    .endSpec()
-                    .done();
+            if (testParameters.getBoolean("bunchTopicsUpgrade")) {
+                for (int x = 0; x < upgradeTopicCount; x++) {
+                    KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
+                        .editSpec()
+                            .withTopicName(topicName + "-" + x)
+                        .endSpec()
+                        .build());
+                }
             }
         }
 
@@ -314,14 +316,16 @@ public class StrimziUpgradeST extends BaseST {
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
-        // Check that topics weren't deleted/duplicated during upgrade procedures
-        assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
-        assertThat("KafkaTopic " + topicName + " is not in expected topic list",
-                kafkaTopicList.contains(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get()), is(true));
-        for (int x = 0; x < upgradeTopicCount; x++) {
-            KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
-            assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
+        if (testParameters.getBoolean("bunchTopicsUpgrade")) {
+            // Check that topics weren't deleted/duplicated during upgrade procedures
+            assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
+            List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+            assertThat("KafkaTopic " + topicName + " is not in expected topic list",
+                    kafkaTopicList.contains(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get()), is(true));
+            for (int x = 0; x < upgradeTopicCount; x++) {
+                KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
+                assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
+            }
         }
 
         // Check errors in CO log

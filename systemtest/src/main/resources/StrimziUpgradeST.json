@@ -6,6 +6,7 @@
     "toExamples":"strimzi-0.12.1",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.4/strimzi-0.11.4.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.1/strimzi-0.12.1.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.12.1-kafka-2.1.0",
       "kafka": "strimzi/kafka:0.12.1-kafka-2.1.0",
@@ -43,6 +44,7 @@
     "toExamples":"strimzi-0.13.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.1/strimzi-0.12.1.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-0.13.0.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.13.0-kafka-2.2.1",
       "kafka": "strimzi/kafka:0.13.0-kafka-2.2.1",
@@ -80,6 +82,7 @@
     "toExamples":"strimzi-0.14.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-0.13.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.14.0-kafka-2.3.0",
       "kafka": "strimzi/kafka:0.14.0-kafka-2.3.0",
@@ -117,6 +120,7 @@
     "toExamples":"strimzi-0.15.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.15.0-kafka-2.3.1",
       "kafka": "strimzi/kafka:0.15.0-kafka-2.3.0",
@@ -154,6 +158,7 @@
     "toExamples":"strimzi-0.16.2",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.16.2-kafka-2.3.1",
       "kafka": "strimzi/kafka:0.16.2-kafka-2.3.1",
@@ -228,6 +233,7 @@
     "toExamples":"strimzi-0.18.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.18.0-kafka-2.4.0",
       "kafka": "strimzi/kafka:0.18.0-kafka-2.4.0",
@@ -265,6 +271,7 @@
     "toExamples":"HEAD",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "urlTo":"HEAD",
+    "bunchTopicsUpgrade": true,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
       "kafka": "strimzi/kafka:latest-kafka-2.5.0",
