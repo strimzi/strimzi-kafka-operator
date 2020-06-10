@@ -56,6 +56,9 @@ public interface KubeCluster {
                 case "minikube":
                     clusters = new KubeCluster[]{new Minikube()};
                     break;
+                case "kubernetes":
+                    clusters = new KubeCluster[]{new Kubernetes()};
+                    break;
                 case "minishift":
                     clusters = new KubeCluster[]{new Minishift()};
                     break;
