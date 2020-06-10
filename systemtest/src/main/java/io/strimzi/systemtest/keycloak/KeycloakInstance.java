@@ -62,6 +62,9 @@ public class KeycloakInstance {
                 if (result.err().contains("HTTP/2 201") && result.out().isEmpty()) {
                     LOGGER.debug("Importing of realm succeed with code HTTP/2 201");
                     return true;
+                } else if (result.err().contains("409 Conflict")) {
+                    LOGGER.debug("The Realm is already present!");
+                    return true;
                 }
                 LOGGER.error("Importing of realm failed gonna try it again.");
                 return false;
