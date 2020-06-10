@@ -300,6 +300,60 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Asserting if log is without records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(emptyString()));
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(emptyString()));
+
+
+        LOGGER.info("Setting external logging OFF");
+        configMapTo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-to")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j2.properties", "name=TOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=INFO\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        configMapUo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-uo")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData(Collections.singletonMap("log4j2.properties", "name=UOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=INFO\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
+
+        LOGGER.info("The EO shouldn't roll - verifying pod stability");
+        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+        );
+
+        LOGGER.info("Waiting {} ms for INFO log will appear", LOGGING_RELOADING_INTERVAL);
+        //wait some time if TO and UO will log something
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(not(emptyString())));
     }
 
     @BeforeAll
