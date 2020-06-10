@@ -19,6 +19,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
+    private static final String STATUS_KEY = "Status";
+    private static final String SUMMARY_KEY = "summary";
 
     private final Vertx vertx;
     private final long idleTimeout;
@@ -172,9 +174,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlUserTaskResponse> getUserTaskStatus(String host, int port, String userTaskId) {
+    public Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskId) {
 
-        Promise<CruiseControlUserTaskResponse> result = Promise.promise();
+        Promise<CruiseControlResponse> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
@@ -202,38 +204,40 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                                 json.getString(CC_REST_API_ERROR_KEY)));
                             }
                             JsonObject statusJson = new JsonObject();
-                            String taskStatus = jsonUserTask.getString("Status");
-                            statusJson.put("Status", taskStatus);
-                            // The status could be ACTIVE in which case there will not be a "summary" so we check that we are
-                            // in a state that actually has that key.
-                            if (taskStatus.equals(CruiseControlUserTaskStatus.IN_EXECUTION.toString()) ||
-                                    taskStatus.equals(CruiseControlUserTaskStatus.COMPLETED.toString())) {
-                                // We now need to extract the original response which is in a raw string (not nicely formatted JSON)
-                                statusJson.put("summary", ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject("summary"));
+                            String taskStatusStr = jsonUserTask.getString(STATUS_KEY);
+                            statusJson.put(STATUS_KEY, taskStatusStr);
+                            CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusStr);
+                            switch (taskStatus) {
+                                case ACTIVE:
+                                    // If the status is ACTIVE there will not be a "summary" so we skip pulling the summary key
+                                    break;
+                                case IN_EXECUTION:
+                                    // Tasks in execution will be rebalance tasks, so their original response will contain the summary of the rebalance they are executing
+                                    // We handle these in the same way as COMPLETED tasks so we drop down to that case.
+                                case COMPLETED:
+                                    // Completed tasks will have the original rebalance proposal summary in their original response
+                                    statusJson.put(SUMMARY_KEY, ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject(SUMMARY_KEY));
+                                    break;
+                                case COMPLETED_WITH_ERROR:
+                                    // Completed with error tasks will have "CompletedWithError" as their original response, which is not Json.
+                                    statusJson.put(SUMMARY_KEY, jsonUserTask.getString("originalResponse"));
+                                    break;
+                                default:
+                                    throw new IllegalStateException("Unexpected user task status: " + taskStatus);
                             }
-                            CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(userTaskID, statusJson);
-                            result.complete(ccResponse);
+                            result.complete(new CruiseControlResponse(userTaskID, statusJson));
                         });
                     } else if (response.statusCode() == 500) {
                         response.bodyHandler(buffer -> {
                             JsonObject json = buffer.toJsonObject();
+                            String errorString;
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                if (json.getString(CC_REST_API_ERROR_KEY).contains("Error happened in fetching response for task")) {
-                                    // This is to deal with a bug in the CC rest API that will error out if you ask for fetch_completed_task=true
-                                    // for a task that has COMPLETED_WITH_ERROR. Upstream Bug: https://github.com/linkedin/cruise-control/issues/1187
-                                    CruiseControlUserTaskResponse ccResponse = new CruiseControlUserTaskResponse(null, json);
-                                    ccResponse.setCompletedWithError(true);
-                                    result.complete(ccResponse);
-                                } else {
-                                    result.fail(new CruiseControlRestException(
-                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                    json.getString(CC_REST_API_ERROR_KEY)));
-                                }
+                                errorString = json.getString(CC_REST_API_ERROR_KEY);
                             } else {
-                                result.fail(new CruiseControlRestException(
-                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                json.toString()));
+                                errorString = json.toString();
                             }
+                            result.fail(new CruiseControlRestException(
+                                    "Error for request: " + host + ":" + port + path + ". Server returned: " + errorString));
                         });
                     } else {
                         result.fail(new CruiseControlRestException(
