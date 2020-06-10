@@ -42,6 +42,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import scala.annotation.bridge;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -167,6 +168,8 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 // Verify status
                 List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is("http://foo-mirrormaker2-api.test.svc:8083"));
+                assertThat(capturedMirrorMaker2s.get(0).getStatus().getReplicas(), is(mirrorMaker2.getReplicas()));
+                assertThat(capturedMirrorMaker2s.get(0).getStatus().getPodSelector().getMatchLabels(), is(mirrorMaker2.getSelectorLabels().toMap()));
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
                 async.flag();

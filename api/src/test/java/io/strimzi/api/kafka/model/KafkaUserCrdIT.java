@@ -29,7 +29,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserIsNotScaling() {
-        assertThrows(KubeClusterException.NotFound.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
+        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
     }
 
     @Test

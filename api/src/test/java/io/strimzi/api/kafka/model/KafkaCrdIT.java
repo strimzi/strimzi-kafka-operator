@@ -34,7 +34,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaIsNotScaling() {
-        assertThrows(KubeClusterException.NotFound.class, () -> createScaleDelete(Kafka.class, "Kafka.yaml"));
+        assertThrows(KubeClusterException.class, () -> createScaleDelete(Kafka.class, "Kafka.yaml"));
     }
 
     @Test

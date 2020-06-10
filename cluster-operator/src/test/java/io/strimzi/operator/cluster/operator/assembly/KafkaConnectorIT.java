@@ -223,6 +223,7 @@ public class KafkaConnectorIT {
             KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
             assertThat(kafkaConnector, notNullValue());
             assertThat(kafkaConnector.getStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getTasksMax(), is(1));
             assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
             assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
             assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
