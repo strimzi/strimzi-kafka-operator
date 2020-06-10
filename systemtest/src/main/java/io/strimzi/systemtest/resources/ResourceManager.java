@@ -418,8 +418,8 @@ public class ResourceManager {
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getMetadata().getName())
-            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
+                    .withName(resource.getMetadata().getName())
+                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getStatus().equals(status)),
             () -> logCurrentResourceStatus(resource));
 
         LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
