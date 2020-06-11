@@ -196,6 +196,7 @@
     "toExamples":"strimzi-0.17.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
+    "bunchTopicsUpgrade": false,
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
       "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
