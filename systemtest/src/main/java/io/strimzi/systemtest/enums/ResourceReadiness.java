@@ -20,6 +20,8 @@ import io.strimzi.systemtest.Constants;
 
 public enum ResourceReadiness {
     KAFKA,
+    CRUISE_CONTROL,
+    KAFKA_EXPORTER,
     KAFKA_CONNECT,
     KAFKA_CONNECT_S2I,
     KAFKA_MIRROR_MAKER,
@@ -30,7 +32,9 @@ public enum ResourceReadiness {
     KAFKA_USER,
     SERVICE,
     SECRET,
-    DEPLOYMENT;
+    DEPLOYMENT,
+    DEPLOYMENT_CONFIG,
+    STATEFUL_SET;
 
     private static ResourceReadiness getKind(String kind) {
         switch (kind) {
@@ -54,8 +58,16 @@ public enum ResourceReadiness {
                 return KAFKA_USER;
             case Constants.SERVICE:
                 return SERVICE;
-            case "Secret":
+            case Constants.SECRET:
                 return SECRET;
+            case Constants.DEPLOYMENT_CONFIG:
+                return DEPLOYMENT_CONFIG;
+            case Constants.CRUISE_CONTROL:
+                return CRUISE_CONTROL;
+            case Constants.KAFKA_EXPORTER:
+                return KAFKA_EXPORTER;
+            case Constants.STATEFUL_SET:
+                return STATEFUL_SET;
             default:
                 return DEPLOYMENT;
         }
@@ -71,19 +83,29 @@ public enum ResourceReadiness {
             case KAFKA_CONNECT:
             case KAFKA_CONNECT_S2I:
             case KAFKA_MIRROR_MAKER2:
+            case DEPLOYMENT_CONFIG:
                 timeout = Duration.ofMinutes(10).toMillis();
                 break;
             case KAFKA_MIRROR_MAKER:
             case KAFKA_BRIDGE:
             case KAFKA_CONNECTOR:
+            case STATEFUL_SET:
             case DEPLOYMENT:
                 timeout = Duration.ofMinutes(8).toMillis();
+                break;
+            case CRUISE_CONTROL:
+            case KAFKA_EXPORTER:
+                timeout = Duration.ofMinutes(4).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(2).toMillis();
         }
 
         return timeout;
+    }
+
+    public static long getTimeoutForPodsReadiness(int expectPods) {
+        return Duration.ofMinutes(4).toMillis() * expectPods;
     }
 }
 
