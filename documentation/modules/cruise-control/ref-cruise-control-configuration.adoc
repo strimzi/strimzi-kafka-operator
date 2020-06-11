@@ -58,7 +58,7 @@ spec:
     # ...
 ----
 
-[#capacity-configuration]
+[[capacity-configuration]]
 [discrete]
 == Capacity configuration
 
@@ -97,7 +97,7 @@ spec:
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 
-[#logging-configuration]
+[[logging-configuration]]
 [discrete]
 == Logging configuration
 
