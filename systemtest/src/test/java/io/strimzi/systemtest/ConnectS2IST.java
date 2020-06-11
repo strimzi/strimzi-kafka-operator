@@ -581,7 +581,7 @@ class ConnectS2IST extends BaseST {
                     .build());
         });
 
-        depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
+        depConfSnapshot = DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
 
         LOGGER.info("===== CONNECTS2I VERSION CHANGE =====");
