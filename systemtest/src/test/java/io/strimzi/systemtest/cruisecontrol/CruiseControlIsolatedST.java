@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -85,6 +86,7 @@ public class CruiseControlIsolatedST extends BaseST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResource() {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
         KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME).done();
