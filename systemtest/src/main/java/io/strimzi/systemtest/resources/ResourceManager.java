@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -417,9 +418,18 @@ public class ResourceManager {
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> operation.inNamespace(resource.getMetadata().getNamespace())
-                    .withName(resource.getMetadata().getName())
-                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getStatus().equals(status)),
+            () -> {
+                // This is a temporary workaround until KafkaRebalance status will have same status structure as other resources
+                if (resource.getKind().equals(KafkaRebalance.RESOURCE_KIND)) {
+                    return operation.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getStatus().equals(status));
+                } else {
+                    return operation.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status));
+                }
+            },
             () -> logCurrentResourceStatus(resource));
 
         LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
