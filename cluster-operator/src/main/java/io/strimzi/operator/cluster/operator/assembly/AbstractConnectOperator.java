@@ -566,10 +566,34 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
         status.setConnectorStatus(statusResult);
 
+        status.setTasksMax(getActualTaskCount(connector, statusResult));
+
         return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
             (connector1, status1) -> {
                 return new KafkaConnectorBuilder(connector1).withStatus(status1).build();
             });
+    }
+
+    /**
+     * The tasksMax are mirrored in the KafkaConnector.status where they are used by the scale subresource.
+     * However, .spec.tasksMax is not always set and has no default value in Strimzi (only in Kafka Connect). So when
+     * it is not set, we try to count the tasks from the status. And if these are missing as well, we just set it to 0.
+     *
+     * @param connector         The KafkaConnector instance of the reconciled connector
+     * @param statusResult      The status from the Connect REST API
+     * @return                  Number of tasks which should be set in the status
+     */
+    protected int getActualTaskCount(KafkaConnector connector, Map<String, Object> statusResult)  {
+        if (connector.getSpec() != null
+                && connector.getSpec().getTasksMax() != null)  {
+            return connector.getSpec().getTasksMax();
+        } else if (statusResult != null
+                && statusResult.containsKey("tasks")
+                && statusResult.get("tasks") instanceof List) {
+            return ((List) statusResult.get("tasks")).size();
+        } else {
+            return 0;
+        }
     }
 
     protected JsonObject asJson(KafkaConnectorSpec spec) {

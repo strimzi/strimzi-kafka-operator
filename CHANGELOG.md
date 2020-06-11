@@ -3,6 +3,13 @@
 
 ## 0.19.0
 
+* Add support for scale subresource to make scaling of following resources easier:
+  * KafkaConnect
+  * KafkaConnectS2I
+  * KafkaBridge
+  * KafkaMirrorMaker
+  * KafkaMirrorMaker2
+  * KafkaConnector 
 * Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
 * Use Java 11 as the Java runtime
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.

@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -32,12 +33,15 @@ public abstract class AbstractCrdIT {
                 && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 11);
     }
 
-    protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
+    private <T extends CustomResource> T loadResource(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);
         assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));
         createDelete(ssStr);
-        T model = TestUtils.fromYaml(resource, resourceClass, false);
+        return TestUtils.fromYaml(resource, resourceClass, false);
+    }
 
+    protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
+        T model = loadResource(resourceClass, resource);
         String modelStr = TestUtils.toYamlString(model);
         assertDoesNotThrow(() -> createDelete(modelStr), "Create delete failed after first round-trip -- maybe a problem with a defaulted value?\nApplied string: " + modelStr);
     }
@@ -68,6 +72,41 @@ public abstract class AbstractCrdIT {
         }
     }
 
+    protected <T extends CustomResource> void createScaleDelete(Class<T> resourceClass, String resource) {
+        T model = loadResource(resourceClass, resource);
+        String modelKind = model.getKind();
+        String modelName = model.getMetadata().getName();
+        String modelStr = TestUtils.toYamlString(model);
+        createScaleDelete(modelKind, modelName, modelStr);
+    }
+
+    private void createScaleDelete(String kind, String name, String ssStr) {
+        RuntimeException creationOrScaleException = null;
+        RuntimeException deletionException = null;
+        try {
+            try {
+                cmdKubeClient().applyContent(ssStr);
+                cmdKubeClient().scaleByName(kind, name, 10);
+            } catch (RuntimeException t) {
+                creationOrScaleException = t;
+            }
+        } finally {
+            try {
+                cmdKubeClient().deleteContent(ssStr);
+            } catch (RuntimeException t) {
+                deletionException = t;
+            }
+        }
+        if (creationOrScaleException != null) {
+            if (deletionException != null) {
+                creationOrScaleException.addSuppressed(deletionException);
+            }
+            throw creationOrScaleException;
+        } else if (deletionException != null) {
+            throw deletionException;
+        }
+    }
+
     protected void assertMissingRequiredPropertiesMessage(String message, String... requiredProperties) {
         for (String requiredProperty: requiredProperties) {
             assertThat("Could not find" + requiredProperty + " in message: " + message, message, anyOf(
@@ -75,6 +114,19 @@ public abstract class AbstractCrdIT {
                     containsStringIgnoringCase(requiredProperty + ": Required value")
             ));
         }
+    }
+
+    protected void waitForCrd(String resource, String name) {
+        cluster.cmdClient().waitFor(resource, name, crd -> {
+            JsonNode json = (JsonNode) crd;
+            if (json != null
+                    && json.hasNonNull("status")
+                    && json.get("status").hasNonNull("conditions")) {
+                return true;
+            }
+
+            return false;
+        });
     }
 
     @BeforeEach

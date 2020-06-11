@@ -173,6 +173,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
                 assertThat(capturedMM, hasSize(1));
                 KafkaMirrorMaker mm = capturedMM.get(0);
+                assertThat(mm.getStatus().getReplicas(), is(mirror.getReplicas()));
+                assertThat(mm.getStatus().getPodSelector().getMatchLabels(), is(mirror.getSelectorLabels().toMap()));
                 assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready"));
                 assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
 
