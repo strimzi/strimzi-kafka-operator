@@ -92,12 +92,12 @@ public class KafkaRebalanceStateMachineTest {
         List<String> foundStatuses = new ArrayList<>();
 
         for (Condition condition :  received.getConditions()) {
-            String status = condition.getStatus();
-            if (status.equals(expectedState.toString())) {
+            String type = condition.getType();
+            if (type.equals(expectedState.toString())) {
                 log.info("Found condition with expected state: " + expectedState.toString());
                 return true;
             } else {
-                foundStatuses.add(status);
+                foundStatuses.add(type);
             }
         }
         log.error("Expected : " + expectedState.toString() + " but found : " + foundStatuses);
@@ -131,8 +131,8 @@ public class KafkaRebalanceStateMachineTest {
         // there is no actual status and related condition when a KafkaRebalance is just created
         if (currentState != KafkaRebalanceAssemblyOperator.State.New) {
             Condition currentRebalanceCondition = new Condition();
-            currentRebalanceCondition.setStatus(currentState.toString());
-            currentRebalanceCondition.setType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE);
+            currentRebalanceCondition.setType(currentState.toString());
+            currentRebalanceCondition.setStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS);
 
             KafkaRebalanceStatus currentStatus = new KafkaRebalanceStatus();
             currentStatus.setConditions(Collections.singletonList(currentRebalanceCondition));

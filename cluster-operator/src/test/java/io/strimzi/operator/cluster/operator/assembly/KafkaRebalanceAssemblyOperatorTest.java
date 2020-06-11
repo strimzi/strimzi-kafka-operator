@@ -939,7 +939,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         assertThat(kafkaRebalance.getStatus().getConditions(), notNullValue());
         Condition stateCondition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
         assertThat(stateCondition, notNullValue());
-        assertThat(stateCondition.getStatus(), is(state.toString()));
+        assertThat(stateCondition.getType(), is(state.toString()));
     }
 
     private void assertState(KafkaRebalance kafkaRebalance, KafkaRebalanceAssemblyOperator.State state,

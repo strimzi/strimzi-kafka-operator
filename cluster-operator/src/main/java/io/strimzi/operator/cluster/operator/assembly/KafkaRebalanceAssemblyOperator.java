@@ -46,6 +46,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -183,7 +184,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     log.debug("{}: EventReceived {} on {} with status [{}] and {}={}", reconciliation, action,
                             kafkaRebalance.getMetadata().getName(),
-                            kafkaRebalance.getStatus() != null ? rebalanceStateConditionStatus(kafkaRebalance.getStatus()) : null,
+                            kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
                             ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
 
                     withLock(reconciliation, LOCK_TIMEOUT_MS,
@@ -203,23 +204,23 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Searches through the conditions in the supplied status instance and finds those whose type is
-     * {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}. If there are none it will return null. If there are
+     * Searches through the conditions in the supplied status instance and finds those whose type matches one of the values defined
+     * in the {@link KafkaRebalanceAssemblyOperator.State} enum. If there are none it will return null. If there are
      * more than one it will throw a RuntimeException. If there is only one it will return that Condition.
      *
      * @param status The KafkaRebalanceStatus instance whose conditions will be searched.
-     * @return The Condition instance from the supplied status that has type {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}.
-     *         If none are found then the method will return null.
-     * @throws RuntimeException If there is more than one Condition instance in the supplied status with the type
-     *                          {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}.
+     * @return The Condition instance from the supplied status that has a type value matching one of the values of the
+     *         {@link KafkaRebalanceAssemblyOperator.State} enum. If none are found then the method will return null.
+     * @throws RuntimeException If there is more than one Condition instance in the supplied status whose type matches one of the
+     *                          {@link KafkaRebalanceAssemblyOperator.State} enum values.
      */
     /* test */ protected Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
         if (status.getConditions() != null) {
 
             List<Condition> statusConditions = status.getConditions()
                     .stream()
-                    .filter(condition -> condition.getType() != null &&
-                            condition.getType().equals(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE))
+                    .filter(condition -> condition.getType() != null)
+                    .filter(condition -> Arrays.stream(State.values()).anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))
                     .collect(Collectors.toList());
 
             if (statusConditions.size() == 1) {
@@ -233,15 +234,15 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Searches through the Conditions in the supplied status and returns the status of the Condition with type
-     * {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_TYPE}.
+     * Searches through the Conditions in the supplied status and returns the type of the Condition with status
+     * {@link KafkaRebalanceStatus#REBALANCE_STATUS_CONDITION_STATUS}.
      *
      * @param status The status instance whose conditions will be searched.
      * @return The status of the rebalance condition.
      */
-    private String rebalanceStateConditionStatus(KafkaRebalanceStatus status) {
+    private String rebalanceStateConditionType(KafkaRebalanceStatus status) {
         Condition rebalanceStateCondition = rebalanceStateCondition(status);
-        return rebalanceStateCondition != null ? rebalanceStateCondition.getStatus() : null;
+        return rebalanceStateCondition != null ? rebalanceStateCondition.getType() : null;
     }
 
     private Future<KafkaRebalance> updateStatus(KafkaRebalance kafkaRebalance,
@@ -249,14 +250,14 @@ public class KafkaRebalanceAssemblyOperator
                                                 Throwable e) {
         // leaving the current status when the desired one is null
         if (desiredStatus != null) {
-            String rebalanceStatusString = rebalanceStateConditionStatus(desiredStatus);
+            String rebalanceTypeString = rebalanceStateConditionType(desiredStatus);
 
             if (e != null) {
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
-                        KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, State.NotReady.toString(), e);
-            } else if (rebalanceStatusString != null) {
+                        State.NotReady.toString(), KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS, e);
+            } else if (rebalanceTypeString != null) {
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus,
-                        KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE, rebalanceStatusString);
+                        rebalanceTypeString, KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS);
             } else {
                 throw new IllegalArgumentException("Status related exception and the Status condition's type cannot both be null");
             }
@@ -382,7 +383,7 @@ public class KafkaRebalanceAssemblyOperator
                                             .compose(updatedKafkaRebalance -> {
                                                 log.info("{}: State updated to [{}] with annotation {}={} ",
                                                         reconciliation,
-                                                        rebalanceStateConditionStatus(updatedKafkaRebalance.getStatus()),
+                                                        rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
                                                         ANNO_STRIMZI_IO_REBALANCE,
                                                         rawRebalanceAnnotation(updatedKafkaRebalance));
                                                 if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
@@ -525,8 +526,8 @@ public class KafkaRebalanceAssemblyOperator
                                     p.complete(new KafkaRebalanceStatusBuilder()
                                             .withSessionId(null)
                                             .addNewCondition()
-                                                .withNewStatus(State.Stopped.toString())
-                                                .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                                .withNewType(State.Stopped.toString())
+                                                .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                             .endCondition().build());
                                 } else {
                                     requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder,
@@ -657,8 +658,8 @@ public class KafkaRebalanceAssemblyOperator
                                             p.complete(new KafkaRebalanceStatusBuilder()
                                                     .withSessionId(null)
                                                     .addNewCondition()
-                                                        .withNewStatus(State.Stopped.toString())
-                                                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                                        .withNewType(State.Stopped.toString())
+                                                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                                     .endCondition().build());
                                         } else {
                                             log.error("{}: Cruise Control stopping execution failed", reconciliation, stopResult.cause());
@@ -680,8 +681,8 @@ public class KafkaRebalanceAssemblyOperator
                                                             .withSessionId(null)
                                                             .withOptimizationResult(taskStatusJson.getJsonObject("summary").getMap())
                                                             .addNewCondition()
-                                                                .withStatus(State.Ready.toString())
-                                                                .withType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                                                .withNewType(State.Ready.toString())
+                                                                .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                                             .endCondition().build());
                                                     break;
                                                 case COMPLETED_WITH_ERROR:
@@ -694,8 +695,8 @@ public class KafkaRebalanceAssemblyOperator
                                                     p.complete(new KafkaRebalanceStatusBuilder()
                                                             .withSessionId(sessionId)
                                                             .addNewCondition()
-                                                                .withStatus(State.NotReady.toString())
-                                                                .withType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                                                .withNewType(State.NotReady.toString())
+                                                                .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                                             .endCondition().build());
                                                     break;
                                                 case IN_EXECUTION: // Rebalance is still in progress
@@ -712,8 +713,8 @@ public class KafkaRebalanceAssemblyOperator
                                                                 .withSessionId(sessionId)
                                                                 .withOptimizationResult(taskStatusJson.getJsonObject("summary").getMap())
                                                                 .addNewCondition()
-                                                                    .withStatus(State.Rebalancing.toString())
-                                                                    .withType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                                                    .withNewType(State.Rebalancing.toString())
+                                                                    .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                                                 .endCondition().build());
                                                     }
                                                     ccApiErrorCount.set(0);
@@ -788,8 +789,8 @@ public class KafkaRebalanceAssemblyOperator
             log.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
             return Future.succeededFuture(new KafkaRebalanceStatusBuilder()
                     .addNewCondition()
-                        .withNewStatus(State.Stopped.toString())
-                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                        .withNewType(State.Stopped.toString())
+                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                     .endCondition().build());
         }
     }
@@ -822,7 +823,7 @@ public class KafkaRebalanceAssemblyOperator
                                             if (kafkaRebalanceStatus == null) {
                                                 currentState = State.New;
                                             } else {
-                                                String rebalanceStateConditionStatus = rebalanceStateConditionStatus(kafkaRebalanceStatus);
+                                                String rebalanceStateConditionStatus = rebalanceStateConditionType(kafkaRebalanceStatus);
                                                 if (rebalanceStateConditionStatus != null) {
                                                     currentState = State.valueOf(rebalanceStateConditionStatus);
                                                 } else {
@@ -873,8 +874,8 @@ public class KafkaRebalanceAssemblyOperator
                             // and we need to re-request the proposal at a later stage so we move to the PendingProposal State.
                             return new KafkaRebalanceStatusBuilder()
                                     .addNewCondition()
-                                        .withNewStatus(State.PendingProposal.toString())
-                                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                        .withNewType(State.PendingProposal.toString())
+                                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                     .endCondition().build();
                         } else if (response.proposalIsStillCalculating()) {
                             // If rebalance proposal is still being processed we need to re-request the proposal at a later stage
@@ -882,8 +883,8 @@ public class KafkaRebalanceAssemblyOperator
                             return new KafkaRebalanceStatusBuilder()
                                     .withNewSessionId(response.getUserTaskId())
                                     .addNewCondition()
-                                        .withNewStatus(State.PendingProposal.toString())
-                                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                        .withNewType(State.PendingProposal.toString())
+                                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                     .endCondition().build();
                         }
                     } else {
@@ -892,15 +893,15 @@ public class KafkaRebalanceAssemblyOperator
                             // this failed tasks (COMPLETED_WITH_ERROR)
                             return new KafkaRebalanceStatusBuilder()
                                     .addNewCondition()
-                                        .withNewStatus(State.PendingProposal.toString())
-                                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                        .withNewType(State.PendingProposal.toString())
+                                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                     .endCondition().build();
                         } else if (response.proposalIsStillCalculating()) {
                             return new KafkaRebalanceStatusBuilder()
                                     .withNewSessionId(response.getUserTaskId())
                                     .addNewCondition()
-                                        .withNewStatus(State.Rebalancing.toString())
-                                        .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                        .withNewType(State.Rebalancing.toString())
+                                        .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                     .endCondition().build();
                         }
                     }
@@ -913,8 +914,8 @@ public class KafkaRebalanceAssemblyOperator
                                 .withNewSessionId(response.getUserTaskId())
                                 .withOptimizationResult(response.getJson().getJsonObject(CC_REST_API_SUMMARY).getMap())
                                 .addNewCondition()
-                                    .withNewStatus(ready.toString())
-                                    .withNewType(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_TYPE)
+                                    .withNewType(ready.toString())
+                                    .withNewStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS)
                                 .endCondition().build();
                     } else {
                         throw new CruiseControlRestException("Rebalance returned unknown response: " + response.toString());
@@ -973,7 +974,7 @@ public class KafkaRebalanceAssemblyOperator
     private State state(KafkaRebalance kafkaRebalance) {
         KafkaRebalanceStatus rebalanceStatus = kafkaRebalance.getStatus();
         if (rebalanceStatus != null) {
-            String statusString = rebalanceStateConditionStatus(rebalanceStatus);
+            String statusString = rebalanceStateConditionType(rebalanceStatus);
             if (statusString != null) {
                 return State.valueOf(statusString);
             }

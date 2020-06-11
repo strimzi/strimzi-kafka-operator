@@ -15,6 +15,7 @@
 * Use Java 11 as the Java runtime
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
 * Migration to Helm 3
+* Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in the Kubernetes web console.
 
 ### Deprecations and removals
 
