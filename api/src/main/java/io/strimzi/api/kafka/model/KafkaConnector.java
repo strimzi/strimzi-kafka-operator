@@ -46,7 +46,11 @@ import static java.util.Collections.unmodifiableList;
                                 storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
+                        )
                 )
         )
 )
@@ -71,6 +75,8 @@ public class KafkaConnector extends CustomResource implements UnknownPropertyPre
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String SHORT_NAME = "kctr";
+    public static final String SPEC_REPLICAS_PATH = ".spec.tasksMax";
+    public static final String STATUS_REPLICAS_PATH = ".status.tasksMax";
 
     private KafkaConnectorSpec spec;
     private KafkaConnectorStatus status;

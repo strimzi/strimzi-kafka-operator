@@ -13,13 +13,19 @@ rules:
   resources:
   - kafkas
   - kafkaconnects
+  - kafkaconnects/scale
   - kafkaconnects2is
+  - kafkaconnects2is/scale
   - kafkamirrormakers
+  - kafkamirrormakers/scale
   - kafkausers
   - kafkatopics
   - kafkabridges
+  - kafkabridges/scale
   - kafkaconnectors
+  - kafkaconnectors/scale
   - kafkamirrormaker2s
+  - kafkamirrormaker2s/scale
   - kafkarebalances
   verbs:
   - get

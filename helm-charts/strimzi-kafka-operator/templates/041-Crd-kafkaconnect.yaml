@@ -37,6 +37,10 @@ spec:
     type: integer
   subresources:
     status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.selector
   validation:
     openAPIV3Schema:
       properties:
@@ -1196,5 +1200,27 @@ spec:
                     description: The class of the connector plugin.
               description: The list of connector plugins available in this Kafka Connect
                 deployment.
+            podSelector:
+              type: object
+              properties:
+                matchExpressions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type: string
+                matchLabels:
+                  type: object
+              description: Label selector for pods providing this resource.
+            replicas:
+              type: integer
+              description: The current number of pods being used to provide this resource.
           description: The status of the Kafka Connect cluster.
 {{- end -}}
