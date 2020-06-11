@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -133,9 +134,10 @@ public class StatefulSetUtils {
      */
     public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
+        long ssTimeout = ResourceReadiness.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
-        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ssTimeout,
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
 

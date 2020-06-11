@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.test.TestUtils;
@@ -70,7 +71,8 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
-        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+        long connectorTimeout = ResourceReadiness.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND);
+        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, connectorTimeout, () -> {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
         }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));

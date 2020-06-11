@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
@@ -21,6 +22,7 @@ public class KafkaTopicUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
+    private static long topicTimeout = ResourceReadiness.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
 
     private KafkaTopicUtils() {}
 
@@ -57,7 +59,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicCreation(String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
-        TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, topicTimeout,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
                     .withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
@@ -66,7 +68,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
         LOGGER.info("Waiting for KafkaTopic {} creation", topicNamePrefix);
-        TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, topicTimeout,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
                     .findFirst().get().getStatus().getConditions().get(0).getType().equals("Ready")

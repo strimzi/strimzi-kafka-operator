@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +19,14 @@ import static io.restassured.RestAssured.given;
 public class HttpUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
+    private static final long SERVICE_TIMEOUT = ResourceReadiness.getTimeoutForResourceReadiness(Constants.SERVICE);
 
     private HttpUtils() { }
 
     public static void waitUntilServiceWithNameIsReady(String baserURI, String serviceName) {
+
         LOGGER.info("Wait until Service name {} is present in json", serviceName);
-        TestUtils.waitFor("Service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        TestUtils.waitFor("Service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, SERVICE_TIMEOUT,
             () -> {
                 Response response = given()
                         .when()
@@ -45,7 +48,7 @@ public class HttpUtils {
 
     public static void waitUntilServiceHasSomeTraces(String baseURI, String serviceName) {
         LOGGER.info("Wait untill Service {} has some traces", serviceName);
-        TestUtils.waitFor("Service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        TestUtils.waitFor("Service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, SERVICE_TIMEOUT,
             () -> {
                 Response response = given()
                             .when()

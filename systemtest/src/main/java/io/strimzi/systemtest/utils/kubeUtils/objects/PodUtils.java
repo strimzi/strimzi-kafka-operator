@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +18,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -60,43 +60,45 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
-        AtomicInteger count = new AtomicInteger();
-        TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = kubeClient().listPods(selector);
-            if (pods.isEmpty() && expectPods == 0) {
-                LOGGER.debug("Expected pods are ready");
-                return true;
-            }
-            if (pods.isEmpty()) {
-                LOGGER.debug("Not ready (no pods matching {})", selector);
-                return false;
-            }
-            if (pods.size() != expectPods) {
-                LOGGER.debug("Expected pods not ready");
-                return false;
-            }
-            for (Pod pod : pods) {
-                if (!Readiness.isPodReady(pod)) {
-                    LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
-                    count.set(0);
+        int[] counter = {0};
+
+        TestUtils.waitFor("All pods matching " + selector + "to be ready",
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceReadiness.getTimeoutForPodsReadiness(expectPods),
+            () -> {
+                List<Pod> pods = kubeClient().listPods(selector);
+                if (pods.isEmpty() && expectPods == 0) {
+                    LOGGER.debug("Expected pods are ready");
+                    return true;
+                }
+                if (pods.isEmpty()) {
+                    LOGGER.debug("Not ready (no pods matching {})", selector);
                     return false;
-                } else {
-                    if (containers) {
-                        for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
-                            LOGGER.debug("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
-                            if (!Boolean.TRUE.equals(cs.getReady())) {
-                                return false;
+                }
+                if (pods.size() != expectPods) {
+                    LOGGER.debug("Expected pods not ready");
+                    return false;
+                }
+                for (Pod pod : pods) {
+                    if (!Readiness.isPodReady(pod)) {
+                        LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
+                        counter[0] = 0;
+                        return false;
+                    } else {
+                        if (containers) {
+                            for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
+                                LOGGER.debug("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
+                                if (!Boolean.TRUE.equals(cs.getReady())) {
+                                    return false;
+                                }
                             }
                         }
                     }
                 }
-            }
-            LOGGER.debug("Pods {} are ready",
-                pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
-            int c = count.getAndIncrement();
-            // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
-            return c > 10;
-        }, onTimeout);
+                LOGGER.debug("Pods {} are ready",
+                    pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
+                // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
+                return ++counter[0] > 10;
+            }, onTimeout);
     }
 
     public static void waitForPodUpdate(String podName, Date startTime) {
@@ -130,7 +132,7 @@ public class PodUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceReadiness.getTimeoutForPodsReadiness(1),
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
