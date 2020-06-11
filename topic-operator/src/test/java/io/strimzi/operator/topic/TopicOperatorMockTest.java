@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -40,6 +41,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -62,6 +64,7 @@ public class TopicOperatorMockTest {
     private AdminClient adminClient;
     private TopicConfigsWatcher topicsConfigWatcher;
     private ZkTopicWatcher topicWatcher;
+    private PrometheusMeterRegistry metrics;
     private ZkTopicsWatcher topicsWatcher;
 
     // TODO this is all in common with TOIT, so factor out a common base class
@@ -76,8 +79,12 @@ public class TopicOperatorMockTest {
     }
 
     @AfterAll
-    public static void after() {
-        vertx.close();
+    public static void after() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        vertx.close(closed -> {
+            latch.countDown();
+        });
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     @BeforeEach
@@ -113,6 +120,10 @@ public class TopicOperatorMockTest {
                 topicsConfigWatcher = session.topicConfigsWatcher;
                 topicWatcher = session.topicWatcher;
                 topicsWatcher = session.topicsWatcher;
+                metrics = session.metricsRegistry;
+                metrics.forEachMeter(meter -> {
+                    metrics.remove(meter);
+                });
                 async.flag();
             } else {
                 ar.cause().printStackTrace();
@@ -136,19 +147,34 @@ public class TopicOperatorMockTest {
     }
 
     @AfterEach
-    public void tearDown(VertxTestContext context) {
-        Checkpoint checkpoint = context.checkpoint();
+    public void tearDown(VertxTestContext context) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId, undeployResult -> {
+                topicWatcher.stop();
+                topicsWatcher.stop();
+                topicsConfigWatcher.stop();
+                metrics.close();
+                waitFor("Topic watcher stopped",  1_000, 30_000,
+                    () -> !this.topicWatcher.started());
+                waitFor("Topic configs watcher stopped", 1_000, 30_000,
+                    () -> !this.topicsConfigWatcher.started());
+                waitFor("Topic watcher stopped", 1_000, 30_000,
+                    () -> !this.topicsWatcher.started());
+                waitFor("Metrics watcher stopped", 1_000, 30_000,
+                    () -> this.metrics.isClosed());
                 if (adminClient != null) {
                     adminClient.close();
                 }
                 if (kafkaCluster != null) {
                     kafkaCluster.shutdown();
+                    waitFor("stop kafka cluster", 1_000, 30_000, () -> !kafkaCluster.isRunning());
                 }
-                checkpoint.flag();
+                latch.countDown();
             });
         }
+        latch.await(30, TimeUnit.SECONDS);
+        context.completeNow();
     }
 
     private static int zkPort(KafkaCluster cluster) {
