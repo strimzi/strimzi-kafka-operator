@@ -127,7 +127,6 @@
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta1
 :KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta1
-:ApiVersion: v1beta1
 
 // API Versions previous
 :KafkaApiVersionPrev: kafka.strimzi.io/v1alpha1
