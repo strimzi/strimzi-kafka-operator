@@ -10,11 +10,11 @@ Make is a useful tool for building your documentation and pushing it to a public
 `make docu_clean`:: Delete all temporary files
 `make docu_check`:: Execute the documentation checks in `.travis/check_docs.sh`
 `make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
-`make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers which are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
+`make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers so they are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
 
 == Generate the API Reference
 
-The API Reference is stored in `documentation/modules/appendix_crds.adoc` file.
+The API Reference is stored in the `documentation/modules/appendix_crds.adoc` file.
 It is generated directly from the Java code when building the operators.
 If you change the Strimzi API, you need to regenerate the API Reference with following command:
 
