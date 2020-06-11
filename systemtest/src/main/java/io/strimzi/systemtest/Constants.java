@@ -96,6 +96,10 @@ public interface Constants {
     String INGRESS = "Ingress";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
     String ROLE_BINDING = "RoleBinding";
+    String DEPLOYMENT_CONFIG = "DeploymentConfig";
+    String SECRET = "Secret";
+    String KAFKA_EXPORTER = "KafkaWithExporter";
+    String STATEFUL_SET = "StatefulSet";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
