@@ -235,15 +235,15 @@ public class StrimziUpgradeST extends BaseST {
             kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
             LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient().create(kafkaTopicYaml);
-
-            if (testParameters.getBoolean("bunchTopicsUpgrade")) {
-                for (int x = 0; x < upgradeTopicCount; x++) {
-                    KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
-                        .editSpec()
-                            .withTopicName(topicName + "-" + x)
-                        .endSpec()
-                        .build());
-                }
+        }
+        // Create bunch of topics for upgrade if it's specified in configuration
+        if (testParameters.getBoolean("bunchTopicsUpgrade")) {
+            for (int x = 0; x < upgradeTopicCount; x++) {
+                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
+                    .editSpec()
+                        .withTopicName(topicName + "-" + x)
+                    .endSpec()
+                    .build());
             }
         }
 
