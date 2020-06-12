@@ -62,15 +62,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
-<<<<<<< HEAD
-|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, keycloak].
-|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).
-=======
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
->>>>>>> OPA PoC using the Kafka Authorizer from OPA Contrib repo
+|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -751,6 +745,7 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationOpa.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationOpa` from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
@@ -769,8 +764,6 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 |integer
 |expireAfterMs         1.2+<.<|Decision cache expiry in milliseconds. Defaults to `3600000`.
 |integer
-|token                 1.2+<.<|Token for authentication with OPA.
-|string
 |superUsers            1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
 |====

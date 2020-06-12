@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ import java.util.List;
 /**
  * Configures the broker authorization
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -36,7 +38,6 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     private int initialCacheCapacity = 5000;
     private int maximumCacheSize = 50000;
     private long expireAfterMs = 3600000;
-    private String token;
 
     @Description("Must be `" + TYPE_OPA + "`")
     @Override
@@ -110,15 +111,5 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
 
     public void setExpireAfterMs(long expireAfterMs) {
         this.expireAfterMs = expireAfterMs;
-    }
-
-    @Description("Token for authentication with OPA.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
     }
 }

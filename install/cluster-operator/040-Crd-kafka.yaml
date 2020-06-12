@@ -1010,9 +1010,6 @@ spec:
                         - secretName
                       description: Trusted certificates for TLS connection to the
                         OAuth server.
-                    token:
-                      type: string
-                      description: Token for authentication with OPA.
                     tokenEndpointUri:
                       type: string
                       description: Authorization server token endpoint URI.

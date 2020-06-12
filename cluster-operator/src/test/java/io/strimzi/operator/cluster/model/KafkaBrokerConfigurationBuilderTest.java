@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
+import io.strimzi.api.kafka.model.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
@@ -192,6 +193,49 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
+    }
+
+    @Test
+    public void testOpaAuthorizationWithDefaults() {
+        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
+                .withUrl("http://opa:8181/v1/data/kafka/allow")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=com.bisnode.kafka.authorization.OpaAuthorizer\n" +
+                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
+                "opa.authorizer.allow.on.error=false\n" +
+                "opa.authorizer.cache.initial.capacity=5000\n" +
+                "opa.authorizer.cache.maximum.size=50000\n" +
+                "opa.authorizer.cache.expire.after.seconds=3600\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
+    }
+
+    @Test
+    public void testOpaAuthorization() {
+        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
+                .withUrl("http://opa:8181/v1/data/kafka/allow")
+                .withAllowOnError(true)
+                .withInitialCacheCapacity(1000)
+                .withMaximumCacheSize(10000)
+                .withExpireAfterMs(60000)
+                .addToSuperUsers("jack", "CN=conor")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=com.bisnode.kafka.authorization.OpaAuthorizer\n" +
+                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
+                "opa.authorizer.allow.on.error=true\n" +
+                "opa.authorizer.cache.initial.capacity=1000\n" +
+                "opa.authorizer.cache.maximum.size=10000\n" +
+                "opa.authorizer.cache.expire.after.seconds=60\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
     @Test

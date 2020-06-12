@@ -491,10 +491,6 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));
 
-            if (opaAuthz.getToken() != null && !opaAuthz.getToken().isEmpty())  {
-                writer.println(String.format("%s=%s", "opa.authorizer.token", opaAuthz.getToken()));
-            }
-
             // User configured super users
             if (opaAuthz.getSuperUsers() != null && opaAuthz.getSuperUsers().size() > 0) {
                 superUsers.addAll(opaAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
