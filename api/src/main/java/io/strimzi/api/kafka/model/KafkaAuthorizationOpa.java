@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * Configures the broker authorization
+ * Configures the broker authorization to use Open Policy Agent as an authorization and policy server.
  */
 @DescriptionFile
 @Buildable(
