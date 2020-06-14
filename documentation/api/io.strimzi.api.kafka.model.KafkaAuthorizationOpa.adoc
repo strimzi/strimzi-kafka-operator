@@ -11,15 +11,16 @@ Defines whether Kafka client should be allowed or denied by default when the aut
 Defaults to `false` - all actions will be denied.
 
 `initialCacheCapacity`::
-Initial capacity of the local cache used by the authorizer.
+Initial capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request.
 Defaults to `5000`.
 
 `maximumCacheSize`::
-Maximum capacity of the local cache used by the authorizer.
+Maximum capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request.
 Defaults to `50000`.
 
 `expireAfterMs`::
-The expiration of the records kept in the local cache.
+The expiration of the records kept in the local cache to avoid querying Open Policy Agent for every request.
+Defines how often will the cached authorization decisions will expire and be reloaded from the Open Policy Agent server.
 In milliseconds.
 Defaults to `3600000` milliseconds (1 hour).
 

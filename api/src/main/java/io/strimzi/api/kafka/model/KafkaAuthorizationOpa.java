@@ -23,7 +23,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs", "token", "superUsers"})
+@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -57,7 +57,8 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.superUsers = superUsers;
     }
 
-    @Description("URL of the OPA server with the policy name which should be queried. " +
+    @Description("The URL used to connect to the Open Policy Agent server. " +
+            "The URL has to include the policy which will be queried by the authorizer. " +
             "This option is required.")
     @Example("http://opa:8181/v1/data/kafka/authz/allow")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -69,8 +70,8 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.url = url;
     }
 
-    @Description("Defines the authorizer behaviour when the OPA calls fail. " +
-            "Defaults to `false`.")
+    @Description("Defines whether Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent (for example because it is temporarily unavailable). " +
+            "Defaults to `false` - all actions will be denied.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isAllowOnError() {
         return allowOnError;
@@ -80,7 +81,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.allowOnError = allowOnError;
     }
 
-    @Description("Initial capacity of the decision cache. " +
+    @Description("Initial capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request " +
             "Defaults to `5000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getInitialCacheCapacity() {
@@ -91,7 +92,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.initialCacheCapacity = initialCacheCapacity;
     }
 
-    @Description("Maximum capacity of the decision cache. " +
+    @Description("Maximum capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request. " +
             "Defaults to `50000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getMaximumCacheSize() {
@@ -102,7 +103,9 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.maximumCacheSize = maximumCacheSize;
     }
 
-    @Description("Decision cache expiry in milliseconds. " +
+    @Description("The expiration of the records kept in the local cache to avoid querying Open Policy Agent for every request. " +
+            "Defines how often will the cached authorization decisions will expire and be reloaded from the Open Policy Agent server. " +
+            "In milliseconds. " +
             "Defaults to `3600000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public long getExpireAfterMs() {
