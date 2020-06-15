@@ -41,6 +41,8 @@ pipeline {
         OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
         COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
         JAVA_VERSION = "11"
+        TEST_HELM2_VERSION = "v2.16.3"
+        TEST_HELM3_VERSION = "v3.2.0"
     }
     stages {
         stage('Clean WS') {
@@ -103,6 +105,15 @@ pipeline {
                         } else {
                             lib.startCRC()
                         }
+                    }
+                }
+            }
+        }
+        stage('Install Helm') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    script {
+                        lib.installHelm(env.WORKSPACE)
                     }
                 }
             }
