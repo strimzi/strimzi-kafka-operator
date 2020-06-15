@@ -44,7 +44,7 @@ public class TopicScalabilityST extends BaseST {
             String currentTopic = topicName + i;
             LOGGER.debug("Verifying that {} topic CR has Ready status", currentTopic);
 
-            KafkaTopicUtils.waitForKafkaTopicStatus(currentTopic, "Ready");
+            KafkaTopicUtils.waitForKafkaTopicReady(currentTopic);
         }
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);

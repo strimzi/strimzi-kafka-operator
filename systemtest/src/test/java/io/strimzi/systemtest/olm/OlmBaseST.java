@@ -38,7 +38,7 @@ public class OlmBaseST extends BaseST {
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaResource.toString());
-        KafkaUtils.waitUntilKafkaCRIsReady(kafkaResource.getJsonObject("metadata").getString("name"));
+        KafkaUtils.waitForKafkaReady(kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaUser() {
@@ -56,7 +56,7 @@ public class OlmBaseST extends BaseST {
     void doTestDeployExampleKafkaConnect() {
         JsonObject kafkaConnectResource = OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaConnectResource.toString());
-        KafkaConnectUtils.waitForConnectStatus(kafkaConnectResource.getJsonObject("metadata").getString("name"), "Ready");
+        KafkaConnectUtils.waitForConnectReady(kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaConnectS2I() {
@@ -67,7 +67,7 @@ public class OlmBaseST extends BaseST {
         examples.put(KafkaConnectS2I.RESOURCE_KIND, kafkaConnectS2IResource);
         OlmResource.setExampleResources(examples);
         cmdKubeClient().applyContent(kafkaConnectS2IResource.toString());
-        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IResource.getJsonObject("metadata").getString("name"), "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaBridge() {
@@ -77,11 +77,11 @@ public class OlmBaseST extends BaseST {
     }
 
     void doTestDeployExampleKafkaMirrorMaker() {
-        JsonObject kafkaMirroMakerResource = OlmResource.getExampleResources().get(KafkaMirrorMaker.RESOURCE_KIND);
-        cmdKubeClient().applyContent(kafkaMirroMakerResource.toString()
+        JsonObject kafkaMirrorMakerResource = OlmResource.getExampleResources().get(KafkaMirrorMaker.RESOURCE_KIND);
+        cmdKubeClient().applyContent(kafkaMirrorMakerResource.toString()
                 .replace("my-source-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-target-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(kafkaMirroMakerResource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(kafkaMirrorMakerResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker2() {

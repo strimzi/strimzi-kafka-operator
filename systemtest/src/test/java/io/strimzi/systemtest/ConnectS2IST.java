@@ -39,6 +39,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -279,7 +280,7 @@ class ConnectS2IST extends BaseST {
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
         envVarUpdated.put("TEST_ENV_3", "test.env.three");
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+        Map<String, String> connectSnapshot = DeploymentConfigUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
 
         LOGGER.info("Verify values before update");
 
@@ -293,7 +294,7 @@ class ConnectS2IST extends BaseST {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
-        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
+        DeploymentConfigUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
 
         deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName))).build();
         connectPodName = kubeClient().listPods(deploymentConfigSelector).get(0).getMetadata().getName();
@@ -482,13 +483,14 @@ class ConnectS2IST extends BaseST {
                 .endSpec().done();
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
-                .editSpec()
+            .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", topicName)
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .endSpec().done();
+            .endSpec()
+            .done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -548,7 +550,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Scaling up to {}", scaleReplicasTo);
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(scaleReplicasTo));
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, scaleReplicasTo);
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, scaleReplicasTo);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), Matchers.is(scaleReplicasTo));
@@ -558,7 +560,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
                 cs2i.getSpec().setReplicas(initialReplicas));
-        Map<String, String> depConfSnapshot = DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, initialReplicas);
+        Map<String, String> depConfSnapshot = DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, initialReplicas);
 
         connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
         assertThat(connectPods.size(), is(initialReplicas));
@@ -579,7 +581,7 @@ class ConnectS2IST extends BaseST {
                     .build());
         });
 
-        depConfSnapshot = DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
+        depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
 
         LOGGER.info("===== CONNECTS2I VERSION CHANGE =====");
@@ -588,7 +590,7 @@ class ConnectS2IST extends BaseST {
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME,
             kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getKafkaVersions().get(1).version()));
 
-        depConfSnapshot = DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
+        depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
 
         String versionCommand = "ls libs | grep -Po 'connect-api-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
 
@@ -611,7 +613,7 @@ class ConnectS2IST extends BaseST {
             kafkaConnectS2I.getSpec().getTls().getTrustedCertificates().add(certSecretSource);
         });
 
-        DeploymentUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
+        DeploymentConfigUtils.waitTillDepConfigHasRolled(CONNECT_S2I_CLUSTER_NAME, depConfSnapshot);
 
         List<CertSecretSource> trustedCertificates = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE)
             .withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getTls().getTrustedCertificates();
@@ -637,7 +639,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Scaling KafkaConnect down to zero");
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
 
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, 0);
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
         connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
         KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
@@ -675,7 +677,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Scaling KafkaConnect down to zero");
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
 
-        DeploymentUtils.waitForDeploymentConfigReady(deploymentConfigName, 0);
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
         connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
         KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
@@ -697,14 +699,14 @@ class ConnectS2IST extends BaseST {
             .endMetadata()
             .done();
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+        Map<String, String> connectSnapshot = DeploymentConfigUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
 
         File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
 
         // Start a new image build using the plugins directory
         cmdKubeClient().execInCurrentNamespace("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath());
         // Wait for rolling update connect pods
-        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
+        DeploymentConfigUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
 
         LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
