@@ -84,7 +84,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -577,7 +577,7 @@ class KafkaST extends BaseST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha() {
         String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -1209,7 +1209,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls() {
@@ -1275,7 +1275,7 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls() {

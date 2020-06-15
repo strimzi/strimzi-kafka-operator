@@ -68,7 +68,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -381,7 +381,7 @@ class ConnectS2IST extends BaseST {
 
     @Test
     @Tag(CONNECTOR_OPERATOR)
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String connectClusterName = "connect-cluster";

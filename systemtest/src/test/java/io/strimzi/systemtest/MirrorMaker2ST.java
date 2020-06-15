@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -196,7 +196,7 @@ class MirrorMaker2ST extends BaseST {
      */
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth() {
         String availabilityTopicSourceName = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
         String availabilityTopicTargetName = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);

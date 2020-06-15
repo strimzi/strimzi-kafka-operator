@@ -60,7 +60,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
@@ -331,7 +331,7 @@ public class TracingST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService() {
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");

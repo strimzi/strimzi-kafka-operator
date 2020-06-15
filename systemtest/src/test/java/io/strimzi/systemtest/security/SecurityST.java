@@ -294,6 +294,12 @@ class SecurityST extends BaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
+    void test10run() {
+        for (int i = 0; i < 10; i++) {
+            testAutoRenewAllCaCertsTriggeredByAnno();
+        }
+    }
+
     void testAutoRenewAllCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME),

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -41,7 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @OpenShiftOnly
 @Tag(REGRESSION)
-@Tag(ACCEPTANCE)
+//@Tag(ACCEPTANCE)
 public class OpenShiftTemplatesST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);

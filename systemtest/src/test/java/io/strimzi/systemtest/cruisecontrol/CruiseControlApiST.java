@@ -20,7 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -39,7 +39,7 @@ public class CruiseControlApiST extends BaseST {
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
 
     @Order(1)
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     @Test
     void testCruiseControlDeploymentStateEndpoint()  {
         String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STATE);

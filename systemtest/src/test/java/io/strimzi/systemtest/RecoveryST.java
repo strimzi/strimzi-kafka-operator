@@ -23,7 +23,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -53,7 +53,7 @@ class RecoveryST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testRecoveryFromKafkaStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
@@ -72,7 +72,7 @@ class RecoveryST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed

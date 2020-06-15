@@ -26,7 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -84,7 +84,7 @@ class UserST extends BaseST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testUpdateUser() {
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 

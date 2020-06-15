@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+//import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -68,7 +68,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
-    @Tag(ACCEPTANCE)
+    //@Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
