@@ -7,7 +7,7 @@
 = Optimization proposals overview
 
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
-Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:#capacity-configuration[capacity limits on broker resources].
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:capacity-configuration[capacity limits on broker resources].
 
 An optimization proposal is contained in the `Status.Optimization Result` property of a `KafkaRebalance` custom resource. 
 The information provided is a summary of the full optimization proposal. 
@@ -30,7 +30,7 @@ If you generate an optimization proposal using the default optimization goals, C
 To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
 Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
 
-[#contents-optimization-proposals]
+[[contents-optimization-proposals]]
 [discrete]
 == Contents of optimization proposals
 

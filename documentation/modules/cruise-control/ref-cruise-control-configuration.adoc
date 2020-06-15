@@ -58,14 +58,13 @@ spec:
     # ...
 ----
 
-[#capacity-configuration]
+[[capacity-configuration]]
 [discrete]
 == Capacity configuration
 
-Cruise Control uses _capacity limits_ to determine if optimization goals for broker resources are being broken.
-An optimization will fail if a hard goal is broken, preventing the optimization from being used to generate an optimization proposal.
+Cruise Control uses _capacity limits_ to determine if certain resource-based optimization goals are being broken. 
 
-You specify capacity limits for broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
+You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 Capacity limits can be set for the following broker resources in the described units:
 
 * `disk`            - Disk storage in bytes
@@ -97,7 +96,7 @@ spec:
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 
-[#logging-configuration]
+[[logging-configuration]]
 [discrete]
 == Logging configuration
 
