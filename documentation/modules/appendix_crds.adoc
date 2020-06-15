@@ -754,11 +754,11 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 |Property                     |Description
 |type                  1.2+<.<|Must be `opa`.
 |string
-|url                   1.2+<.<|(Required) The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer.
+|url                   1.2+<.<|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
 |string
-|allowOnError          1.2+<.<|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable. Defaults to `false` - all actions will be denied.
+|allowOnError          1.2+<.<|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
 |boolean
-|initialCacheCapacity  1.2+<.<|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `5000`.
+|initialCacheCapacity  1.2+<.<|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
 |integer
 |maximumCacheSize      1.2+<.<|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
 |integer
@@ -2946,3 +2946,4 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |optimizationResult  1.2+<.<|A JSON object describing the optimization result.
 |map
 |====
+
