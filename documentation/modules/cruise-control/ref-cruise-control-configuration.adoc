@@ -63,8 +63,6 @@ spec:
 == Capacity configuration
 
 Cruise Control uses _capacity limits_ to determine if certain resource-based optimization goals are being broken. 
-An attempted optimization fails if one or more of these resource-based goals is set as a hard goal and then broken. 
-This prevents the optimization from being used to generate an optimization proposal.
 
 You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 Capacity limits can be set for the following broker resources in the described units:
