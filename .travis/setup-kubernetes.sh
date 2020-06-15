@@ -13,21 +13,59 @@ function install_kubectl {
 
 function install_nsenter {
     # Pre-req for helm
-    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz | tar -zxf-
+    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz -k | tar -zxf-
     cd util-linux-${TEST_NSENTER_VERSION}
     ./configure --without-ncurses
     make nsenter
     sudo cp nsenter /usr/bin
 }
 
-function install_helm {
+function install_helm2 {
     install_nsenter
-    # Set `TEST_HELM_VERSION` to `latest` to get latest version
-    HELM_INSTALL_DIR=/usr/bin
+
+    export HELM_INSTALL_DIR=/usr/bin
     curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+    # we need to modify the script with a different path because on the Azure pipelines the HELM_INSTALL_DIR env var is not honoured
+    sed -i 's#/usr/local/bin#/usr/bin#g' get_helm.sh
     chmod 700 get_helm.sh
-    sudo ./get_helm.sh --version ${TEST_HELM_VERSION}
-    helm init --client-only
+
+    echo "Installing helm 2..."
+    sudo ./get_helm.sh --version "${TEST_HELM2_VERSION}"
+    sudo mv ${HELM_INSTALL_DIR}/helm ${HELM_INSTALL_DIR}/helm2
+
+    echo "Verifying the installation of helm2 binary..."
+    # run a proper helm command instead of, for example, "which helm", to verify that we can call the binary
+    helm2 --help
+    helmCommandOutput=$?
+
+    if [ $helmCommandOutput != 0 ]; then
+        echo "helm2 binary hasn't been installed properly - exiting..."
+        exit 1
+    fi
+}
+
+function install_helm3 {
+    install_nsenter
+
+    export HELM_INSTALL_DIR=/usr/bin
+    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+    # we need to modify the script with a different path because on the Azure pipelines the HELM_INSTALL_DIR env var is not honoured
+    sed -i 's#/usr/local/bin#/usr/bin#g' get_helm.sh
+    chmod 700 get_helm.sh
+
+    echo "Installing helm 3..."
+    sudo ./get_helm.sh --version "${TEST_HELM3_VERSION}"
+    sudo mv ${HELM_INSTALL_DIR}/helm ${HELM_INSTALL_DIR}/helm3
+
+    echo "Verifying the installation of helm3 binary..."
+    # run a proper helm command instead of, for example, "which helm", to verify that we can call the binary
+    helm3 --help
+    helmCommandOutput=$?
+
+    if [ $helmCommandOutput != 0 ]; then
+        echo "helm3 binary hasn't been installed properly - exiting..."
+        exit 1
+    fi
 }
 
 function wait_for_minikube {
@@ -66,7 +104,8 @@ function label_node {
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
-    install_helm
+    install_helm2
+    install_helm3
     if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
         TEST_MINIKUBE_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     else
