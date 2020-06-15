@@ -155,7 +155,7 @@ def clearImages() {
 }
 
 def installHelm(String workspace) {
-    sh(script: "${workspace}/.travis/install-helm.sh")
+    sh(script: "${workspace}/.travis/setup-helm.sh")
 }
 
 def buildStrimziImages() {
