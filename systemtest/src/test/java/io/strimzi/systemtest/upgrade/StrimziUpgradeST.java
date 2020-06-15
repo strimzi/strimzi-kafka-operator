@@ -237,7 +237,7 @@ public class StrimziUpgradeST extends BaseST {
             cmdKubeClient().create(kafkaTopicYaml);
         }
         // Create bunch of topics for upgrade if it's specified in configuration
-        if (testParameters.getBoolean("bunchTopicsUpgrade")) {
+        if (testParameters.getBoolean("generateTopics")) {
             for (int x = 0; x < upgradeTopicCount; x++) {
                 KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
                     .editSpec()
@@ -316,7 +316,7 @@ public class StrimziUpgradeST extends BaseST {
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
-        if (testParameters.getBoolean("bunchTopicsUpgrade")) {
+        if (testParameters.getBoolean("generateTopics")) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
             assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
             List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
