@@ -754,17 +754,17 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 |Property                     |Description
 |type                  1.2+<.<|Must be `opa`.
 |string
-|url                   1.2+<.<|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
+|url                   1.2+<.<|(Required) The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer.
 |string
-|allowOnError          1.2+<.<|Defines whether Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent (for example because it is temporarily unavailable). Defaults to `false` - all actions will be denied.
+|allowOnError          1.2+<.<|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable. Defaults to `false` - all actions will be denied.
 |boolean
-|initialCacheCapacity  1.2+<.<|Initial capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request Defaults to `5000`.
+|initialCacheCapacity  1.2+<.<|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `5000`.
 |integer
-|maximumCacheSize      1.2+<.<|Maximum capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request. Defaults to `50000`.
+|maximumCacheSize      1.2+<.<|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
 |integer
-|expireAfterMs         1.2+<.<|The expiration of the records kept in the local cache to avoid querying Open Policy Agent for every request. Defines how often will the cached authorization decisions will expire and be reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
+|expireAfterMs         1.2+<.<|The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
 |integer
-|superUsers            1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
+|superUsers            1.2+<.<|List of super users, which is specifically a list of user principals that have unlimited access rights.
 |string array
 |====
 
@@ -2946,4 +2946,3 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |optimizationResult  1.2+<.<|A JSON object describing the optimization result.
 |map
 |====
-

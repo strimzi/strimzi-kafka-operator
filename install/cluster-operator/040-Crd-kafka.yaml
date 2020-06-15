@@ -962,7 +962,7 @@ spec:
                       type: boolean
                       description: Defines whether Kafka client should be allowed
                         or denied by default when the authorizer fails to query the
-                        Open Policy Agent (for example because it is temporarily unavailable).
+                        Open Policy Agent, for example, when it is temporarily unavailable.
                         Defaults to `false` - all actions will be denied.
                     clientId:
                       type: string
@@ -982,18 +982,18 @@ spec:
                       type: integer
                       description: The expiration of the records kept in the local
                         cache to avoid querying Open Policy Agent for every request.
-                        Defines how often will the cached authorization decisions
-                        will expire and be reloaded from the Open Policy Agent server.
+                        Defines how often the cached authorization decisions
+                        are reloaded from the Open Policy Agent server.
                         In milliseconds. Defaults to `3600000`.
                     initialCacheCapacity:
                       type: integer
                       description: Initial capacity of the local cache used by the
-                        authorizer to avoid querying Open Policy Agent for every request
+                        authorizer to avoid querying the Open Policy Agent for every request
                         Defaults to `5000`.
                     maximumCacheSize:
                       type: integer
                       description: Maximum capacity of the local cache used by the
-                        authorizer to avoid querying Open Policy Agent for every request.
+                        authorizer to avoid querying the Open Policy Agent for every request.
                         Defaults to `50000`.
                     superUsers:
                       type: array
@@ -1026,18 +1026,18 @@ spec:
                       - simple
                       - opa
                       - keycloak
-                      description: Authorization type. Currently the supported types
+                      description: Authorization type. Currently, the supported types
                         are `simple`, `keycloak`, and `opa`. `simple` authorization
                         type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer`
                         class for authorization. `keycloak` authorization type uses
-                        Keycloak Authorization Services for authorization. `opa` is
-                        using Open Policy Agent based authorization.
+                        Keycloak Authorization Services for authorization. `opa`
+                        authorization type uses Open Policy Agent authorization.
                     url:
                       type: string
                       example: http://opa:8181/v1/data/kafka/authz/allow
-                      description: The URL used to connect to the Open Policy Agent
+                      description: (Required) The URL used to connect to the Open Policy Agent
                         server. The URL has to include the policy which will be queried
-                        by the authorizer. This option is required.
+                        by the authorizer. 
                   required:
                   - type
                   description: Authorization configuration for Kafka brokers.

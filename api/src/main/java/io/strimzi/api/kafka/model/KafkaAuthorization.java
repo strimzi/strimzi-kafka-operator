@@ -33,10 +33,10 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving, S
     private Map<String, Object> additionalProperties;
 
     @Description("Authorization type. " +
-            "Currently the supported types are `simple`, `keycloak`, and `opa`. " +
+            "Currently, the supported types are `simple`, `keycloak`, and `opa`. " +
             "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization. " +
             "`keycloak` authorization type uses Keycloak Authorization Services for authorization. " +
-            "`opa` is using Open Policy Agent based authorization.")
+            "`opa` authorization type uses Open Policy Agent based authorization.")
     public abstract String getType();
 
     @Override

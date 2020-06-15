@@ -45,7 +45,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         return TYPE_OPA;
     }
 
-    @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
+    @Description("List of super users, which is specifically a list of user principals that have unlimited access rights.")
     @Example("- CN=my-user\n" +
              "- CN=my-other-user")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -70,7 +70,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.url = url;
     }
 
-    @Description("Defines whether Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent (for example because it is temporarily unavailable). " +
+    @Description("Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). " +
             "Defaults to `false` - all actions will be denied.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isAllowOnError() {
@@ -81,7 +81,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.allowOnError = allowOnError;
     }
 
-    @Description("Initial capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request " +
+    @Description("Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request " +
             "Defaults to `5000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getInitialCacheCapacity() {
@@ -92,7 +92,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.initialCacheCapacity = initialCacheCapacity;
     }
 
-    @Description("Maximum capacity of the local cache used by the authorizer to avoid querying Open Policy Agent for every request. " +
+    @Description("Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. " +
             "Defaults to `50000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public int getMaximumCacheSize() {
@@ -103,8 +103,8 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         this.maximumCacheSize = maximumCacheSize;
     }
 
-    @Description("The expiration of the records kept in the local cache to avoid querying Open Policy Agent for every request. " +
-            "Defines how often will the cached authorization decisions will expire and be reloaded from the Open Policy Agent server. " +
+    @Description("The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. " +
+            "Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. " +
             "In milliseconds. " +
             "Defaults to `3600000`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
