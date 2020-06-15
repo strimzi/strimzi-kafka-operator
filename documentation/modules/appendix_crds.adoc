@@ -62,8 +62,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
-|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, keycloak].
-|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
+|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
 |config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
@@ -729,7 +729,7 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
 |====
@@ -740,13 +740,41 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 |string array
 |====
 
+[id='type-KafkaAuthorizationOpa-{context}']
+### `KafkaAuthorizationOpa` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationOpa.adoc[leveloffset=+1]
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationOpa` from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+It must have the value `opa` for the type `KafkaAuthorizationOpa`.
+[options="header"]
+|====
+|Property                     |Description
+|type                  1.2+<.<|Must be `opa`.
+|string
+|url                   1.2+<.<|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
+|string
+|allowOnError          1.2+<.<|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
+|boolean
+|initialCacheCapacity  1.2+<.<|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
+|integer
+|maximumCacheSize      1.2+<.<|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
+|integer
+|expireAfterMs         1.2+<.<|The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
+|integer
+|superUsers            1.2+<.<|List of super users, which is specifically a list of user principals that have unlimited access rights.
+|string array
+|====
+
 [id='type-KafkaAuthorizationKeycloak-{context}']
 ### `KafkaAuthorizationKeycloak` schema reference
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationKeycloak` from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationKeycloak` from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`].
 It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 [options="header"]
 |====
