@@ -263,4 +263,8 @@ public class StUtils {
     public static String getLogFromPodByTime(String podName, String containerName, String timeSince) {
         return cmdKubeClient().execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
+
+    public static String getHost() {
+        return Environment.KUBERNETES_DOMAIN.equals(".nip.io") ?  kubeClient().getClient().getMasterUrl().getHost() + ".nip.io" : Environment.KUBERNETES_DOMAIN;
+    }
 }

@@ -4,16 +4,15 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,12 +34,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
-    public static final String NAMESPACE = "bridge-cluster-test";
     private static final String CORS_ORIGIN = "https://strimzi.io";
-
-    protected static String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
-    private static String bridgeHost;
-    private static int bridgePort;
 
     @Test
     void testCorsOriginAllowed(VertxTestContext context) {
@@ -59,7 +53,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
 
-        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+        client.request(HttpMethod.OPTIONS, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
             .putHeader("Origin", CORS_ORIGIN)
             .putHeader("Access-Control-Request-Method", "POST")
             .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
@@ -70,7 +64,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
                 assertThat(ar.result().getHeader("access-control-allow-headers"), is("access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept"));
                 List<String> list = Arrays.asList(ar.result().getHeader("access-control-allow-methods").split(","));
                 assertThat(list, hasItem("POST"));
-                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+                client.request(HttpMethod.POST, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
                     .putHeader("Origin", CORS_ORIGIN)
                     .send(ar2 -> context.verify(() -> {
                         assertThat(ar2.result().statusCode(), is(404));
@@ -86,13 +80,13 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
         final String notAllowedOrigin = "https://evil.io";
 
-        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+        client.request(HttpMethod.OPTIONS, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
             .putHeader("Origin", notAllowedOrigin)
             .putHeader("Access-Control-Request-Method", "POST")
             .send(ar -> context.verify(() -> {
                 assertThat(ar.result().statusCode(), is(403));
                 assertThat(ar.result().statusMessage(), is("CORS Rejected - Invalid origin"));
-                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+                client.request(HttpMethod.POST, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
                     .putHeader("Origin", notAllowedOrigin)
                     .send(ar2 -> context.verify(() -> {
                         assertThat(ar2.result().statusCode(), is(403));
@@ -103,7 +97,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    static void beforeAll() throws InterruptedException {
+    static void beforeAll() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
@@ -122,11 +116,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
-        KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        ServiceUtils.waitForNodePortService(bridgeExternalService);
+        String bridgeServiceName = KafkaBridgeResources.serviceName(CLUSTER_NAME);
+        KubernetesResource.createIngress(bridgeServiceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, NAMESPACE, kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName()).done();
 
-        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
-        bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+        bridgeHost = StUtils.getHost();
     }
 }
