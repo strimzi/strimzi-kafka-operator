@@ -113,7 +113,7 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        lib.InstallHelm(env.WORKSPACE)
+                        lib.installHelm(env.WORKSPACE)
                     }
                 }
             }
