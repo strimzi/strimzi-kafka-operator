@@ -13,7 +13,7 @@ Analyze the summary information in the optimization proposal and decide whether 
 
 * You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
 
-* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:#capacity-configuration[capacity limits on broker resources].
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:capacity-configuration[capacity limits on broker resources].
 
 .Procedure
 
@@ -108,7 +108,7 @@ Status:
 ----
 +
 The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
-For descriptions of each property, see xref:#contents-optimization-proposals[Contents of optimization proposals]. 
+For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals]. 
 
 .What to do next
 
