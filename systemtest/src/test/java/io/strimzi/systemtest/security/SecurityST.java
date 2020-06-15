@@ -31,6 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -52,6 +53,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -76,6 +78,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
@@ -1048,6 +1051,70 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
         assertThrows(WaitException.class, () -> basicExternalKafkaClient.sendMessagesTls());
+    }
+
+    @Test
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testOpaAuthorization() throws IOException {
+        final String goodUser = "good-user";
+        final String badUser = "bad-user";
+        final String topic1Name = KafkaTopicUtils.generateRandomNameOfTopic();
+        final String topic2Name = KafkaTopicUtils.generateRandomNameOfTopic();
+        final int numberOfMessages = 500;
+        final String consumerGroupName = "consumer-group-name-1";
+
+        // Install OPA
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-ephemeral")
+            .endMetadata()
+            .editSpec()
+                .editKafka()
+                .withNewKafkaAuthorizationOpa()
+                    .withUrl("http://opa:8181/v1/data/kafka/simple/authz/allow")
+                .endKafkaAuthorizationOpa()
+                .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                    .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topic1Name).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topic2Name).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, goodUser).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, badUser).done();
+
+        LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", goodUser, topic1Name);
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(topic1Name)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(goodUser)
+            .withMessageCount(numberOfMessages)
+            .withConsumerGroupName(consumerGroupName)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .build();
+
+        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
+        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+
+        LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", badUser, topic2Name);
+
+        basicExternalKafkaClient.setKafkaUsername(badUser);
+        basicExternalKafkaClient.setTopicName(topic2Name);
+        assertThrows(WaitException.class, () -> basicExternalKafkaClient.sendMessagesTls());
+        assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls());
+
+        // Delete OPA
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile("../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
     }
 
     @Test

@@ -18,6 +18,7 @@
     <properties>
         <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
         <cruise-control.version>2.0.108</cruise-control.version>
+        <opa-authorizer.version>0.4.1</opa-authorizer.version>
     </properties>
 
     <repositories>
@@ -178,6 +179,26 @@
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-math3</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Open Policy Authorization plugin -->
+        <dependency>
+            <groupId>com.bisnode.kafka.authorization</groupId>
+            <artifactId>opa-authorizer</artifactId>
+            <version>${opa-authorizer.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>jackson-module-scala_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

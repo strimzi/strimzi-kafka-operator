@@ -22,6 +22,7 @@ import java.util.Map;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaAuthorizationSimple.TYPE_SIMPLE, value = KafkaAuthorizationSimple.class),
+        @JsonSubTypes.Type(name = KafkaAuthorizationOpa.TYPE_OPA, value = KafkaAuthorizationOpa.class),
         @JsonSubTypes.Type(name = KafkaAuthorizationKeycloak.TYPE_KEYCLOAK, value = KafkaAuthorizationKeycloak.class)
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -32,8 +33,10 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving, S
     private Map<String, Object> additionalProperties;
 
     @Description("Authorization type. " +
-            "Currently the only supported type is `simple`. " +
-            "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization.")
+            "Currently, the supported types are `simple`, `keycloak`, and `opa`. " +
+            "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization. " +
+            "`keycloak` authorization type uses Keycloak Authorization Services for authorization. " +
+            "`opa` authorization type uses Open Policy Agent based authorization.")
     public abstract String getType();
 
     @Override

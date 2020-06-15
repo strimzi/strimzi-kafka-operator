@@ -3,6 +3,7 @@
 
 ## 0.19.0
 
+* Add support for authorization using Open Policy Agent
 * Add support for scale subresource to make scaling of following resources easier:
   * KafkaConnect
   * KafkaConnectS2I
