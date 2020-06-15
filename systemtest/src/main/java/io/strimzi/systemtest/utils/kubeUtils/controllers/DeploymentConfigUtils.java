@@ -32,7 +32,6 @@ public class DeploymentConfigUtils {
         return PodUtils.podSnapshot(selector);
     }
 
-
     /**
      * Method to check that all pods for expected DeploymentConfig were rolled
      * @param name DeploymentConfig name
@@ -54,7 +53,6 @@ public class DeploymentConfigUtils {
             return false;
         }
     }
-
 
     /**
      * Method to wait when DeploymentConfig will be recreated after rolling update
@@ -108,26 +106,18 @@ public class DeploymentConfigUtils {
         return depConfigSnapshot(depConfigName);
     }
 
-    public static void waitForDeploymentConfigStatus(String depConfigName, String status) {
-        LOGGER.info("Wait for {}: {} will have desired state: {}", "DeploymentConfig", depConfigName, status);
+    public static void waitForDeploymentConfigReady(String depConfigName) {
+        LOGGER.info("Wait for DeploymentConfig: {} will be ready", depConfigName);
 
-        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", "DeploymentConfig", depConfigName, status),
+        TestUtils.waitFor(String.format("Wait for DeploymentConfig: %s will be ready", depConfigName),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentConfig(depConfigName).getStatus().getConditions().get(0).getType().equals(status),
+            () -> kubeClient().getDeploymentConfigStatus(depConfigName),
             () -> {
                 if (kubeClient().getDeploymentConfig(depConfigName) != null) {
                     LOGGER.info(kubeClient().getDeploymentConfig(depConfigName));
                 }
             });
 
-        LOGGER.info("{}: {} is in desired state: {}", "DeploymentConfig", depConfigName, status);
-    }
-
-    public static void waitForDeploymentConfigReady(String depConfigName) {
-        waitForDeploymentConfigStatus(depConfigName, "Ready");
-    }
-
-    public static void waitForDeploymentConfigNotReady(String depConfigName) {
-        waitForDeploymentConfigStatus(depConfigName, "NotReady");
+        LOGGER.info("Wait for DeploymentConfig: {} is ready", depConfigName);
     }
 }

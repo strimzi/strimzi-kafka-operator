@@ -35,33 +35,35 @@ public class DeploymentUtils {
      * @param deployment - every DoneableDeployment, that HasMetadata and has status (fabric8 status)
      **/
     public static void logCurrentDeploymentStatus(Deployment deployment) {
-        String kind = deployment.getKind();
-        String name = deployment.getMetadata().getName();
+        if (deployment != null) {
+            String kind = deployment.getKind();
+            String name = deployment.getMetadata().getName();
 
-        List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+            List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-        for (DeploymentCondition deploymentCondition : deployment.getStatus().getConditions()) {
-            log.add("\tType: " + deploymentCondition.getType() + "\n");
-            log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
-        }
-
-        if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
-            log.add("\nPods with conditions and messages:\n\n");
-
-            for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                log.add(pod.getMetadata().getName() + ":");
-                for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                    if (podCondition.getMessage() != null) {
-                        log.add("\n\tType: " + podCondition.getType() + "\n");
-                        log.add("\tMessage: " + podCondition.getMessage() + "\n");
-                    }
-                }
-                log.add("\n\n");
+            for (DeploymentCondition deploymentCondition : deployment.getStatus().getConditions()) {
+                log.add("\tType: " + deploymentCondition.getType() + "\n");
+                log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
             }
+
+            if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
+                log.add("\nPods with conditions and messages:\n\n");
+
+                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                    log.add(pod.getMetadata().getName() + ":");
+                    for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                        if (podCondition.getMessage() != null) {
+                            log.add("\n\tType: " + podCondition.getType() + "\n");
+                            log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                        }
+                    }
+                    log.add("\n\n");
+                }
+                LOGGER.info("{}", String.join("", log));
+            }
+
             LOGGER.info("{}", String.join("", log));
         }
-
-        LOGGER.info("{}", String.join("", log));
     }
 
     public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
@@ -142,27 +144,15 @@ public class DeploymentUtils {
         LOGGER.info("Deployment {} was recovered", name);
     }
 
-    public static void waitForDeploymentStatus(String deploymentName, String status) {
-        LOGGER.info("Wait for {}: {} will have desired state: {}", Constants.DEPLOYMENT, deploymentName, status);
-
-        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", Constants.DEPLOYMENT, deploymentName, status),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentConfig(deploymentName).getStatus().getConditions().get(0).getType().equals(status),
-            () -> {
-                if (kubeClient().getDeploymentConfig(deploymentName) != null) {
-                    LOGGER.info(kubeClient().getDeploymentConfig(deploymentName));
-                }
-            });
-
-        LOGGER.info("{}: {} is in desired state: {}", Constants.DEPLOYMENT, deploymentName, status);
-    }
-
     public static void waitForDeploymentReady(String deploymentName) {
-        waitForDeploymentStatus(deploymentName, "Ready");
-    }
+        LOGGER.info("Wait for Deployment: {} will be ready", deploymentName);
 
-    public static void waitForDeploymentNotReady(String deploymentName) {
-        waitForDeploymentStatus(deploymentName, "NotReady");
+        TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getDeploymentStatus(deploymentName),
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
+
+        LOGGER.info("Deployment: {} is ready", deploymentName);
     }
 
     /**
@@ -171,7 +161,8 @@ public class DeploymentUtils {
      * @param expectPods The expected number of pods.
      */
     public static void waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
-        waitForDeploymentStatus(deploymentName, "Ready");
+        waitForDeploymentReady(deploymentName);
+
         LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
