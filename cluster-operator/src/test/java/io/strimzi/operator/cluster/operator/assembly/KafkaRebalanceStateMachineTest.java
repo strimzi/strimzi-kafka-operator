@@ -132,7 +132,7 @@ public class KafkaRebalanceStateMachineTest {
         if (currentState != KafkaRebalanceAssemblyOperator.State.New) {
             Condition currentRebalanceCondition = new Condition();
             currentRebalanceCondition.setType(currentState.toString());
-            currentRebalanceCondition.setStatus(KafkaRebalanceStatus.REBALANCE_STATUS_CONDITION_STATUS);
+            currentRebalanceCondition.setStatus("True");
 
             KafkaRebalanceStatus currentStatus = new KafkaRebalanceStatus();
             currentStatus.setConditions(Collections.singletonList(currentRebalanceCondition));

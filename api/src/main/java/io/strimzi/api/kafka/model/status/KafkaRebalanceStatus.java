@@ -29,8 +29,6 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
 
-    public static final String REBALANCE_STATUS_CONDITION_STATUS = "True";
-
     private static final long serialVersionUID = 1L;
 
     private String sessionId;
