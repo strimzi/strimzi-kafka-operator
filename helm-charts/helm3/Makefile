@@ -1,14 +1,15 @@
 PROJECT_NAME=helm-charts
 
-include ../Makefile.os
+include ../../Makefile.os
 
 RELEASE_VERSION ?= latest
-CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../release.version | tr A-Z a-z)
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../../release.version | tr A-Z a-z)
 CHART_NAME=strimzi-kafka-operator
-CHART_PATH=./$(CHART_NAME)/
-CHART_RENDERED_TEMPLATES_TMP=../target/charts
-CHART_RENDERED_TEMPLATES_CLUSTERROLES=../cluster-operator/src/main/resources/cluster-roles/
-CHART_RENDERED_TEMPLATES_INSTALL=../install/cluster-operator/
+CHART_PATH ?= ../helm3/strimzi-kafka-operator/
+CHART_RENDERED_TEMPLATES_TMP=../../target/charts
+CHART_RENDERED_TEMPLATES_CLUSTERROLES=../../cluster-operator/src/main/resources/cluster-roles/
+CHART_RENDERED_TEMPLATES_INSTALL=../../install/cluster-operator/
+HELM_CLI=helm3
 
 helm_clean:
 	rm -rf $(CHART_RENDERED_TEMPLATES_TMP)
@@ -17,13 +18,13 @@ helm_clean:
 
 helm_lint:
 	# Linting Helm Chart
-	helm lint --debug $(CHART_PATH)
+	$(HELM_CLI) lint --debug $(CHART_PATH)
 
 helm_template:
-	./kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
+	../kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_TMP)
-	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) $(CHART_PATH)
+	$(HELM_CLI) template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) $(CHART_PATH)
 
 helm_install: helm_clean helm_template
 	# Remove Helm-related labels
@@ -53,7 +54,7 @@ helm_pkg: helm_lint helm_install
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
 	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
-	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
+	$(HELM_CLI) package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 	rm -rf strimzi-$(RELEASE_VERSION)
 
 docker_build: helm_pkg
