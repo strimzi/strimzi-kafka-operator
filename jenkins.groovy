@@ -154,6 +154,9 @@ def clearImages() {
     sh "docker rmi -f \$(docker images -q) 2>/dev/null || echo 'No more images to remove.'"
 }
 
+def installHelm(String workspace) {
+    sh(script: "${workspace}/.travis/install-helm.sh")
+}
 
 def buildStrimziImages() {
     sh(script: "make docker_build")
