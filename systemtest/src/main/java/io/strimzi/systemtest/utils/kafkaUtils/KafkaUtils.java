@@ -37,15 +37,15 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitUntilKafkaCRIsReady(String clusterName) {
-        waitUntilKafkaStatus(clusterName, "Ready");
+    public static void waitForKafkaReady(String clusterName) {
+        waitForKafkaStatus(clusterName, "Ready");
     }
 
-    public static void waitUntilKafkaCRIsNotReady(String clusterName) {
-        waitUntilKafkaStatus(clusterName, "NotReady");
+    public static void waitForKafkaNotReady(String clusterName) {
+        waitForKafkaStatus(clusterName, "NotReady");
     }
 
-    public static void waitUntilKafkaStatus(String clusterName, String state) {
+    public static void waitForKafkaStatus(String clusterName, String state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }

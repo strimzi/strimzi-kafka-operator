@@ -35,6 +35,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -688,7 +689,7 @@ class ConnectST extends BaseST {
         KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
 
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
-        DeploymentUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME));
+        DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME));
     }
 
     @Test

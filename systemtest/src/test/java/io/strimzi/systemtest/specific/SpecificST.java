@@ -26,9 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
@@ -173,7 +171,7 @@ public class SpecificST extends BaseST {
 
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
-        KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
@@ -181,8 +179,7 @@ public class SpecificST extends BaseST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    void testLoadBalancerSourceRanges() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-
+    void testLoadBalancerSourceRanges() {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
         Matcher ipv4InterfacesMatcher = ipv4InterfacesPattern.matcher(networkInterfaces);

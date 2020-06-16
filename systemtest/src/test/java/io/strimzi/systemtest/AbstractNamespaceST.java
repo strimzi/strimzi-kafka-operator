@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -15,7 +14,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +65,7 @@ public abstract class AbstractNamespaceST extends BaseST {
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), 1);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
