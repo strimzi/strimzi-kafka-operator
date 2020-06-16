@@ -43,9 +43,9 @@ public class ClientUtils {
     }
 
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
-        long timeout = (messageCount / 2) * 1000;
+        long timeout = (long) (messageCount / 2) * 1000;
         LOGGER.info("Waiting till producer {} and consumer {} finish for the following {} ms", producerName, consumerName, timeout);
-        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, (messageCount / 2) * 1000,
+        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
             () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(producerName).get().getStatus().getSucceeded().equals(1) &&
                     kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(consumerName).get().getStatus().getSucceeded().equals(1));
     }
