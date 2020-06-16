@@ -80,9 +80,9 @@ spec:
     topicOperator: {}
     userOperator: {}
   cruiseControl:
-    capacity:
-      networkIn: 10000KB/s
-      networkOut: 10000KB/s
+    brokerCapacity:
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
     config:
       hard.goals: >
         com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
@@ -153,9 +153,9 @@ spec:
     topicOperator: {}
     userOperator: {}
   cruiseControl:
-    capacity:
-      networkIn: 10000KB/s
-      networkOut: 10000KB/s
+    brokerCapacity:
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
     config:
       default.goals: >
          com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,

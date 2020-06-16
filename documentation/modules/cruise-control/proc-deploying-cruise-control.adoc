@@ -29,9 +29,9 @@ metadata:
 spec:
   # ...
   cruiseControl:
-    capacity: <1>
-      networkIn: 10000KB/s
-      networkOut: 10000KB/s
+    brokerCapacity: <1>
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
       # ...
     config: <2>
       default.goals: >
