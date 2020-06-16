@@ -5,9 +5,9 @@ metadata:
   labels:
     app: strimzi
 subjects:
-- kind: ServiceAccount
-  name: strimzi-cluster-operator
-  namespace: myproject
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: myproject
 roleRef:
   kind: ClusterRole
   name: strimzi-cluster-operator-namespaced
