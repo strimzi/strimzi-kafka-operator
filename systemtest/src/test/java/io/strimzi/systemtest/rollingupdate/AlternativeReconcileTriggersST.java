@@ -69,7 +69,7 @@ class AlternativeReconcileTriggersST extends BaseST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
         KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
-        String producerAdditionConfiguration = "retries=10\ndelivery.timeout.ms=60000\nrequest.timeout.ms=60000\nmax.in.flight.requests.per.connection=1";
+        String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
         KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
         KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "").done();
         // ##############################

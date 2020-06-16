@@ -196,6 +196,7 @@ public class StrimziUpgradeST extends BaseST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
     }
 
+    @SuppressWarnings("MethodLength")
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
         String continuousTopicName = "continuous-topic";
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInt("continuousClientsMessages");
