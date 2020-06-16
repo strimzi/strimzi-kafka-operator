@@ -26,6 +26,45 @@ USER root:root
 COPY ./_my-plugins_/ /opt/kafka/plugins/
 USER {DockerImageUser}
 ----
++
+.Example plug-in file
+[source,subs="+quotes"]
+----
+$ tree ./_my-plugins_/
+./_my-plugins_/
+├── debezium-connector-mongodb
+│   ├── bson-3.4.2.jar
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mongodb-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mongodb-driver-3.4.2.jar
+│   ├── mongodb-driver-core-3.4.2.jar
+│   └── README.md
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
+----
 
 . Build the container image.
 
@@ -45,10 +84,15 @@ apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect-cluster
-spec:
+spec: <1>
   #...
-  image: my-new-container-image
+  image: my-new-container-image <2>
+  config: <3>
+    #...
 ----
+<1> xref:type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster].
+<2> The docker image for the pods.
+<3> Configuration of the Kafka Connect _workers_ (not connectors).
 +
 or
 +

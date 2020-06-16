@@ -31,7 +31,7 @@ For example:
 [source,shell,subs="+quotes,attributes"]
 ----
 kind: Pod
-apiVersion: {API_Version}
+apiVersion: v1
 metadata:
   name: client-pod
 spec:
@@ -76,7 +76,7 @@ For example:
 [source,shell,subs="+quotes,attributes"]
 ----
 kind: Pod
-apiVersion: {API_Version}
+apiVersion: v1
 metadata:
   name: client-pod
 spec:
