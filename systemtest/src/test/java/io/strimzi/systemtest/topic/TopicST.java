@@ -152,7 +152,7 @@ public class TopicST extends BaseST {
 
         LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
         KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, "Ready");
+        KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
     }
 
     @Test

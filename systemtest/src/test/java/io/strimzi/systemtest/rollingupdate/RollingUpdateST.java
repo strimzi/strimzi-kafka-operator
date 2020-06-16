@@ -604,7 +604,7 @@ class RollingUpdateST extends BaseST {
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         String bootstrapAddressDns = ((KafkaListenerExternalNodePort) Crds.kafkaOperation(kubeClient().getClient())
                 .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()

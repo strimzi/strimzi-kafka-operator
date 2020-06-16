@@ -16,8 +16,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
-import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
@@ -33,6 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -261,7 +260,6 @@ class SecurityST extends BaseST {
         }
         if (!kafkaShouldRoll) {
             assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
-
         }
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)), is(eoPod));
@@ -379,6 +377,7 @@ class SecurityST extends BaseST {
             LOGGER.info("Wait for kafka to rolling restart (2)...");
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         }
+
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (2)...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
@@ -422,12 +421,13 @@ class SecurityST extends BaseST {
 
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
-
         }
+
         if (!kafkaShouldRoll) {
             assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
         }
+
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)), is(eoPod));
         }
@@ -486,7 +486,6 @@ class SecurityST extends BaseST {
                     .endZookeeper()
                 .endSpec()
                 .done();
-
     }
 
     @Test
@@ -667,7 +666,6 @@ class SecurityST extends BaseST {
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
         );
-
     }
 
     @Test
@@ -736,7 +734,6 @@ class SecurityST extends BaseST {
         internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setTopicName(topic1);
         internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
-
 
         LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
         assertThrows(AssertionError.class, () ->  {
@@ -870,13 +867,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        TestUtils.waitFor("KafkaConnect status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus()
-                        .getConditions().get(0).getType().equals("Ready"));
-
-        KafkaConnectStatus kafkaStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-
-        assertThat("KafkaConnect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
@@ -944,12 +935,7 @@ class SecurityST extends BaseST {
             mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
         });
 
-        TestUtils.waitFor("KafkaMirrorMaker status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("Ready"));
-
-        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-
-        assertThat("KafkaMirrorMaker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
 
         KafkaMirrorMakerResource.deleteKafkaMirrorMakerWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
@@ -1325,7 +1311,6 @@ class SecurityST extends BaseST {
 
     @Test
     void testKafkaAndKafkaConnectTlsVersion() {
-
         Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
 
         final String tlsVersion12 = "TLSv1.2";
@@ -1338,9 +1323,9 @@ class SecurityST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
-                .editKafka()
-                .withConfig(configWithNewestVersionOfTls)
-                .endKafka()
+                    .editKafka()
+                        .withConfig(configWithNewestVersionOfTls)
+                    .endKafka()
                 .endSpec()
                 .done();
 
@@ -1366,7 +1351,7 @@ class SecurityST extends BaseST {
 
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editSpec()
-                .withConfig(configWithLowestVersionOfTls)
+                    .withConfig(configWithLowestVersionOfTls)
                 .endSpec()
                 .build());
 
@@ -1393,7 +1378,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
@@ -1412,9 +1397,9 @@ class SecurityST extends BaseST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
-                .editKafka()
-                .withConfig(configWithCipherSuitesSha384)
-                .endKafka()
+                    .editKafka()
+                        .withConfig(configWithCipherSuitesSha384)
+                    .endKafka()
                 .endSpec()
                 .done();
 
@@ -1433,13 +1418,13 @@ class SecurityST extends BaseST {
 
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editSpec()
-                .withConfig(configWithCipherSuitesSha256)
+                    .withConfig(configWithCipherSuitesSha256)
                 .endSpec()
                 .build());
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "NotReady");
+        KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
 
         LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
 
@@ -1456,7 +1441,7 @@ class SecurityST extends BaseST {
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, "Ready");
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
