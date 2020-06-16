@@ -8,7 +8,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import java.util.Objects;
 
 /**
- * Specialization of {@link StatefulSetOperator} for StatefulSets of Kafka brokers
+ * Specialization of {@link StatefulSetOperator.RestartReason}
  */
 public class BrokerConfigChange extends StatefulSetOperator.RestartReason {
 
