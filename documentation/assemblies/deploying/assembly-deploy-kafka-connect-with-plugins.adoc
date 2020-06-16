@@ -29,6 +29,8 @@ The procedures in this section show how to add your own connector classes to con
 
 * xref:using-openshift-s2i-create-image-{context}[Creating a container image using OpenShift builds and Source-to-Image (S2I) (available only on OpenShift)]
 
+IMPORTANT: You create the configuration for connectors directly xref:con-creating-managing-connectors-{context}[using the Kafka Connect REST API or KafkaConnector custom resources].
+
 //Procedure to create a container images from base image
 include::modules/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
 //Procedure to create a base images from OpenShift builds and S2I
