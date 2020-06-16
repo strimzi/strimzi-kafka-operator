@@ -9,7 +9,7 @@
 link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and external systems.
 
 In Strimzi, Kafka Connect is deployed in distributed mode.
-Kafka Connect can also work in standalone mode, but this is currently not supported by Strimzi.
+Kafka Connect can also work in standalone mode, but this is not supported by Strimzi.
 
 Using the concept of _connectors_, Kafka Connect provides a framework for moving large amounts of data into and out of your Kafka cluster while maintaining scalability and reliability.
 
