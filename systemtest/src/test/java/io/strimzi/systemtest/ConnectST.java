@@ -988,7 +988,7 @@ class ConnectST extends BaseST {
         LOGGER.info("Scaling subresource task max to {}", scaleTo);
         cmdKubeClient().scaleByName(KafkaConnector.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
 
-        LOGGER.info("Check if taskMax is set to {} and observed generation is higher", scaleTo);
+        LOGGER.info("Check if taskMax is set to {}", scaleTo);
         int tasksMax = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax();
         assertThat(tasksMax, is(scaleTo));
     }

@@ -711,7 +711,7 @@ class ConnectS2IST extends BaseST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
         assertThat(connectS2IPods.size(), is(4));
-        assertThat(++connectS2IObsGen, is(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration()));
+        assertThat(connectS2IObsGen < KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : connectS2IPods) {
             assertThat(pod.contains(connectS2IGenName), is(true));
         }
