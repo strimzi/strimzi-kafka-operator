@@ -264,7 +264,7 @@
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
       "afterKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0",
-      "continuousClientsMessages": 1200
+      "continuousClientsMessages": 0
     },
     "environmentInfo": {
       "status": "stable",

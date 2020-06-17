@@ -261,18 +261,20 @@ public class StrimziUpgradeST extends BaseST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+            if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
+                KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+                // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
+                expectedTopicCount++;
+            }
             String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
             KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
             // ##############################
-            // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
-            expectedTopicCount += 1;
         }
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("KafkaUser " + userName + "availability", 10_000L, 120_000L,
+        TestUtils.waitFor("KafkaUser " + userName + " availability", 10_000L, 120_000L,
             () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages
