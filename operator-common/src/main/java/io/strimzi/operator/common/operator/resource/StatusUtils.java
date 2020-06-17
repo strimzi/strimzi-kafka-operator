@@ -62,6 +62,14 @@ public class StatusUtils {
                 .build();
     }
 
+    public static Condition buildRebalanceCondition(String type) {
+        return new ConditionBuilder()
+                .withLastTransitionTime(iso8601Now())
+                .withType(type)
+                .withStatus("True")
+                .build();
+    }
+
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }
@@ -78,12 +86,20 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(readyCondition));
     }
 
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
+        setStatusConditionAndObservedGeneration(resource, status, type, "True", error);
+    }
+
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         status.setConditions(Collections.singletonList(condition));
+    }
+
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
+        setStatusConditionAndObservedGeneration(resource, status, type, "True");
     }
 
     public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
