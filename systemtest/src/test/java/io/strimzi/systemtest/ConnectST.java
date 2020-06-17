@@ -8,8 +8,10 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
@@ -942,6 +944,53 @@ class ConnectST extends BaseST {
         assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
+    }
+
+    @Test
+    void testScaleConnectAndConnectorSubresource() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .done();
+
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("topics", TOPIC_NAME)
+            .endSpec()
+            .done();
+
+        int scaleTo = 4;
+        long connectObsGen = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
+        String connectGenName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getGenerateName();
+
+        LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
+        LOGGER.info("Scaling subresource replicas to {}", scaleTo);
+        cmdKubeClient().scaleByName(KafkaConnect.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
+
+        LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
+        List<String> connectPods = kubeClient().listPodNames("type", "kafka-connect");
+        assertThat(connectPods.size(), is(4));
+        assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
+        for (String pod : connectPods) {
+            assertThat(pod.contains(connectGenName), is(true));
+        }
+
+        LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
+        LOGGER.info("Scaling subresource task max to {}", scaleTo);
+        cmdKubeClient().scaleByName(KafkaConnector.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
+
+        LOGGER.info("Check if taskMax is set to {} and observed generation is higher", scaleTo);
+        int tasksMax = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax();
+        assertThat(tasksMax, is(scaleTo));
     }
 
     @Override

@@ -689,6 +689,34 @@ class ConnectS2IST extends BaseST {
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
+    @Test
+    void testScaleConnectS2ISubresource() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+            .endMetadata()
+            .done();
+
+        int scaleTo = 4;
+        long connectS2IObsGen = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
+        String connectS2IGenName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getGenerateName();
+
+        LOGGER.info("-------> Scaling KafkaConnectS2I subresource <-------");
+        LOGGER.info("Scaling subresource replicas to {}", scaleTo);
+        cmdKubeClient().scaleByName(KafkaConnectS2I.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME), scaleTo);
+
+        LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
+        List<String> connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        assertThat(connectS2IPods.size(), is(4));
+        assertThat(++connectS2IObsGen, is(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration()));
+        for (String pod : connectS2IPods) {
+            assertThat(pod.contains(connectS2IGenName), is(true));
+        }
+    }
+
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 

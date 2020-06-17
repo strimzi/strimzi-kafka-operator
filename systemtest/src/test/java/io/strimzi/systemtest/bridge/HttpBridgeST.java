@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -250,6 +252,34 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
         assertThat(bridgePods.size(), is(0));
         assertThat(bridgeStatus.getConditions().get(0).getType(), is("Ready"));
+    }
+
+    @Test
+    void testScaleBridgeSubresource() {
+        String bridgeName = "scaling-bridge";
+
+        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-bridge")
+            .endMetadata()
+            .done();
+
+        int scaleTo = 4;
+        long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
+        String bridgeGenName = kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getGenerateName();
+
+        LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
+        LOGGER.info("Scaling subresource replicas to {}", scaleTo);
+        cmdKubeClient().scaleByName(KafkaBridge.RESOURCE_KIND, bridgeName, scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
+
+        LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
+        List<String> bridgePods = kubeClient().listPodNames("type", "kafka-bridge");
+        assertThat(bridgePods.size(), is(4));
+        assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
+        for (String pod : bridgePods) {
+            assertThat(pod.contains(bridgeGenName), is(true));
+        }
     }
 
     @BeforeAll
