@@ -71,7 +71,7 @@ class AlternativeReconcileTriggersST extends BaseST {
         KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
         String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
         KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
-        KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "").done();
+        KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount).done();
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();

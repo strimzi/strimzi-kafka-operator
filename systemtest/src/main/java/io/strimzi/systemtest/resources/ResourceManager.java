@@ -432,7 +432,7 @@ public class ResourceManager {
             },
             () -> logCurrentResourceStatus(resource));
 
-        LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
+        LOGGER.info("{}: {} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
     }
 

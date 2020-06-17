@@ -485,61 +485,8 @@ public class KafkaClientsResource {
             .build());
     }
 
-    public static DoneableJob consumerStrimzi(String consumerName, String bootstrapServer, String topicName, int messageCount, String additionalConfig) {
-        Map<String, String> consumerLabels = new HashMap<>();
-        consumerLabels.put("app", consumerName);
-        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
-
-        return KubernetesResource.deployNewJob(new JobBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(consumerLabels)
-                .withName(consumerName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(consumerLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withRestartPolicy("OnFailure")
-                        .withContainers()
-                            .addNewContainer()
-                            .withName(consumerName)
-                                .withImage("strimzi/hello-world-consumer:latest")
-                                    .addNewEnv()
-                                        .withName("BOOTSTRAP_SERVERS")
-                                        .withValue(bootstrapServer)
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("TOPIC")
-                                        .withValue(topicName)
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("DELAY_MS")
-                                        .withValue("1000")
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("LOG_LEVEL")
-                                        .withValue("DEBUG")
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("MESSAGE_COUNT")
-                                        .withValue(String.valueOf(messageCount))
-                                    .endEnv()
-                                   .addNewEnv()
-                                        .withName("GROUP_ID")
-                                        .withValue(generateRandomConsumerGroup())
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("ADDITIONAL_CONFIG")
-                                        .withValue(additionalConfig)
-                                    .endEnv()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build());
+    public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount) {
+        return producerStrimzi(producerName, bootstrapServer, topicName, messageCount, "");
     }
 
     public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount, String additionalConfig) {
@@ -587,6 +534,67 @@ public class KafkaClientsResource {
                                     .addNewEnv()
                                         .withName("PRODUCER_ACKS")
                                         .withValue("all")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("ADDITIONAL_CONFIG")
+                                        .withValue(additionalConfig)
+                                    .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
+    }
+
+    public static DoneableJob consumerStrimzi(String consumerName, String bootstrapServer, String topicName, int messageCount) {
+        return consumerStrimzi(consumerName, bootstrapServer, topicName, messageCount, "", generateRandomConsumerGroup());
+    }
+
+    public static DoneableJob consumerStrimzi(String consumerName, String bootstrapServer, String topicName, int messageCount, String additionalConfig, String consumerGroup) {
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", consumerName);
+        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+
+        return KubernetesResource.deployNewJob(new JobBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(consumerLabels)
+                .withName(consumerName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(consumerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("OnFailure")
+                        .withContainers()
+                            .addNewContainer()
+                            .withName(consumerName)
+                                .withImage("strimzi/hello-world-consumer:latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue(topicName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("DEBUG")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue(String.valueOf(messageCount))
+                                    .endEnv()
+                                   .addNewEnv()
+                                        .withName("GROUP_ID")
+                                        .withValue(consumerGroup)
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("ADDITIONAL_CONFIG")

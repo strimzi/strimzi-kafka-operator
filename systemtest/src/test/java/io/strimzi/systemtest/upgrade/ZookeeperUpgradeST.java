@@ -39,10 +39,10 @@ public class ZookeeperUpgradeST extends BaseST {
 
     public static final String NAMESPACE = "zookeeper-upgrade-test";
 
-    private String continuousTopicName = "continuous-topic";
-    private int continuousClientsMessageCount = 1300;
-    private String producerName = "hello-world-producer";
-    private String consumerName = "hello-world-consumer";
+    private final String continuousTopicName = "continuous-topic";
+    private final int continuousClientsMessageCount = 1000;
+    private final String producerName = "hello-world-producer";
+    private final String consumerName = "hello-world-consumer";
 
     @Test
     void testKafkaClusterUpgrade(TestInfo testinfo) {
@@ -111,7 +111,7 @@ public class ZookeeperUpgradeST extends BaseST {
             KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
             String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
-            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "").done();
+            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount).done();
             // ##############################
 
         } else {

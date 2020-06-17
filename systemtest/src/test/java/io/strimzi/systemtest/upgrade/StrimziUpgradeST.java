@@ -80,7 +80,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String userName = "my-user";
     private final int upgradeTopicCount = 40;
     // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
-    private final int expectedTopicCount = upgradeTopicCount + 2;
+    private int expectedTopicCount = upgradeTopicCount + 2;
 
     private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
 
@@ -202,6 +202,7 @@ public class StrimziUpgradeST extends BaseST {
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInt("continuousClientsMessages");
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
+        String continuousConsumerGroup = "continuous-consumer-group";
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
@@ -263,8 +264,10 @@ public class StrimziUpgradeST extends BaseST {
             KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
             String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
-            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "").done();
+            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
             // ##############################
+            // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
+            expectedTopicCount += 1;
         }
 
         // Wait until user will be created
@@ -354,6 +357,9 @@ public class StrimziUpgradeST extends BaseST {
             // ##############################
             ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
             // ##############################
+            // Delete jobs to make same names available for next upgrade run during chain upgrade
+            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(producerName).delete();
+            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(consumerName).delete();
         }
 
         // Check errors in CO log
