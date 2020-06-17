@@ -24,8 +24,8 @@ For example, `nodeport` is the least secure, so you might not wish to use it in 
 
 In this procedure:
 
-. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ enabled
-. A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_
+. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ is enabled.
+. A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_.
 
 You can configure your listener to use TLS or SCRAM-SHA authentication,
 both of which can be used with TLS encryption.
@@ -122,7 +122,7 @@ A service is created for each Kafka broker pod.
 +
 An additional service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
 +
-The cluster (CA) to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
 . Find the bootstrap address and port from the status of the `Kafka` resource.
 +
