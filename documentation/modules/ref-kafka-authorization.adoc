@@ -14,6 +14,7 @@ You can configure:
 
 * Simple authorization
 * xref:assembly-oauth-authorization_str[OAuth 2.0 authorization] (if you are using OAuth 2.0 token based authentication)
+* xref:type-KafkaAuthorizationOpa-reference[Open Policy Agent authorization]
 
 == Simple authorization
 

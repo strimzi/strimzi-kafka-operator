@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -93,7 +92,7 @@ class CustomResourceStatusST extends BaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testKafkaStatus() {
         LOGGER.info("Checking status of deployed kafka cluster");
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -116,7 +115,7 @@ class CustomResourceStatusST extends BaseST {
         });
 
         LOGGER.info("Wait until cluster will be in NotReady state ...");
-        KafkaUtils.waitUntilKafkaCRIsNotReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -124,7 +123,7 @@ class CustomResourceStatusST extends BaseST {
                     .addToRequests("cpu", new Quantity("100m"))
                     .build());
         });
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
         assertKafkaStatus(3, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
     }
 
@@ -361,7 +360,7 @@ class CustomResourceStatusST extends BaseST {
 
     @Test
     void testKafkaMirrorMaker2WrongBootstrap() {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithoutWait(
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithoutWait(
                 KafkaMirrorMaker2Resource.defaultKafkaMirrorMaker2(CLUSTER_NAME,
             "non-existing-source", "non-existing-target", 1, false).build());
 

@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
@@ -26,6 +27,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -78,7 +80,9 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Cruise Control configuration");
             writer.println("cruise.control.metrics.topic=strimzi.cruisecontrol.metrics");
             writer.println("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS");
-            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.bootstrapServiceName(clusterName) + ":9091");
+            // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
+            // to the pods behind the bootstrap one when they are not ready during startup.
+            writer.println("cruise.control.metrics.reporter.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
             writer.println("cruise.control.metrics.reporter.security.protocol=SSL");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.type=PKCS12");
             writer.println("cruise.control.metrics.reporter.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
@@ -476,6 +480,20 @@ public class KafkaBrokerConfigurationBuilder {
             // User configured super users
             if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
                 superUsers.addAll(simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
+            }
+        } else if (KafkaAuthorizationOpa.TYPE_OPA.equals(authorization.getType())) {
+            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+            writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
+
+            writer.println(String.format("%s=%s", "opa.authorizer.url", opaAuthz.getUrl()));
+            writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", opaAuthz.isAllowOnError()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", opaAuthz.getInitialCacheCapacity()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
+            writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));
+
+            // User configured super users
+            if (opaAuthz.getSuperUsers() != null && opaAuthz.getSuperUsers().size() > 0) {
+                superUsers.addAll(opaAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
             }
         } else if (KafkaAuthorizationKeycloak.TYPE_KEYCLOAK.equals(authorization.getType())) {
             KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;

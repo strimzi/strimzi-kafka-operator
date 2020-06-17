@@ -27,6 +27,15 @@ public class CrdGeneratorTest {
     }
 
     @Test
+    public void simpleTestWithSubresources() throws IOException, URISyntaxException {
+        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        StringWriter w = new StringWriter();
+        crdGenerator.generate(ExampleWithSubresourcesCrd.class, w);
+        String s = w.toString();
+        assertEquals(CrdTestUtils.readResource("simpleTestWithSubresources.yaml"), s);
+    }
+
+    @Test
     public void generateHelmMetadataLabels() throws IOException {
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("app", "{{ template \"strimzi.name\" . }}");

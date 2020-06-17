@@ -4,12 +4,14 @@
  */
 package io.strimzi.test.k8s.cmdClient;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.executor.ExecResult;
 
 import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -67,6 +69,16 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     K deleteNamespace(String name);
 
     /**
+     * Scale resource using the scale subresource
+     *
+     * @param kind      Kind of the resource which should be scaled
+     * @param name      Name of the resource which should be scaled
+     * @param replicas  Number of replicas to which the resource should be scaled
+     * @return          This kube client
+     */
+    K scaleByName(String kind, String name, int replicas);
+
+    /**
      * Execute the given {@code command} in the given {@code pod}.
      * @param pod The pod
      * @param command The command
@@ -110,6 +122,15 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @return The process result.
      */
     ExecResult exec(boolean throwError, boolean logToOutput, String... command);
+
+    /**
+     * Wait for the resource with the given {@code name} to be reach the state defined by the predicate.
+     * @param resource The resource type.
+     * @param name The resource name.
+     * @param condition Predicate to test if the desired state was achieved
+     * @return This kube client.
+     */
+    K waitFor(String resource, String name, Predicate<JsonNode> condition);
 
     /**
      * Wait for the resource with the given {@code name} to be created.

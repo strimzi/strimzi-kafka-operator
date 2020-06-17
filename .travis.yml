@@ -17,6 +17,7 @@ install:
 - mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_script:
 - "./.travis/setup-kubernetes.sh"
+- "./.travis/setup-helm.sh"
 script:
 - "./.travis/build.sh"
 cache:
@@ -31,9 +32,10 @@ env:
   - DOCKER_ORG=strimzici
   - DOCKER_REGISTRY=docker.io
   - TEST_CLUSTER=minikube
-  - TEST_KUBECTL_VERSION=v1.15.0
+  - TEST_KUBECTL_VERSION=v1.16.0
   - TEST_NSENTER_VERSION=2.32
-  - TEST_HELM_VERSION=v2.16.3
+  - TEST_HELM2_VERSION=v2.16.3
+  - TEST_HELM3_VERSION=v3.2.0
   - TEST_MINIKUBE_VERSION=v1.2.0
   - STRIMZI_DEFAULT_LOG_LEVEL=DEBUG
   - MVN_ARGS="-q"

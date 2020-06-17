@@ -23,7 +23,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import java.util.function.Consumer;
 
 public class KafkaMirrorMakerResource {
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../examples/kafka-mirror-maker/kafka-mirror-maker.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../examples/mirror-maker/kafka-mirror-maker.yaml";
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());

@@ -6,12 +6,12 @@ package io.strimzi.systemtest.upgrade;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -40,9 +40,7 @@ import javax.json.JsonValue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -79,6 +77,9 @@ public class StrimziUpgradeST extends BaseST {
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
     private final String userName = "my-user";
+    private final int upgradeTopicCount = 40;
+    // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
+    private final int expectedTopicCount = upgradeTopicCount + 2;
 
     private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
 
@@ -110,16 +111,7 @@ public class StrimziUpgradeST extends BaseST {
 
             throw e;
         } finally {
-            // Get current date to create a unique folder
-            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-            String logDir = Environment.TEST_LOG_DIR + testClass + currentDate;
-
-            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
-            logCollector.collectEvents();
-            logCollector.collectConfigMaps();
-            logCollector.collectLogsFromPods();
-            logCollector.collectStrimzi();
-
+            TestExecutionWatcher.collectLogs(testClass, testName);
             deleteInstalledYamls(coDir);
         }
     }
@@ -161,15 +153,7 @@ public class StrimziUpgradeST extends BaseST {
 
             throw e;
         } finally {
-            // Get current date to create a unique folder
-            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-            String logDir = Environment.TEST_LOG_DIR + testClass + currentDate;
-
-            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
-            logCollector.collectEvents();
-            logCollector.collectConfigMaps();
-            logCollector.collectLogsFromPods();
-
+            TestExecutionWatcher.collectLogs(testClass, testName);
             deleteInstalledYamls(coDir);
         }
     }
@@ -252,6 +236,16 @@ public class StrimziUpgradeST extends BaseST {
             LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient().create(kafkaTopicYaml);
         }
+        // Create bunch of topics for upgrade if it's specified in configuration
+        if (testParameters.getBoolean("generateTopics")) {
+            for (int x = 0; x < upgradeTopicCount; x++) {
+                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
+                    .editSpec()
+                        .withTopicName(topicName + "-" + x)
+                    .endSpec()
+                    .build());
+            }
+        }
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
@@ -321,6 +315,18 @@ public class StrimziUpgradeST extends BaseST {
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
+
+        if (testParameters.getBoolean("generateTopics")) {
+            // Check that topics weren't deleted/duplicated during upgrade procedures
+            assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
+            List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+            assertThat("KafkaTopic " + topicName + " is not in expected topic list",
+                    kafkaTopicList.contains(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get()), is(true));
+            for (int x = 0; x < upgradeTopicCount; x++) {
+                KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
+                assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
+            }
+        }
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);

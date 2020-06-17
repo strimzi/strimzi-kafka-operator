@@ -26,8 +26,8 @@ import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -669,21 +669,9 @@ public class KafkaRebalanceAssemblyOperator
                                     log.info("{}: Getting Cruise Control rebalance user task status", reconciliation);
                                     apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId).onComplete(userTaskResult -> {
                                         if (userTaskResult.succeeded()) {
-                                            CruiseControlUserTaskResponse response = userTaskResult.result();
+                                            CruiseControlResponse response = userTaskResult.result();
                                             JsonObject taskStatusJson = response.getJson();
-                                            CruiseControlUserTaskStatus taskStatus;
-                                            // Due to a bug in the CC rest API (https://github.com/linkedin/cruise-control/issues/1187), if we ask
-                                            // for the status of a task that has COMPLETED_WITH_ERROR with fetch_completed_task=true, will will get
-                                            // 500 error instead of the task status. So the client currently handles this case and sets a flag in
-                                            // the CC response object.
-                                            if (response.completedWithError()) {
-                                                log.debug("{}: User tasks end-point returned {} for task: {}", reconciliation,
-                                                        CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR, sessionId);
-                                                taskStatus = CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR;
-                                            } else {
-                                                String taskStatusStr = taskStatusJson.getString("Status");
-                                                taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusStr);
-                                            }
+                                            CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
                                             switch (taskStatus) {
                                                 case COMPLETED:
                                                     vertx.cancelTimer(t);

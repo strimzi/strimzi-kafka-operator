@@ -53,7 +53,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         throw throwable;
     }
 
-    void collectLogs(String testClass, String testMethod) {
+    public static void collectLogs(String testClass, String testMethod) {
         // Stop test execution time counter in case of failures
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         // Get current date to create a unique folder

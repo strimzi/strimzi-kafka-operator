@@ -444,7 +444,7 @@ class KafkaST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -851,7 +851,7 @@ class KafkaST extends BaseST {
         //Updating first topic using pod CLI
         KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, topicName, 2);
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
                 hasItems("PartitionCount:2"));
@@ -865,7 +865,7 @@ class KafkaST extends BaseST {
             topic.getSpec().setPartitions(2);
         });
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, cliTopicName),
                 hasItems("PartitionCount:2"));
@@ -986,7 +986,7 @@ class KafkaST extends BaseST {
             k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
-        PodUtils.waitUntilPodReplicasCount(eoDeploymentName, 0);
+        PodUtils.waitUntilPodStabilityReplicasCount(eoDeploymentName, 0);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
@@ -2043,7 +2043,7 @@ class KafkaST extends BaseST {
 
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         pvcs = kubeClient().listPersistentVolumeClaims();
 

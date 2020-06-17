@@ -10,20 +10,25 @@ import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -39,6 +44,7 @@ public class CruiseControlIsolatedST extends BaseST {
 
 
     @Test
+    @Disabled
     void testManuallyCreateMetricsReporterTopic() {
         KafkaResource.kafkaWithCruiseControlWithoutWaitAutoCreateTopicsDisable(CLUSTER_NAME, 3, 3);
 
@@ -77,6 +83,37 @@ public class CruiseControlIsolatedST extends BaseST {
         LOGGER.info("Verifying that Cruise control pod is running and ready (stable)");
 
         PodUtils.verifyThatRunningPodsAreStable(CruiseControlResources.deploymentName(CLUSTER_NAME));
+    }
+
+    @Test
+    @Tag(ACCEPTANCE)
+    void testCruiseControlWithRebalanceResource() {
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME).done();
+
+        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceUtils.KafkaRebalanceState.PendingProposal);
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.PendingProposal);
+
+        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceUtils.KafkaRebalanceState.ProposalReady);
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.ProposalReady);
+
+        LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
+
+        // attach the approve annotation -> RS
+        LOGGER.info("Executing command in the namespace {}", cmdKubeClient().namespace(NAMESPACE).namespace());
+        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE).execInCurrentNamespace("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
+
+        LOGGER.info("Response from the annotation process {}", response);
+
+        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceUtils.KafkaRebalanceState.Rebalancing);
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.Rebalancing);
+
+        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceUtils.KafkaRebalanceState.Ready);
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.Ready);
     }
 
     @BeforeAll

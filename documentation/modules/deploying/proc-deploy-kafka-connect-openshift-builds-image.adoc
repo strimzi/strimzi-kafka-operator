@@ -22,7 +22,7 @@ When started using the enhanced image, Kafka Connect loads any third-party plug-
 +
 [source,shell,subs="+quotes"]
 ----
-oc apply -f examples/kafka-connect/kafka-connect-s2i.yaml
+oc apply -f examples/connect/kafka-connect-s2i.yaml
 ----
 
 . Create a directory with Kafka Connect plug-ins:

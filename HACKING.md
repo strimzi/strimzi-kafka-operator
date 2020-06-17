@@ -24,7 +24,9 @@ To build this project you must first install several command line utilities and 
 - [`make`](https://www.gnu.org/software/make/) - Make build system
 - [`mvn`](https://maven.apache.org/index.html) (version 3.5 and above) - Maven CLI
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
-    - After installing Helm be sure to run `helm init`.
+    - Both Helm 2 and Helm 3 are supported. In order to use either two, you need to download both versions. A convenient way to do so is to download the [get_helm.sh](https://helm.sh/docs/intro/install/#from-script) script and specify the version you want to download either for Helm 2 or Helm 3.
+    - After you download one binary, you can , for convenience, rename it to `helm2` and `helm3` accordingly.
+    - Note that if you are using the Helm version 2 charts, after installing the Helm CLI, ensure you run `helm2 init` to configure to your cluster.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
 - [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool. 
@@ -237,7 +239,13 @@ This labels your latest container build as `strimzi/operator:latest` and you can
 
 The `strimzi-kafka-operator` Helm Chart can be installed directly from its source.
 
-    helm install ./helm-charts/strimzi-kafka-operator
+For any Helm version 2 chart, run:
+
+    `helm install ./helm-charts/helm2/strimzi-kafka-operator`
+
+For any Helm version 3 chart, run:
+
+    `helm install ./helm-charts/helm3/strimzi-kafka-operator`
     
 The chart is also available in the release artifact as a tarball.
 

@@ -39,4 +39,4 @@ spec:
           memory: 500Mi
 ----
 Save the file and exit the editor.
-The Cluster Operator applies   the changes automatically.
+The Cluster Operator applies the changes automatically.

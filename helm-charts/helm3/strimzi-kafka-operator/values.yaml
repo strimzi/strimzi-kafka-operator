@@ -1,0 +1,123 @@
+# Default values for strimzi-kafka-operator.
+
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`), 
+# the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
+watchNamespaces: []
+watchAnyNamespace: false
+
+image:
+  repository: strimzi
+  name: operator
+  tag: latest
+logLevel: INFO
+fullReconciliationIntervalMs: 120000
+operationTimeoutMs: 300000
+kubernetesServiceDnsDomain: cluster.local
+
+tolerations: []
+affinity: {}
+nodeSelector: {}
+
+
+# Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
+# repository name with your registry URL.
+# Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
+zookeeper:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+kafka:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+kafkaConnect:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+kafkaConnects2i:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+topicOperator:
+  image:
+    repository: strimzi
+    name: operator
+    tag: latest
+userOperator:
+  image:
+    repository: strimzi
+    name: operator
+    tag: latest
+kafkaInit:
+  image:
+    repository: strimzi
+    name: operator
+    tag: latest
+tlsSidecarKafka:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+tlsSidecarEntityOperator:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+kafkaMirrorMaker:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+kafkaBridge:
+  image:
+    repository: strimzi
+    name: kafka-bridge
+    tag: 0.16.0
+kafkaExporter:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+jmxTrans:
+  image:
+    repository: strimzi
+    name: jmxtrans
+    tag: latest
+kafkaMirrorMaker2:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+cruiseControl:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+tlsSidecarCruiseControl:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
+resources:
+  limits:
+    memory: 384Mi
+    cpu: 1000m
+  requests:
+    memory: 384Mi
+    cpu: 200m
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+# Override the docker image repository used by all Strimzi images
+# imageRepositoryOverride: foobar
+# Override the docker image tag used by all Strimzi images
+# imageTagOverride: latest
+createGlobalResources: true

@@ -16,7 +16,7 @@ The example YAML will create a `FileStreamSourceConnector` to send each line of 
 
 .Procedure
 
-. Edit the `examples/connector/source-connector.yaml` file:
+. Edit the `examples/connect/source-connector.yaml` file:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -45,7 +45,7 @@ spec:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl apply -f examples/connector/source-connector.yaml
+kubectl apply -f examples/connect/source-connector.yaml
 ----
 
 . Check that the resource was created:

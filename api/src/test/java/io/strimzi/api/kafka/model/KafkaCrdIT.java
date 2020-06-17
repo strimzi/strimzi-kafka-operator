@@ -33,6 +33,11 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaIsNotScaling() {
+        assertThrows(KubeClusterException.class, () -> createScaleDelete(Kafka.class, "Kafka.yaml"));
+    }
+
+    @Test
     void testKafkaV1Beta1() {
         createDelete(Kafka.class, "KafkaV1beta1.yaml");
     }
@@ -174,7 +179,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA);
-        cluster.cmdClient().waitForResourceCreation("crd", "kafkas.kafka.strimzi.io");
+        waitForCrd("crd", "kafkas.kafka.strimzi.io");
     }
 
     @AfterAll

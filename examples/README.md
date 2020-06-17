@@ -4,11 +4,9 @@ This folder contains different examples of Strimzi custom resources and demonstr
 
 * [Kafka cluster](./kafka)
     * Kafka deployments with different types of storage
-* [Kafka Connect](./kafka-connect)
-* [Kafka Connect Connector](./connector)
-* [Kafka Mirror Maker](./kafka-mirror-maker)
-* [Kafka Mirror Maker 2](./kafka-mirror-maker2)
-* [Kafka Bridge](./kafka-bridge)
+* [Kafka Connect and Kafka Connect Connector](./connect)
+* [Kafka Mirror Maker 1 and 2](./mirror-maker)
+* [Kafka Bridge](./bridge)
 * [Cruise Control and Kafka Rebalance](./cruise-control)
 * [Kafka users](./user)
 * [Kafka topics](./topic)
