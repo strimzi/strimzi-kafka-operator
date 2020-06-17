@@ -9,11 +9,9 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternal;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalConfiguration;
@@ -29,8 +27,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -197,6 +193,26 @@ public class KafkaResource {
         return kafka;
     }
 
+    public static Kafka kafkaWithCruiseControlWithoutWait(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build();
+
+        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+    }
+
+    public static Kafka kafkaWithCruiseControlWithoutWaitAutoCreateTopicsDisable(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+                    .editSpec()
+                        .editKafka()
+                            .addToConfig("auto.create.topics.enable", "false")
+                        .endKafka()
+                    .endSpec()
+                .build();
+
+        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+    }
+
     /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
@@ -214,29 +230,17 @@ public class KafkaResource {
      * Wait until the ZK, Kafka and EO are all ready
      */
     private static Kafka waitFor(Kafka kafka) {
-        String kafkaCrName = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
+        long timeout = Constants.TIMEOUT_FOR_RESOURCE_READINESS;
 
-        LOGGER.info("Waiting for Kafka {} in namespace {}", kafkaCrName, namespace);
-
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(kafkaCrName), kafka.getSpec().getZookeeper().getReplicas());
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(kafkaCrName), kafka.getSpec().getKafka().getReplicas());
-
-        // EO should not be deployed if it does not contain UO and TO
-        if (kafka.getSpec().getEntityOperator().getTopicOperator() != null || kafka.getSpec().getEntityOperator().getUserOperator() != null) {
-            DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(kafkaCrName));
-        }
         // Kafka Exporter is not setup every time
         if (kafka.getSpec().getKafkaExporter() != null) {
-            DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(kafkaCrName));
+            timeout += Constants.TIMEOUT_FOR_RESOURCE_CREATION;
         }
         // Cruise Control is not setup every time
         if (kafka.getSpec().getCruiseControl() != null) {
-            LOGGER.info("Waiting for Cruise Control pods");
-            DeploymentUtils.waitForDeploymentReady(CruiseControlResources.deploymentName(kafkaCrName));
-            LOGGER.info("Cruise Control pods are ready");
+            timeout += Constants.TIMEOUT_FOR_RESOURCE_CREATION;
         }
-        return kafka;
+        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, "Ready", timeout);
     }
 
     private static Kafka deleteLater(Kafka kafka) {

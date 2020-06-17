@@ -65,7 +65,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -605,7 +604,7 @@ class RollingUpdateST extends BaseST {
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         String bootstrapAddressDns = ((KafkaListenerExternalNodePort) Crds.kafkaOperation(kubeClient().getClient())
                 .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
@@ -627,50 +626,6 @@ class RollingUpdateST extends BaseST {
 
         LOGGER.info("Verifying that new DNS is inside kafka CR");
         assertThat(bootstrapAddressDns, is(bootstrapDns));
-    }
-
-    @Test
-    void testClusterCaRemovedTriggersRollingUpdate() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
-
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .build();
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        String zkCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
-        String kCrtBeforeAccident = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
-
-        // some kind of accident happened and the CA secret has been deleted
-        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zkCrtBeforeAccident)));
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kCrtBeforeAccident)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
-
-        int sentAfter = internalKafkaClient.sendMessagesTls();
-        assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
     @Test

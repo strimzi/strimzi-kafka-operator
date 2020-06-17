@@ -56,7 +56,12 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaMirrorMaker.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaMirrorMaker.STATUS_REPLICAS_PATH,
+                                labelSelectorPath = KafkaMirrorMaker.LABEL_SELECTOR_PATH
+                        )
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -108,6 +113,9 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kmm";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
+    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
+    public static final String LABEL_SELECTOR_PATH = ".status.selector";
 
     private String apiVersion;
     private ObjectMeta metadata;

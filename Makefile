@@ -4,7 +4,6 @@ include ./Makefile.os
 
 GITHUB_VERSION ?= master
 RELEASE_VERSION ?= latest
-CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 BRIDGE_VERSION ?= $(shell cat ./bridge.version | tr A-Z a-z)
 DOCKER_CMD ?= docker
@@ -13,7 +12,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts/helm2 helm-charts/helm3 install examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: prerequisites_check $(SUBDIRS)
@@ -29,10 +28,11 @@ next_version:
 bridge_version:
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
-	# Update Kafka Bridge image tag in chart values.yaml to BRIDGE_VERSION
-	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $(CHART_PATH)values.yaml
-	# Update Kafka Bridge image tag in chart README.md config grid with BRIDGE_VERSION
-	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $(CHART_PATH)README.md
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator;	\
+		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md;	\
+	done
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
@@ -65,23 +65,23 @@ release_pkg: helm_pkg
 
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
-	# Update default image tag in chart values.yaml to RELEASE_VERSION
-	$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
-	# Update default image tagPrefix in chart values.yaml to RELEASE_VERSION
-	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
-	# Update default image tag in chart README.md config grid with RELEASE_VERSION
-	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
-	# Update default image tag in chart README.md config grid with RELEASE_VERSION
-	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
-	# Update Kafka Bridge image tag in chart values.yaml to BRIDGE_VERSION
-	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $(CHART_PATH)values.yaml
-	# Update Kafka Bridge image tag in chart README.md config grid with BRIDGE_VERSION
-	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $(CHART_PATH)README.md
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator;	\
+		$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
+		$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
+		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md;	\
+	done
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
 	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
-	mv ./index.yaml ./helm-charts/index.yaml
+	for HELM_VERSION in 2 3; do	\
+		cp ./index.yaml ./helm-charts/helm$$HELM_VERSION/index.yaml;	\
+	done
+	rm ./index.yaml
 
 release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
@@ -90,12 +90,15 @@ release_single_file:
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
-	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
-	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
-	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
-	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
-	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
-	rm -rf strimzi-$(RELEASE_VERSION)/charts/
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator/;	\
+		mkdir -p strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
+		$(CP) -r $$CHART_PATH strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME);	\
+		helm$$HELM_VERSION package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $$CHART_PATH;	\
+		cp strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-$$HELM_VERSION-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz;	\
+		rm -rf strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
+	done
+	rm strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 
 docu_versions:
 	documentation/snip-kafka-versions.sh > documentation/modules/snip-kafka-versions.adoc
@@ -154,7 +157,7 @@ docu_htmlnoheaderclean:
 systemtests:
 	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
 
-helm_install: helm-charts
+helm_install: helm-charts/helm3
 
 crd_install: install
 

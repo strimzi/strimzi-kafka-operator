@@ -3,7 +3,34 @@
 
 ## 0.19.0
 
-* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic 
+* Add support for authorization using Open Policy Agent
+* Add support for scale subresource to make scaling of following resources easier:
+  * KafkaConnect
+  * KafkaConnectS2I
+  * KafkaBridge
+  * KafkaMirrorMaker
+  * KafkaMirrorMaker2
+  * KafkaConnector 
+* Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
+* Use Java 11 as the Java runtime
+* Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
+* Migration to Helm 3
+* Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
+
+### Deprecations and removals
+
+#### Removal of v1alpha1 versions of several custom resources
+
+In Strimzi 0.12.0, the `v1alpha1` versions of the following resources have been deprecated and replaced by `v1beta1`:
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaMirrorMaker`
+* `KafkaTopic`
+* `KafkaUser`
+
+In the next release, the `v1alpha1` versions of these resources will be removed. 
+Please follow the guide for upgrading the resources: https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-resources-str.
 
 ## 0.18.0
 

@@ -46,4 +46,4 @@ kubectl apply -f _kafka.yaml_
 
 .Additional resources
 
-* For more information about the schema of the `resources` object, see xref:type-ResourceRequirements-reference[].
+* For more information about the schema of the `resources` object, see {K8sResourceRequirementsAPI}.

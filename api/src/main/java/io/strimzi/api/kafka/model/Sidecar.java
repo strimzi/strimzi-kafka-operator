@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -42,6 +43,7 @@ public class Sidecar implements UnknownPropertyPreserving, Serializable {
         this.image = image;
     }
 
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;

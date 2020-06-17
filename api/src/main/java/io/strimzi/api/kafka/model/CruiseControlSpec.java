@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -113,6 +114,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve for the Cruise Control container")
     public ResourceRequirements getResources() {
         return resources;

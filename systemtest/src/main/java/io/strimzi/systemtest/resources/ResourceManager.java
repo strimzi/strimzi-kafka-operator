@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -286,7 +287,7 @@ public class ResourceManager {
     private static void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the Pods are terminated for KafkaConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
 
-        DeploymentUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
+        DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         ReplicaSetUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
 
         kubeClient().listPods().stream()
@@ -412,20 +413,23 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status, long resourceTimeout) {
         LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getMetadata().getName())
-            .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
+                    .withName(resource.getMetadata().getName())
+                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
             () -> logCurrentResourceStatus(resource));
 
         LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
     }
 
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+        return waitForResourceStatus(operation, resource, status, Constants.TIMEOUT_FOR_RESOURCE_READINESS);
+    }
 
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);

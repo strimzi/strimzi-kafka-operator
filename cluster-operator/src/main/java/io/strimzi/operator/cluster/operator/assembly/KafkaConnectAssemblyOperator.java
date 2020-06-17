@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -153,6 +154,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     if (!connectHasZeroReplicas) {
                         kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
                     }
+
+                    kafkaConnectStatus.setReplicas(connect.getReplicas());
+                    kafkaConnectStatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(connect.getSelectorLabels().toMap()).build());
 
                     this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation, kafkaConnectStatus,
                         (connect1, status) -> new KafkaConnectBuilder(connect1).withStatus(status).build()).onComplete(statusResult -> {

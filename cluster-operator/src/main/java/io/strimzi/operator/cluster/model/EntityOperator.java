@@ -138,9 +138,6 @@ public class EntityOperator extends AbstractModel {
 
             result.setOwnerReference(kafkaAssembly);
 
-            result.setUserAffinity(affinity(entityOperatorSpec));
-            result.setTolerations(tolerations(entityOperatorSpec));
-
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(kafkaAssembly);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(kafkaAssembly);
             TlsSidecar tlsSidecar = entityOperatorSpec.getTlsSidecar();
@@ -180,6 +177,10 @@ public class EntityOperator extends AbstractModel {
                 }
             }
 
+            // Entity Operator needs special treatment for Affinity and Tolerations because of deprecated fields in spec
+            result.setUserAffinity(affinity(entityOperatorSpec));
+            result.setTolerations(tolerations(entityOperatorSpec));
+
             result.setTlsSidecar(tlsSidecar);
             result.setTopicOperator(topicOperator);
             result.setUserOperator(userOperator);
@@ -201,7 +202,7 @@ public class EntityOperator extends AbstractModel {
                 && entityOperatorSpec.getTemplate().getPod() != null
                 && entityOperatorSpec.getTemplate().getPod().getTolerations() != null) {
             if (entityOperatorSpec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+                log.warn("Tolerations given on both spec.entityOperator.tolerations and spec.entityOperator.template.pod.tolerations; latter takes precedence");
             }
             return entityOperatorSpec.getTemplate().getPod().getTolerations();
         } else {
@@ -215,7 +216,7 @@ public class EntityOperator extends AbstractModel {
                 && entityOperatorSpec.getTemplate().getPod() != null
                 && entityOperatorSpec.getTemplate().getPod().getAffinity() != null) {
             if (entityOperatorSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.entityOperator.affinity and spec.entityOperator.template.pod.affinity; latter takes precedence");
             }
             return entityOperatorSpec.getTemplate().getPod().getAffinity();
         } else {

@@ -127,15 +127,15 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 [[replaceables]]
 == Styling replaceables
 
-Replaceable values in the text and code must be styled as monospace, italics, lowercase, arrow brackets, and hyphens.
+Replaceable values in the text and code should be styled in `monospace`, with italics, uppercase, and hyphens.
 
 .Replaceables quick reference
 [cols="50%,50%a",options="header"]
 |===
 |Item |Use
-|Replaceable value |\_`<some-value>`_
-|Location of broker instance |\_`<broker-instance-dir>`_
-|Component install directory |\_`<install-dir>`_
+|Replaceable value |\_`SOME-VALUE`_
+|Location of broker instance |\_`BROKER-INSTANCE-DIR>`_
+|Component install directory |\_`INSTALL-DIR`_
 |===
 
 TIP: If using a replaceable within a source block, you will need to add

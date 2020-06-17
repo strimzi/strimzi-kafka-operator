@@ -54,7 +54,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -445,7 +444,7 @@ class KafkaST extends BaseST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -852,7 +851,7 @@ class KafkaST extends BaseST {
         //Updating first topic using pod CLI
         KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, topicName, 2);
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName),
                 hasItems("PartitionCount:2"));
@@ -866,7 +865,7 @@ class KafkaST extends BaseST {
             topic.getSpec().setPartitions(2);
         });
 
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, cliTopicName),
                 hasItems("PartitionCount:2"));
@@ -981,20 +980,13 @@ class KafkaST extends BaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        String eoPodName = kubeClient().listPodsByPrefixInName(eoDeploymentName).get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(null);
             k.getSpec().getEntityOperator().setUserOperator(null);
         });
 
-        //Waiting when EO pod will be deleted
-        DeploymentUtils.waitForDeploymentDeletion(eoDeploymentName);
-        ReplicaSetUtils.waitForReplicaSetDeletion(eoDeploymentName);
-        PodUtils.deletePodWithWait(eoPodName);
-
-        //Checking that EO was removed
-        assertThat(kubeClient().listPodsByPrefixInName(eoDeploymentName).size(), is(0));
+        PodUtils.waitUntilPodStabilityReplicasCount(eoDeploymentName, 0);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
@@ -2051,7 +2043,7 @@ class KafkaST extends BaseST {
 
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
-        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         pvcs = kubeClient().listPersistentVolumeClaims();
 

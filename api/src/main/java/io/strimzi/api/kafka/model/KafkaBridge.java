@@ -51,7 +51,12 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaBridge.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaBridge.STATUS_REPLICAS_PATH,
+                                labelSelectorPath = KafkaBridge.LABEL_SELECTOR_PATH
+                        )
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -95,6 +100,9 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kb";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
+    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
+    public static final String LABEL_SELECTOR_PATH = ".status.selector";
 
     private String apiVersion;
     private ObjectMeta metadata;

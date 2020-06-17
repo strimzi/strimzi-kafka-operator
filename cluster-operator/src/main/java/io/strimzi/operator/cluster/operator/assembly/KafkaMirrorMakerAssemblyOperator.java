@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -105,6 +106,9 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.readiness(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
+
+                        kafkaMirrorMakerStatus.setReplicas(mirror.getReplicas());
+                        kafkaMirrorMakerStatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(mirror.getSelectorLabels().toMap()).build());
 
                         updateStatus(assemblyResource, reconciliation, kafkaMirrorMakerStatus).onComplete(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well

@@ -14,7 +14,7 @@ Cruise Control will then apply the optimization proposal to the Kafka cluster, r
 *This is not a dry run.* Before you approve an optimization proposal, you must:
 
 * Refresh the proposal in case it has become out of date.
-* Carefully review the xref:#contents-optimization-proposals[contents of the proposal].
+* Carefully review the xref:contents-optimization-proposals[contents of the proposal].
 ====
 
 .Prerequisites
@@ -30,7 +30,7 @@ Perform these steps for the optimization proposal that you want to approve:
 . Unless the optimization proposal is newly generated, check that it is based on current information about the state of the Kafka cluster.
 To do so, refresh the optimization proposal to make sure it uses the latest cluster metrics:
 
-.. Annotate the `KafkaRebalance` resource in Kubernetes with `approve`:
+.. Annotate the `KafkaRebalance` resource in Kubernetes with `refresh`:
 +
 [source,shell,subs="+quotes"]
 ----

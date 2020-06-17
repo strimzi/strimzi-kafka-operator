@@ -20,7 +20,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import java.util.function.Consumer;
 
 public class KafkaConnectorResource {
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connector/source-connector.yaml";
+    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connect/source-connector.yaml";
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());

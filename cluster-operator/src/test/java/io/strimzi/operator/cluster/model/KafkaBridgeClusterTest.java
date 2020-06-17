@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -11,11 +13,14 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -353,6 +358,27 @@ public class KafkaBridgeClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withNewKey("key1")
+                                    .withNewOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = singletonList(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -369,6 +395,8 @@ public class KafkaBridgeClusterTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withAffinity(affinity)
+                            .withTolerations(tolerations)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -397,6 +425,8 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
 
         // Check Service
         Service svc = kbc.generateService();

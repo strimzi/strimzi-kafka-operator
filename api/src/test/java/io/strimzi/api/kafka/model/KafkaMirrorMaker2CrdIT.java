@@ -31,6 +31,11 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaMirrorMaker2Scaling() {
+        createScaleDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2.yaml");
+    }
+
+    @Test
     void testKafkaMirrorMaker2Minimal() {
         createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-minimal.yaml");
     }
@@ -106,7 +111,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        cluster.cmdClient().waitForResourceCreation("crd", "kafkamirrormaker2s.kafka.strimzi.io");
+        waitForCrd("crd", "kafkamirrormaker2s.kafka.strimzi.io");
     }
 
     @AfterAll

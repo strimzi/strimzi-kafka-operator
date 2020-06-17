@@ -126,6 +126,10 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.4", ModelUtils.serviceDnsName(namespace, ZookeeperCluster.serviceName(cluster)));
             sbjAltNames.put("DNS.5", ZookeeperCluster.podDnsName(namespace, cluster, i));
             sbjAltNames.put("DNS.6", ZookeeperCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
+            sbjAltNames.put("DNS.7", ModelUtils.wildcardServiceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.8", ModelUtils.wildcardServiceDnsName(namespace, ZookeeperCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.9", ModelUtils.wildcardServiceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.headlessServiceName(cluster)));
+            sbjAltNames.put("DNS.10", ModelUtils.wildcardServiceDnsName(namespace, ZookeeperCluster.headlessServiceName(cluster)));
 
             Subject subject = new Subject();
             subject.setOrganizationName("io.strimzi");

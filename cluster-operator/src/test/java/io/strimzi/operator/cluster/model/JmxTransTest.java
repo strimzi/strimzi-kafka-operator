@@ -5,10 +5,15 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -38,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.CustomMatchers.hasEntries;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -188,6 +194,27 @@ public class JmxTransTest {
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withNewKey("key1")
+                                    .withNewOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = singletonList(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+
         Kafka resource = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editOrNewJmxTrans()
@@ -205,6 +232,8 @@ public class JmxTransTest {
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
+                                .withAffinity(affinity)
+                                .withTolerations(tolerations)
                             .endPod()
                         .endTemplate()
                     .endJmxTrans()
@@ -217,6 +246,8 @@ public class JmxTransTest {
         assertThat(dep.getMetadata().getLabels(), hasEntries(expectedDepLabels));
         assertThat(dep.getMetadata().getAnnotations(), hasEntries(depAnots));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
 
         // Check Pods
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), hasEntries(podLabels));

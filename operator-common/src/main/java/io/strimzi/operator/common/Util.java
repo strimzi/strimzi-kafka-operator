@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class Util {
@@ -49,6 +50,8 @@ public class Util {
     }
 
     /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
      * @param vertx The vertx instance.
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
@@ -58,6 +61,24 @@ public class Util {
      * @return A future that completes when the given {@code completed} indicates readiness.
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
+        return waitFor(vertx, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
+    }
+
+    /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param vertx The vertx instance.
+     * @param logContext A string used for context in logging.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param completed Determines when the wait is complete by returning true.
+     * @param failOnError Determine whether a given error thrown by {@code completed},
+     *                    should result in the immediate completion of the returned Future.
+     * @return A future that completes when the given {@code completed} indicates readiness.
+     */
+    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
+                                       Predicate<Throwable> failOnError) {
         Promise<Void> promise = Promise.promise();
         LOGGER.debug("Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -84,14 +105,18 @@ public class Util {
                             LOGGER.debug("{} is {}", logContext, logState);
                             promise.complete();
                         } else {
-                            long timeLeft = deadline - System.currentTimeMillis();
-                            if (timeLeft <= 0) {
-                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                LOGGER.error(exceptionMessage);
-                                promise.fail(new TimeoutException(exceptionMessage));
+                            if (failOnError.test(res.cause())) {
+                                promise.fail(res.cause());
                             } else {
-                                // Schedule ourselves to run again
-                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                long timeLeft = deadline - System.currentTimeMillis();
+                                if (timeLeft <= 0) {
+                                    String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
+                                    LOGGER.error(exceptionMessage);
+                                    promise.fail(new TimeoutException(exceptionMessage));
+                                } else {
+                                    // Schedule ourselves to run again
+                                    vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                }
                             }
                         }
                     }
