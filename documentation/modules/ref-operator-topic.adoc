@@ -9,7 +9,7 @@ The `KafkaTopic` resource is used to configure topics, including the number of p
 
 The full schema for `KafkaTopic` is described in xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
 
-= Identifying a Kafka cluster for topic handling
+== Identifying a Kafka cluster for topic handling
 
 A `KafkaTopic` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 
@@ -29,7 +29,7 @@ The label is used by the Topic Operator to identify the `KafkaTopic` resource an
 
 If the label does not match the Kafka cluster, the Topic Operator cannot identify the `KafkaTopic` and the topic is not created.
 
-= Handling changes to topics
+== Handling changes to topics
 
 A fundamental problem that the Topic Operator has to solve is that there is no single source of truth:
 Both the `KafkaTopic` resource and the Kafka topic can be modified independently of the operator.

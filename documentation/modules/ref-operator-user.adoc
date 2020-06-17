@@ -9,7 +9,7 @@ The `KafkaUser` resource is used to configure the authentication mechanism, auth
 
 The full schema for `KafkaUser` is described in xref:type-KafkaUser-reference[`KafkaUser` schema reference].
 
-= Identifying a Kafka cluster for user handling
+== Identifying a Kafka cluster for user handling
 
 A `KafkaUser` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 

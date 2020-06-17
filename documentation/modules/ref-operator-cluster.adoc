@@ -3,7 +3,7 @@
 // assembly-using-the-cluster-operator.adoc
 
 [id='ref-operator-cluster-{context}']
-= Cluster Operator Configuration
+= Cluster Operator configuration
 
 The Cluster Operator can be configured through the following supported environment variables.
 
@@ -121,7 +121,7 @@ The DNS domain name is added to the Kafka broker certificates used for hostname 
 +
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
 
-= Periodic reconciliation
+== Periodic reconciliation
 
 Although the Cluster Operator reacts to all notifications about the desired cluster resources received from the Kubernetes cluster,
 if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync with the state of the running Kubernetes cluster.
