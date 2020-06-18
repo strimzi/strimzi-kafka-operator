@@ -107,7 +107,7 @@ Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context
 [source]
 RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal
 
-Six of these goals are preset as xref:hard-soft-goals[hard goals].
+Five of these goals are preset as xref:hard-soft-goals[hard goals].
 
 To reduce complexity, we recommend that you use the inherited master optimization goals, unless you need to _completely_ exclude one or more goals from use in `KafkaRebalance` resources. The priority order of the master optimization goals can be modified, if desired, in the configuration for xref:default-goals[default optimization goals].
 
