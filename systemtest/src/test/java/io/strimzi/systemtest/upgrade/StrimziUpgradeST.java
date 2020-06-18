@@ -264,7 +264,7 @@ public class StrimziUpgradeST extends BaseST {
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
                 KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
                 // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
-                expectedTopicCount++;
+                expectedTopicCount += 1;
             }
             String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
