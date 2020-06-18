@@ -264,7 +264,9 @@ public class StrimziUpgradeST extends BaseST {
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
                 KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
                 // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
+                LOGGER.info("Incrementing expectedTOpicCount: {}", expectedTopicCount);
                 expectedTopicCount += 1;
+                LOGGER.info("Incerementing done: {}", expectedTopicCount);
             }
             String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
@@ -343,6 +345,8 @@ public class StrimziUpgradeST extends BaseST {
 
         if (testParameters.getBoolean("generateTopics")) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
+            LOGGER.info("KafkaList size: {}", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size());
+            LOGGER.info("Expected size: {}", expectedTopicCount);
             assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
             List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
             assertThat("KafkaTopic " + topicName + " is not in expected topic list",
