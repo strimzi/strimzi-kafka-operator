@@ -278,6 +278,10 @@ class HttpBridgeST extends HttpBridgeBaseST {
         assertThat(bridgePods.size(), is(4));
         assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getReplicas(), is(4));
+        /*
+        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
+        the observed generation is increased
+        */
         assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : bridgePods) {
             assertThat(pod.contains(bridgeGenName), is(true));

@@ -981,6 +981,10 @@ class ConnectST extends BaseST {
         assertThat(connectPods.size(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
+        /*
+        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
+        the observed generation is increased
+        */
         assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : connectPods) {
             assertThat(pod.contains(connectGenName), is(true));
@@ -994,6 +998,12 @@ class ConnectST extends BaseST {
         LOGGER.info("Check if taskMax is set to {}", scaleTo);
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getTasksMax(), is(scaleTo));
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax(), is(scaleTo));
+
+        LOGGER.info("Check taskMax on Connect pods API");
+        for (String pod : connectPods) {
+            JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(pod, CLUSTER_NAME));
+            assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
+        }
     }
 
     @Override

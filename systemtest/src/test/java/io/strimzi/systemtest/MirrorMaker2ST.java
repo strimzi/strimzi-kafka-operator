@@ -588,6 +588,10 @@ class MirrorMaker2ST extends BaseST {
         assertThat(mm2Pods.size(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
+        /*
+        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
+        the observed generation is increased
+        */
         assertThat(mm2ObsGen < KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : mm2Pods) {
             assertThat(pod.contains(mm2GenName), is(true));

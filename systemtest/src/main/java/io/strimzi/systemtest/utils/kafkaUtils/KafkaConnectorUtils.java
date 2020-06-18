@@ -93,4 +93,9 @@ public class KafkaConnectorUtils {
                 .withName(connectorName).get().getStatus().getTasksMax() == taskMax)
         );
     }
+
+    public static String getConnectorSpecFromConnectAPI(String podName, String connectorName) {
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+            "curl http://localhost:8083/connectors/" + connectorName).out();
+    }
 }

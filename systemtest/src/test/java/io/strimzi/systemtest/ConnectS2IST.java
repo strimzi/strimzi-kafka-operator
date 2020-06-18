@@ -713,6 +713,10 @@ class ConnectS2IST extends BaseST {
         assertThat(connectS2IPods.size(), is(4));
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
+        /*
+        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
+        the observed generation is increased
+        */
         assertThat(connectS2IObsGen < KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : connectS2IPods) {
             assertThat(pod.contains(connectS2IGenName), is(true));
