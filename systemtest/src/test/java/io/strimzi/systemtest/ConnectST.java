@@ -976,9 +976,11 @@ class ConnectST extends BaseST {
         cmdKubeClient().scaleByName(KafkaConnect.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
 
-        LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
+        LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
         List<String> connectPods = kubeClient().listPodNames("type", "kafka-connect");
         assertThat(connectPods.size(), is(4));
+        assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
+        assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
         assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : connectPods) {
             assertThat(pod.contains(connectGenName), is(true));
@@ -987,10 +989,11 @@ class ConnectST extends BaseST {
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
         LOGGER.info("Scaling subresource task max to {}", scaleTo);
         cmdKubeClient().scaleByName(KafkaConnector.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
+        KafkaConnectorUtils.waitForConnectorsTaskMaxChange(CLUSTER_NAME, scaleTo);
 
         LOGGER.info("Check if taskMax is set to {}", scaleTo);
-        int tasksMax = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax();
-        assertThat(tasksMax, is(scaleTo));
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getTasksMax(), is(scaleTo));
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax(), is(scaleTo));
     }
 
     @Override

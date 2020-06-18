@@ -652,6 +652,8 @@ public class MirrorMakerST extends BaseST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
         assertThat(mmPods.size(), is(4));
+        assertThat(KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
+        assertThat(KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
         assertThat(mmObsGen < KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : mmPods) {
             assertThat(pod.contains(mmGenName), is(true));

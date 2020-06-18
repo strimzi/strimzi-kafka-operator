@@ -276,6 +276,8 @@ class HttpBridgeST extends HttpBridgeBaseST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> bridgePods = kubeClient().listPodNames("type", "kafka-bridge");
         assertThat(bridgePods.size(), is(4));
+        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getSpec().getReplicas(), is(4));
+        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getReplicas(), is(4));
         assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : bridgePods) {
             assertThat(pod.contains(bridgeGenName), is(true));
