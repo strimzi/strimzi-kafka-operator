@@ -1,6 +1,6 @@
 # Default values for strimzi-kafka-operator.
 
-# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`), 
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
 # the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
 watchNamespaces: []
 watchAnyNamespace: false
@@ -17,7 +17,6 @@ kubernetesServiceDnsDomain: cluster.local
 tolerations: []
 affinity: {}
 nodeSelector: {}
-
 
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
 # repository name with your registry URL.
@@ -117,7 +116,7 @@ readinessProbe:
   periodSeconds: 30
 
 # Override the docker image repository used by all Strimzi images
-# imageRepositoryOverride: foobar
+imageRepositoryOverride: ""
 # Override the docker image tag used by all Strimzi images
-# imageTagOverride: latest
+imageTagOverride: ""
 createGlobalResources: true

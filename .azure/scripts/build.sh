@@ -43,7 +43,7 @@ if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
   echo "  mvn clean verify -DskipTests -DskipITs \\"
   echo "    && make crd_install \\"
   echo "    && make helm_install \\"
-  echo "    && git add install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles"
+  echo "    && git add install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles \\"
   echo "    && git commit -s -m 'Update derived resources'"
   exit 1
 fi

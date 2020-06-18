@@ -1,15 +1,11 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: kafkas.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
+    app: strimzi
     strimzi.io/crd-install: "true"
-    chart: '{{ template "strimzi.chart" . }}'
     component: kafkas.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
   versions:
@@ -6829,4 +6825,3 @@ spec:
                       Set only for `tls` and `external` listeners.
               description: Addresses of the internal and external listeners.
           description: The status of the Kafka and ZooKeeper clusters, and Topic Operator.
-{{- end -}}

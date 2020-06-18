@@ -63,7 +63,7 @@ import static java.util.Collections.emptyMap;
  * <p>The tool works by recursing through class properties (in the JavaBeans sense)
  * and the types of those properties, guided by the annotations.</p>
  *
- * <h3>Annotations</h3>
+ * <h2>Annotations</h2>
  * <dl>
  *     <dt>@{@link Crd}</dt>
  *     <dd>Annotates the top level class which represents an instance of the custom resource.
@@ -121,7 +121,7 @@ import static java.util.Collections.emptyMap;
  *
  * </dl>
  *
- * <h3>Polymorphism</h3>
+ * <h2>Polymorphism</h2>
  * <p>Although true OpenAPI Schema Objects have some support for polymorphism via
  * {@code discriminator} and {@code oneOf}, CRD validation schemas don't support
  * {@code discriminator} or references which means CRD validation
