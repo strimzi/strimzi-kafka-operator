@@ -31,19 +31,6 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{/*
-Generate a docker registry prefix or empty string.
-
-NOTE: Not currently being used.  Is this useful?
-*/}}
-{{- define "dockerRegistryOverride" -}}
-{{- if .Values.dockerRegistryOverride -}}
-{{- printf "%s/" .Values.image.dockerRegistry -}}
-{{- else -}}
-{{- "" -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "imageRepositoryOverride" -}}
 {{- .Values.imageRepositoryOverride -}}
 {{- end -}}

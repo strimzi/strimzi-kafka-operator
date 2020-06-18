@@ -1,15 +1,11 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kafkaconnects2is.kafka.strimzi.io
+  name: kafkamirrormakers.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
+    app: strimzi
     strimzi.io/crd-install: "true"
-    chart: '{{ template "strimzi.chart" . }}'
-    component: kafkaconnects2is.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
+    component: kafkamirrormakers.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
   versions:
@@ -22,19 +18,29 @@ spec:
   version: v1beta1
   scope: Namespaced
   names:
-    kind: KafkaConnectS2I
-    listKind: KafkaConnectS2IList
-    singular: kafkaconnects2i
-    plural: kafkaconnects2is
+    kind: KafkaMirrorMaker
+    listKind: KafkaMirrorMakerList
+    singular: kafkamirrormaker
+    plural: kafkamirrormakers
     shortNames:
-    - kcs2i
+    - kmm
     categories:
     - strimzi
   additionalPrinterColumns:
   - name: Desired replicas
-    description: The desired number of Kafka Connect replicas
+    description: The desired number of Kafka MirrorMaker replicas
     JSONPath: .spec.replicas
     type: integer
+  - name: Consumer Bootstrap Servers
+    description: The boostrap servers for the consumer
+    JSONPath: .spec.consumer.bootstrapServers
+    type: string
+    priority: 1
+  - name: Producer Bootstrap Servers
+    description: The boostrap servers for the producer
+    JSONPath: .spec.producer.bootstrapServers
+    type: string
+    priority: 1
   subresources:
     status: {}
     scale:
@@ -49,11 +55,411 @@ spec:
           properties:
             replicas:
               type: integer
-              description: The number of pods in the Kafka Connect group.
+              minimum: 1
+              description: The number of pods in the `Deployment`.
             image:
               type: string
               description: The docker image for the pods.
-            buildResources:
+            whitelist:
+              type: string
+              description: List of topics which are included for mirroring. This option
+                allows any regular expression using Java-style regular expressions.
+                Mirroring two topics named A and B is achieved by using the whitelist
+                `'A\|B'`. Or, as a special case, you can mirror all topics using the
+                whitelist '*'. You can also specify multiple regular expressions separated
+                by commas.
+            consumer:
+              type: object
+              properties:
+                numStreams:
+                  type: integer
+                  minimum: 1
+                  description: Specifies the number of consumer stream threads to
+                    create.
+                offsetCommitInterval:
+                  type: integer
+                  description: Specifies the offset auto-commit interval in ms. Default
+                    value is 60000.
+                groupId:
+                  type: string
+                  description: A unique string that identifies the consumer group
+                    this consumer belongs to.
+                bootstrapServers:
+                  type: string
+                  description: A list of host:port pairs for establishing the initial
+                    connection to the Kafka cluster.
+                authentication:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the access
+                        token which was obtained from the authorization server.
+                    accessTokenIsJwt:
+                      type: boolean
+                      description: Configure whether access token should be treated
+                        as JWT. This should be set to `false` if the authorization
+                        server returns opaque tokens. Defaults to `true`.
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        key:
+                          type: string
+                          description: The name of the private key in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - key
+                      - secretName
+                      description: Reference to the `Secret` which holds the certificate
+                        and private key pair.
+                    clientId:
+                      type: string
+                      description: OAuth Client ID which the Kafka client can use
+                        to authenticate against the OAuth server and use the token
+                        endpoint URI.
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the OAuth
+                        client secret which the Kafka client can use to authenticate
+                        against the OAuth server and use the token endpoint URI.
+                    disableTlsHostnameVerification:
+                      type: boolean
+                      description: Enable or disable TLS hostname verification. Default
+                        value is `false`.
+                    maxTokenExpirySeconds:
+                      type: integer
+                      description: Set or limit time-to-live of the access tokens
+                        to the specified number of seconds. This should be set if
+                        the authorization server returns opaque tokens.
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which
+                            the password is stored.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the password.
+                      required:
+                      - password
+                      - secretName
+                      description: Reference to the `Secret` which holds the password.
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the refresh
+                        token which can be used to obtain access token from the authorization
+                        server.
+                    scope:
+                      type: string
+                      description: OAuth scope to use when authenticating against
+                        the authorization server. Some authorization servers require
+                        this to be set. The possible values depend on how authorization
+                        server is configured. By default `scope` is not specified
+                        when doing the token endpoint request.
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                        - certificate
+                        - secretName
+                      description: Trusted certificates for TLS connection to the
+                        OAuth server.
+                    tokenEndpointUri:
+                      type: string
+                      description: Authorization server token endpoint URI.
+                    type:
+                      type: string
+                      enum:
+                      - tls
+                      - scram-sha-512
+                      - plain
+                      - oauth
+                      description: Authentication type. Currently the only supported
+                        types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                        type uses SASL SCRAM-SHA-512 Authentication. `plain` type
+                        uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                        Authentication. The `tls` type uses TLS Client Authentication.
+                        The `tls` type is supported only over TLS connections.
+                    username:
+                      type: string
+                      description: Username used for the authentication.
+                  required:
+                  - type
+                  description: Authentication configuration for connecting to the
+                    cluster.
+                config:
+                  type: object
+                  description: 'The MirrorMaker consumer config. Properties with the
+                    following prefixes cannot be set: ssl., bootstrap.servers, group.id,
+                    sasl., security., interceptor.classes (with the exception of:
+                    ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol,
+                    ssl.enabled.protocols).'
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                        - certificate
+                        - secretName
+                      description: Trusted certificates for TLS connection.
+                  description: TLS configuration for connecting MirrorMaker to the
+                    cluster.
+              required:
+              - groupId
+              - bootstrapServers
+              description: Configuration of source cluster.
+            producer:
+              type: object
+              properties:
+                bootstrapServers:
+                  type: string
+                  description: A list of host:port pairs for establishing the initial
+                    connection to the Kafka cluster.
+                abortOnSendFailure:
+                  type: boolean
+                  description: Flag to set the MirrorMaker to exit on a failed send.
+                    Default value is `true`.
+                authentication:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the access
+                        token which was obtained from the authorization server.
+                    accessTokenIsJwt:
+                      type: boolean
+                      description: Configure whether access token should be treated
+                        as JWT. This should be set to `false` if the authorization
+                        server returns opaque tokens. Defaults to `true`.
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        key:
+                          type: string
+                          description: The name of the private key in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - key
+                      - secretName
+                      description: Reference to the `Secret` which holds the certificate
+                        and private key pair.
+                    clientId:
+                      type: string
+                      description: OAuth Client ID which the Kafka client can use
+                        to authenticate against the OAuth server and use the token
+                        endpoint URI.
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the OAuth
+                        client secret which the Kafka client can use to authenticate
+                        against the OAuth server and use the token endpoint URI.
+                    disableTlsHostnameVerification:
+                      type: boolean
+                      description: Enable or disable TLS hostname verification. Default
+                        value is `false`.
+                    maxTokenExpirySeconds:
+                      type: integer
+                      description: Set or limit time-to-live of the access tokens
+                        to the specified number of seconds. This should be set if
+                        the authorization server returns opaque tokens.
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which
+                            the password is stored.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the password.
+                      required:
+                      - password
+                      - secretName
+                      description: Reference to the `Secret` which holds the password.
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored
+                            in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing
+                            the secret value.
+                      required:
+                      - key
+                      - secretName
+                      description: Link to Kubernetes Secret containing the refresh
+                        token which can be used to obtain access token from the authorization
+                        server.
+                    scope:
+                      type: string
+                      description: OAuth scope to use when authenticating against
+                        the authorization server. Some authorization servers require
+                        this to be set. The possible values depend on how authorization
+                        server is configured. By default `scope` is not specified
+                        when doing the token endpoint request.
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                        - certificate
+                        - secretName
+                      description: Trusted certificates for TLS connection to the
+                        OAuth server.
+                    tokenEndpointUri:
+                      type: string
+                      description: Authorization server token endpoint URI.
+                    type:
+                      type: string
+                      enum:
+                      - tls
+                      - scram-sha-512
+                      - plain
+                      - oauth
+                      description: Authentication type. Currently the only supported
+                        types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                        type uses SASL SCRAM-SHA-512 Authentication. `plain` type
+                        uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                        Authentication. The `tls` type uses TLS Client Authentication.
+                        The `tls` type is supported only over TLS connections.
+                    username:
+                      type: string
+                      description: Username used for the authentication.
+                  required:
+                  - type
+                  description: Authentication configuration for connecting to the
+                    cluster.
+                config:
+                  type: object
+                  description: 'The MirrorMaker producer config. Properties with the
+                    following prefixes cannot be set: ssl., bootstrap.servers, sasl.,
+                    security., interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                    ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                        - certificate
+                        - secretName
+                      description: Trusted certificates for TLS connection.
+                  description: TLS configuration for connecting MirrorMaker to the
+                    cluster.
+              required:
+              - bootstrapServers
+              description: Configuration of target cluster.
+            resources:
               type: object
               properties:
                 limits:
@@ -61,92 +467,6 @@ spec:
                 requests:
                   type: object
               description: CPU and memory resources to reserve.
-            livenessProbe:
-              type: object
-              properties:
-                failureThreshold:
-                  type: integer
-                  description: Minimum consecutive failures for the probe to be considered
-                    failed after having succeeded. Defaults to 3. Minimum value is
-                    1.
-                initialDelaySeconds:
-                  type: integer
-                  minimum: 0
-                  description: The initial delay before first the health is first
-                    checked.
-                periodSeconds:
-                  type: integer
-                  description: How often (in seconds) to perform the probe. Default
-                    to 10 seconds. Minimum value is 1.
-                successThreshold:
-                  type: integer
-                  description: Minimum consecutive successes for the probe to be considered
-                    successful after having failed. Defaults to 1. Must be 1 for liveness.
-                    Minimum value is 1.
-                timeoutSeconds:
-                  type: integer
-                  minimum: 0
-                  description: The timeout for each attempted health check.
-              description: Pod liveness checking.
-            readinessProbe:
-              type: object
-              properties:
-                failureThreshold:
-                  type: integer
-                  description: Minimum consecutive failures for the probe to be considered
-                    failed after having succeeded. Defaults to 3. Minimum value is
-                    1.
-                initialDelaySeconds:
-                  type: integer
-                  minimum: 0
-                  description: The initial delay before first the health is first
-                    checked.
-                periodSeconds:
-                  type: integer
-                  description: How often (in seconds) to perform the probe. Default
-                    to 10 seconds. Minimum value is 1.
-                successThreshold:
-                  type: integer
-                  description: Minimum consecutive successes for the probe to be considered
-                    successful after having failed. Defaults to 1. Must be 1 for liveness.
-                    Minimum value is 1.
-                timeoutSeconds:
-                  type: integer
-                  minimum: 0
-                  description: The timeout for each attempted health check.
-              description: Pod readiness checking.
-            jvmOptions:
-              type: object
-              properties:
-                "-XX":
-                  type: object
-                  description: A map of -XX options to the JVM.
-                "-Xms":
-                  type: string
-                  pattern: '[0-9]+[mMgG]?'
-                  description: -Xms option to to the JVM.
-                "-Xmx":
-                  type: string
-                  pattern: '[0-9]+[mMgG]?'
-                  description: -Xmx option to to the JVM.
-                gcLoggingEnabled:
-                  type: boolean
-                  description: Specifies whether the Garbage Collection logging is
-                    enabled. The default is false.
-                javaSystemProperties:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        description: The system property name.
-                      value:
-                        type: string
-                        description: The system property value.
-                  description: A map of additional system properties which will be
-                    passed using the `-D` option to the JVM.
-              description: JVM Options for pods.
             affinity:
               type: object
               properties:
@@ -356,6 +676,54 @@ spec:
                           topologyKey:
                             type: string
               description: The pod's affinity rules.
+            tolerations:
+              type: array
+              items:
+                type: object
+                properties:
+                  effect:
+                    type: string
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  tolerationSeconds:
+                    type: integer
+                  value:
+                    type: string
+              description: The pod's tolerations.
+            jvmOptions:
+              type: object
+              properties:
+                "-XX":
+                  type: object
+                  description: A map of -XX options to the JVM.
+                "-Xms":
+                  type: string
+                  pattern: '[0-9]+[mMgG]?'
+                  description: -Xms option to to the JVM.
+                "-Xmx":
+                  type: string
+                  pattern: '[0-9]+[mMgG]?'
+                  description: -Xmx option to to the JVM.
+                gcLoggingEnabled:
+                  type: boolean
+                  description: Specifies whether the Garbage Collection logging is
+                    enabled. The default is false.
+                javaSystemProperties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: The system property name.
+                      value:
+                        type: string
+                        description: The system property value.
+                  description: A map of additional system properties which will be
+                    passed using the `-D` option to the JVM.
+              description: JVM Options for pods.
             logging:
               type: object
               properties:
@@ -374,11 +742,23 @@ spec:
                   description: Logging type, must be either 'inline' or 'external'.
               required:
               - type
-              description: Logging configuration for Kafka Connect.
+              description: Logging configuration for MirrorMaker.
             metrics:
               type: object
-              description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
+              description: The Prometheus JMX Exporter configuration. See {JMXExporter}
                 for details of the structure of this configuration.
+            tracing:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jaeger
+                  description: Type of the tracing used. Currently the only supported
+                    type is `jaeger` for Jaeger tracing.
+              required:
+              - type
+              description: The configuration of tracing in Kafka MirrorMaker.
             template:
               type: object
               properties:
@@ -399,7 +779,7 @@ spec:
                             template. Can be applied to different resources such as
                             `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                       description: Metadata which should be applied to the resource.
-                  description: Template for Kafka Connect `Deployment`.
+                  description: Template for Kafka MirrorMaker `Deployment`.
                 pod:
                   type: object
                   properties:
@@ -713,26 +1093,8 @@ spec:
                           value:
                             type: string
                       description: The pod's tolerations.
-                  description: Template for Kafka Connect `Pods`.
-                apiService:
-                  type: object
-                  properties:
-                    metadata:
-                      type: object
-                      properties:
-                        labels:
-                          type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                        annotations:
-                          type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                      description: Metadata which should be applied to the resource.
-                  description: Template for Kafka Connect API `Service`.
-                connectContainer:
+                  description: Template for Kafka MirrorMaker `Pods`.
+                mirrorMakerContainer:
                   type: object
                   properties:
                     env:
@@ -795,7 +1157,7 @@ spec:
                             gmsaCredentialSpecName:
                               type: string
                       description: Security context for the container.
-                  description: Template for the Kafka Connect container.
+                  description: Template for Kafka MirrorMaker container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -822,343 +1184,74 @@ spec:
                         number of pods or fewer are unavailable after the eviction.
                         Setting this value to 0 prevents all voluntary evictions,
                         so the pods must be evicted manually. Defaults to 1.
-                  description: Template for Kafka Connect `PodDisruptionBudget`.
-              description: Template for Kafka Connect and Kafka Connect S2I resources.
-                The template allows users to specify how the `Deployment`, `Pods`
-                and `Service` are generated.
-            authentication:
+                  description: Template for Kafka MirrorMaker `PodDisruptionBudget`.
+              description: Template to specify how Kafka MirrorMaker resources, `Deployments`
+                and `Pods`, are generated.
+            livenessProbe:
               type: object
               properties:
-                accessToken:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                      description: The key under which the secret value is stored
-                        in the Kubernetes Secret.
-                    secretName:
-                      type: string
-                      description: The name of the Kubernetes Secret containing the
-                        secret value.
-                  required:
-                  - key
-                  - secretName
-                  description: Link to Kubernetes Secret containing the access token
-                    which was obtained from the authorization server.
-                accessTokenIsJwt:
-                  type: boolean
-                  description: Configure whether access token should be treated as
-                    JWT. This should be set to `false` if the authorization server
-                    returns opaque tokens. Defaults to `true`.
-                certificateAndKey:
-                  type: object
-                  properties:
-                    certificate:
-                      type: string
-                      description: The name of the file certificate in the Secret.
-                    key:
-                      type: string
-                      description: The name of the private key in the Secret.
-                    secretName:
-                      type: string
-                      description: The name of the Secret containing the certificate.
-                  required:
-                  - certificate
-                  - key
-                  - secretName
-                  description: Reference to the `Secret` which holds the certificate
-                    and private key pair.
-                clientId:
-                  type: string
-                  description: OAuth Client ID which the Kafka client can use to authenticate
-                    against the OAuth server and use the token endpoint URI.
-                clientSecret:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                      description: The key under which the secret value is stored
-                        in the Kubernetes Secret.
-                    secretName:
-                      type: string
-                      description: The name of the Kubernetes Secret containing the
-                        secret value.
-                  required:
-                  - key
-                  - secretName
-                  description: Link to Kubernetes Secret containing the OAuth client
-                    secret which the Kafka client can use to authenticate against
-                    the OAuth server and use the token endpoint URI.
-                disableTlsHostnameVerification:
-                  type: boolean
-                  description: Enable or disable TLS hostname verification. Default
-                    value is `false`.
-                maxTokenExpirySeconds:
+                failureThreshold:
                   type: integer
-                  description: Set or limit time-to-live of the access tokens to the
-                    specified number of seconds. This should be set if the authorization
-                    server returns opaque tokens.
-                passwordSecret:
-                  type: object
-                  properties:
-                    password:
-                      type: string
-                      description: The name of the key in the Secret under which the
-                        password is stored.
-                    secretName:
-                      type: string
-                      description: The name of the Secret containing the password.
-                  required:
-                  - password
-                  - secretName
-                  description: Reference to the `Secret` which holds the password.
-                refreshToken:
-                  type: object
-                  properties:
-                    key:
-                      type: string
-                      description: The key under which the secret value is stored
-                        in the Kubernetes Secret.
-                    secretName:
-                      type: string
-                      description: The name of the Kubernetes Secret containing the
-                        secret value.
-                  required:
-                  - key
-                  - secretName
-                  description: Link to Kubernetes Secret containing the refresh token
-                    which can be used to obtain access token from the authorization
-                    server.
-                scope:
-                  type: string
-                  description: OAuth scope to use when authenticating against the
-                    authorization server. Some authorization servers require this
-                    to be set. The possible values depend on how authorization server
-                    is configured. By default `scope` is not specified when doing
-                    the token endpoint request.
-                tlsTrustedCertificates:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                        description: The name of the file certificate in the Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the certificate.
-                    required:
-                    - certificate
-                    - secretName
-                  description: Trusted certificates for TLS connection to the OAuth
-                    server.
-                tokenEndpointUri:
-                  type: string
-                  description: Authorization server token endpoint URI.
-                type:
-                  type: string
-                  enum:
-                  - tls
-                  - scram-sha-512
-                  - plain
-                  - oauth
-                  description: Authentication type. Currently the only supported types
-                    are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type
-                    uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL
-                    PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication.
-                    The `tls` type uses TLS Client Authentication. The `tls` type
-                    is supported only over TLS connections.
-                username:
-                  type: string
-                  description: Username used for the authentication.
-              required:
-              - type
-              description: Authentication configuration for Kafka Connect.
-            bootstrapServers:
-              type: string
-              description: Bootstrap servers to connect to. This should be given as
-                a comma separated list of _<hostname>_:‍_<port>_ pairs.
-            config:
-              type: object
-              description: 'The Kafka Connect configuration. Properties with the following
-                prefixes cannot be set: ssl., sasl., security., listeners, plugin.path,
-                rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes
-                (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites,
-                ssl.protocol, ssl.enabled.protocols).'
-            externalConfiguration:
+                  description: Minimum consecutive failures for the probe to be considered
+                    failed after having succeeded. Defaults to 3. Minimum value is
+                    1.
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                  description: The initial delay before first the health is first
+                    checked.
+                periodSeconds:
+                  type: integer
+                  description: How often (in seconds) to perform the probe. Default
+                    to 10 seconds. Minimum value is 1.
+                successThreshold:
+                  type: integer
+                  description: Minimum consecutive successes for the probe to be considered
+                    successful after having failed. Defaults to 1. Must be 1 for liveness.
+                    Minimum value is 1.
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
+                  description: The timeout for each attempted health check.
+              description: Pod liveness checking.
+            readinessProbe:
               type: object
               properties:
-                env:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        description: Name of the environment variable which will be
-                          passed to the Kafka Connect pods. The name of the environment
-                          variable cannot start with `KAFKA_` or `STRIMZI_`.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Refernce to a key in a ConfigMap.
-                          secretKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a Secret.
-                        description: Value of the environment variable which will
-                          be passed to the Kafka Connect pods. It can be passed either
-                          as a reference to Secret or ConfigMap field. The field has
-                          to specify exactly one Secret or ConfigMap.
-                    required:
-                    - name
-                    - valueFrom
-                  description: Allows to pass data from Secret or ConfigMap to the
-                    Kafka Connect pods as environment variables.
-                volumes:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      configMap:
-                        type: object
-                        properties:
-                          defaultMode:
-                            type: integer
-                          items:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                mode:
-                                  type: integer
-                                path:
-                                  type: string
-                          name:
-                            type: string
-                          optional:
-                            type: boolean
-                        description: Reference to a key in a ConfigMap. Exactly one
-                          Secret or ConfigMap has to be specified.
-                      name:
-                        type: string
-                        description: Name of the volume which will be added to the
-                          Kafka Connect pods.
-                      secret:
-                        type: object
-                        properties:
-                          defaultMode:
-                            type: integer
-                          items:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                mode:
-                                  type: integer
-                                path:
-                                  type: string
-                          optional:
-                            type: boolean
-                          secretName:
-                            type: string
-                        description: Reference to a key in a Secret. Exactly one Secret
-                          or ConfigMap has to be specified.
-                    required:
-                    - name
-                  description: Allows to pass data from Secret or ConfigMap to the
-                    Kafka Connect pods as volumes.
-              description: Pass data from Secrets or ConfigMaps to the Kafka Connect
-                pods and use them to configure connectors.
-            insecureSourceRepository:
-              type: boolean
-              description: When true this configures the source repository with the
-                'Local' reference policy and an import policy that accepts insecure
-                source tags.
-            resources:
-              type: object
-              properties:
-                limits:
-                  type: object
-                requests:
-                  type: object
-              description: The maximum limits for CPU and memory resources and the
-                requested initial resources.
-            tls:
-              type: object
-              properties:
-                trustedCertificates:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                        description: The name of the file certificate in the Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the certificate.
-                    required:
-                    - certificate
-                    - secretName
-                  description: Trusted certificates for TLS connection.
-              description: TLS configuration.
-            tolerations:
-              type: array
-              items:
-                type: object
-                properties:
-                  effect:
-                    type: string
-                  key:
-                    type: string
-                  operator:
-                    type: string
-                  tolerationSeconds:
-                    type: integer
-                  value:
-                    type: string
-              description: The pod's tolerations.
-            tracing:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - jaeger
-                  description: Type of the tracing used. Currently the only supported
-                    type is `jaeger` for Jaeger tracing.
-              required:
-              - type
-              description: The configuration of tracing in Kafka Connect.
+                failureThreshold:
+                  type: integer
+                  description: Minimum consecutive failures for the probe to be considered
+                    failed after having succeeded. Defaults to 3. Minimum value is
+                    1.
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                  description: The initial delay before first the health is first
+                    checked.
+                periodSeconds:
+                  type: integer
+                  description: How often (in seconds) to perform the probe. Default
+                    to 10 seconds. Minimum value is 1.
+                successThreshold:
+                  type: integer
+                  description: Minimum consecutive successes for the probe to be considered
+                    successful after having failed. Defaults to 1. Must be 1 for liveness.
+                    Minimum value is 1.
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
+                  description: The timeout for each attempted health check.
+              description: Pod readiness checking.
             version:
               type: string
-              description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                Consult the user documentation to understand the process required
-                to upgrade or downgrade the version.
+              description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}.
+                Consult the documentation to understand the process required to upgrade
+                or downgrade the version.
           required:
-          - bootstrapServers
-          description: The specification of the Kafka Connect Source-to-Image (S2I)
-            cluster.
+          - replicas
+          - whitelist
+          - consumer
+          - producer
+          description: The specification of Kafka MirrorMaker.
         status:
           type: object
           properties:
@@ -1193,30 +1286,6 @@ spec:
               type: integer
               description: The generation of the CRD that was last reconciled by the
                 operator.
-            url:
-              type: string
-              description: The URL of the REST API endpoint for managing and monitoring
-                Kafka Connect connectors.
-            connectorPlugins:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    description: The type of the connector plugin. The available types
-                      are `sink` and `source`.
-                  version:
-                    type: string
-                    description: The version of the connector plugin.
-                  class:
-                    type: string
-                    description: The class of the connector plugin.
-              description: The list of connector plugins available in this Kafka Connect
-                deployment.
-            buildConfigName:
-              type: string
-              description: The name of the build configuration.
             podSelector:
               type: object
               properties:
@@ -1239,5 +1308,4 @@ spec:
             replicas:
               type: integer
               description: The current number of pods being used to provide this resource.
-          description: The status of the Kafka Connect Source-to-Image (S2I) cluster.
-{{- end -}}
+          description: The status of Kafka MirrorMaker.

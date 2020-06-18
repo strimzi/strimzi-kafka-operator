@@ -1,15 +1,11 @@
-{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kafkaconnectors.kafka.strimzi.io
+  name: kafkarebalances.kafka.strimzi.io
   labels:
-    app: '{{ template "strimzi.name" . }}'
+    app: strimzi
     strimzi.io/crd-install: "true"
-    chart: '{{ template "strimzi.chart" . }}'
-    component: kafkaconnectors.kafka.strimzi.io-crd
-    release: '{{ .Release.Name }}'
-    heritage: '{{ .Release.Service }}'
+    component: kafkarebalances.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
   versions:
@@ -19,40 +15,38 @@ spec:
   version: v1alpha1
   scope: Namespaced
   names:
-    kind: KafkaConnector
-    listKind: KafkaConnectorList
-    singular: kafkaconnector
-    plural: kafkaconnectors
+    kind: KafkaRebalance
+    listKind: KafkaRebalanceList
+    singular: kafkarebalance
+    plural: kafkarebalances
     shortNames:
-    - kctr
+    - kr
     categories:
     - strimzi
   subresources:
     status: {}
-    scale:
-      specReplicasPath: .spec.tasksMax
-      statusReplicasPath: .status.tasksMax
   validation:
     openAPIV3Schema:
       properties:
         spec:
           type: object
           properties:
-            class:
-              type: string
-              description: The Class for the Kafka Connector.
-            tasksMax:
-              type: integer
-              minimum: 1
-              description: The maximum number of tasks for the Kafka Connector.
-            config:
-              type: object
-              description: 'The Kafka Connector configuration. The following properties
-                cannot be set: connector.class, tasks.max.'
-            pause:
+            goals:
+              type: array
+              items:
+                type: string
+              description: A list of goals, ordered by decreasing priority, to use
+                for generating and executing the rebalance proposal. The supported
+                goals are available at https://github.com/linkedin/cruise-control#goals.
+                If an empty goals list is provided, the goals declared in the default.goals
+                Cruise Control configuration parameter are used.
+            skipHardGoalCheck:
               type: boolean
-              description: Whether the connector should be paused. Defaults to false.
-          description: The specification of the Kafka Connector.
+              description: Whether to allow the hard goals specified in the Kafka
+                CR to be skipped in rebalance proposal generation. This can be useful
+                when some of those hard goals are preventing a balance solution being
+                found. Default is false.
+          description: The specification of the Kafka rebalance.
         status:
           type: object
           properties:
@@ -87,12 +81,12 @@ spec:
               type: integer
               description: The generation of the CRD that was last reconciled by the
                 operator.
-            connectorStatus:
+            sessionId:
+              type: string
+              description: The session identifier for requests to Cruise Control pertaining
+                to this KafkaRebalance resource. This is used by the Kafka Rebalance
+                operator to track the status of ongoing rebalancing operations.
+            optimizationResult:
               type: object
-              description: The connector status, as reported by the Kafka Connect
-                REST API.
-            tasksMax:
-              type: integer
-              description: The maximum number of tasks for the Kafka Connector.
-          description: The status of the Kafka Connector.
-{{- end -}}
+              description: A JSON object describing the optimization result.
+          description: The status of the Kafka rebalance.
