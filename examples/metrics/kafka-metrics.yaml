@@ -150,7 +150,7 @@ spec:
         type: GAUGE
         labels:
           replicaId: "$2"
-      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(Packets.*)"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(Packets\\w+)"
         name: "zookeeper_$4"
         type: COUNTER
         labels:
