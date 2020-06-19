@@ -77,7 +77,8 @@ public class CruiseControlApiST extends BaseST {
         assertThat(response, containsString("DiskCapacityGoal"));
         assertThat(response, containsString("NetworkInboundCapacityGoal"));
         assertThat(response, containsString("NetworkOutboundCapacityGoal"));
-        assertThat(response, containsString("CpuCapacityGoal"));
+        // TODO: This Goal is currently not working properly on Kubernetes. It will be added in once this issue is fixed: https://github.com/linkedin/cruise-control/issues/1242
+        //assertThat(response, containsString("CpuCapacityGoal"));
         assertThat(response, containsString("ReplicaDistributionGoal"));
         assertThat(response, containsString("DiskUsageDistributionGoal"));
         assertThat(response, containsString("NetworkInboundUsageDistributionGoal"));
