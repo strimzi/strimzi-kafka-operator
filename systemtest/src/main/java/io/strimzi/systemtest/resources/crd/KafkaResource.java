@@ -200,19 +200,6 @@ public class KafkaResource {
         return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
     }
 
-    public static Kafka kafkaWithCruiseControlWithoutWaitAutoCreateTopicsDisable(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
-                    .editSpec()
-                        .editKafka()
-                            .addToConfig("auto.create.topics.enable", "false")
-                        .endKafka()
-                    .endSpec()
-                .build();
-
-        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
-    }
-
     /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
