@@ -56,7 +56,6 @@ Please follow the guide for upgrading the resources: https://strimzi.io/docs/ope
 * Add support for CORS in the HTTP Kafka Bridge
 * Pass HTTP Proxy configuration from operator to operands
 * Add Cruise Control support, KafkaRebalance resource and rebalance operator
-* Support dynamically changeable logging in the Entity Operator 
 
 ## 0.17.0
 
