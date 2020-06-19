@@ -288,13 +288,17 @@ public class KafkaRoller {
 
         private void closeLoggingAnyError() {
             if (adminClient != null) {
-                try {
-                    adminClient.close(Duration.ofMinutes(2));
-                } catch (Exception e) {
-                    log.warn("Ignoring exception when closing admin client", e);
-                }
+                closeLoggingAnyError2(adminClient);
                 adminClient = null;
             }
+        }
+    }
+
+    private static void closeLoggingAnyError2(Admin admin) {
+        try {
+            admin.close(Duration.ofMinutes(2));
+        } catch (Exception e) {
+            log.warn("Ignoring exception when closing admin client", e);
         }
     }
 
@@ -388,12 +392,12 @@ public class KafkaRoller {
         if (!needsRestart) {
             /*
             First time we do the restart, the pod is Unschedulable, the post-restart livesness check fails with a timeout and the reconciliation ends
-  - lastProbeTime: null
-    lastTransitionTime: "2020-06-19T10:25:54Z"
-    message: '0/1 nodes are available: 1 Insufficient cpu.'
-    reason: Unschedulable
-    status: "False"
-    type: PodScheduled
+              - lastProbeTime: null
+                lastTransitionTime: "2020-06-19T10:25:54Z"
+                message: '0/1 nodes are available: 1 Insufficient cpu.'
+                reason: Unschedulable
+                status: "False"
+                type: PodScheduled
 
             Next reconciliation there's no reason to restart, so we try to determine whether we need to reconfigure.
             We get CE. If this were not fatal we'd try the next broker (TEST FAIL).
@@ -404,18 +408,24 @@ public class KafkaRoller {
             If we treat CE as fatal there we never restart the pod, so it never gets fixed.
              */
 
-            // TODO leak's admin client if diff throws
             // ConFigException is fatal here because otherwise we bring down the cluster by trying to roll other brokers
-            adminClient = adminClient(podId, true);
-            diff = diff(adminClient, podId);
-            if (diff.getDiffSize() > 0) {
-                if (diff.canBeUpdatedDynamically()) {
-                    log.info("Pod {} needs to be reconfigured.", podId);
-                    needsReconfig = true;
-                } else {
-                    log.info("Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podId);
-                    needsRestart = true;
+            try {
+                adminClient = adminClient(podId, true);
+                diff = diff(adminClient, podId);
+                if (diff.getDiffSize() > 0) {
+                    if (diff.canBeUpdatedDynamically()) {
+                        log.info("Pod {} needs to be reconfigured.", podId);
+                        needsReconfig = true;
+                    } else {
+                        log.info("Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podId);
+                        needsRestart = true;
+                    }
                 }
+            } catch (RuntimeException | Error e) {
+                if (adminClient != null) {
+                    closeLoggingAnyError2(adminClient);
+                }
+                throw e;
             }
         } else {
             log.info("Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
