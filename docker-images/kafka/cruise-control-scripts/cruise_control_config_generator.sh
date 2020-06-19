@@ -21,8 +21,6 @@ cat <<EOF > $CC_CAPACITY_FILE
 }
 EOF
 
-cat $CC_CAPACITY_FILE
-
 # Generate cluster config
 cat <<EOF > $CC_CLUSTER_CONFIG_FILE
 {
