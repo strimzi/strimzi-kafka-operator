@@ -386,6 +386,24 @@ public class KafkaRoller {
         boolean needsReconfig = false;
         Admin adminClient = null;
         if (!needsRestart) {
+            /*
+            First time we do the restart, the pod is Unschedulable, the post-restart livesness check fails with a timeout and the reconciliation ends
+  - lastProbeTime: null
+    lastTransitionTime: "2020-06-19T10:25:54Z"
+    message: '0/1 nodes are available: 1 Insufficient cpu.'
+    reason: Unschedulable
+    status: "False"
+    type: PodScheduled
+
+            Next reconciliation there's no reason to restart, so we try to determine whether we need to reconfigure.
+            We get CE. If this were not fatal we'd try the next broker (TEST FAIL).
+            In the old algo, because no change was necessary we never tried to open an AC
+
+            When pod later becomes schedulable due to spec change we had a stale pod, so we don't open the AC here,
+            but rather when getting the controller.
+            If we treat CE as fatal there we never restart the pod, so it never gets fixed.
+             */
+
             // TODO leak's admin client if diff throws
             // ConFigException is fatal here because otherwise we bring down the cluster by trying to roll other brokers
             adminClient = adminClient(podId, true);
