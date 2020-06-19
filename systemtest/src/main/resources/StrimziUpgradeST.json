@@ -303,7 +303,7 @@
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.5.0",
-      "continuousClientsMessages": 400
+      "continuousClientsMessages": 500
     },
     "environmentInfo": {
       "status": "stable",
