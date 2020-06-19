@@ -96,7 +96,7 @@ public class CruiseControlIsolatedST extends BaseST {
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         assertThat(modelTrainingTopic.getPartitions(), is(32));
-//        assertThat(modelTrainingTopic.getReplicas(), is(1));
+//        assertThat(modelTrainingTopic.getReplicas(), is(2));
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         assertThat(partitionMetricsTopic.getPartitions(), is(32));
