@@ -84,4 +84,18 @@ public class KafkaConnectorUtils {
                 apiUrl + "/connectors"
         );
     }
+
+    public static void waitForConnectorsTaskMaxChange(String connectorName, int taskMax) {
+        TestUtils.waitFor("Wait for KafkaConnector taskMax will change", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+            () -> (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
+                .withName(connectorName).get().getSpec().getTasksMax() == taskMax)
+                && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
+                .withName(connectorName).get().getStatus().getTasksMax() == taskMax)
+        );
+    }
+
+    public static String getConnectorSpecFromConnectAPI(String podName, String connectorName) {
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+            "curl http://localhost:8083/connectors/" + connectorName).out();
+    }
 }
