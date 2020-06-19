@@ -44,8 +44,10 @@ import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -279,7 +281,7 @@ public class KafkaRoller {
 
         Admin adminClient() throws ForceableProblem, FatalProblem {
             if (adminClient == null) {
-                adminClient = KafkaRoller.this.adminClient(podId);
+                adminClient = KafkaRoller.this.adminClient(podId, false);
             }
             return adminClient;
         }
@@ -318,46 +320,39 @@ public class KafkaRoller {
         try {
             restartPlan = restartPlan(podId, pod);
             if (restartPlan.needsRestart || restartPlan.needsReconfig) {
-                try {
-                    Integer controller = controller(podId, restartPlan.adminClient(), operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-                    int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
-                            0, Integer::sum);
-                    if (controller == podId && stillRunning > 1) {
-                        log.debug("Pod {} is controller and there are other pods to roll", podId);
-                        throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
-                    } else {
-                        if (canRoll(restartPlan.adminClient(), podId, 60_000, TimeUnit.MILLISECONDS)) {
-                            // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                            boolean updatedDynamically;
 
-                            if (restartPlan.needsReconfig) {
-                                try {
-                                    updateBrokerConfigDynamically(podId, restartPlan.adminClient(), restartPlan.diff);
-                                    updatedDynamically = true;
-                                    // TODO do we need some check here that the broker is still OK?
-                                } catch (ForceableProblem e) {
-                                    log.debug("Pod {} could not be updated dynamically ({}), will restart", podId, e);
-                                    updatedDynamically = false;
-                                }
-                            } else {
+                Integer controller = controller(podId, restartPlan.adminClient(), operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+                int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
+                        0, Integer::sum);
+                if (controller == podId && stillRunning > 1) {
+                    log.debug("Pod {} is controller and there are other pods to roll", podId);
+                    throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
+                } else {
+                    if (canRoll(restartPlan.adminClient(), podId, 60_000, TimeUnit.MILLISECONDS)) {
+                        // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
+                        boolean updatedDynamically;
+
+                        if (restartPlan.needsReconfig) {
+                            try {
+                                updateBrokerConfigDynamically(podId, restartPlan.adminClient(), restartPlan.diff);
+                                updatedDynamically = true;
+                            } catch (ForceableProblem e) {
+                                log.debug("Pod {} could not be updated dynamically ({}), will restart", podId, e);
                                 updatedDynamically = false;
                             }
-                            if (!updatedDynamically) {
-                                log.debug("Pod {} can be rolled now", podId);
-                                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                            }
                         } else {
-                            log.debug("Pod {} cannot be rolled right now", podId);
-                            throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
+                            updatedDynamically = false;
                         }
-                    }
-
-                } catch (ForceableProblem e) {
-                    if (restartContext.backOff.done() || e.forceNow) {
-                        log.warn("Pod {} will be force-rolled", podName(podId));
-                        restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                        if (!updatedDynamically) {
+                            log.debug("Pod {} can be rolled now", podId);
+                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                        } else {
+                            // TODO do we need some check here that the broker is still OK?
+                            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                        }
                     } else {
-                        throw e;
+                        log.debug("Pod {} cannot be rolled right now", podId);
+                        throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
                     }
                 }
             } else {
@@ -369,6 +364,13 @@ public class KafkaRoller {
                 await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
                 log.debug("Pod {} is now ready", podId);
             }
+        } catch (ForceableProblem e) {
+            if (restartContext.backOff.done() || e.forceNow) {
+                log.warn("Pod {} will be force-rolled", podName(podId));
+                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+            } else {
+                throw e;
+            }
         } finally {
             if (restartPlan != null) {
                 restartPlan.closeLoggingAnyError();
@@ -379,16 +381,14 @@ public class KafkaRoller {
     private RestartPlan restartPlan(int podId, Pod pod) throws ForceableProblem, InterruptedException, FatalProblem {
         List<RestartReason> reasonToRestartPod = podNeedsRestart.apply(pod);
         // Unless the annotation is present, check the pod is at least ready.
-        if (!reasonToRestartPod.stream().filter(reason -> reason instanceof ForcedRestart).findFirst().isPresent()) {
-            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-        }
         boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
         boolean needsReconfig = false;
         Admin adminClient = null;
         if (!needsRestart) {
             // TODO leak's admin client if diff throws
-            adminClient = adminClient(podId);
+            // ConFigException is fatal here because otherwise we bring down the cluster by trying to roll other brokers
+            adminClient = adminClient(podId, true);
             diff = diff(adminClient, podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
@@ -549,11 +549,18 @@ public class KafkaRoller {
     /**
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
-    protected Admin adminClient(Integer podId) throws ForceableProblem, FatalProblem {
+    protected Admin adminClient(Integer podId, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
         try {
             String hostname = KafkaCluster.podDnsName(this.namespace, this.cluster, podName(podId)) + ":" + KafkaCluster.REPLICATION_PORT;
             log.debug("Creating AdminClient for {}", hostname);
             return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
+        } catch (KafkaException e) {
+            if (ceShouldBeFatal && (e instanceof ConfigException
+                    || e.getCause() instanceof ConfigException)) {
+                throw new FatalProblem("An error while try to create an admin client for pod " + podName(podId), e);
+            } else {
+                throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
+            }
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
         }
