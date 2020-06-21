@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.topic;
 
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -58,19 +57,20 @@ public class TopicScalabilityST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+//        prepareEnvForOperator(NAMESPACE);
+//
+//        applyRoleBindings(NAMESPACE);
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();

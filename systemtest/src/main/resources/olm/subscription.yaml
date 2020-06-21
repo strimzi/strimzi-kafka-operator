@@ -7,8 +7,17 @@ metadata:
     app: strimzi
 spec:
   name: ${OLM_OPERATOR_NAME}
-  source: strimzi-source
-  sourceNamespace: openshift-marketplace
+  source: ${OLM_SOURCE_NAME}
+  sourceNamespace: ${OLM_SOURCE_NAMESPACE}
   startingCSV: ${OLM_APP_BUNDLE_PREFIX}.${OLM_OPERATOR_VERSION}
   channel: stable
   installPlanApproval: Automatic
+  config:
+    env:
+      - name: STRIMZI_LOG_LEVEL
+        value: "DEBUG"
+      - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+        value: "${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}"
+      - name: STRIMZI_OPERATION_TIMEOUT_MS
+        value: "${STRIMZI_OPERATION_TIMEOUT_MS}"
+

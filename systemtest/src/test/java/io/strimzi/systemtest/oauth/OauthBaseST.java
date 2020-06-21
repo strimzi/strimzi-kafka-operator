@@ -74,14 +74,16 @@ public class OauthBaseST extends BaseST {
     protected WebClient client;
 
     @BeforeAll
-    void setup() throws InterruptedException {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+//        prepareEnvForOperator(NAMESPACE);
+//        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+//
+//        applyRoleBindings(NAMESPACE);
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(NAMESPACE).done();
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
 
         deployTestSpecificResources();
     }
@@ -183,7 +185,7 @@ public class OauthBaseST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
 
         createSecretsForDeployments();

@@ -153,6 +153,7 @@ public final class TestUtils {
 
     public static String getFileAsString(String filePath) {
         try {
+            LOGGER.info(filePath);
             return new String(Files.readAllBytes(Paths.get(filePath)), "UTF-8");
         } catch (IOException e) {
             LOGGER.info("File with path {} not found", filePath);

@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -124,19 +123,20 @@ public class CruiseControlApiST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+//        prepareEnvForOperator(NAMESPACE);
+//
+//        applyRoleBindings(NAMESPACE);
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
 
         deployTestResources();
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestResources();
     }

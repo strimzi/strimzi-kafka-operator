@@ -6,7 +6,7 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -98,12 +98,13 @@ public class CruiseControlIsolatedST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+//        prepareEnvForOperator(NAMESPACE);
+//
+//        applyRoleBindings(NAMESPACE);
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
     }
 }

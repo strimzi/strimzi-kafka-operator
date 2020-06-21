@@ -249,4 +249,9 @@ public interface Constants {
      * Tag for tests where cruise control used
      */
     String CRUISE_CONTROL = "cruisecontrol";
+
+    /**
+     * Tag for tests where we can use installation via OLM
+     */
+    String OLM_SUPPORTED = "olm";
 }

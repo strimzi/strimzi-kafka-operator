@@ -165,9 +165,9 @@ class LoggingChangeST extends BaseST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
 
-        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, "strimzi-cluster-operator"), is(true));
+        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()), is(true));
         assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
@@ -175,14 +175,15 @@ class LoggingChangeST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+//        prepareEnvForOperator(NAMESPACE);
+//
+//        applyRoleBindings(NAMESPACE);
+//
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
     }
 
     @Override

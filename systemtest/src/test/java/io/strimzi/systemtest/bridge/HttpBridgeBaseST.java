@@ -14,7 +14,6 @@ import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,13 +71,14 @@ public class HttpBridgeBaseST extends BaseST {
     }
 
     @BeforeAll
-    void deployClusterOperator(Vertx vertx) {
+    void deployClusterOperator(Vertx vertx) throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(getBridgeNamespace());
-
-        applyRoleBindings(getBridgeNamespace());
-        // 050-Deployment
-        KubernetesResource.clusterOperator(getBridgeNamespace()).done();
+//        prepareEnvForOperator(getBridgeNamespace());
+//
+//        applyRoleBindings(getBridgeNamespace());
+//        // 050-Deployment
+//        KubernetesResource.clusterOperator(getBridgeNamespace()).done();
+        installClusterOperator(getBridgeNamespace());
 
         // Create http client
         client = WebClient.create(vertx, new WebClientOptions()

@@ -13,6 +13,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -175,7 +176,7 @@ public class StrimziUpgradeST extends BaseST {
                 .endKafka()
             .endSpec().done();
 
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
@@ -183,10 +184,10 @@ public class StrimziUpgradeST extends BaseST {
         cluster.applyClusterOperatorInstallFiles();
         applyRoleBindings(NAMESPACE);
 
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").delete();
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
 
-        DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
@@ -207,7 +208,7 @@ public class StrimziUpgradeST extends BaseST {
         copyModifyApply(coDir);
 
         LOGGER.info("Waiting for CO deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady("strimzi-cluster-operator", 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
         LOGGER.info("CO ready");
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
@@ -336,7 +337,7 @@ public class StrimziUpgradeST extends BaseST {
         copyModifyApply(coInstallDir);
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPods);
+        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
         LOGGER.info("Waiting for ZK StatefulSet roll");
         StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
@@ -385,7 +386,7 @@ public class StrimziUpgradeST extends BaseST {
     }
 
     private void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(Constants.STRIMZI_DEPLOYMENT_NAME);
+        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);
