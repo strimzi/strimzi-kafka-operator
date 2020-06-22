@@ -73,12 +73,6 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void deleteKafkaTopicWithWait(String topicName) {
-        LOGGER.info("Deleting topic {} in namespace {}", topicName, kubeClient().getNamespace());
-        KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).delete();
-        waitForKafkaTopicDeletion(topicName);
-    }
-
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} deletion", topicName);
         TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
