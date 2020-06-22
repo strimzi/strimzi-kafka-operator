@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -13,16 +12,11 @@ import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
