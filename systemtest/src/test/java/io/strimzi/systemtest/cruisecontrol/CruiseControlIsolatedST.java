@@ -43,45 +43,14 @@ public class CruiseControlIsolatedST extends BaseST {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     @Test
-    void testAutoCreationOfCruiseControlTopics() throws InterruptedException {
+    void testAutoCreationOfCruiseControlTopics() {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
-                .editCruiseControl()
-                    .addToConfig("auto.create.topics.enable", "false")
-                .endCruiseControl()
             .endSpec()
             .done();
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        LOGGER.info("Removing auto-created CC topics");
-        KafkaTopicUtils.deleteKafkaTopicWithWait(CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicUtils.deleteKafkaTopicWithWait(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicUtils.deleteKafkaTopicWithWait(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-
-        //wait some time to know if CC topics will be created by metrics reporter
-        Thread.sleep(60_000);
-
-        LOGGER.info("Checking if CC topics are not recreated");
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CRUISE_CONTROL_METRICS_TOPIC).get() == null, is(true));
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get() == null, is(true));
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get() == null, is(true));
-
-        LOGGER.info("Changing the CC config to auto.create.topics.enable=true and removing config of Kafka");
-        //firstly we need to configure the Kafka settings, because it will be rolled sooner than CC and it will create the topics with default values for Kafka
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getConfig().remove("auto.create.topics.enable", "false");
-            kafka.getSpec().getCruiseControl().getConfig().put("auto.create.topics.enable", "true");
-        });
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-cruise-control", 1);
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicCreation(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicUtils.waitForKafkaTopicCreation(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
 
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE)
             .withName(CRUISE_CONTROL_METRICS_TOPIC).get().getSpec();
@@ -96,11 +65,11 @@ public class CruiseControlIsolatedST extends BaseST {
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         assertThat(modelTrainingTopic.getPartitions(), is(32));
-//        assertThat(modelTrainingTopic.getReplicas(), is(2));
+        assertThat(modelTrainingTopic.getReplicas(), is(2));
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         assertThat(partitionMetricsTopic.getPartitions(), is(32));
-//        assertThat(partitionMetricsTopic.getReplicas(), is(2));
+        assertThat(partitionMetricsTopic.getReplicas(), is(2));
     }
 
     @Test
