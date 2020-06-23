@@ -23,7 +23,7 @@ fi
 
 yq_array=($(echo "$YQ_VERSION" | tr '.' '\n'))
 
-yq_err_msg="${RED}yq version is ${YQ_VERSION}, version must be 3.3.1 of above. Please download the latest version from https://github.com/mikefarah/yq/releases${NO_COLOUR}"
+yq_err_msg="${RED}yq version is ${YQ_VERSION}, version must be 3.3.1 or above. Please download the latest version from https://github.com/mikefarah/yq/releases${NO_COLOUR}"
 
 if [[ yq_array[0] -lt 3  ]]; then
   echo -e $yq_err_msg
