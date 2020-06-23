@@ -386,6 +386,9 @@ public final class TestUtils {
                     ((ObjectNode) envVar).remove("valueFrom");
                     ((ObjectNode) envVar).put("value", namespace);
                 }
+                if (varName.matches("STRIMZI_LOG_LEVEL")) {
+                    ((ObjectNode) envVar).put("value", "DEBUG");
+                }
             }
             return mapper.writeValueAsString(node);
         } catch (IOException e) {

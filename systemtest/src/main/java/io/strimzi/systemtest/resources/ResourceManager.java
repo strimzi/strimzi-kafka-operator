@@ -423,7 +423,7 @@ public class ResourceManager {
                     .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
             () -> logCurrentResourceStatus(resource));
 
-        LOGGER.info("{}:{} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
+        LOGGER.info("{}: {} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
     }
 

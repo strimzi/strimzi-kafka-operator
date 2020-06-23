@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.batch.DoneableJob;
+import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
@@ -34,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.kafkaclients.AbstractKafkaClient.generateRandomConsumerGroup;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public class KafkaClientsResource {
@@ -480,5 +483,127 @@ public class KafkaClientsResource {
                 .endTemplate()
             .endSpec()
             .build());
+    }
+
+    public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount) {
+        return producerStrimzi(producerName, bootstrapServer, topicName, messageCount, "");
+    }
+
+    public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount, String additionalConfig) {
+        Map<String, String> producerLabels = new HashMap<>();
+        producerLabels.put("app", producerName);
+        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+
+        return KubernetesResource.deployNewJob(new JobBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(producerLabels)
+                .withName(producerName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(producerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("OnFailure")
+                        .withContainers()
+                            .addNewContainer()
+                            .withName(producerName)
+                                .withImage("strimzi/hello-world-producer:latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue(topicName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("DEBUG")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue(String.valueOf(messageCount))
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("PRODUCER_ACKS")
+                                        .withValue("all")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("ADDITIONAL_CONFIG")
+                                        .withValue(additionalConfig)
+                                    .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
+    }
+
+    public static DoneableJob consumerStrimzi(String consumerName, String bootstrapServer, String topicName, int messageCount) {
+        return consumerStrimzi(consumerName, bootstrapServer, topicName, messageCount, "", generateRandomConsumerGroup());
+    }
+
+    public static DoneableJob consumerStrimzi(String consumerName, String bootstrapServer, String topicName, int messageCount, String additionalConfig, String consumerGroup) {
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", consumerName);
+        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+
+        return KubernetesResource.deployNewJob(new JobBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(consumerLabels)
+                .withName(consumerName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(consumerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("OnFailure")
+                        .withContainers()
+                            .addNewContainer()
+                            .withName(consumerName)
+                                .withImage("strimzi/hello-world-consumer:latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue(topicName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("DEBUG")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue(String.valueOf(messageCount))
+                                    .endEnv()
+                                   .addNewEnv()
+                                        .withName("GROUP_ID")
+                                        .withValue(consumerGroup)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("ADDITIONAL_CONFIG")
+                                        .withValue(additionalConfig)
+                                    .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
     }
 }

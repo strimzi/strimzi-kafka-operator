@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -79,7 +80,7 @@ public class StrimziUpgradeST extends BaseST {
     private final String userName = "my-user";
     private final int upgradeTopicCount = 40;
     // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
-    private final int expectedTopicCount = upgradeTopicCount + 2;
+    private int expectedTopicCount = upgradeTopicCount + 2;
 
     private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
 
@@ -91,9 +92,11 @@ public class StrimziUpgradeST extends BaseST {
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
+
             // Tidy up
         } catch (KubeClusterException e) {
             e.printStackTrace();
+            TestExecutionWatcher.collectLogs(testClass, testName);
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -111,7 +114,6 @@ public class StrimziUpgradeST extends BaseST {
 
             throw e;
         } finally {
-            TestExecutionWatcher.collectLogs(testClass, testName);
             deleteInstalledYamls(coDir);
         }
     }
@@ -136,6 +138,7 @@ public class StrimziUpgradeST extends BaseST {
             }
         } catch (KubeClusterException e) {
             e.printStackTrace();
+            TestExecutionWatcher.collectLogs(testClass, testName);
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -153,7 +156,6 @@ public class StrimziUpgradeST extends BaseST {
 
             throw e;
         } finally {
-            TestExecutionWatcher.collectLogs(testClass, testName);
             deleteInstalledYamls(coDir);
         }
     }
@@ -194,7 +196,14 @@ public class StrimziUpgradeST extends BaseST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
     }
 
+    @SuppressWarnings("MethodLength")
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
+        String continuousTopicName = "continuous-topic";
+        int continuousClientsMessageCount = testParameters.getJsonObject("client").getInt("continuousClientsMessages");
+        String producerName = "hello-world-producer";
+        String consumerName = "hello-world-consumer";
+        String continuousConsumerGroup = "continuous-consumer-group";
+
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -247,9 +256,25 @@ public class StrimziUpgradeST extends BaseST {
             }
         }
 
+        if (continuousClientsMessageCount != 0) {
+            // ##############################
+            // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
+            // ##############################
+            // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
+            if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
+                KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+                // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
+                expectedTopicCount += 1;
+            }
+            String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
+            KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
+            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
+            // ##############################
+        }
+
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("KafkaUser " + userName + "availability", 10_000L, 120_000L,
+        TestUtils.waitFor("KafkaUser " + userName + " availability", 10_000L, 120_000L,
             () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages
@@ -326,6 +351,17 @@ public class StrimziUpgradeST extends BaseST {
                 KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
                 assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
             }
+        }
+
+        if (continuousClientsMessageCount != 0) {
+            // ##############################
+            // Validate that continuous clients finished successfully
+            // ##############################
+            ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+            // ##############################
+            // Delete jobs to make same names available for next upgrade run during chain upgrade
+            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(producerName).delete();
+            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(consumerName).delete();
         }
 
         // Check errors in CO log

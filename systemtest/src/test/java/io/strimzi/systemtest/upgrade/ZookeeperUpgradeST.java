@@ -9,7 +9,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -36,6 +39,11 @@ public class ZookeeperUpgradeST extends BaseST {
 
     public static final String NAMESPACE = "zookeeper-upgrade-test";
 
+    private final String continuousTopicName = "continuous-topic";
+    private final int continuousClientsMessageCount = 1000;
+    private final String producerName = "hello-world-producer";
+    private final String consumerName = "hello-world-consumer";
+
     @Test
     void testKafkaClusterUpgrade(TestInfo testinfo) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
@@ -46,6 +54,12 @@ public class ZookeeperUpgradeST extends BaseST {
 
             runVersionChange(initialVersion, newVersion, 3, 3, testinfo);
         }
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        // ##############################
     }
 
     @Test
@@ -58,6 +72,12 @@ public class ZookeeperUpgradeST extends BaseST {
 
             runVersionChange(initialVersion, newVersion, 3, 3, testInfo);
         }
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        // ##############################
     }
 
     void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas, TestInfo testInfo) {
@@ -83,6 +103,17 @@ public class ZookeeperUpgradeST extends BaseST {
                     .endKafka()
                 .endSpec()
                 .done();
+
+            // ##############################
+            // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
+            // ##############################
+            // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
+            KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+            String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
+            KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
+            KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount).done();
+            // ##############################
+
         } else {
             LOGGER.info("Initial Kafka version (" + initialVersion.version() + ") is already ready");
             kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));

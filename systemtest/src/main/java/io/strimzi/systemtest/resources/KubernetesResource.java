@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.batch.DoneableJob;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -26,8 +28,8 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
@@ -136,6 +138,26 @@ public class KubernetesResource {
                 }
             );
             return waitFor(deleteLater(co));
+        });
+    }
+
+    public static DoneableJob deployNewJob(Job job) {
+        return new DoneableJob(job, kubernetesJob -> {
+            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+                () -> {
+                    try {
+                        ResourceManager.kubeClient().getClient().batch().jobs().inNamespace(kubeClient().getNamespace()).createOrReplace(kubernetesJob);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return deleteLater(kubernetesJob);
         });
     }
 
@@ -444,5 +466,9 @@ public class KubernetesResource {
 
     public static NetworkPolicy deleteLater(NetworkPolicy resource) {
         return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().network().networkPolicies(), resource);
+    }
+
+    public static Job deleteLater(Job resource) {
+        return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().batch().jobs(), resource);
     }
 }
