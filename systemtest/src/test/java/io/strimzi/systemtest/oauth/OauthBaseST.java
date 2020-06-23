@@ -82,8 +82,8 @@ public class OauthBaseST extends BaseST {
 //        applyRoleBindings(NAMESPACE);
 //        // 050-Deployment
 //        KubernetesResource.clusterOperator(NAMESPACE).done();
-        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
         installClusterOperator(NAMESPACE);
+        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
         deployTestSpecificResources();
     }
