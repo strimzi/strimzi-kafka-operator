@@ -6,7 +6,6 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
