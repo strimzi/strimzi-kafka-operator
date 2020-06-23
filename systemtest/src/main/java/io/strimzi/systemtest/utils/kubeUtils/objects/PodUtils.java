@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +63,7 @@ public class PodUtils {
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.getTimeoutForPodsReadiness(expectPods),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Duration.ofMinutes(6).toMillis(),
             () -> {
                 List<Pod> pods = kubeClient().listPods(selector);
                 if (pods.isEmpty() && expectPods == 0) {
@@ -132,7 +132,7 @@ public class PodUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.getTimeoutForPodsReadiness(1),
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Duration.ofMinutes(6).toMillis(),
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {

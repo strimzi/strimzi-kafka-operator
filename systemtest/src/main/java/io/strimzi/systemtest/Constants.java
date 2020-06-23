@@ -98,8 +98,8 @@ public interface Constants {
     String ROLE_BINDING = "RoleBinding";
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
     String SECRET = "Secret";
-    String KAFKA_EXPORTER = "KafkaWithExporter";
-    String KAFKA_CRUISE_CONTROL = "KafkaWithCruiseControl";
+    String KAFKA_EXPORTER_DEPLOYMENT = "KafkaWithExporter";
+    String KAFKA_CRUISE_CONTROL_DEPLOYMENT = "KafkaWithCruiseControl";
     String STATEFUL_SET = "StatefulSet";
 
     /**

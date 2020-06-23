@@ -30,16 +30,16 @@ public class ResourceOperation {
             case Constants.DEPLOYMENT_CONFIG:
                 timeout = Duration.ofMinutes(10).toMillis();
                 break;
-            case KafkaRebalance.RESOURCE_KIND:
             case KafkaMirrorMaker.RESOURCE_KIND:
             case KafkaBridge.RESOURCE_KIND:
-            case KafkaConnector.RESOURCE_KIND:
             case Constants.STATEFUL_SET:
+            case Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT:
+            case Constants.KAFKA_EXPORTER_DEPLOYMENT:
             case Constants.DEPLOYMENT:
                 timeout = Duration.ofMinutes(8).toMillis();
                 break;
-            case Constants.KAFKA_CRUISE_CONTROL:
-            case Constants.KAFKA_EXPORTER:
+            case KafkaConnector.RESOURCE_KIND:
+            case KafkaRebalance.RESOURCE_KIND:
                 timeout = Duration.ofMinutes(4).toMillis();
                 break;
             default:
@@ -47,9 +47,5 @@ public class ResourceOperation {
         }
 
         return timeout;
-    }
-
-    public static long getTimeoutForPodsReadiness(int expectPods) {
-        return Duration.ofMinutes(4).toMillis() * expectPods;
     }
 }

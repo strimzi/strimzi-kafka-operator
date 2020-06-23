@@ -222,11 +222,11 @@ public class KafkaResource {
 
         // Kafka Exporter is not setup every time
         if (kafka.getSpec().getKafkaExporter() != null) {
-            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER);
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER_DEPLOYMENT);
         }
         // Cruise Control is not setup every time
         if (kafka.getSpec().getCruiseControl() != null) {
-            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL);
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }
         return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, "Ready", timeout);
     }
