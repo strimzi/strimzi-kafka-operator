@@ -19,6 +19,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaConnectorUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectorUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND);
 
     private KafkaConnectorUtils() {}
 
@@ -71,8 +72,7 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
-        long connectorTimeout = ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND);
-        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, connectorTimeout, () -> {
+        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, READINESS_TIMEOUT, () -> {
             String availableConnectors = getCreatedConnectors(connectS2IPodName);
             return availableConnectors.contains(connectorName);
         }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));

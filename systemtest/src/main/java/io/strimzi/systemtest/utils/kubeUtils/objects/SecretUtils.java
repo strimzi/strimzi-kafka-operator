@@ -29,6 +29,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
 
     private SecretUtils() { }
 
@@ -37,9 +38,8 @@ public class SecretUtils {
     }
 
     public static void waitForSecretReady(String secretName, Runnable onTimeout) {
-        long secretTimeout = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
         LOGGER.info("Waiting for Secret {}", secretName);
-        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, secretTimeout,
+        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getSecret(secretName) != null,
             onTimeout);
         LOGGER.info("Secret {} created", secretName);

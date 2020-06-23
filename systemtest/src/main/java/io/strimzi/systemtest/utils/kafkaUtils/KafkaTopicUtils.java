@@ -22,7 +22,7 @@ public class KafkaTopicUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
-    private static long topicTimeout = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
 
     private KafkaTopicUtils() {}
 
@@ -59,7 +59,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicCreation(String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
-        TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, topicTimeout,
+        TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
                     .withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
@@ -68,7 +68,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
         LOGGER.info("Waiting for KafkaTopic {} creation", topicNamePrefix);
-        TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, topicTimeout,
+        TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
                     .findFirst().get().getStatus().getConditions().get(0).getType().equals("Ready")

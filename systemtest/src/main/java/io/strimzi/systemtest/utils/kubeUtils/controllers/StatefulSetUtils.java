@@ -25,6 +25,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class StatefulSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
 
     private StatefulSetUtils() { }
 
@@ -134,10 +135,9 @@ public class StatefulSetUtils {
      */
     public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
-        long ssTimeout = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
-        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ssTimeout,
+        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
 
