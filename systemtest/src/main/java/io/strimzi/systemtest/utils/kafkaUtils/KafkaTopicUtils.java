@@ -7,8 +7,8 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.enums.ResourceReadiness;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +22,7 @@ public class KafkaTopicUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
-    private static long topicTimeout = ResourceReadiness.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
+    private static long topicTimeout = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
 
     private KafkaTopicUtils() {}
 

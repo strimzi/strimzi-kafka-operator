@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
@@ -217,15 +218,15 @@ public class KafkaResource {
      * Wait until the ZK, Kafka and EO are all ready
      */
     private static Kafka waitFor(Kafka kafka) {
-        long timeout = Constants.TIMEOUT_FOR_RESOURCE_READINESS;
+        long timeout = ResourceOperation.getTimeoutForResourceReadiness(kafka.getKind());
 
         // Kafka Exporter is not setup every time
         if (kafka.getSpec().getKafkaExporter() != null) {
-            timeout += Constants.TIMEOUT_FOR_RESOURCE_CREATION;
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER);
         }
         // Cruise Control is not setup every time
         if (kafka.getSpec().getCruiseControl() != null) {
-            timeout += Constants.TIMEOUT_FOR_RESOURCE_CREATION;
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL);
         }
         return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, "Ready", timeout);
     }

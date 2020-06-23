@@ -417,7 +417,7 @@ public class ResourceManager {
         LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeout,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
@@ -428,7 +428,8 @@ public class ResourceManager {
     }
 
     public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
-        return waitForResourceStatus(operation, resource, status, Constants.TIMEOUT_FOR_RESOURCE_READINESS);
+        long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
+        return waitForResourceStatus(operation, resource, status, resourceTimeout);
     }
 
     private static Deployment getDeploymentFromYaml(String yamlPath) {

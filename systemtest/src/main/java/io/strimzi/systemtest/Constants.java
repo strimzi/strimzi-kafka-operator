@@ -99,6 +99,7 @@ public interface Constants {
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
     String SECRET = "Secret";
     String KAFKA_EXPORTER = "KafkaWithExporter";
+    String KAFKA_CRUISE_CONTROL = "KafkaWithCruiseControl";
     String STATEFUL_SET = "StatefulSet";
 
     /**

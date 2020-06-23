@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.ResourceReadiness;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +37,7 @@ public class SecretUtils {
     }
 
     public static void waitForSecretReady(String secretName, Runnable onTimeout) {
-        long secretTimeout = ResourceReadiness.getTimeoutForResourceReadiness(Constants.SECRET);
+        long secretTimeout = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
         LOGGER.info("Waiting for Secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, secretTimeout,
             () -> kubeClient().getSecret(secretName) != null,

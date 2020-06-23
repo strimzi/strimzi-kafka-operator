@@ -7,7 +7,7 @@ package io.strimzi.systemtest.utils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.ResourceReadiness;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +19,7 @@ import static io.restassured.RestAssured.given;
 public class HttpUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
-    private static final long SERVICE_TIMEOUT = ResourceReadiness.getTimeoutForResourceReadiness(Constants.SERVICE);
+    private static final long SERVICE_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SERVICE);
 
     private HttpUtils() { }
 
