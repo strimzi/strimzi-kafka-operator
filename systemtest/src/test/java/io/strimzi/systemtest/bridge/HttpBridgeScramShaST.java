@@ -8,7 +8,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -93,9 +93,14 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls()
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                        .endTls()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec().done();

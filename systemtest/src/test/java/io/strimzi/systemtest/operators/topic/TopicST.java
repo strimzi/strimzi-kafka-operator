@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -123,10 +124,19 @@ public class TopicST extends AbstractST {
         KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endKafkaListenerExternalNodePort()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()

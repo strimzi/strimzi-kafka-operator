@@ -10,16 +10,19 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -35,8 +38,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -186,37 +187,45 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
+                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                            .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                            .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                            .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                            .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                            .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
                                         .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
                                         .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endTls()
-                        .withNewKafkaListenerExternalNodePort()
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
+                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                            .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                            .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                            .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                            .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                            .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
                                         .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
                                         .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endKafkaListenerExternalNodePort()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -319,8 +328,12 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                 .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
@@ -334,7 +347,7 @@ public class OauthTlsST extends OauthAbstractST {
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endTls()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()

@@ -105,6 +105,8 @@ public class JbodStorageTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
+                        .withNewListeners()
+                        .endListeners()
                         .withNewJbodStorage()
                             .withVolumes(volumes)
                         .endJbodStorage()

@@ -46,8 +46,8 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -117,6 +117,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -159,6 +160,8 @@ public class ResourceUtils {
                     .withNewKafka()
                         .withReplicas(replicas)
                         .withImage(image)
+                        .withNewListeners()
+                        .endListeners()
                         .withLivenessProbe(probe)
                         .withReadinessProbe(probe)
                         .withStorage(new EphemeralStorage())
@@ -329,8 +332,17 @@ public class ResourceUtils {
                     .editKafka()
                         .withLogging(kafkaLogging)
                         .withNewListeners()
-                            .withPlain(new KafkaListenerPlain())
-                            .withTls(new KafkaListenerTls())
+                            .addNewListValue()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endListValue()
                         .endListeners()
                     .endKafka()
                     .editZookeeper()
@@ -362,6 +374,7 @@ public class ResourceUtils {
 
         KafkaClusterSpec kafkaClusterSpec = new KafkaClusterSpec();
         kafkaClusterSpec.setReplicas(replicas);
+        kafkaClusterSpec.setListeners(new ArrayOrObjectKafkaListeners(emptyList()));
         kafkaClusterSpec.setImage(image);
         if (kafkaLogging != null) {
             kafkaClusterSpec.setLogging(kafkaLogging);

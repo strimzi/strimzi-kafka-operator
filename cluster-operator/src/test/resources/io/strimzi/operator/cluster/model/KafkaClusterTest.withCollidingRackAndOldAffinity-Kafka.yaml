@@ -4,6 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
+    listeners: []
     rack:
       topologyKey: "failure-domain.beta.kubernetes.io/zone"
     affinity:

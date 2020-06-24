@@ -14,13 +14,9 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternal;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalConfiguration;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
@@ -33,6 +29,7 @@ import io.strimzi.test.TestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -162,10 +159,10 @@ public class KafkaResource {
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                    .withNewListeners()
-                        .withNewPlain().endPlain()
-                        .withNewTls().endTls()
-                    .endListeners()
+                    .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
+                            .withNewPlain().endPlain()
+                            .withNewTls().endTls()
+                            .build()))
                     .withNewInlineLogging()
                         .addToLoggers("log4j.rootLogger", "DEBUG")
                     .endInlineLogging()
@@ -269,36 +266,17 @@ public class KafkaResource {
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName) {
-        KafkaListenerTls kafkaListenerTls = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getTls();
-        return kafkaListenerTls.getConfiguration() == null ?
-                KafkaResources.clusterCaCertificateSecretName(clusterName) : kafkaListenerTls.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        GenericKafkaListener tlsListener = listeners.stream().filter(listener -> "tls".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+        return tlsListener.getConfiguration() == null ?
+                KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName) {
-        KafkaListenerExternal kafkaListenerExternal = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getExternal();
-
-        KafkaListenerExternalConfiguration kafkaListenerExternalConfiguration;
-
-        switch (kafkaListenerExternal.getType()) {
-            case KafkaListenerExternalRoute.TYPE_ROUTE:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalRoute) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalNodePort.TYPE_NODEPORT:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalNodePort) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalLoadBalancer) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalIngress.TYPE_INGRESS:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalIngress) kafkaListenerExternal).getConfiguration();
-                break;
-            default:
-                kafkaListenerExternalConfiguration = null;
-                break;
-        }
-
-        return kafkaListenerExternalConfiguration == null ?
-                KafkaResources.clusterCaCertificateSecretName(clusterName) : kafkaListenerExternalConfiguration.getBrokerCertChainAndKey().getSecretName();
+        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        GenericKafkaListener external = listeners.stream().filter(listener -> "external".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+        return external.getConfiguration() == null ?
+                KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

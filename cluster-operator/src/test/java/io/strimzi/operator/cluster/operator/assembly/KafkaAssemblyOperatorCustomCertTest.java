@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -72,7 +73,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     private Kafka kafka;
     private KafkaAssemblyOperator operator;
     private KubernetesClient client;
-    private List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
+    private final List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
 
     /**
      * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
@@ -98,8 +99,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.reconcileCas(this::dateSupplier)
                     .compose(state -> state.getKafkaClusterDescription())
-                    .compose(state -> state.customTlsListenerCertificate())
-                    .compose(state -> state.customExternalListenerCertificate())
+                    .compose(state -> state.customListenerCertificates())
                     .compose(state -> state.kafkaStatefulSet())
                     .compose(state -> state.kafkaRollingUpdate())
                     .map((Void) null);
@@ -154,7 +154,11 @@ public class KafkaAssemblyOperatorCustomCertTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withNewListeners()
-                            .withNewTls()
+                            .addNewListValue()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
                                 .withNewConfiguration()
                                     .withNewBrokerCertChainAndKey()
                                         .withSecretName("my-tls-secret")
@@ -162,8 +166,12 @@ public class KafkaAssemblyOperatorCustomCertTest {
                                         .withKey("tls.key")
                                     .endBrokerCertChainAndKey()
                                 .endConfiguration()
-                            .endTls()
-                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
                                 .withNewConfiguration()
                                     .withNewBrokerCertChainAndKey()
                                         .withSecretName("my-external-secret")
@@ -171,7 +179,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                                         .withKey("tls.key")
                                     .endBrokerCertChainAndKey()
                                 .endConfiguration()
-                            .endKafkaListenerExternalLoadBalancer()
+                            .endListValue()
                         .endListeners()
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
@@ -196,7 +204,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     }
 
     public String getTlsThumbprint()    {
-        return "vjPd/D/f0/X3yqitf65yoUZbyeWnQU4cPDJGbr7GA7I=";
+        return "{external=COWn2zWLZMhoewfrmSTfUeKlQPifBKekyXzjm2iGTuc=, tls=vjPd/D/f0/X3yqitf65yoUZbyeWnQU4cPDJGbr7GA7I=}";
     }
 
     public Secret getExternalSecret() {
@@ -207,10 +215,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 .addToData("tls.crt", "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQxVENDQXIyZ0F3SUJBZ0lVUWUrQUdacXdDK0Z0ZFBiMjUyQU1ERjlaOFk0d0RRWUpLb1pJaHZjTkFRRUwKQlFBd1ZERUxNQWtHQTFVRUJoTUNRMW94RHpBTkJnTlZCQWNUQmxCeVlXZDFaVEViTUJrR0ExVUVDaE1TU21GcgpkV0lnVTJOb2IyeDZMQ0JKYm1NdU1SY3dGUVlEVlFRREV3NUpiblJsY20xbFpHbGhkR1ZEUVRBZUZ3MHhPVEV5Ck16RXhPVEl4TURCYUZ3MHlNREV4TWprd016SXhNREJhTUU0eEN6QUpCZ05WQkFZVEFrTmFNUTh3RFFZRFZRUUgKRXdaUWNtRm5kV1V4R3pBWkJnTlZCQW9URWtwaGEzVmlJRk5qYUc5c2Vpd2dTVzVqTGpFUk1BOEdBMVVFQXhNSQpSWGgwWlhKdVlXd3dnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDVkZDK2d1b1c2CjdmWEQ2ZC81Y2FyOHMzcktMeFRjSlgzT0Z4Ykl3K3NUNnZLOHg1cVBSVjlDS2h5ZHJzWGVhNnRQWDdhRUJETVQKL1lGd08xQWdBS0szTUwwQXFTZFZ6RktBQnIydnh3U1M5RHFKSW9zb1ovS2ZkdGZ0dHB1SnRCcWZ3eWd0QjYxWQpxU24xVnduTUFTbDdCUHluc2ZXTW40RkpqQlg4eDBKQ1lIbGhDOXVsczk5bFRSZVlRNjNHUjJNU0pqbFVpYmh1Ck83RjdZa2NmbTZKMkRrK0RzVXdiT3NoOCtHUFBGK2ZqbkU5aDJkRDVKUVdxUjc0Y2dqNnVMdE1rZ1lqWU11L2UKeTZYTkJZUkF3c1hOeU9sL1VnRW1XOVBmb3lYRTNRVnRSYVFQamg5N3RYNjlNYURNSXZML2ZFeU9NclhGWUNTYwplN0szMEpFbW9uci9BZ01CQUFHamdhUXdnYUV3RGdZRFZSMFBBUUgvQkFRREFnV2dNQjBHQTFVZEpRUVdNQlFHCkNDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFqQU1CZ05WSFJNQkFmOEVBakFBTUIwR0ExVWREZ1FXQkJUdnJlc1cKL3l5eTlxMFRrb1lYME9sMUVlSzhiVEFmQmdOVkhTTUVHREFXZ0JUcEJ2VWdOanAvWEx4bmNmSTlnQUtCV2NSWQpPVEFpQmdOVkhSRUVHekFaZ2hjcUxqRTVNaTR4TmpndU5qUXVNVFF6TG01cGNDNXBiekFOQmdrcWhraUc5dzBCCkFRc0ZBQU9DQVFFQUgvNG1TUmtSWEZORXJwTVFkS0tPeHFjVFNrd0dNRzM1UlR4ajNjeXR2OEtNYW9VWUQvTUsKcTR5MjJLOS90OU1ybjQ2L3BNVi9aY29lZkFJQ3VRSEdnSDVHN3gxaEN4T3RKK1dCMy9oM25ZOXhnbUJwcTU5MApJZlo1NDczVnQ5RldrR3NGNU5FZnNPWkVMNE9BL3BqaStUKzFCNENWOGs1NGQ3blJkSWpMZkNSbGlVTm13WEZCCkJqeTBIOEpGZ216TFpROTNKRzRhRi9hM1RwMDhvY0xxbjZzTHkzN0pFbkJQSVBnL1ZqS3hJeGNvbUVzbFdVL28KdHZoRVNLc3V3TFcxUnkycmNJNHoyeXl5ZnIyMlFpRzdBRk5RUFdHUGlhM3FuRkYxbmxxWXI4V3VjR3Vnanp5NAphM0h0RmFnMkxwbWoxZFB6cUI4anJGZHhKY0hBVHd3UTV3PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQotLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS0KTUlJRGtUQ0NBbm1nQXdJQkFnSVVNU0Z6WEdCYnNtdVcxY3VaYU9CeUsyK01LK1V3RFFZSktvWklodmNOQVFFTApCUUF3VERFTE1Ba0dBMVVFQmhNQ1Exb3hEekFOQmdOVkJBY1RCbEJ5WVdkMVpURWJNQmtHQTFVRUNoTVNTbUZyCmRXSWdVMk5vYjJ4NkxDQkpibU11TVE4d0RRWURWUVFERXdaU2IyOTBRMEV3SGhjTk1Ua3hNak14TVRreU1UQXcKV2hjTk1qQXhNVEk1TURNeU1UQXdXakJVTVFzd0NRWURWUVFHRXdKRFdqRVBNQTBHQTFVRUJ4TUdVSEpoWjNWbApNUnN3R1FZRFZRUUtFeEpLWVd0MVlpQlRZMmh2Ykhvc0lFbHVZeTR4RnpBVkJnTlZCQU1URGtsdWRHVnliV1ZrCmFXRjBaVU5CTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2dW15TnFBaXp2VEIKQ0xRa3FiVDBEajI0R1ZwcVJsb0RSTGdRc0xzMFhHMCtPZVMrc0UyU2ZLTkhJeC9BK1pzUEFoTm04L1BlL01UKwpHNFBzYzgydHNpNitTZWJlYjBENExuOVI3UXVlWFpKTXlxaXhSWFlzcEZBMHA5bXhwc1NpZ0NnTFl3Y3NCVElkCm12U055VllzV2hUUHpuMXM4VUJ2SlVoenBCKzBLM1d6WkhYMEVJYVh3ZmtsM1Fob3JQZDdyQ0RUVXAzQlNwdWUKSXRENG1VcCtNV3NvSDZzRzUrazBIeUNISzVEUS9qN2xSb1Y2dGhsSkdJdkxXbmhodFRLNjVOQThsQk92Wkd6UQpQMVBaMUwreEZRUXZyZDJKMUltczZicmM4NytqM0JEZ0VxZ1YvSjJGYmtEL3JQSHVFTDRSVndqS3l2YU1Tc2crCkthU3FjQ3VJR1FJREFRQUJvMk13WVRBT0JnTlZIUThCQWY4RUJBTUNBZ1F3RHdZRFZSMFRBUUgvQkFVd0F3RUIKL3pBZEJnTlZIUTRFRmdRVTZRYjFJRFk2ZjF5OFozSHlQWUFDZ1ZuRVdEa3dId1lEVlIwakJCZ3dGb0FVSzZhZApWaHk5bmtBR1JGbXorU3MyQkNvVUhua3dEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBTHRKRjJTY3NkVUNzT2VKCmU0N2grbG5UNHRJU2s3WVVNQk02Rlc1bFhPU05PRXhrVEs5THBOd1hpeGFQVWlLZFo1RWhURE1KUDZuNkJZaVMKV01wRU9aNmVQY3p5bVZ5cHN3KzhZUXJ6U3ByMG1UL1l3L2pTQzRwTXNXL1dBNWYwWWpGMTVidGR2U01kekd5UAp5MjlEL1B5Vy9jQnRiNlhyZGtsKzRmZUY2a1Z6bWZwWDhsSklVRmhqK0ppZmNrRWdJTkhYTHZ1SjFXWWFUbkxpClZTWi9FVUQxK0pabzZaOElFMmRsd21OQXhQc0pCSnNiUFF0eUQ4SEg1clJtWW5LaXN5Q1dvU0xIUjJRZlA4SzYKOGFNMVpxTEkvWWxmditPMzlQQnZ4eEFTZldta2VzbHp1anBUYnZTV1hRNHk1dFEvRWhvSlFjQnVsOUhWc2xiRgpKSkhTRWtnPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlEYURDQ0FsQ2dBd0lCQWdJVWM1Sm1sYlEwQjJDcWcxWDV6MGs1emdyU0lVc3dEUVlKS29aSWh2Y05BUUVMCkJRQXdUREVMTUFrR0ExVUVCaE1DUTFveER6QU5CZ05WQkFjVEJsQnlZV2QxWlRFYk1Ca0dBMVVFQ2hNU1NtRnIKZFdJZ1UyTm9iMng2TENCSmJtTXVNUTh3RFFZRFZRUURFd1pTYjI5MFEwRXdIaGNOTVRreE1qTXhNVGt5TVRBdwpXaGNOTWpReE1qSTVNVGt5TVRBd1dqQk1NUXN3Q1FZRFZRUUdFd0pEV2pFUE1BMEdBMVVFQnhNR1VISmhaM1ZsCk1Sc3dHUVlEVlFRS0V4SktZV3QxWWlCVFkyaHZiSG9zSUVsdVl5NHhEekFOQmdOVkJBTVRCbEp2YjNSRFFUQ0MKQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFNVDdlMDUvdmoyVm5IMFl0QXRMeGlQSgpaYkoyTzZRb25ldFRiNnltT0xaU0p2d0Uyd1RUQnlXNmxXWHZaVWsvNlNwRDQ5ODZ4eXM0RUs0bkc3WWUwOGx6Cjl4OVlZSUFhU0ptcEpmcjF2SkZBNnhCQWVZTDFqNEQ0T1kyUk80Qnp2Tmtobml3SmRVQXpzZCtVQzJzTW41SE4KZ2hTQTlzejNlTjVrcXAzNzNkdFBETWgyUVRZZnMvTFgySVhuSEEzeWhRRDZlZktxTEpZR2ZYTFZTdWNhNmYrawpUTkVBVmpDQ0E1bEl5OFJ1L25LTlZVQXlvTE5CSzI2R0prRTBuNU1qMzArRVhpdFE3YlN2SEUzdm1zRFFPTnl5CkF1K0dEbEl6WWtYOXpNUjRnYnNKNDQxK3dUWE5yVWtKRmVtb1B4c3dhcEFLc3FSTlljK3dXVUJPR21ZV2xHOEMKQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnRUdNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwTwpCQllFRkN1bW5WWWN2WjVBQmtSWnMva3JOZ1FxRkI1NU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQXhqbEMrCm5lYnNndzlZSUs3NndzTWpFZ01BNlIySzVub25nVllKZWJHZXpnejBNaW5md0IxbjVnd2xGSkRZZHJvSUhmSmQKV3pxakpCdnhqUTlxUURoYzcyaGJkK3NlelNnUFZNR29Hb2l1cmJLY3VDa3lBalZMK1M4eFNHSkY5Ti81bEtwUQpqTklMZnBtSzlxMWZlam4zYzJmcFk0eE1aRnRUWk9qZVN6SGhLdTZ2VnVLZGZYYWRuQllWOTJPWXhUeXFJVk9CCmNPMm9EUDlvQmZjWlY4N0ZTSG9zY0dUOXRnd1F5R09zbEk3YmlObTFnRmZRL1VzcEhKRVltcy8za2NKRC9vOFkKS0lKeUFPUDNwYngzc0FhTWYrVHVaUkN6WGV5SFVUUzM1a3VoYjdvdEFTYmh1amlEaHRTeHFwL05CT3lBL2tmeApuQXN6SUdEMVdXYnBOSjMrCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K")
                 .addToData("tls.key", "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQ1ZGQytndW9XNjdmWEQKNmQvNWNhcjhzM3JLTHhUY0pYM09GeGJJdytzVDZ2Szh4NXFQUlY5Q0toeWRyc1hlYTZ0UFg3YUVCRE1UL1lGdwpPMUFnQUtLM01MMEFxU2RWekZLQUJyMnZ4d1NTOURxSklvc29aL0tmZHRmdHRwdUp0QnFmd3lndEI2MVlxU24xClZ3bk1BU2w3QlB5bnNmV01uNEZKakJYOHgwSkNZSGxoQzl1bHM5OWxUUmVZUTYzR1IyTVNKamxVaWJodU83RjcKWWtjZm02SjJEaytEc1V3Yk9zaDgrR1BQRitmam5FOWgyZEQ1SlFXcVI3NGNnajZ1THRNa2dZallNdS9leTZYTgpCWVJBd3NYTnlPbC9VZ0VtVzlQZm95WEUzUVZ0UmFRUGpoOTd0WDY5TWFETUl2TC9mRXlPTXJYRllDU2NlN0szCjBKRW1vbnIvQWdNQkFBRUNnZ0VBTzVhNkF2RUxpMUNhc0JqSDRobEJVNGthUjc3U0E3MG9zRHdpYTFXRW5ZMkkKUVZVM3ZwVG9JclphZ2R6ZVVxMk82RWRGMlRja2c1VU5MQ05KUDhHQlNPQStiQWt4SStac0E2aXVJWmpYaHpZQQpQOWlDN3orOWgyZ2xuMnNpZU1SNDcrcytIK0cxdEg3SnVydHp1d3VyM1BSOVdUcVZBQVN4MVFnZHNkQ2o5NHVrClJzdGsrSGhjM2thT1U0UHM1cWFWbWJZdFB6ZlVibjhoK0xZOWNpZGxQanhiaWZCMTdiK0FaSW9mS2FTb1hEVG4KRks4Wmk1V056cklFdm1TQVZJT00vMHhPbUpnTXdIWUdvUW9PbWJ1TGl0VEFOemQwTmFUVFcyTDV0dlZYa1psOApGZlRrOFRGZ2p2RUpSdExEdklHd3VlS1I1ZE51cGpWSUQ1ek55c0NLSVFLQmdRREFRWVhQclVtd0xheXBhQU5aCmNuY21sL1NNbmowRklwcTJId3Ayb05JRTU1ZlBzZ04yK2tpQklPNXVxYkFGa2U5aGJldTVqS3FLT1hRVFFya3UKa04ybmZvRGJNYklVS29vZXowZyt3REdHeWhJOThzS1REdTZmZTd2Z1FSR3d5ZzIvMUhlRlZVbFMzSHRGbm9aWQpMbnBubXUwcmxoSXg2R2MzaE9PZ1VQN2Jvd0tCZ1FER2dkYUpCVGtuRDVDcjJpYzZ4c2d1WnV6RTd5bzUrZ05uCjREcjc2NXNRc3hNVGhIbjJJMXNpMldBeFl0RmVROGxHMCs3ai9vYjZOUHRaWWg1eXBud2RsbHFiRXVtNUxzYVoKTFZnY09hMGsxeEhxVSt3VUxJWm9hcmlxWXhYUHMvcEU4ZHoralQ3Wld4WmI0aGJ1WmRrU2lJWWVWTzlpaGhKagpKbDZGdTRFWTlRS0JnUUN2S2tPL3J4UUhaK1g3eDEvZDNGUEJId3ZhSHNaYjZtWnBicWk2NHRYWFVDYmFQa2UzCjNGdTVBd2NhWHBLWTBKajQvUXliMXhUK3NWQVh5R0F1bENEUDNZdUxxcUNralFtZy9wekZSNWtZUlA0UDRTSDAKbU5ORERacGt2UVJnUGdmKzhwY2ZMVkNNSllSUEx4c2FOdWFoaE45NEtkaFVEbm9VZEloc1piOSszd0tCZ0d3cApBTGttQkc4WkZ3M2NUdlhDcS81RWpJdjllTGVnVjB5NUs4cHFKTktqa0NoWlRZN2swdHFaTU1XWC8xWnFmdmc5CnIvUEFrdEV3SHlnancwMWJFMU9Yd2dTdStIU3pYUGpIY1RQbjVVU21meGQ3NUsxVldXTDVpMmNqbUJYVkRlK1YKRFlJUmVnWTZrR00rUEpwbkdqRHovSWY0WlhyOGJIWmp5S3I3Y0tzbEFvR0JBTG1TbS8ydkptd21VTzJSQjZEQwpjb1ZrTEZLNkROUmhQaGw4c3NOdDRBWnA4YUJtVzloZC9TditWOHhoNzl6OGhPUlF5cjZoNDVVRjlySXhJb1kyCll3MllidkkyYzRiZlZEQWpGY3U3UEZ3MzVoOFJPRytrMStoNDZQUkhKY1F2dzJxSnN2NnhKOVZLaEdzcEQxdUgKeUVHOEQxRGtVM1FVOElTN01ybUR6Mk9YCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K")
                 .build();
-    }
-
-    public String getExternalThumbprint()   {
-        return "COWn2zWLZMhoewfrmSTfUeKlQPifBKekyXzjm2iGTuc=";
     }
 
     public Pod getPod(StatefulSet sts) {
@@ -230,9 +234,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
+                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
                 assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), empty());
@@ -247,9 +249,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
+                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
                 Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
@@ -258,11 +258,11 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat("There are no changes in broker config, the restart should not be needed",
                         isPodToRestart.apply(pod), empty());
 
-                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
+                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
                 assertThat("Tls listener thumbprint annotation changed, pod should need restart",
                         isPodToRestart.apply(pod).get(0),
-                        equalTo("custom certificate on the TLS listener changes"));
+                        equalTo("custom certificate one or more listeners changed"));
 
                 async.flag();
             })));
@@ -275,9 +275,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
+                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
                 Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
@@ -287,11 +285,11 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat("There are no changes in broker config, the restart should not be needed",
                         isPodToRestart.apply(pod), empty());
 
-                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
+                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
                 assertThat(isPodToRestart.apply(pod).get(0),
-                        equalTo("custom certificate on the external listener changes"));
+                        equalTo("custom certificate one or more listeners changed"));
 
                 async.flag();
             })));
@@ -302,11 +300,19 @@ public class KafkaAssemblyOperatorCustomCertTest {
         kafka = new KafkaBuilder(createKafka())
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewTls()
-                            .endTls()
-                            .withNewKafkaListenerExternalNodePort()
-                            .endKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewListValue()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                            .endListValue()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -321,9 +327,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER)));
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER)));
+                        not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS)));
 
                 List<Function<Pod, List<String>>> capturedFunctions = functionArgumentCaptor;
                 assertThat(capturedFunctions, hasSize(1));

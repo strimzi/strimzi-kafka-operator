@@ -7,6 +7,7 @@ package io.strimzi.kafka.init;
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class InitWriter {
@@ -58,19 +60,45 @@ public class InitWriter {
      * @return if the operation was executed successfully
      */
     public boolean writeExternalAddress() {
-
         List<NodeAddress> addresses = client.nodes().withName(config.getNodeName()).get().getStatus().getAddresses();
-        log.info("NodeLabels = {}", addresses);
-        String externalAddress = NodeUtils.findAddress(addresses, config.getAddressType());
+        StringBuilder externalAddresses = new StringBuilder();
 
-        if (externalAddress == null) {
+        String address = NodeUtils.findAddress(addresses, null);
+
+        if (address == null) {
             log.error("External address not found");
             return false;
         } else  {
-            log.info("External address found {}", externalAddress);
+            log.info("Default External address found {}", address);
+            externalAddresses.append(externalAddressExport(null, address));
         }
 
-        return write(FILE_EXTERNAL_ADDRESS, externalAddress);
+        for (NodeAddressType type : NodeAddressType.values())   {
+            address = NodeUtils.findAddress(addresses, type);
+            log.info("External {} address found {}", type.toValue(), address);
+            externalAddresses.append(externalAddressExport(type, address));
+        }
+
+        return write(FILE_EXTERNAL_ADDRESS, externalAddresses.toString());
+    }
+
+    /**
+     * Formats address type and address into shell export command for environment variable
+     *
+     * @param type      Type of the address. Use null for default address
+     * @param address   Address for given type
+     * @return          String with the shell command
+     */
+    private String externalAddressExport(NodeAddressType type, String address) {
+        String envVar;
+
+        if (type != null) {
+            envVar = String.format("STRIMZI_NODEPORT_%s_ADDRESS", type.toValue().toUpperCase(Locale.ENGLISH));
+        } else {
+            envVar = "STRIMZI_NODEPORT_DEFAULT_ADDRESS";
+        }
+
+        return String.format("export %s=%s", envVar, address) + System.lineSeparator();
     }
 
     /**

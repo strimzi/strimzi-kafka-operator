@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -61,6 +61,7 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -591,24 +592,31 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
-            kafka.getSpec().getKafka().getListeners().setExternal(
-                new KafkaListenerExternalNodePortBuilder()
-                    .withNewOverrides()
-                        .withNewBootstrap()
-                            .withAddress(bootstrapDns)
-                        .endBootstrap()
-                    .endOverrides()
-                    .build());
+            kafka.getSpec().getKafka()
+                    .setListeners(new ArrayOrObjectKafkaListeners(asList(
+                            new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .build(),
+                            new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.NODEPORT)
+                                    .withTls(true)
+                                    .withNewConfiguration()
+                                        .withNewBootstrap()
+                                            .withAlternativeNames(bootstrapDns)
+                                        .endBootstrap()
+                                    .endConfiguration()
+                                    .build()
+                    )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
-
-        String bootstrapAddressDns = ((KafkaListenerExternalNodePort) Crds.kafkaOperation(kubeClient().getClient())
-                .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
-                .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
 
         Map<String, String> secretData = kubeClient().getSecret(KafkaResources.brokersServiceName(CLUSTER_NAME)).getData();
 
@@ -620,12 +628,9 @@ class RollingUpdateST extends AbstractST {
                 Certificate certificate = certificateFactory.generateCertificate(publicCert);
 
                 LOGGER.info("Verifying that new DNS is in certificate subject alternative names");
-                assertThat(certificate.toString(), containsString(bootstrapAddressDns));
+                assertThat(certificate.toString(), containsString(bootstrapDns));
             }
         }
-
-        LOGGER.info("Verifying that new DNS is inside kafka CR");
-        assertThat(bootstrapAddressDns, is(bootstrapDns));
     }
 
     @Test

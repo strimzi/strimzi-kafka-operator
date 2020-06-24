@@ -58,6 +58,7 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
+    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
      * @param certificateAuthority The CA configuration.
@@ -121,8 +122,6 @@ public class ModelUtils {
         }
         throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
     }
-
-    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
         return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,

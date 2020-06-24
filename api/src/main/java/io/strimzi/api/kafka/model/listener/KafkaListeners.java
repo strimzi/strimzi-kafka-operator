@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -30,6 +31,8 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"plain", "tls", "external"})
 @EqualsAndHashCode
+@Deprecated
+@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener.class)
 public class KafkaListeners implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

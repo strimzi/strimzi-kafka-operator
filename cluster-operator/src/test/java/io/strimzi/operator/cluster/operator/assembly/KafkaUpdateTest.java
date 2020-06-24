@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -102,18 +103,31 @@ public class KafkaUpdateTest {
                         .withNamespace(NAMESPACE)
                         .build())
                 .withNewSpec()
-                .withNewKafka()
-                .withReplicas(2)
-                .withVersion(version)
-                .withConfig(config)
-                .withNewEphemeralStorage().endEphemeralStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(1)
-                .withNewEphemeralStorage().endEphemeralStorage()
-                .endZookeeper()
-                .withNewTopicOperator()
-                .endTopicOperator()
+                    .withNewKafka()
+                        .withReplicas(2)
+                        .withNewListeners()
+                            .addNewListValue()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endListValue()
+                        .endListeners()
+                        .withVersion(version)
+                        .withConfig(config)
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
                 .endSpec()
                 .build();
     }

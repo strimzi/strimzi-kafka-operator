@@ -6,6 +6,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.certs.CertManager;
@@ -78,8 +81,17 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
+                            .addNewListValue()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endListValue()
                         .endListeners()
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
@@ -146,10 +158,10 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
-                        .endListeners()
+                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
+                                .withNewPlain()
+                                .endPlain()
+                                .build()))
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

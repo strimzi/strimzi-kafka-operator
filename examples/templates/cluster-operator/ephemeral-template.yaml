@@ -73,8 +73,14 @@ objects:
       version: ${{KAFKA_VERSION}}
       replicas: ${{KAFKA_NODE_COUNT}}
       listeners:
-        plain: {}
-        tls: {}
+        - name: plain
+          port: 9092
+          type: internal
+          tls: false
+        - name: tls
+          port: 9093
+          type: internal
+          tls: true
       livenessProbe:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}

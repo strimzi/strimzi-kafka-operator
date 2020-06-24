@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -60,10 +62,10 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
-                        .endListeners()
+                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
+                                .withNewPlain()
+                                .endPlain()
+                                .build()))
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

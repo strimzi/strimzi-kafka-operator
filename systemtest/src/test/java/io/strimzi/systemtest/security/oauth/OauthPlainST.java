@@ -9,12 +9,18 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -30,11 +36,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.time.Duration;
 
@@ -124,8 +125,11 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewPlain()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                 .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
@@ -133,17 +137,20 @@ public class OauthPlainST extends OauthAbstractST {
                                 .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                             .endKafkaListenerAuthenticationOAuth()
-                        .endPlain()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                            .endKafkaListenerAuthenticationOAuth()
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -223,26 +230,32 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewPlain()
+                        .withNewListeners()
+                            .addNewListValue()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
                                 .withNewKafkaListenerAuthenticationOAuth()
                                     .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                     .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
                                     .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .endKafkaListenerAuthenticationOAuth()
-                            .endPlain()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .endKafkaListenerAuthenticationOAuth()
+                            .endListValue()
+                            .addNewListValue()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
                                 .withTls(false)
-                            .endKafkaListenerExternalNodePort()
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .endKafkaListenerAuthenticationOAuth()
+                            .endListValue()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -351,8 +364,12 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(introspectionKafka, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withClientId(OAUTH_KAFKA_CLIENT_NAME)
                                 .withNewClientSecret()
@@ -363,8 +380,23 @@ public class OauthPlainST extends OauthAbstractST {
                                 .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                 .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
                             .endKafkaListenerAuthenticationOAuth()
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                                .withNewClientSecret()
+                                    .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                                    .withKey(OAUTH_KEY)
+                                .endClientSecret()
+                                .withAccessTokenIsJwt(false)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -395,16 +427,19 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewPlain()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
                             .withNewKafkaListenerAuthenticationOAuth()
-                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                 .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
                                 .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
                                 .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                             .endKafkaListenerAuthenticationOAuth()
-                        .endPlain()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()

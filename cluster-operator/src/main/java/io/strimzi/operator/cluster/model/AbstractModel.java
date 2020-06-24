@@ -802,15 +802,11 @@ public abstract class AbstractModel {
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(serviceName, templateServiceLabels),
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, templateServiceLabels),
                 getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations) {
-        return createService(name, type, ports, labels, selector, annotations, null);
-    }
-
-    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, String loadBalancerIP) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -823,7 +819,6 @@ public abstract class AbstractModel {
                     .withType(type)
                     .withSelector(selector.toMap())
                     .withPorts(ports)
-                    .withLoadBalancerIP(loadBalancerIP)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);
@@ -841,7 +836,7 @@ public abstract class AbstractModel {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
-                    .withLabels(getLabelsWithStrimziName(headlessServiceName, templateHeadlessServiceLabels).toMap())
+                    .withLabels(getLabelsWithStrimziName(name, templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())

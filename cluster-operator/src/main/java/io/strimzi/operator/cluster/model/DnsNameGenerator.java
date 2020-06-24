@@ -53,8 +53,6 @@ public class DnsNameGenerator {
                 .podDnsName(podName);
     }
 
-
-
     /**
      * Generates the DNS name of the pod without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
@@ -73,9 +71,30 @@ public class DnsNameGenerator {
 
     }
 
+    /**
+     * Generates the pod DNS name without the cluster domain suffix
+     *
+     * @param namespace     Namespace of the service
+     * @param serviceName   Name of the service
+     * @param podName       Name of the pod
+     * @return              Pod DNS name without the suffix
+     */
     public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
         return DnsNameGenerator.of(namespace, serviceName)
                 .podDnsNameWithoutClusterDomain(podName);
+    }
+
+    /**
+     * Generates the pod DNS name with the cluster domain suffix
+     *
+     * @param namespace     Namespace of the service
+     * @param serviceName   Name of the service
+     * @param podName       Name of the pod
+     * @return              Pod DNS name including the suffix
+     */
+    public static String podDnsNameWithClusterDomain(String namespace, String serviceName, String podName) {
+        return DnsNameGenerator.of(namespace, serviceName)
+                .podDnsName(podName);
     }
 
     /**
@@ -119,8 +138,6 @@ public class DnsNameGenerator {
                 KUBERNETES_SERVICE_DNS_DOMAIN);
     }
 
-
-
     /**
      * Generates the DNS name of the service without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
@@ -134,8 +151,27 @@ public class DnsNameGenerator {
                 namespace);
     }
 
+    /**
+     * Generates the service name without the cluster domain suffix
+     *
+     * @param namespace     Namespace of the service
+     * @param serviceName   Name of the service
+     * @return              Service DNS name without the suffix
+     */
     public static String serviceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
         return DnsNameGenerator.of(namespace, serviceName)
                 .serviceDnsNameWithoutClusterDomain();
+    }
+
+    /**
+     * Generates the service name with the cluster domain suffix
+     *
+     * @param namespace     Namespace of the service
+     * @param serviceName   Name of the service
+     * @return              Fully qualified DNS name including the suffix
+     */
+    public static String serviceDnsNameWithClusterDomain(String namespace, String serviceName) {
+        return DnsNameGenerator.of(namespace, serviceName)
+                .serviceDnsName();
     }
 }

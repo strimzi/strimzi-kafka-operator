@@ -601,13 +601,14 @@ public class CrdGenerator {
             result.set("enum", stringArray(Property.subtypeNames(property.getDeclaringClass())));
         }
 
-        Deprecated deprecated = property.getAnnotation(Deprecated.class);
+        // The deprecated field cannot be set in Kube OpenAPI v3 schema. But we should keep this code for future when it might be possible.
+        /*Deprecated deprecated = property.getAnnotation(Deprecated.class);
         if (deprecated == null) {
             deprecated = property.getType().getType().getAnnotation(Deprecated.class);
         }
         if (deprecated != null) {
             result.put("deprecated", true);
-        }
+        }*/
 
         return result;
     }

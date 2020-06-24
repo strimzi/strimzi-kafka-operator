@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
@@ -427,10 +428,19 @@ class CustomResourceStatusST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endKafkaListenerExternalNodePort()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()

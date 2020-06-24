@@ -7,7 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -91,9 +91,14 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls()
-                            .withAuth(new KafkaListenerAuthenticationTls())
-                        .endTls()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endListValue()
                     .endListeners()
                 .endKafka()
             .endSpec()
