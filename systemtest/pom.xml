@@ -259,14 +259,14 @@
             <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance &amp; !flaky</groups>
+                <groups>acceptance</groups>
             </properties>
         </profile>
         <profile>
             <id>regression</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>regression &amp; !flaky &amp; !cci_flaky</groups>
+                <groups>regression</groups>
             </properties>
         </profile>
         <profile>
