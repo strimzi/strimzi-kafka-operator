@@ -665,11 +665,6 @@ public class MirrorMakerST extends BaseST {
     @BeforeAll
     void setupEnvironment() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-//
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE).done();
         installClusterOperator(NAMESPACE);
     }
 }

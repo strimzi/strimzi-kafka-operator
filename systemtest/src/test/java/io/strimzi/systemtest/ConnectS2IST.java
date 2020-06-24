@@ -763,11 +763,6 @@ class ConnectS2IST extends BaseST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-//
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
         deployKafkaClients();

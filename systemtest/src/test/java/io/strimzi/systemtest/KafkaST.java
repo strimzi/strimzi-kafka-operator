@@ -2104,13 +2104,7 @@ class KafkaST extends BaseST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-//
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE).done();
-
-        installClusterOperator(NAMESPACE, 600000);
+        installClusterOperator(NAMESPACE);
     }
 
     @Override

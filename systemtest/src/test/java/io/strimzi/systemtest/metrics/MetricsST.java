@@ -317,12 +317,8 @@ public class MetricsST extends BaseST {
     @BeforeAll
     void setupEnvironment() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-//
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE).done();
         installClusterOperator(NAMESPACE);
+
         KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();

@@ -223,12 +223,6 @@ class UserST extends BaseST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-//
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE).done();
-//
         installClusterOperator(NAMESPACE);
 
         deployTestSpecificResources();

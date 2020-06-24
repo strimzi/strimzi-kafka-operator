@@ -73,11 +73,6 @@ public class HttpBridgeBaseST extends BaseST {
     @BeforeAll
     void deployClusterOperator(Vertx vertx) throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(getBridgeNamespace());
-//
-//        applyRoleBindings(getBridgeNamespace());
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(getBridgeNamespace()).done();
         installClusterOperator(getBridgeNamespace());
 
         // Create http client

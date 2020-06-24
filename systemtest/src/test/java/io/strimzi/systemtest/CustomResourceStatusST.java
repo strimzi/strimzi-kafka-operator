@@ -407,8 +407,6 @@ class CustomResourceStatusST extends BaseST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-//        prepareEnvForOperator(NAMESPACE);
-
         deployTestSpecificResources();
     }
 
@@ -419,9 +417,6 @@ class CustomResourceStatusST extends BaseST {
     }
 
     void deployTestSpecificResources() throws Exception {
-//        applyRoleBindings(NAMESPACE);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
         installClusterOperator(NAMESPACE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
