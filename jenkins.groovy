@@ -170,7 +170,7 @@ def buildStrimziImages() {
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
     withMaven(mavenOpts: '-Djansi.force=true') {
-        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress"
+        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -DrerunFailingTestsCount=2"
     }
 }
 
