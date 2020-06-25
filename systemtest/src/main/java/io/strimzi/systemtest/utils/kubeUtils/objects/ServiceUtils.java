@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +20,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ServiceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ServiceUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SERVICE);
 
     private ServiceUtils() { }
 
@@ -50,7 +52,7 @@ public class ServiceUtils {
     public static void waitForLoadBalancerService(String serviceName) {
         LOGGER.info("Waiting for Service {} in namespace {}", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("LoadBalancer service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("LoadBalancer service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
         LOGGER.info("Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
     }
@@ -58,7 +60,7 @@ public class ServiceUtils {
     public static void waitForNodePortService(String serviceName) throws InterruptedException {
         LOGGER.info("Waiting for Service {} in namespace {}", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("NodePort service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("NodePort service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getPorts().get(0).getNodePort() != null);
 
         Thread.sleep(10000);

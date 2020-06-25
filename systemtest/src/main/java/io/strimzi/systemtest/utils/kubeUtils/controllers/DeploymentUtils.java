@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +28,7 @@ import static java.util.Arrays.asList;
 public class DeploymentUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT);
 
     private DeploymentUtils() { }
 
@@ -148,7 +150,7 @@ public class DeploymentUtils {
         LOGGER.info("Wait for Deployment: {} will be ready", deploymentName);
 
         TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getDeploymentStatus(deploymentName),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
 

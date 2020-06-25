@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +22,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class DeploymentConfigUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentConfigUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT_CONFIG);
 
     /**
      * Returns a map of pod name to resource version for the pods currently in the given DeploymentConfig.
@@ -110,7 +112,7 @@ public class DeploymentConfigUtils {
         LOGGER.info("Wait for DeploymentConfig: {} will be ready", depConfigName);
 
         TestUtils.waitFor(String.format("Wait for DeploymentConfig: %s will be ready", depConfigName),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient().getDeploymentConfigStatus(depConfigName),
             () -> {
                 if (kubeClient().getDeploymentConfig(depConfigName) != null) {
