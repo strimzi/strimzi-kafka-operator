@@ -41,10 +41,12 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # ...
-  logging:
-    type: inline
-    loggers:
-      kafka.root.logger.level: "INFO"
+  kafka:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        kafka.root.logger.level: "INFO"
   # ...
   zookeeper:
     # ...
