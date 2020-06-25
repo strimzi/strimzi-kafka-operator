@@ -240,14 +240,6 @@ public abstract class BaseST implements TestSeparator {
         KubeClusterResource.getInstance().deleteClusterOperatorInstallFiles();
         KubeClusterResource.getInstance().deleteNamespaces();
 
-//        KubeClusterResource.getInstance().createNamespaces(coNamespace, bindingsNamespaces);
-//        KubeClusterResource.getInstance().applyClusterOperatorInstallFiles();
-//
-//        ResourceManager.setClassResources();
-//
-//        applyRoleBindings(coNamespace, bindingsNamespaces);
-//        // 050-Deployment
-//        KubernetesResource.clusterOperator(coNamespace, operationTimeout).done();
         installClusterOperator(coNamespace, bindingsNamespaces, operationTimeout, reconciliationInterval);
     }
 
