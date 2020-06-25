@@ -52,6 +52,11 @@ public class Oc extends BaseCmdKubeClient<Oc> {
     }
 
     @Override
+    public String defaultOlmNamespace() {
+        return "openshift-marketplace";
+    }
+
+    @Override
     public Oc namespace(String namespace) {
         return new Oc(namespace);
     }

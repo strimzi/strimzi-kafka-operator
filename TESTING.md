@@ -214,10 +214,12 @@ All environment variables can be seen in [Environment](systemtest/src/main/java/
 | COMPONENTS_IMAGE_PULL_POLICY | Image Pull Policy for Kafka, Bridge, etc.                                         | IfNotPresent                                     |
 | STRIMZI_TEST_LOG_LEVEL    | Log level for system tests                                                           | INFO                                             |
 | OLM_OPERATOR_NAME         | Operator name in manifests CSV                                                       | strimzi                                             |
+| OLM_SOURCE_NAME           | CatalogSource name which contains desired operator                                   | strimzi-source                                     |
 | OLM_APP_BUNDLE_PREFIX     | CSV bundle name                                                                      | strimzi                                             |
 | OLM_OPERATOR_VERSION      | Version of the operator which will be installed                                      | v0.16.2                                             |
 | DEFAULT_TO_DENY_NETWORK_POLICIES | Determines how will be network policies set - to deny-all (true) or allow-all (false)    | true                                            |
 | STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS | Set maximum count of characters printed from [Executor](test/src/main/java/io/strimzi/test/executor/Exec.java) stdout and stderr | 20000   |
+| CLUSTER_OPERATOR_INSTALL_TYPE | Specify how the CO will be deployed. `OLM` option will install operator via OLM, you just need to set other `OLM` env variables.    | bundle  |
 
 If you want to use your own images with a different tag or from a different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 

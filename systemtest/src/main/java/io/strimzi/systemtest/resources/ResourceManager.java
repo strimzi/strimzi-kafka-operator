@@ -74,6 +74,8 @@ public class ResourceManager {
     private static Stack<Runnable> methodResources = new Stack<>();
     private static Stack<Runnable> pointerResources = classResources;
 
+    private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
+
     private static ResourceManager instance;
 
     public static synchronized ResourceManager getInstance() {
@@ -434,5 +436,13 @@ public class ResourceManager {
 
     private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
+    }
+
+    public static String getCoDeploymentName() {
+        return coDeploymentName;
+    }
+
+    public static void setCoDeploymentName(String newName) {
+        coDeploymentName = newName;
     }
 }

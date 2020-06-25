@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -31,7 +30,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
@@ -665,21 +663,8 @@ public class MirrorMakerST extends BaseST {
     }
     
     @BeforeAll
-    void setupEnvironment() {
+    void setupEnvironment() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE)
-            .editSpec()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .addToEnv(new EnvVarBuilder().withName("TEST_ENV_3").withValue("test.value").build())
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec().done();
+        installClusterOperator(NAMESPACE);
     }
 }

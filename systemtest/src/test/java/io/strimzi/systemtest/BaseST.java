@@ -15,6 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -116,6 +117,37 @@ public abstract class BaseST implements TestSeparator {
     }
 
     /**
+     * This method install Strimzi Cluster Operator based on environment variable configuration.
+     * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
+     * Don't use this method in tests, where specific configuration of CO is needed.
+     * @param namespace namespace where CO should be installed into
+     */
+    protected void installClusterOperator(String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) throws Exception {
+        if (Environment.isOlmInstall()) {
+            cluster.setNamespace(namespace);
+            cluster.createNamespace(namespace);
+            OlmResource.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+        } else {
+            prepareEnvForOperator(namespace, bindingsNamespaces);
+            applyRoleBindings(namespace, bindingsNamespaces);
+            // 050-Deployment
+            KubernetesResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
+        }
+    }
+
+    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) throws Exception {
+        installClusterOperator(namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
+    }
+
+    protected void installClusterOperator(String namespace, long operationTimeout) throws Exception {
+        installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    protected void installClusterOperator(String namespace) throws Exception {
+        installClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    }
+
+    /**
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
@@ -168,10 +200,20 @@ public abstract class BaseST implements TestSeparator {
     /**
      * Recreate namespace and CO after test failure
      * @param coNamespace namespace where CO will be deployed to
+     * @param operationTimeout timeout for CO operations
+     * @param reconciliationInterval CO reconciliation interval
+     */
+    protected void recreateTestEnv(String coNamespace, long operationTimeout, long reconciliationInterval) throws Exception {
+        recreateTestEnv(coNamespace, Collections.singletonList(coNamespace), operationTimeout, reconciliationInterval);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
-        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
+        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     /**
@@ -180,21 +222,25 @@ public abstract class BaseST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      * @param operationTimeout timeout for CO operations
      */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) throws Exception {
+        recreateTestEnv(coNamespace, bindingsNamespaces, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
+     * @param operationTimeout timeout for CO operations
+     * @param reconciliationInterval CO reconciliation interval
+     */
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) throws Exception {
         ResourceManager.deleteMethodResources();
         ResourceManager.deleteClassResources();
 
         KubeClusterResource.getInstance().deleteClusterOperatorInstallFiles();
         KubeClusterResource.getInstance().deleteNamespaces();
 
-        KubeClusterResource.getInstance().createNamespaces(coNamespace, bindingsNamespaces);
-        KubeClusterResource.getInstance().applyClusterOperatorInstallFiles();
-
-        ResourceManager.setClassResources();
-
-        applyRoleBindings(coNamespace, bindingsNamespaces);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(coNamespace, operationTimeout).done();
+        installClusterOperator(coNamespace, bindingsNamespaces, operationTimeout, reconciliationInterval);
     }
 
     /**
@@ -292,7 +338,8 @@ public abstract class BaseST implements TestSeparator {
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : kubeClient().getDeployment("strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
+        LOGGER.info(ResourceManager.getCoDeploymentName());
+        for (Container c : kubeClient().getDeployment(ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -497,8 +544,8 @@ public abstract class BaseST implements TestSeparator {
     void verifyLabelsOnCOPod() {
         LOGGER.info("Verifying labels for cluster-operator pod");
 
-        Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
-        assertThat(coLabels.get("name"), is("strimzi-cluster-operator"));
+        Map<String, String> coLabels = kubeClient().listPods("name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
+        assertThat(coLabels.get("name"), is(ResourceManager.getCoDeploymentName()));
         assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
     }
 
@@ -671,7 +718,7 @@ public abstract class BaseST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
