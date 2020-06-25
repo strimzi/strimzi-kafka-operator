@@ -1678,6 +1678,7 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 
 Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2381,6 +2382,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====

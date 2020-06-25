@@ -1,4 +1,7 @@
-Kafka allows a user to enforce certain quotas to control usage of resources by clients.
+Kafka allows a user to set `quotas` to control the use of resources by clients.
+
+.`quotas`
+
 Quotas split into two categories:
 
 * _Network usage_ quotas, which are defined as the byte rate threshold for each group of clients sharing a quota
@@ -21,4 +24,4 @@ spec:
     requestPercentage: 55
 ----
 
-For more info about Kafka user quotas visit http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].
+For more info about Kafka user quotas, refer to the http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].

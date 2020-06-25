@@ -1,0 +1,394 @@
+// This module is included in the following files:
+//
+// master.adoc
+
+[id='con-common-configuration-properties-{context}']
+== Common configuration properties
+
+Common configuration properties apply to more than one resource.
+
+[id='con-common-configuration-replicas-{context}']
+.`replicas`
+
+Use the `replicas` property to configure replicas.
+
+The type of replication depends on the resource.
+
+* `KafkaTopic` uses a replication factor to configure the number of replicas of each partition within a Kafka cluster.
+* Kafka components use replicas to configure the number of pods in a deployment to provide better availability and scalability.
+
+*MirrorMaker*
+
+When running Kafka MirrorMaker on Kubernetes it is not absolutely necessary to run multiple replicas of the Kafka MirrorMaker for high availability.
+When the node where the Kafka MirrorMaker has deployed crashes, Kubernetes will automatically reschedule the Kafka MirrorMaker pod to a different node.
+However, running Kafka MirrorMaker with multiple replicas can provide faster failover times as the other nodes will be up and running.
+
+[id='con-common-configuration-bootstrap-{context}']
+.`bootstrapServers`
+
+Use the `bootstrapServers` property to configure a list of bootstrap servers.
+
+The bootstrap server lists can refer to Kafka clusters that are not deployed in the same Kubernetes cluster.
+They can also refer to a Kafka cluster not deployed by Strimzi.
+
+If on the same Kubernetes cluster, each list must ideally contain the Kafka cluster bootstrap service which is named `_CLUSTER-NAME_-kafka-bootstrap` and a port of 9092 for plain traffic or 9093 for encrypted traffic.
+If deployed by Strimzi but on different Kubernetes clusters, the list content depends on the approach used for exposing the clusters (routes, nodeports or loadbalancers).
+
+When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
+
+[id='con-common-configuration-cipher-{context}']
+.`SSL` cipher suites
+
+Use the three allowed `ssl` configuration options to run external listeners with a specific _cipher suite_ for a TLS version.
+A _cipher suite_ combines algorithms for secure connection and data transfer.
+
+.Example SSL configuration
+[source,yaml,subs="attributes+"]
+----
+spec:
+  producer:
+    config:
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
+      ssl.enabled.protocols: "TLSv1.2" <2>
+      ssl.protocol: "TLSv1.2" <3>
+----
+<1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
+`AES` bulk encyption algorithm and `SHA384` MAC algorithm.
+<2> The SSl protocol `TLSv1.2` is enabled.
+<3> Specifies the `TLSv1.2` protocol to generate the SSL context.
+Allowed values are `TLSv1.1` and `TLSv1.2`.
+
+[id='con-common-configuration-resources-{context}']
+.`resources`
+
+You request CPU and memory resources for components.
+Limits specify the maximum resources that can be consumed by a given container.
+
+Resource requests and limits for the Topic Operator and User Operator are set in the `Kafka` resource.
+
+Use the `reources.requests` and `resources.limits` properties to configure resource requests and limits.
+
+For every deployed container, Strimzi allows you to request specific resources and define the maximum consumption of those resources.
+
+Strimzi supports requests and limits for the following types of resources:
+
+* `cpu`
+* `memory`
+
+Strimzi uses the Kubernetes syntax for specifying these resources.
+
+For more information about managing computing resources on Kubernetes, see {K8sManagingComputingResources}.
+
+*Resource requests*
+
+Requests specify the resources to reserve for a given container.
+Reserving the resources ensures that they are always available.
+
+IMPORTANT: If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
+
+A request may be configured for one or more supported resources.
+
+*Resource limits*
+
+Limits specify the maximum resources that can be consumed by a given container.
+The limit is not reserved and might not always be available.
+A container can use the resources up to the limit only when they are available.
+Resource limits should be always higher than the resource requests.
+
+A resource may be configured for one or more supported limits.
+
+*Supported CPU formats*
+
+CPU requests and limits are supported in the following formats:
+
+* Number of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
+* Number or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
+
+NOTE: The computing power of 1 CPU core may differ depending on the platform where Kubernetes is deployed.
+
+For more information on CPU specification, see the {K8sMeaningOfCpu}.
+
+*Supported memory formats*
+
+Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and gibibytes.
+
+* To specify memory in megabytes, use the `M` suffix. For example `1000M`.
+* To specify memory in gigabytes, use the `G` suffix. For example `1G`.
+* To specify memory in mebibytes, use the `Mi` suffix. For example `1000Mi`.
+* To specify memory in gibibytes, use the `Gi` suffix. For example `1Gi`.
+
+For more details about memory specification and additional supported units, see {K8sMeaningOfMemory}.
+
+[id='con-common-configuration-images-{context}']
+.`image`
+
+Use the `image` property to configure the container image used by the component.
+
+Overriding container images is recommended only in special situations where you need to use a different container registry or a customized image.
+
+For example, if your network does not allow access to the container repository used by Strimzi, you can copy the Strimzi images or build them from the source.
+However, if the configured image is not compatible with Strimzi images, it might not work properly.
+
+A copy of the container image might also be customized and used for debugging.
+
+You can specify which container image to use for a component using the `image` property in the following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.kafka.tlsSidecar`
+* `Kafka.spec.zookeeper`
+* `Kafka.spec.entityOperator.topicOperator`
+* `Kafka.spec.entityOperator.userOperator`
+* `Kafka.spec.entityOperator.tlsSidecar`
+* `Kafka.spec.jmxTrans`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+* `KafkaMirrorMaker.spec`
+* `KafkaMirrorMaker2.spec`
+* `KafkaBridge.spec`
+
+*Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
+
+Kafka, Kafka Connect (including Kafka Connect with S2I support), and Kafka MirrorMaker support multiple versions of Kafka.
+Each component requires its own image.
+The default images for the different Kafka versions are configured in the following environment variables:
+
+* `STRIMZI_KAFKA_IMAGES`
+* `STRIMZI_KAFKA_CONNECT_IMAGES`
+* `STRIMZI_KAFKA_CONNECT_S2I_IMAGES`
+* `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`
+
+These environment variables contain mappings between the Kafka versions and their corresponding images.
+The mappings are used together with the `image` and `version` properties:
+
+* If neither `image` nor `version` are given in the custom resource then the `version` will default to the Cluster Operator's default Kafka version, and the image will be the one corresponding to this version in the environment variable.
+
+* If `image` is given but `version` is not, then the given image is used and the `version` is assumed to be the Cluster Operator's default Kafka version.
+
+* If `version` is given but `image` is not, then the image that corresponds to the given version in the environment variable is used.
+
+* If both `version` and `image` are given, then the given image is used. The image is assumed to contain a Kafka image with the given version.
+
+The `image` and `version` for the different components can be configured in the following properties:
+
+* For Kafka in `spec.kafka.image` and `spec.kafka.version`.
+* For Kafka Connect, Kafka Connect S2I, and Kafka MirrorMaker in `spec.image` and `spec.version`.
+
+WARNING: It is recommended to provide only the `version` and leave the `image` property unspecified.
+This reduces the chance of making a mistake when configuring the custom resource.
+If you need to change the images used for different versions of Kafka, it is preferable to configure the Cluster Operator's environment variables.
+
+*Configuring the `image` property in other resources*
+
+For the `image` property in the other custom resources, the given value will be used during deployment.
+If the `image` property is missing, the `image` specified in the Cluster Operator configuration will be used.
+If the `image` name is not defined in the Cluster Operator configuration, then the default value will be used.
+
+* For Kafka broker TLS sidecar:
+. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaStunnel}` container image.
+* For Topic Operator:
+. Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerTopicOperator}` container image.
+* For User Operator:
+. Container image specified in the `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerUserOperator}` container image.
+* For Entity Operator TLS sidecar:
+. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerEntityOperatorStunnel}` container image.
+* For Kafka Exporter:
+. Container image specified in the `STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafka}` container image.
+* For Kafka Bridge:
+. Container image specified in the `STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaBridge}` container image.
+* For Kafka broker initializer:
+. Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaInit}` container image.
+* For Kafka broker initializer:
+. Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
+. `{DockerKafkaInit}` container image.
+
+.Example of container image configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    image: my-org/my-image:latest
+    # ...
+  zookeeper:
+    # ...
+----
+
+[id='con-common-configuration-healthchecks-{context}']
+.livenessProbe` and `readinessProbe` healthchecks
+
+Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
+
+Healthchecks are periodical tests which verify the health of an application.
+When a Healthcheck probe fails, Kubernetes assumes that the application is not healthy and attempts to fix it.
+
+For more details about the probes, see {K8sLivenessReadinessProbes}.
+
+Both `livenessProbe` and `readinessProbe` support the following options:
+
+* `initialDelaySeconds`
+* `timeoutSeconds`
+* `periodSeconds`
+* `successThreshold`
+* `failureThreshold`
+
+.An example of liveness and readiness probe configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+readinessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 5
+livenessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 5
+# ...
+----
+
+For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[Probe schema reference].
+
+[id='con-common-configuration-prometheus-{context}']
+.`metrics`
+
+Use the `metrics` property to enable and configure Prometheus metrics.
+
+The `metrics` property can also contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
+
+To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+
+When metrics are enabled, they are exposed on port 9404.
+
+When the `metrics` property is not defined in the resource, the Prometheus metrics are disabled.
+
+For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka].
+
+[id='con-common-configuration-jvm-{context}']
+.`jvmOptions`
+
+JVM options can be configured using the `jvmOptions` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+* `KafkaMirrorMaker.spec`
+* `KafkaMirrorMaker2.spec`
+* `KafkaBridge.spec`
+
+Only the following JVM options are supported:
+
+`-Xms`:: Configures the minimum initial allocation heap size when the JVM starts.
+`-Xmx`:: Configures the maximum heap size.
+
+NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
+Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
+This is in contrast to the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+
+The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:con-common-configuration-resources-reference[memory request] limit configured for the container.
+
+* If there is a memory limit, the JVM's minimum and maximum memory is set to a value corresponding to the limit.
+* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to grow as needed, which is ideal for single node environments in test and development.
+
+[IMPORTANT]
+====
+Setting `-Xmx` explicitly requires some care:
+
+* The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
+* If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure (from other Pods running on it).
+* If `-Xmx` is set without also setting an appropriate Kubernetes memory request, it is possible that the container will be scheduled to a node with insufficient memory.
+In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
+====
+
+When setting `-Xmx` explicitly, it is recommended to:
+
+* Set the memory request and the memory limit to the same value
+* Use a memory request that is at least 4.5 × the `-Xmx`
+* Consider setting `-Xms` to the same value as `-Xmx`
+
+IMPORTANT: Containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as an operating system page cache.
+On such containers, the requested memory should be significantly higher than the memory used by the JVM.
+
+.Example fragment configuring `-Xmx` and `-Xms`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  "-Xmx": "2g"
+  "-Xms": "2g"
+# ...
+----
+
+In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
+Its total memory usage will be approximately 8GiB.
+
+Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
+For Kafka and ZooKeeper pods such allocation could cause unwanted latency.
+For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation is multiplied by the number of consumers.
+
+*-server*
+
+`-server` enables the server JVM. This option can be set to true or false.
+
+.Example fragment configuring `-server`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  "-server": true
+# ...
+----
+
+NOTE: When neither of the two options (`-server` and `-XX`) are specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` is used.
+
+*-XX*
+
+`-XX` object can be used for configuring advanced runtime options of a JVM.
+The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+
+.Example showing the use of the `-XX` object
+[source,yaml,subs=attributes+]
+----
+jvmOptions:
+  "-XX":
+    "UseG1GC": true
+    "MaxGCPauseMillis": 20
+    "InitiatingHeapOccupancyPercent": 35
+    "ExplicitGCInvokesConcurrent": true
+    "UseParNewGC": false
+----
+
+The example configuration above will result in the following JVM options:
+
+[source]
+----
+-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
+----
+
+NOTE: When neither of the two options (`-server` and `-XX`) are specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` is used.
+
+[id='con-common-configuration-garbage-collection-{context}']
+.Garbage collector logging
+
+The `jvmOptions` property also allows you to enable and disable garbage collector (GC) logging.
+GC logging is disabled by default.
+To enable it, set the `gcLoggingEnabled` property as follows:
+
+.Example of enabling GC logging
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  gcLoggingEnabled: true
+# ...
+----

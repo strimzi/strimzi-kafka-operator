@@ -31,5 +31,6 @@ include::modules/appendix_faq.adoc[leveloffset=+1]
 :parent-context: {context}
 :context: reference
 ## Custom Resource API Reference
+include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
 include::modules/appendix_crds.adoc[]
 :context: {parent-context}

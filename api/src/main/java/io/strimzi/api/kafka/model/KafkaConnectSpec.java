@@ -9,21 +9,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "version", "image", 
-        "bootstrapServers", "tls", "authentication", "config", "resources", 
+@JsonPropertyOrder({ "replicas", "version", "image",
+        "bootstrapServers", "tls", "authentication", "config", "resources",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", 
+        "affinity", "tolerations", "logging", "metrics", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
