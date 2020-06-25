@@ -29,7 +29,7 @@ To build this project you must first install several command line utilities and 
     - Note that if you are using the Helm version 2 charts, after installing the Helm CLI, ensure you run `helm2 init` to configure to your cluster.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
-- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool. 
+- [`yq`](https://github.com/mikefarah/yq) - (version 3.3.1 and above) YAML manipulation tool. 
     - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need **v3** version.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 

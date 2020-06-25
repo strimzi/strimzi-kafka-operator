@@ -118,6 +118,15 @@ pipeline {
                 }
             }
         }
+        stage('Install yq') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        lib.installYq(env.WORKSPACE)
+                    }
+                }
+            }
+        }
         stage('Build project') {
             steps {
                 script {
