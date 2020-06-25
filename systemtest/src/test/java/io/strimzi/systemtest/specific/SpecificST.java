@@ -171,7 +171,7 @@ public class SpecificST extends BaseST {
 
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
