@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -316,13 +315,10 @@ public class MetricsST extends BaseST {
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
 
     @BeforeAll
-    void setupEnvironment() throws InterruptedException {
+    void setupEnvironment() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+        installClusterOperator(NAMESPACE);
 
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();

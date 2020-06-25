@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toList;
 public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     String defaultNamespace();
+    String defaultOlmNamespace();
 
     /** Deletes the resources by resource name. */
     K deleteByName(String resourceType, String resourceName);
