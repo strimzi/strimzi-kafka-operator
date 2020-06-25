@@ -2819,12 +2819,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             if (topicOperator != null)  {
                                 this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toCm);
-                                configAnnotation += this.topicOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
+                                configAnnotation += this.topicOperatorMetricsAndLogsConfigMap.getData().get(topicOperator.getAncillaryConfigMapKeyLogConfig());
                             }
 
                             if (userOperator != null)   {
                                 this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoCm);
-                                configAnnotation += this.userOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
+                                configAnnotation += this.userOperatorMetricsAndLogsConfigMap.getData().get(userOperator.getAncillaryConfigMapKeyLogConfig());
                             }
 
                             Map<String, String> annotations = new HashMap<>(1);
