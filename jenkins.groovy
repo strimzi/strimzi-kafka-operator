@@ -158,6 +158,10 @@ def installHelm(String workspace) {
     sh(script: "${workspace}/.travis/setup-helm.sh")
 }
 
+def installYq(String workspace) {
+    sh(script: "${workspace}/.travis/install_yq.sh")
+}
+
 def buildStrimziImages() {
     sh(script: "make docker_build")
     sh(script: "make docker_tag")
