@@ -893,12 +893,8 @@ public class TracingST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
     }
 }

@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,7 +92,7 @@ public class MetricsUtils {
     }
 
     public static HashMap<String, String> collectClusterOperatorPodMetrics() {
-        LabelSelector coSelector = kubeClient().getDeploymentSelectors(Constants.STRIMZI_DEPLOYMENT_NAME);
+        LabelSelector coSelector = kubeClient().getDeploymentSelectors(ResourceManager.getCoDeploymentName());
         return collectMetricsFromPods(coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
     }
 

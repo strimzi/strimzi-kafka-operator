@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -222,18 +221,15 @@ class UserST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+        installClusterOperator(NAMESPACE);
 
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
         deployTestSpecificResources();
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

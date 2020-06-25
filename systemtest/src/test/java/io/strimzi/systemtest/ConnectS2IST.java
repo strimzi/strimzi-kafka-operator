@@ -50,7 +50,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.io.File;
@@ -762,19 +761,15 @@ class ConnectS2IST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
+        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
         deployKafkaClients();
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
         deployKafkaClients();
     }

@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -60,9 +59,9 @@ class RecoveryST extends BaseST {
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
         String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         StatefulSetUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
@@ -79,9 +78,9 @@ class RecoveryST extends BaseST {
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
         String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         StatefulSetUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
@@ -227,13 +226,9 @@ class RecoveryST extends BaseST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
         deployTestSpecificResources();
     }
 
@@ -243,7 +238,7 @@ class RecoveryST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws InterruptedException {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

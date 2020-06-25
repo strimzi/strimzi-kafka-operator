@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -120,17 +119,13 @@ class KafkaRollerST extends BaseST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
         super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM).done();
+        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM);
     }
 }
