@@ -62,4 +62,8 @@ public class ResourceOperation {
 
         return timeout;
     }
+
+    public static long getTimeoutForRollingUpdate(int expectPods) {
+        return Duration.ofMinutes(6).toMillis() * expectPods;
+    }
 }
