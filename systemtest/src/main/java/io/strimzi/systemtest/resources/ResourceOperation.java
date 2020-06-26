@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.KafkaRebalanceState;
 
@@ -29,7 +28,6 @@ public class ResourceOperation {
             case KafkaConnectS2I.RESOURCE_KIND:
             case KafkaMirrorMaker2.RESOURCE_KIND:
             case Constants.DEPLOYMENT_CONFIG:
-            case KafkaRebalance.RESOURCE_KIND:
                 timeout = Duration.ofMinutes(10).toMillis();
                 break;
             case KafkaMirrorMaker.RESOURCE_KIND:
