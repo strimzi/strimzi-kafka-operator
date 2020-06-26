@@ -803,6 +803,8 @@
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
                     <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1</forkCount>
+                    <useModulePath>false</useModulePath>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -836,6 +838,7 @@
                             </includes>
                             <trimStackTrace>false</trimStackTrace>
                             <forkCount>1</forkCount>
+                            <useModulePath>false</useModulePath>
                         </configuration>
                     </execution>
                 </executions>

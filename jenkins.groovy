@@ -159,7 +159,7 @@ def installHelm(String workspace) {
 }
 
 def buildStrimziImages() {
-    sh(script: "make docker_build")
+    sh(script: "MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build")
     sh(script: "make docker_tag")
     // Login to internal registries
     sh(script: "docker login ${env.DOCKER_REGISTRY} -u \$(oc whoami) -p \$(oc whoami -t)")
@@ -170,7 +170,7 @@ def buildStrimziImages() {
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
     withMaven(mavenOpts: '-Djansi.force=true') {
-        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -DrerunFailingTestsCount=2"
+        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -Dfailsafe.rerunFailingTestsCount=2"
     }
 }
 
