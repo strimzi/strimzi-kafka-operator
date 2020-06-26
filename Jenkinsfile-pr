@@ -69,6 +69,9 @@ pipeline {
                     echo "TEST_CASE: ${env.TEST_CASE}"
                     if (env.ghprbCommentBody.contains('profile=')) {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
+                        if (env.TEST_PROFILE != "flaky") {
+                            env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",flaky"
+                        }
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                     if (env.ghprbCommentBody.contains('exclude=')) {
