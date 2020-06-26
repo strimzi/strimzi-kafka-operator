@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
         "producer", "resources", "jvmOptions", "logging",
-        "metrics", "livenessProbe", "readinessProbe", "template", "tracing"})
+        "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -49,7 +49,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private Map<String, Object> metrics;
+    private boolean enableMetrics;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -68,14 +68,13 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("**Currently not supported** The Prometheus JMX Exporter configuration. " +
-            "See {JMXExporter} for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
-        return metrics;
+    @Description("Enable the metrics for the Kafka Bridge. Default is false.")
+    public boolean getEnableMetrics() {
+        return enableMetrics;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
     }
 
     @Description("Logging configuration for Kafka Bridge.")

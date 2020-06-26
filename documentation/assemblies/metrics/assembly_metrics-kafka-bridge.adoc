@@ -1,0 +1,11 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='assembly-kafka-bridge-{context}']
+= Add Kafka Bridge
+
+If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Kafka Bridge Prometheus endpoint.
+
+include::modules/kafka-bridge/proc_kafka-bridge-configuring.adoc[leveloffset=+1]
+include::modules/kafka-bridge/proc_kafka-bridge-enabling-grafana.adoc[leveloffset=+1]

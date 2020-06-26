@@ -110,6 +110,11 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.tracing.type");
     }
 
+    @Test
+    void testKafkaBridgeWithMetrics() {
+        createDelete(KafkaBridge.class, "KafkaBridge-with-metrics.yaml");
+    }
+
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);

@@ -288,9 +288,9 @@ spec:
               required:
                 - type
               description: Logging configuration for Kafka Bridge.
-            metrics:
-              type: object
-              description: '**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.'
+            enableMetrics:
+              type: boolean
+              description: Enable the metrics for the Kafka Bridge. Default is false.
             livenessProbe:
               type: object
               properties:
