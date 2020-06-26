@@ -11,7 +11,7 @@ The label is used by Kubernetes when scheduling the Kafka broker pods to nodes.
 
 If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
 If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
+Usually, the nodes are labeled with `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions) that can be easily used as the `topologyKey` value.
 This will have the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
 
 .Example of a `Kafka` resource with the `rack` feature enabled
@@ -25,11 +25,11 @@ spec:
   kafka:
     # ...
     rack:
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     # ...
 ----
 
-In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
+In the above example, the `topology.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
 Consult your Kubernetes administrator about the label which should be used.
 
 == Configuring init container image
