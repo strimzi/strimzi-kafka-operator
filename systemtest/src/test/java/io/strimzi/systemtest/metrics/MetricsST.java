@@ -238,7 +238,6 @@ public class MetricsST extends BaseST {
     @Test
     void testUserOperatorMetrics() {
         userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(CLUSTER_NAME);
-        LOGGER.info(userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaUser", userOperatorMetricsData);
@@ -320,7 +319,15 @@ public class MetricsST extends BaseST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3)
+                .editOrNewSpec()
+                    .editEntityOperator()
+                        .editUserOperator()
+                            .withReconciliationIntervalSeconds(30)
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
