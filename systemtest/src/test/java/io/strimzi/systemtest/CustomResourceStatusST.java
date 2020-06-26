@@ -114,7 +114,7 @@ class CustomResourceStatusST extends BaseST {
         });
 
         LOGGER.info("Wait until cluster will be in NotReady state ...");
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
