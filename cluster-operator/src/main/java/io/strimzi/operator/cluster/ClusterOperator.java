@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
@@ -35,11 +34,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -97,7 +91,6 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaRebalanceAssemblyOperator = kafkaRebalanceAssemblyOperator;
 
         this.metricsProvider = metricsProvider;
-        setupMetrics();
     }
 
     @Override
@@ -196,16 +189,6 @@ public class ClusterOperator extends AbstractVerticle {
                     result.handle(ar);
                 });
         return result.future();
-    }
-
-    private void setupMetrics() {
-        MeterRegistry metrics = metricsProvider.meterRegistry();
-
-        new ClassLoaderMetrics().bindTo(metrics);
-        new JvmMemoryMetrics().bindTo(metrics);
-        new ProcessorMetrics().bindTo(metrics);
-        new JvmThreadMetrics().bindTo(metrics);
-        new JvmGcMetrics().bindTo(metrics);
     }
 
     public static String secretName(String cluster) {

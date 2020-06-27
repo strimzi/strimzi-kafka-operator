@@ -18,6 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
@@ -29,13 +30,6 @@ import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.vertx.micrometer.backends.BackendRegistries;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-
 
 public class Session extends AbstractVerticle {
 
@@ -70,7 +64,7 @@ public class Session extends AbstractVerticle {
             sb.append("\t").append(v.key).append(": ").append(Util.maskPassword(v.key, config.get(v).toString())).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
-        setupMetrics();
+        this.metricsRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
     }
 
     /**
@@ -237,15 +231,6 @@ public class Session extends AbstractVerticle {
                 promise.future().onComplete(start);
                 LOGGER.info("Started");
             });
-    }
-
-    public void setupMetrics() {
-        this.metricsRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
-        new ClassLoaderMetrics().bindTo(metricsRegistry);
-        new JvmMemoryMetrics().bindTo(metricsRegistry);
-        new ProcessorMetrics().bindTo(metricsRegistry);
-        new JvmThreadMetrics().bindTo(metricsRegistry);
-        new JvmGcMetrics().bindTo(metricsRegistry);
     }
 
     /**
