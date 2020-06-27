@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-customizing-deployments.adoc
+// assembly-customizing-kubernetes-resources.adoc
 
 [id='con-customizing-image-pull-policy-{context}']
 = Customizing the image pull policy

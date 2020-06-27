@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -35,6 +36,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds"})
 @EqualsAndHashCode
+@DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
@@ -69,7 +71,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.securityContext = securityContext;
     }
 
-    @Description("List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.")
+    @Description("List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. " +
+            "When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.")
     @KubeLink(group = "core", version = "v1", kind = "localobjectreference")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<LocalObjectReference> getImagePullSecrets() {
@@ -84,6 +87,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
             "Set this value longer than the expected cleanup time for your process." +
             "Value must be non-negative integer. " +
             "The value zero indicates delete immediately. " +
+            "You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. " +
             "Defaults to 30 seconds.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DefaultValue("30")
@@ -118,7 +122,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.tolerations = tolerations;
     }
 
-    @Description("The name of the Priority Class to which these pods will be assigned.")
+    @Description("The name of the Priority Class to which these pods will be assigned. " +
+            "For more information about Priority Classes, see {K8sPriorityClass}.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getPriorityClassName() {
         return priorityClassName;

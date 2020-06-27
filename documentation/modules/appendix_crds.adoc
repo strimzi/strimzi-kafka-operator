@@ -1011,6 +1011,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 
 Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
+include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -1026,13 +1027,14 @@ Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`],
 
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
+include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset=+1]
 
 [options="header"]
 |====
 |Property                              |Description
 |metadata                       1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#localobjectreference-v1-core[core/v1 localobjectreference].
+|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#localobjectreference-v1-core[core/v1 localobjectreference].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#localobjectreference-v1-core[LocalObjectReference] array
@@ -1040,13 +1042,13 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#podsecuritycontext-v1-core[PodSecurityContext]
-|terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+|terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
 |integer
 |affinity                       1.2+<.<|The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|priorityClassName              1.2+<.<|The name of the Priority Class to which these pods will be assigned.
+|priorityClassName              1.2+<.<|The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
 |string
 |schedulerName                  1.2+<.<|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
 |string
@@ -1074,6 +1076,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 
+include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -1091,6 +1094,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
+include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -1106,6 +1110,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
+include::../api/io.strimzi.api.kafka.model.template.ContainerTemplate.adoc[leveloffset=+1]
 
 [options="header"]
 |====

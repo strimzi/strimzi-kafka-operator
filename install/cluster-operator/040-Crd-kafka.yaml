@@ -1568,6 +1568,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -1621,7 +1626,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -1834,7 +1842,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch
@@ -2786,6 +2795,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -2839,7 +2853,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -3052,7 +3069,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch
@@ -4432,6 +4450,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -4485,7 +4508,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -4698,7 +4724,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch
@@ -5241,6 +5268,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -5294,7 +5326,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -5507,7 +5542,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch
@@ -5875,6 +5911,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -5928,7 +5969,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -6141,7 +6185,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch
@@ -6316,6 +6361,11 @@ spec:
                                 type: string
                           description: List of references to secrets in the same namespace
                             to use for pulling any of the images used by this Pod.
+                            When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable
+                            in Cluster Operator and the `imagePullSecrets` option
+                            are specified, only the `imagePullSecrets` variable is
+                            used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is
+                            ignored.
                         securityContext:
                           type: object
                           properties:
@@ -6369,7 +6419,10 @@ spec:
                             with a kill signal. Set this value longer than the expected
                             cleanup time for your process.Value must be non-negative
                             integer. The value zero indicates delete immediately.
-                            Defaults to 30 seconds.
+                            You might need to increase the grace period for very large
+                            Kafka clusters, so that the Kafka brokers have enough
+                            time to transfer their work to another broker before they
+                            are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -6582,7 +6635,8 @@ spec:
                         priorityClassName:
                           type: string
                           description: The name of the Priority Class to which these
-                            pods will be assigned.
+                            pods will be assigned. For more information about Priority
+                            Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch

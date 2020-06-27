@@ -1250,7 +1250,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -1297,7 +1297,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -1509,7 +1509,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
@@ -2320,7 +2320,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -2367,7 +2367,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -2579,7 +2579,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
@@ -3828,7 +3828,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -3875,7 +3875,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -4087,7 +4087,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
@@ -4554,7 +4554,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -4601,7 +4601,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -4813,7 +4813,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
@@ -5121,7 +5121,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -5168,7 +5168,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -5380,7 +5380,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
@@ -5532,7 +5532,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.
+                          description: List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
                         securityContext:
                           type: object
                           properties:
@@ -5579,7 +5579,7 @@ spec:
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+                          description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
                         affinity:
                           type: object
                           properties:
@@ -5791,7 +5791,7 @@ spec:
                           description: The pod's affinity rules.
                         priorityClassName:
                           type: string
-                          description: The name of the Priority Class to which these pods will be assigned.
+                          description: The name of the Priority Class to which these pods will be assigned. For more information about Priority Classes, see {K8sPriorityClass}.
                         schedulerName:
                           type: string
                           description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
