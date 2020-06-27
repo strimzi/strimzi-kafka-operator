@@ -17,11 +17,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.TimeUnit;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.micrometer.backends.BackendRegistries;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -51,8 +46,7 @@ public class UserOperator extends AbstractVerticle {
         this.reconciliationInterval = config.getReconciliationIntervalMs();
         this.client = client;
         this.kafkaUserOperator = kafkaUserOperator;
-        metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
-        setupMetrics();
+        this.metrics = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
     }
 
     @Override
@@ -89,17 +83,6 @@ public class UserOperator extends AbstractVerticle {
 
         client.close();
         stop.complete();
-    }
-
-    /**
-     * Setup Metrics collection
-     */
-    public void setupMetrics() {
-        new ClassLoaderMetrics().bindTo(metrics);
-        new JvmMemoryMetrics().bindTo(metrics);
-        new ProcessorMetrics().bindTo(metrics);
-        new JvmThreadMetrics().bindTo(metrics);
-        new JvmGcMetrics().bindTo(metrics);
     }
 
     /**
