@@ -68,8 +68,8 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.version>3.8.1</maven.compiler.version>
-        <maven.surefire.version>2.22.1</maven.surefire.version>
-        <maven.failsafe.version>2.22.1</maven.failsafe.version>
+        <maven.surefire.version>3.0.0-M5</maven.surefire.version>
+        <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
         <maven.assembly.version>3.1.0</maven.assembly.version>
         <maven.shade.version>3.1.0</maven.shade.version>
         <maven.javadoc.version>3.1.0</maven.javadoc.version>
@@ -119,8 +119,8 @@
         <javax.json.version>1.1.4</javax.json.version>
         <rest-assured.version>4.1.1</rest-assured.version>
         <json-path.version>4.1.1</json-path.version>
-        <jupiter.version>5.5.1</jupiter.version>
-        <junit.platform.version>1.5.1</junit.platform.version>
+        <jupiter.version>5.6.2</jupiter.version>
+        <junit.platform.version>1.6.2</junit.platform.version>
         <gson.version>2.8.2</gson.version>
         <vertx.kafka.client>3.9.1</vertx.kafka.client>
         <netty.version>4.1.50.Final</netty.version>
@@ -803,6 +803,9 @@
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
                     <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1</forkCount>
+                    <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
+                    <useModulePath>false</useModulePath>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -832,9 +835,12 @@
                                 <include>**/IT*.java</include>
                                 <include>**/*IT.java</include>
                                 <include>**/ST*.java</include>
-                                <include>**/*ST*.java</include>
+                                <include>**/*ST.java</include>
                             </includes>
                             <trimStackTrace>false</trimStackTrace>
+                            <forkCount>1</forkCount>
+                            <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
+                            <useModulePath>false</useModulePath>
                         </configuration>
                     </execution>
                 </executions>
