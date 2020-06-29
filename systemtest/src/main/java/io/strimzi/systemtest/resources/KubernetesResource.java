@@ -217,7 +217,7 @@ public class KubernetesResource {
         ResourceManager.kubeClient().createIngress(ingress);
 
         TestUtils.waitFor("Ingress will connect to service", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_CR_CREATION,
-            () -> cmdKubeClient().execInPod(kafkaClientsPodName, "curl", StUtils.getHost()).out().contains("{\"error_code\":404,\"message\":\"Not Found\"}"));
+            () -> cmdKubeClient().execInPod(kafkaClientsPodName, "curl", StUtils.getHost()).out().contains("bridge_version"));
 
         return new DoneableIngress(deleteLater(ingress));
     }
