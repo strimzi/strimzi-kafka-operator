@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -23,19 +23,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaRebalanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceUtils.class);
-    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaRebalance.RESOURCE_KIND);
 
     private KafkaRebalanceUtils() {}
-
-    public enum KafkaRebalanceState {
-        New,
-        PendingProposal,
-        ProposalReady,
-        Rebalancing,
-        Ready,
-        NotReady,
-        Stopped
-    }
 
     private static Condition rebalanceStateCondition(String resourceName) {
 
@@ -60,7 +49,8 @@ public class KafkaRebalanceUtils {
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         LOGGER.info("Waiting for KafkaRebalance to be in the {} state", state);
 
-        TestUtils.waitFor("KafkaRebalance to be in the " + state.name(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+        TestUtils.waitFor("KafkaRebalance to be in the " + state.name(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            ResourceOperation.getTimeoutForKafkaRebalanceState(state),
             () -> rebalanceStateCondition(resourceName).getType().equals(state.toString()),
             () -> ResourceManager.logCurrentResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
                 .withName(resourceName).get())

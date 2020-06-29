@@ -6,6 +6,7 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.enums.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -71,13 +72,13 @@ public class CruiseControlIsolatedST extends BaseST {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
         KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME).done();
 
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceUtils.KafkaRebalanceState.PendingProposal);
+        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.PendingProposal);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.PendingProposal);
 
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceUtils.KafkaRebalanceState.ProposalReady);
+        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
@@ -87,13 +88,13 @@ public class CruiseControlIsolatedST extends BaseST {
 
         LOGGER.info("Response from the annotation process {}", response);
 
-        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceUtils.KafkaRebalanceState.Rebalancing);
+        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.Rebalancing);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Rebalancing);
 
-        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceUtils.KafkaRebalanceState.Ready);
+        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceUtils.KafkaRebalanceState.Ready);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Ready);
     }
 
     @BeforeAll
