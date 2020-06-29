@@ -186,7 +186,7 @@ spec:
 <11> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster.
 <12> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-<13> xref:con-common-configuration-cipher-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
+<13> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
 <14> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <15> xref:type-KafkaMirrorMaker2MirrorSpec-reference[MirrorMaker 2.0 connectors].
 <16> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the source cluster used by the MirrorMaker 2.0 connectors.

@@ -23,7 +23,7 @@ The `config` property contains the Kafka MirrorMaker producer configuration opti
 * Number
 * Boolean
 
-To run external listeners with a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-cipher-reference[configure allowed `ssl` properties].
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
 
 *Exceptions*
 
@@ -33,14 +33,15 @@ However, there are exceptions for options automatically configured and managed d
 
 * Kafka cluster bootstrap address
 * Security (encryption, authentication, and authorization)
+* Interceptors
 
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
-* `ssl.` (with the exception of xref:con-common-configuration-cipher-reference[cipher suites])
+* `ssl.` (with the exception of xref:con-common-configuration-ssl-reference[cipher suites])
 * `sasl.`
 * `security.`
 * `bootstrap.servers`
-* `group.id`
+* `interceptor.classes`
 
 When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other options are passed to Kafka MirrorMaker.

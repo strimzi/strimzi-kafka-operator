@@ -46,7 +46,6 @@ You can configure the access token used for authentication with the Kafka broker
 In this case, you do not specify the `tokenEndpointUri`.
 In the `accessToken` property, specify a link to a `Secret` containing the access token.
 
-
 .An example of OAuth client authentication using only an access token
 [source,yaml,subs=attributes+]
 ----

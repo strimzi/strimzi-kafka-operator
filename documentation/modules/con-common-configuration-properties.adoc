@@ -17,11 +17,9 @@ The type of replication depends on the resource.
 * `KafkaTopic` uses a replication factor to configure the number of replicas of each partition within a Kafka cluster.
 * Kafka components use replicas to configure the number of pods in a deployment to provide better availability and scalability.
 
-*MirrorMaker*
-
-When running Kafka MirrorMaker on Kubernetes it is not absolutely necessary to run multiple replicas of the Kafka MirrorMaker for high availability.
-When the node where the Kafka MirrorMaker has deployed crashes, Kubernetes will automatically reschedule the Kafka MirrorMaker pod to a different node.
-However, running Kafka MirrorMaker with multiple replicas can provide faster failover times as the other nodes will be up and running.
+NOTE: When running a Kafka component on Kubernetes it may not be necessary to run multiple replicas for high availability.
+When the node where the component is deployed crashes, Kubernetes will automatically reschedule the Kafka component pod to a different node.
+However, running Kafka components with multiple replicas can provide faster failover times as the other nodes will be up and running.
 
 [id='con-common-configuration-bootstrap-{context}']
 .`bootstrapServers`
@@ -36,21 +34,22 @@ If deployed by Strimzi but on different Kubernetes clusters, the list content de
 
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
 
-[id='con-common-configuration-cipher-{context}']
-.`SSL` cipher suites
+[id='con-common-configuration-ssl-{context}']
+.`ssl`
 
-Use the three allowed `ssl` configuration options to run external listeners with a specific _cipher suite_ for a TLS version.
+Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
 
 .Example SSL configuration
 [source,yaml,subs="attributes+"]
 ----
+# ...
 spec:
-  producer:
-    config:
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
-      ssl.enabled.protocols: "TLSv1.2" <2>
-      ssl.protocol: "TLSv1.2" <3>
+  config:
+    ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
+    ssl.enabled.protocols: "TLSv1.2" <2>
+    ssl.protocol: "TLSv1.2" <3>
+# ...
 ----
 <1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
 `AES` bulk encyption algorithm and `SHA384` MAC algorithm.

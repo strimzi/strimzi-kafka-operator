@@ -12,3 +12,13 @@ tls:
     - secretName: my-cluster-cluster-ca-cert
       certificate: ca.crt
 ----
+
+If you want to enable TLS, but use the default set of public certification authorities shipped with Java,
+you can specify `trustedCertificates` as an empty array:
+
+.An example of enabling TLS with the default Java certificates
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates: []
+----
