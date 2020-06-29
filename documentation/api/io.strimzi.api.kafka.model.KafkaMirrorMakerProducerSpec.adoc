@@ -37,11 +37,11 @@ However, there are exceptions for options automatically configured and managed d
 
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
+* `bootstrap.servers`
+* `interceptor.classes`
 * `ssl.` (with the exception of xref:con-common-configuration-ssl-reference[cipher suites])
 * `sasl.`
 * `security.`
-* `bootstrap.servers`
-* `interceptor.classes`
 
 When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other options are passed to Kafka MirrorMaker.
