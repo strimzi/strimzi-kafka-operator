@@ -190,6 +190,7 @@ public class KubernetesResource {
         IngressBackend backend = new IngressBackend();
         backend.setServiceName(serviceName);
         backend.setServicePort(new IntOrString(port));
+
         HTTPIngressPath path = new HTTPIngressPath();
         path.setPath("/");
         path.setBackend(backend);
@@ -197,13 +198,12 @@ public class KubernetesResource {
         return new IngressBuilder()
             .withNewMetadata()
             .withName(serviceName)
-            .addToLabels("route", serviceName)
             .endMetadata()
             .withNewSpec()
             .withRules(new IngressRuleBuilder()
                 .withHost(StUtils.getHost())
                 .withNewHttp()
-                .withPaths(path)
+                    .withPaths(path)
                 .endHttp()
                 .build())
             .endSpec()
