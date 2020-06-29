@@ -63,7 +63,10 @@ public class ResourceOperation {
         return timeout;
     }
 
-    public static long getTimeoutForRollingUpdate(int expectPods) {
-        return Duration.ofMinutes(6).toMillis() * expectPods;
+    /**
+     * rollingUpdateTimeout returns a reasonable timeout in milliseconds for a number of pods in a to roll on update
+     */
+    public static long rollingUpdateTimeout(int numberOfPods) {
+        return Duration.ofMinutes(6).toMillis() * numberOfPods;
     }
 }
