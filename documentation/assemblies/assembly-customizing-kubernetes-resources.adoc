@@ -28,7 +28,7 @@ For more details about the customizable fields, check the API reference,
 `KafkaConnectS2I.spec`:: See xref:type-KafkaConnectTemplate-reference[] for more details
 `KafkaMirrorMaker.spec`:: See xref:type-KafkaMirrorMakerTemplate-reference[] for more details
 `KafkaMirrorMaker2.spec`:: See xref:type-KafkaMirrorMaker2Template-reference[] for more details
-`KafkaBridge.spec`:: See xref:type-KafkaClusterTemplate-reference[] for more details
+`KafkaBridge.spec`:: See xref:type-KafkaBridgeTemplate-reference[] for more details
 
 In the following example, the `template` property is used to modify the labels in a Kafka broker's `StatefulSet`:
 
