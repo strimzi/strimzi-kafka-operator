@@ -7,10 +7,10 @@
 
 Kafka Bridge has its own configurable loggers:
 
-* `log4j.logger.io.strimzi.kafka.bridge`
-* `log4j.logger.http.openapi.operation.__<operation-id>__`
+* `logger.bridge`
+* `logger.__<operation-id>__`
 
-You can replace `_<operation-id>_` in the `log4j.logger.http.openapi.operation.__<operation-id>__` logger to set log levels for specific operations:
+You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
 
 * `createConsumer`
 * `deleteConsumer`
@@ -31,14 +31,22 @@ You can replace `_<operation-id>_` in the `log4j.logger.http.openapi.operation._
 Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
 You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
 
-Kafka Bridge uses the Apache `log4j` logger implementation.
-Loggers are defined in the `log4j.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
+Each logger has to be configured assigning it a `name` as `http.openapi.operation.__<operation-id>__`.
+For example, configuring the logging level for `send` operation logger means defining the following:
 
 ```
-log4j.logger.http.openapi.operation.healthy=WARN, out
-log4j.additivity.http.openapi.operation.healthy=false
-log4j.logger.http.openapi.operation.ready=WARN, out
-log4j.additivity.http.openapi.operation.ready=false
+logger.send.name = http.openapi.operation.send
+logger.send.level = DEBUG
+```
+
+Kafka Bridge uses the Apache `log4j2` logger implementation.
+Loggers are defined in the `log4j2.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
+
+```
+logger.healthy.name = http.openapi.operation.healthy
+logger.healthy.level = WARN
+logger.ready.name = http.openapi.operation.ready
+logger.ready.level = WARN
 ```
 The log level of all other operations is set to `INFO` by default.
 
@@ -59,7 +67,10 @@ spec:
   logging:
     type: inline
     loggers:
-      log4j.logger.io.strimzi.kafka.bridge: "INFO"
+      logger.bridge.level: "INFO"
+      # enabling DEBUG just for send operation
+      logger.send.name: "http.openapi.operation.send"
+      logger.send.level: "DEBUG"
   # ...
 ----
 

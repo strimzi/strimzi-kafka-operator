@@ -183,7 +183,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     @Override
-    String getAncillaryConfigMapKeyLogConfig() {
+    public String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
     }
 

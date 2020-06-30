@@ -140,22 +140,37 @@ class LogSettingST extends BaseST {
 
     private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<String, String>() {
         {
-            put("log4j.logger.http.openapi.operation.createConsumer", INFO);
-            put("log4j.logger.http.openapi.operation.deleteConsumer", DEBUG);
-            put("log4j.logger.http.openapi.operation.subscribe", TRACE);
-            put("log4j.logger.http.openapi.operation.unsubscribe", DEBUG);
-            put("log4j.logger.http.openapi.operation.poll", INFO);
-            put("log4j.logger.http.openapi.operation.assign", TRACE);
-            put("log4j.logger.http.openapi.operation.commit", DEBUG);
-            put("log4j.logger.http.openapi.operation.send", ERROR);
-            put("log4j.logger.http.openapi.operation.sendToPartition", TRACE);
-            put("log4j.logger.http.openapi.operation.seekToBeginning", DEBUG);
-            put("log4j.logger.http.openapi.operation.seekToEnd", WARN);
-            put("log4j.logger.http.openapi.operation.seek", INFO);
-            put("log4j.logger.http.openapi.operation.healthy", ERROR);
-            put("log4j.logger.http.openapi.operation.ready", WARN);
-            put("log4j.logger.http.openapi.operation.openapi", TRACE);
-            put("test.bridge.logger.level", ERROR);
+            put("logger.createConsumer.name", "http.openapi.operation.createConsumer");
+            put("logger.createConsumer.level", INFO);
+            put("logger.deleteConsumer.name", "http.openapi.operation.deleteConsumer");
+            put("logger.deleteConsumer.level", DEBUG);
+            put("logger.subscribe.name", "http.openapi.operation.subscribe");
+            put("logger.subscribe.level", TRACE);
+            put("logger.unsubscribe.name", "http.openapi.operation.unsubscribe");
+            put("logger.unsubscribe.level", DEBUG);
+            put("logger.poll.name", "http.openapi.operation.poll");
+            put("logger.poll.level", INFO);
+            put("logger.assign.name", "http.openapi.operation.assign");
+            put("logger.assign.level", TRACE);
+            put("logger.commit.name", "http.openapi.operation.commit");
+            put("logger.commit.level", DEBUG);
+            put("logger.send.name", "http.openapi.operation.send");
+            put("logger.send.level", ERROR);
+            put("logger.sendToPartition.name", "http.openapi.operation.sendToPartition");
+            put("logger.sendToPartition.level", TRACE);
+            put("logger.seekToBeginning.name", "http.openapi.operation.seekToBeginning");
+            put("logger.seekToBeginning.level", DEBUG);
+            put("logger.seekToEnd.name", "http.openapi.operation.seekToEnd");
+            put("logger.seekToEnd.level", WARN);
+            put("logger.seek.name", "http.openapi.operation.seek");
+            put("logger.seek.level", INFO);
+            put("logger.healthy.name", "http.openapi.operation.healthy");
+            put("logger.healthy.level", ERROR);
+            put("logger.ready.name", "http.openapi.operation.ready");
+            put("logger.ready.level", WARN);
+            put("logger.openapi.name", "http.openapi.operation.openapi");
+            put("logger.openapi.level", TRACE);
+            put("test.logger.bridge.level", ERROR);
         }
     };
 
@@ -303,9 +318,20 @@ class LogSettingST extends BaseST {
         assertThat(strimziCRs, containsString(topicName));
     }
 
+    private String configMap(String configMapName) {
+        Map<String, String> configMapData = kubeClient().getConfigMap(configMapName).getData();
+        // tries to get a log4j2 configuration file first (operator, bridge, ...) otherwise log4j one (kafka, zookeeper, ...)
+        String configMapKey = configMapData.keySet()
+                .stream()
+                .filter(key -> key.equals("log4j2.properties") || key.equals("log4j.properties"))
+                .findAny()
+                .get();
+        return configMapData.get(configMapKey);
+    }
+
     private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
         boolean result = false;
-        String configMap = kubeClient().getConfigMap(configMapName).getData().get(configMapName.contains("operator") ? "log4j2.properties" : "log4j.properties");
+        String configMap = configMap(configMapName);
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting for logger: {} Expected: {}", entry.getKey(), entry.getValue());
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
