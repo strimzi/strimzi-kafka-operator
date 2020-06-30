@@ -433,6 +433,11 @@ public class KafkaBridgeCluster extends AbstractModel {
         return "kafkaBridgeDefaultLoggingProperties";
     }
 
+    @Override
+    public String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
+    }
+
     /**
      * Set the HTTP configuration
      * @param kafkaBridgeHttpConfig HTTP configuration
