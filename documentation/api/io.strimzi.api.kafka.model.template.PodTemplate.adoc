@@ -1,0 +1,19 @@
+.An example showing the `PodTemplate`
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+  pod:
+    metadata:
+      labels:
+        label1: value1
+      annotations:
+        anno1: value1
+    imagePullSecrets:
+      - name: my-docker-credentials
+    securityContext:
+      runAsUser: 1000001
+      fsGroup: 0
+    terminationGracePeriodSeconds: 120
+# ...
+----
