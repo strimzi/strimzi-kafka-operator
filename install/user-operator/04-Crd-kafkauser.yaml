@@ -186,7 +186,7 @@ spec:
                   description: Template for KafkaUser resources. The template allows
                     users to specify how is the `Secret` with password or certificates
                     are generated.
-              description: Authorization rules for this Kafka user.
+              description: Template to specify how Kafka User `Secrets` are generated.
           description: The specification of the user.
         status:
           type: object

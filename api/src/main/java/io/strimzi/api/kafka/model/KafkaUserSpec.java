@@ -66,7 +66,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
         this.quotas = kafkaUserQuotas;
     }
 
-    @Description("Authorization rules for this Kafka user.")
+    @Description("Template to specify how Kafka User `Secrets` are generated.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaUserTemplate getTemplate() {
         return template;
