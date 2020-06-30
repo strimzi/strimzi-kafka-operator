@@ -36,6 +36,7 @@ import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -48,6 +49,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
+@Tag(ACCEPTANCE)
 @Tag(METRICS)
 public class MetricsST extends BaseST {
 
