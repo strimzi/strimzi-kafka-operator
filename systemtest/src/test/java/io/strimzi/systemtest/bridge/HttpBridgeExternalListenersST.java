@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -38,7 +39,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
-    private static int bridgePort = 0;
 
     @Test
     void testScramShaAuthWithWeirdNamedUser() throws Exception {
@@ -133,7 +133,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
                 .withNewInlineLogging()
                     .addToLoggers("bridge.root.logger", "DEBUG")
                 .endInlineLogging()
-                .withNewHttp(8080)
+                .withNewHttp(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .endSpec()
             .done();
 
