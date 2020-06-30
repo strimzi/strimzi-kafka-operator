@@ -102,7 +102,7 @@ public class StatefulSetUtils {
     public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT * 2, () -> {
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.rollingUpdateTimeout(snapshot.size()), () -> {
                 try {
                     return ssHasRolled(name, snapshot);
                 } catch (Exception e) {
