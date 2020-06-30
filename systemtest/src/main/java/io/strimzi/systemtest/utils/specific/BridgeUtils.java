@@ -135,7 +135,7 @@ public class BridgeUtils {
         return subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client, Collections.emptyMap());
     }
 
-    public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
+    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
                                                   WebClient client, Map<String, String> additionalHeaders) throws InterruptedException, ExecutionException, TimeoutException {
 
         MultiMap headers = MultiMap.caseInsensitiveMultiMap()
@@ -168,14 +168,14 @@ public class BridgeUtils {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
+    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
                                                   WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
-        return createBridgeConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
+        return createHttpConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
     }
 
-    public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, String groupId,
+    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, String groupId,
                                                   WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
-        return createBridgeConsumer(config, bridgeHost, 80, groupId, webClient, Collections.emptyMap());
+        return createHttpConsumer(config, bridgeHost, 80, groupId, webClient, Collections.emptyMap());
     }
 
     public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
