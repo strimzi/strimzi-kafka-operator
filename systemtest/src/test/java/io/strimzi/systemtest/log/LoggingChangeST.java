@@ -226,11 +226,11 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL);
         // wait some time and check whether logs (UO and TO) after this time contain anything
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 3);
 
         LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(not(emptyString())));
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(not(emptyString())));
 
         LOGGER.info("Setting external logging OFF");
         ConfigMap configMapTo = new ConfigMapBuilder()
@@ -298,9 +298,8 @@ class LoggingChangeST extends AbstractST {
         Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log is without records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(emptyString()));
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(emptyString()));
-
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(emptyString()));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(emptyString()));
 
         LOGGER.info("Setting external logging OFF");
         configMapTo = new ConfigMapBuilder()
@@ -352,8 +351,8 @@ class LoggingChangeST extends AbstractST {
         Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(not(emptyString())));
-        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(not(emptyString())));
     }
 
     @BeforeAll
