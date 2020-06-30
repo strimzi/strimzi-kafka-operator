@@ -196,13 +196,4 @@ public class KafkaConfiguration extends AbstractConfiguration {
     public boolean isEmpty() {
         return this.asOrderedProperties().asMap().size() == 0;
     }
-
-    public boolean containsListenersChange() {
-        return asOrderedProperties().asMap().keySet().contains("listeners");
-    }
-
-    public boolean isEmpty() {
-        return this.asOrderedProperties().asMap().size() == 0;
-    }
-
 }

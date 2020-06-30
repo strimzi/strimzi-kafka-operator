@@ -24,10 +24,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -150,8 +148,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
 
         currentMap = brokerConfigs.entries().stream().collect(
                 Collectors.toMap(
-                        configEntry -> configEntry.name(),
-                        configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
+                    configEntry -> configEntry.name(),
+                    configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
 
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);
@@ -235,7 +233,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      */
     @Override
     public boolean isEmpty() {
-        return diff.get(Util.getBrokersConfig(brokerId)) == null ? true : diff.get(Util.getBrokersConfig(brokerId)).isEmpty();
+        return  diff.size() == 0;
     }
 
     /**
