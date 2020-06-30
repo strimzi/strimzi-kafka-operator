@@ -138,7 +138,6 @@ public class KafkaRollerTest {
     }
 
     @Test
-    @Disabled
     public void pod1NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 1 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -160,7 +159,6 @@ public class KafkaRollerTest {
     }
 
     @Test
-    @Disabled
     public void pod3NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 3 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -203,7 +201,6 @@ public class KafkaRollerTest {
     }
 
     @Test
-    @Disabled
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
