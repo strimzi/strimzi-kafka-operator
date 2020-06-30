@@ -29,7 +29,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.RestartReason;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -50,7 +49,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -60,7 +58,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorCustomCertTest {
@@ -239,9 +236,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                List<Function<Pod, List<RestartReason>>> capturedFunctions = functionArgumentCaptor;
-                assertThat(capturedFunctions, hasSize(1));
-                assertThat(capturedFunctions.get(0).apply(getPod(reconcileSts)).isEmpty(), is(true));
+                assertThat(functionArgumentCaptor, hasSize(1));
+                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)).isEmpty(), is(true));
                 async.flag();
             })));
     }
@@ -257,9 +253,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                List<Function<Pod, List<RestartReason>>> capturedFunctions = functionArgumentCaptor;
-                assertThat(capturedFunctions, hasSize(1));
-                Function<Pod, List<RestartReason>> isPodToRestart = capturedFunctions.get(0);
+                assertThat(functionArgumentCaptor, hasSize(1));
+                Function<Pod, List<RestartReason>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
                 assertThat("Tls listener thumbprint annotation matches, restart should not be required",
@@ -286,9 +281,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                List<Function<Pod, List<RestartReason>>> capturedFunctions = functionArgumentCaptor;
-                assertThat(capturedFunctions, hasSize(1));
-                Function<Pod, List<RestartReason>> isPodToRestart = capturedFunctions.get(0);
+                assertThat(functionArgumentCaptor, hasSize(1));
+                Function<Pod, List<RestartReason>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
 

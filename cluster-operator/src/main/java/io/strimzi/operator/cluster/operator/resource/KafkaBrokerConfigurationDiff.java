@@ -5,6 +5,14 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.kafka.config.model.ConfigModel;
@@ -20,14 +28,6 @@ import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
@@ -147,9 +147,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
 
         currentMap = brokerConfigs.entries().stream().collect(
-                Collectors.toMap(
-                    configEntry -> configEntry.name(),
-                    configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
+            Collectors.toMap(
+                ConfigEntry::name,
+                configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
 
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);
