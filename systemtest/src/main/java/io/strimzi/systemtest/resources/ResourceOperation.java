@@ -62,4 +62,11 @@ public class ResourceOperation {
 
         return timeout;
     }
+
+    /**
+     * rollingUpdateTimeout returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update
+     */
+    public static long rollingUpdateTimeout(int numberOfPods) {
+        return Duration.ofMinutes(5).toMillis() * numberOfPods;
+    }
 }
