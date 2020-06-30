@@ -197,7 +197,7 @@ public class KubernetesResource {
 
         return new IngressBuilder()
             .withNewMetadata()
-            .withName(serviceName)
+                .withName(serviceName)
             .endMetadata()
             .withNewSpec()
             .withRules(new IngressRuleBuilder()
