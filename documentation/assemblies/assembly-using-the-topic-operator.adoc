@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// master.adoc
+// assembly-operators.adoc
 
 [id='using-the-topic-operator-{context}']
 = Using the Topic Operator
@@ -8,6 +8,11 @@
 When you create, modify or delete a topic using the `KafkaTopic` resource,
 the Topic Operator ensures those changes are reflected in the Kafka cluster.
 
-include::../modules/ref-topic-operator.adoc[leveloffset=+1]
+The Topic Operator is deployed:
 
+* link:{BookURLDeploying}#deploying-the-topic-operator-using-the-cluster-operator-{context}[Using the Cluster Operator (recommended)^]
+* link:{BookURLDeploying}#deploying-the-topic-operator-standalone-{context}[Standalone to operate with Kafka clusters not managed by Strimzi^]
+
+include::../modules/ref-operator-topic.adoc[leveloffset=+1]
 include::../modules/proc-configuring-kafka-topic.adoc[leveloffset=+1]
+include::../modules/proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]

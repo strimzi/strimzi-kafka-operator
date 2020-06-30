@@ -1,0 +1,107 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='ref-operator-topic-{context}']
+= Kafka topic resource
+
+The `KafkaTopic` resource is used to configure topics, including the number of partitions and replicas.
+
+The full schema for `KafkaTopic` is described in xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
+
+== Identifying a Kafka cluster for topic handling
+
+A `KafkaTopic` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
+
+For example:
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: topic-name-1
+  labels:
+    strimzi.io/cluster: my-cluster
+----
+
+The label is used by the Topic Operator to identify the `KafkaTopic` resource and create a new topic, and also in subsequent handling of the topic.
+
+If the label does not match the Kafka cluster, the Topic Operator cannot identify the `KafkaTopic` and the topic is not created.
+
+== Handling changes to topics
+
+A fundamental problem that the Topic Operator has to solve is that there is no single source of truth:
+Both the `KafkaTopic` resource and the Kafka topic can be modified independently of the operator.
+Complicating this, the Topic Operator might not always be able to observe changes at each end in real time (for example, the operator might be down).
+
+To resolve this, the operator maintains its own private copy of the information about each topic.
+When a change happens either in the Kafka cluster, or in Kubernetes, it looks at both the state of the other system and at its private copy in order to determine what needs to change to keep everything in sync.
+The same thing happens whenever the operator starts, and periodically while it is running.
+
+For example, suppose the Topic Operator is not running, and a `KafkaTopic` `my-topic` gets created.
+When the operator starts it will lack a private copy of "my-topic", so it can infer that the `KafkaTopic` has been created since it was last running.
+The operator will create the topic corresponding to `my-topic`, and also store a private copy of the metadata for `my-topic`.
+
+The private copy allows the operator to cope with scenarios where the topic configuration gets changed both in Kafka and in Kubernetes, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values).
+In the case of incompatible changes, the Kafka configuration wins, and the `KafkaTopic` will be updated to reflect that.
+
+The private copy is held in the same ZooKeeper ensemble used by Kafka itself.
+This mitigates availability concerns, because if ZooKeeper is not running then Kafka itself cannot run, so the operator will be no less available than it would even if it was stateless.
+
+== Kafka topic usage recommendations
+
+When working with topics, be consistent.
+Always operate on either `KafkaTopic` resources or topics directly in Kubernetes.
+Avoid routinely switching between both methods for a given topic.
+
+Use topic names that reflect the nature of the topic, and remember that names cannot be changed later.
+
+If creating a topic in Kafka, use a name that is a valid Kubernetes resource name,
+otherwise the Topic Operator will need to create the corresponding `KafkaTopic` with a name that conforms to the Kubernetes rules.
+
+NOTE: Recommendations for identifiers and names in Kubernetes are outlined in link:https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[Identifiers and Names in Kubernetes^] community article.
+
+== Kafka topic naming conventions
+
+Kafka and Kubernetes impose their own validation rules for the naming of topics in Kafka and `KafkaTopic.metadata.name` respectively.
+There are valid names for each which are invalid in the other.
+
+Using the `spec.topicName` property, it is possible to create a valid topic in Kafka with a name that would be invalid for the Kafka topic in Kubernetes.
+
+The `spec.topicName` property inherits Kafka naming validation rules:
+
+* The name must not be longer than 249 characters.
+* Valid characters for Kafka topics are ASCII alphanumerics, `.`, `_`, and `-`.
+* The name cannot be `.` or `..`, though `.` can be used in a name, such as `exampleTopic.` or `.exampleTopic`.
+
+`spec.topicName` must not be changed.
+
+For example:
+
+[source,yaml]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: topic-name-1
+spec:
+  topicName: topicName-1 <1>
+  # ...
+----
+<1> Upper case is invalid in Kubernetes.
+
+cannot be changed to:
+
+[source,yaml]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: topic-name-1
+spec:
+  topicName: name-2
+  # ...
+----
+
+NOTE: Some Kafka client applications, such as Kafka Streams, can create topics in Kafka programmatically. If those topics have names that are invalid Kubernetes resource names, the Topic Operator gives them valid names based on the Kafka names. Invalid characters are replaced and a hash is appended to the name.

@@ -55,4 +55,4 @@ TIP: When modifying a topic, you can get the current version of the resource usi
 . Create the `KafkaTopic` resource in Kubernetes.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _<topic-config-file>_
+kubectl apply -f _TOPIC-CONFIG-FILE_
