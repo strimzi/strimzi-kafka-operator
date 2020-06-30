@@ -1203,7 +1203,7 @@ public abstract class AbstractModel {
         }
     }
 
-    String getAncillaryConfigMapKeyLogConfig() {
+    public String getAncillaryConfigMapKeyLogConfig() {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 

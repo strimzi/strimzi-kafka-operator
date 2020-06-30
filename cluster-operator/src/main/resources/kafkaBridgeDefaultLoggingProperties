@@ -1,9 +1,24 @@
-log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-bridge.root.logger=INFO
-log4j.rootLogger=${bridge.root.logger}, CONSOLE
-log4j.logger.http.openapi.operation.healthy=WARN, CONSOLE
-log4j.additivity.http.openapi.operation.healthy=false
-log4j.logger.http.openapi.operation.ready=WARN, CONSOLE
-log4j.additivity.http.openapi.operation.ready=false
+name = BridgeConfig
+
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n
+
+rootLogger.level = INFO
+rootLogger.appenderRefs = console
+rootLogger.appenderRef.console.ref = STDOUT
+rootLogger.additivity = false
+
+logger.bridge.name = io.strimzi.kafka.bridge
+logger.bridge.level = INFO
+logger.bridge.appenderRefs = console
+logger.bridge.appenderRef.console.ref = STDOUT
+logger.bridge.additivity = false
+
+# HTTP OpenAPI specific logging levels (default is INFO)
+# Logging healthy and ready endpoints is very verbose because of Kubernetes health checking.
+logger.healthy.name = http.openapi.operation.healthy
+logger.healthy.level = WARN
+logger.ready.name = http.openapi.operation.ready
+logger.ready.level = WARN

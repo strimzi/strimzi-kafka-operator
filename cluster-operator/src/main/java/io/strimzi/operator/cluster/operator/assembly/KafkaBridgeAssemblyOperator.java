@@ -90,7 +90,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 null);
 
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(bridge.getAncillaryConfigMapKeyLogConfig()));
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
