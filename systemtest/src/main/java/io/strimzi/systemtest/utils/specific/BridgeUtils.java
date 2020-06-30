@@ -68,10 +68,6 @@ public class BridgeUtils {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    public static JsonObject sendMessagesHttpRequest(JsonObject records, String bridgeHost, String topicName, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
-        return sendMessagesHttpRequest(records, bridgeHost, 80, topicName, client);
-    }
-
     public static JsonArray receiveMessagesHttpRequest(String bridgeHost, int bridgePort, String groupID, String name, WebClient client) throws Exception {
         CompletableFuture<JsonArray> future = new CompletableFuture<>();
         client.get(bridgePort, bridgeHost, "/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
@@ -93,10 +89,6 @@ public class BridgeUtils {
                 }
             });
         return future.get(1, TimeUnit.MINUTES);
-    }
-
-    public static JsonArray receiveMessagesHttpRequest(String bridgeHost, String groupID, String name, WebClient client) throws Exception {
-        return receiveMessagesHttpRequest(bridgeHost, 80, groupID, name, client);
     }
 
     public static boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId,
