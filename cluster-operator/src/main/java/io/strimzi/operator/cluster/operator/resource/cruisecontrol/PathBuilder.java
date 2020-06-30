@@ -61,11 +61,22 @@ public class PathBuilder {
         return this;
     }
 
+    private void addIfNotZero(PathBuilder builder, CruiseControlParameters param, long value) {
+        if (value > 0) {
+            builder.addParameter(param, String.valueOf(value));
+        }
+    }
+
     public PathBuilder addRebalanceParameters(RebalanceOptions options) {
         if (options != null) {
             PathBuilder builder = addParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
                     .addParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
                     .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
+
+            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_PARTITION_MOVEMENTS, options.getConcurrentPartitionMovementsPerBroker());
+            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS, options.getConcurrentIntraBrokerPartitionMovements());
+            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_LEADER_MOVEMENTS, options.getConcurrentLeaderMovements());
+            addIfNotZero(builder, CruiseControlParameters.REPLICATION_THROTTLE, options.getReplicationThrottle());
 
             if (options.getGoals() != null) {
                 builder.addParameter(CruiseControlParameters.GOALS, options.getGoals());
