@@ -1,8 +1,7 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-operators-cluster-operator.adoc
-// assembly-cluster-operator.adoc
+// assembly-using-the-cluster-operator.adoc
 
 [id='overview-components-cluster-operator-{context}']
 = Cluster Operator
