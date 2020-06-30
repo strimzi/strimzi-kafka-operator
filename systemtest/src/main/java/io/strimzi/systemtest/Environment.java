@@ -111,8 +111,8 @@ public class Environment {
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = System.getenv().getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
     // variables for kafka bridge image
-    private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
-    public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
+    private static final String BRIDGE_IMAGE_DEFAULT = "latest-released";
+    public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);
     // Image pull policy variables
     public static final String COMPONENTS_IMAGE_PULL_POLICY = System.getenv().getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
     public static final String OPERATOR_IMAGE_PULL_POLICY = System.getenv().getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
@@ -152,5 +152,9 @@ public class Environment {
 
     public static boolean isOlmInstall() {
         return Environment.CLUSTER_OPERATOR_INSTALL_TYPE.toUpperCase(Locale.ENGLISH).equals("OLM");
+    }
+
+    public static boolean useLatestReleasedBridge() {
+        return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }
 }
