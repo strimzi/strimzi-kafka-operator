@@ -37,6 +37,6 @@ include::oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
 
 include::oauth/assembly-oauth-authorization.adoc[leveloffset=+1]
 
-include::assembly-customizing-deployments.adoc[leveloffset=+1]
+include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
 
 include::assembly-external-logging.adoc[leveloffset=+1]

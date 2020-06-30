@@ -70,7 +70,7 @@ spec:
 <4> link:{BookURLUsing}#assembly-resource-limits-and-requests-deployment-configuration-kafka[CPU and memory resources to reserve].
 <5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
-<7> link:{BookURLUsing}#assembly-customizing-deployments-str[Customization of deployment templates and pods].
+<7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
 <8> link:{BookURLUsing}#assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
 <9> link:{BookURLUsing}#assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
 
