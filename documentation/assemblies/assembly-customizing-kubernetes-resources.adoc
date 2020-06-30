@@ -29,6 +29,7 @@ The API reference provides more details about the customizable fields.
 `KafkaMirrorMaker.spec`:: See xref:type-KafkaMirrorMakerTemplate-reference[]
 `KafkaMirrorMaker2.spec`:: See xref:type-KafkaMirrorMaker2Template-reference[]
 `KafkaBridge.spec`:: See xref:type-KafkaBridgeTemplate-reference[]
+`KafkaUser.spec`:: See xref:type-KafkaUserTemplate-reference[]
 
 In the following example, the `template` property is used to modify the labels in a Kafka broker's `StatefulSet`:
 

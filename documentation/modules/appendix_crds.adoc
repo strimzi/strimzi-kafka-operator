@@ -1061,7 +1061,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -2170,6 +2170,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |quotas          1.2+<.<|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
 |xref:type-KafkaUserQuotas-{context}[`KafkaUserQuotas`]
+|template        1.2+<.<|Authorization rules for this Kafka user.
+|xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`]
 |====
 
 [id='type-KafkaUserTlsClientAuthentication-{context}']
@@ -2326,6 +2328,20 @@ include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 |integer
 |requestPercentage  1.2+<.<|A quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
 |integer
+|====
+
+[id='type-KafkaUserTemplate-{context}']
+### `KafkaUserTemplate` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+include::../api/io.strimzi.api.kafka.model.template.KafkaUserTemplate.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property       |Description
+|secret  1.2+<.<|Template for KafkaUser resources. The template allows users to specify how is the `Secret` with password or certificates are generated.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-KafkaUserStatus-{context}']
