@@ -10,7 +10,8 @@ The `rack` object has one mandatory field named `topologyKey`.
 This key needs to match one of the labels assigned to the Kubernetes cluster nodes.
 The label is used by Kubernetes when scheduling the Kafka broker pods to nodes.
 If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-Usually, the nodes are labeled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
+Usually, the nodes are labeled with `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions) that can be used as the `topologyKey` value.
+For more information about Kubernetes node labels, see {K8sWellKnownLabelsAnnotationsAndTaints}.
 This has the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
 
 .Prerequisites
@@ -33,7 +34,7 @@ spec:
   kafka:
     # ...
     rack:
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     # ...
 ----
 +

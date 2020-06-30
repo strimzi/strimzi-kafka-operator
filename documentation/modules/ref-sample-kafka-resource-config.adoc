@@ -64,7 +64,7 @@ spec:
       type: persistent-claim <14>
       size: 10000Gi <15>
     rack: <16>
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     metrics: <17>
       lowercaseOutputName: true
       rules: <18>

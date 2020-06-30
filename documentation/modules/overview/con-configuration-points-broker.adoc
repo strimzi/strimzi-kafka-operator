@@ -72,6 +72,6 @@ spec:
       size: 10000Gi
     # ...
     rack:
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     # ...
 ----
