@@ -207,12 +207,12 @@ class LoggingChangeST extends AbstractST {
 
         final String eoPodName = eoPods.keySet().iterator().next();
 
-        LOGGER.info("Changing rootLogger level to INFO with inline logging");
-        InlineLogging ilInfo = new InlineLogging();
-        ilInfo.setLoggers(Collections.singletonMap("rootLogger.level", "INFO"));
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Collections.singletonMap("rootLogger.level", "DEBUG"));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilInfo);
-            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilInfo);
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilDebug);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilDebug);
         });
 
         LOGGER.info("The EO shouldn't roll - verifying pod stability");
@@ -220,13 +220,13 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
-                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for INFO log will appear", LOGGING_RELOADING_INTERVAL);
-        //wait some time if TO and UO will log something
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL);
+        // wait some time and check whether logs (UO and TO) after this time contain anything
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(not(emptyString())));
@@ -294,8 +294,8 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {} ms for INFO log will disappear", LOGGING_RELOADING_INTERVAL);
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log is without records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "1m"), is(emptyString()));
@@ -313,7 +313,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
                         "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                        "rootLogger.level=INFO\n" +
+                        "rootLogger.level=DEBUG\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
                         "rootLogger.additivity=false"))
@@ -329,7 +329,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
                         "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
-                        "rootLogger.level=INFO\n" +
+                        "rootLogger.level=DEBUG\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
                         "rootLogger.additivity=false"))
@@ -343,13 +343,13 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
-                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=INFO")
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for INFO log will appear", LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL);
         //wait some time if TO and UO will log something
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "1m"), is(not(emptyString())));

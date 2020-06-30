@@ -81,6 +81,7 @@ public abstract class AbstractModel {
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
+    protected static final String LOG4J2_MONITOR_INTERVAL = "30";
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
@@ -427,14 +428,14 @@ public abstract class AbstractModel {
 
     /**
      * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
-     * @param data String with log4j(2) properties in format key=value separated by new lines
+     * @param data String with log4j2 properties in format key=value separated by new lines
      * @return
      */
     protected String maybeAddMonitorIntervalToExternalLogging(String data) {
         if (getAncillaryConfigMapKeyLogConfig().equals("log4j2.properties") && !data.contains("monitorInterval")) {
-            // do not override custom value
-            return data + "\nmonitorInterval=30\n";
+            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL + "\n";
         } else {
+            // do not override custom value
             return data;
         }
     }
