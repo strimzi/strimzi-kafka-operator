@@ -53,7 +53,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
 
-        client.request(HttpMethod.OPTIONS, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
             .putHeader("Origin", CORS_ORIGIN)
             .putHeader("Access-Control-Request-Method", "POST")
             .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
@@ -64,7 +64,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
                 assertThat(ar.result().getHeader("access-control-allow-headers"), is("access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept"));
                 List<String> list = Arrays.asList(ar.result().getHeader("access-control-allow-methods").split(","));
                 assertThat(list, hasItem("POST"));
-                client.request(HttpMethod.POST, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
                     .putHeader("Origin", CORS_ORIGIN)
                     .send(ar2 -> context.verify(() -> {
                         assertThat(ar2.result().statusCode(), is(404));
@@ -80,13 +80,13 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
         final String notAllowedOrigin = "https://evil.io";
 
-        client.request(HttpMethod.OPTIONS, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
             .putHeader("Origin", notAllowedOrigin)
             .putHeader("Access-Control-Request-Method", "POST")
             .send(ar -> context.verify(() -> {
                 assertThat(ar.result().statusCode(), is(403));
                 assertThat(ar.result().statusMessage(), is("CORS Rejected - Invalid origin"));
-                client.request(HttpMethod.POST, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
+                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
                     .putHeader("Origin", notAllowedOrigin)
                     .send(ar2 -> context.verify(() -> {
                         assertThat(ar2.result().statusCode(), is(403));
