@@ -75,6 +75,6 @@ spec:
 . Create the `KafkaUser` resource in Kubernetes.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _<user-config-file>_
+kubectl apply -f _USER-CONFIG-FILE_
 
 . Use the credentials from the `my-user` secret in your client application.
