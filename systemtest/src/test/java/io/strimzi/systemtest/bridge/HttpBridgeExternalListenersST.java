@@ -41,7 +41,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
 
     @Test
-    void testScramShaAuthWithWeirdNamedUser() throws Exception {
+    void testScramShaAuthWithWeirdUsername() throws Exception {
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
@@ -69,7 +69,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
     }
 
     @Test
-    void testTlsAuthWithWeirdNamedUser() throws Exception {
+    void testTlsAuthWithWeirdUsername() throws Exception {
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 

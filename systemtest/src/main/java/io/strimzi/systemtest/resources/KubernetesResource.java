@@ -186,7 +186,7 @@ public class KubernetesResource {
         return kCRBList;
     }
 
-    private static Ingress getSystemTestIngressResource(String serviceName, int port) {
+    private static Ingress getIngressResource(String serviceName, int port) {
         IngressBackend backend = new IngressBackend();
         backend.setServiceName(serviceName);
         backend.setServicePort(new IntOrString(port));
@@ -200,18 +200,18 @@ public class KubernetesResource {
                 .withName(serviceName)
             .endMetadata()
             .withNewSpec()
-            .withRules(new IngressRuleBuilder()
-                .withHost(StUtils.getHost())
-                .withNewHttp()
-                    .withPaths(path)
-                .endHttp()
-                .build())
+                .withRules(new IngressRuleBuilder()
+                    .withHost(StUtils.getHost())
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build())
             .endSpec()
             .build();
     }
 
     public static DoneableIngress createIngress(String serviceName, int port, String clientNamespace, String kafkaClientsPodName) {
-        Ingress ingress = getSystemTestIngressResource(serviceName, port);
+        Ingress ingress = getIngressResource(serviceName, port);
 
         LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createIngress(ingress);
