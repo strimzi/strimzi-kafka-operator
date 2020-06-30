@@ -71,6 +71,7 @@
 :K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
 :K8sPriorityClass: link:https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption[Pod Priority and Preemption^]
 :K8sServiceDiscovery: https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
+:K8sWellKnownLabelsAnnotationsAndTaints: link:https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/[Well-Known Labels, Annotations and Taints^]
 :Minikube: link:https://kubernetes.io/docs/tasks/tools/install-minikube/[Install and start Minikube]
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[NGINX Ingress Controller for Kubernetes^]
 :NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
