@@ -83,10 +83,10 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.imagePullSecrets = imagePullSecrets;
     }
 
-    @Description("The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. " +
-            "Set this value longer than the expected cleanup time for your process." +
-            "Value must be non-negative integer. " +
-            "The value zero indicates delete immediately. " +
+    @Description("The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. " +
+            "Set this value to longer than the expected cleanup time for your process. " +
+            "Value must be a non-negative integer. " +
+            "A zero value indicates delete immediately. " +
             "You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. " +
             "Defaults to 30 seconds.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
