@@ -122,8 +122,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.tolerations = tolerations;
     }
 
-    @Description("The name of the Priority Class to which these pods will be assigned. " +
-            "For more information about Priority Classes, see {K8sPriorityClass}.")
+    @Description("The name of the priority class used to assign priority to the pods. " +
+            "For more information about priority classes, see {K8sPriorityClass}.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getPriorityClassName() {
         return priorityClassName;
