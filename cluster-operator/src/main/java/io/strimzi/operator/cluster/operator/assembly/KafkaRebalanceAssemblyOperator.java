@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
@@ -364,15 +365,38 @@ public class KafkaRebalanceAssemblyOperator
         unknown
     }
 
-    private Future<Void> reconcile(Reconciliation reconciliation, String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance, State currentState, RebalanceAnnotation rebalanceAnnotation) {
+    private RebalanceOptions.RebalanceOptionsBuilder convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
+
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = new RebalanceOptions.RebalanceOptionsBuilder();
-        if (kafkaRebalance.getSpec().getGoals() != null) {
-            rebalanceOptionsBuilder.withGoals(kafkaRebalance.getSpec().getGoals());
+
+        if (kafkaRebalanceSpec.getGoals() != null) {
+            rebalanceOptionsBuilder.withGoals(kafkaRebalanceSpec.getGoals());
         }
-        if (kafkaRebalance.getSpec().isSkipHardGoalCheck()) {
+        if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
+        if (kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker() > 0) {
+            rebalanceOptionsBuilder.withConcurrentPartitionMovementsPerBroker(kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker());
+        }
+        if (kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements() > 0) {
+            rebalanceOptionsBuilder.withConcurrentIntraPartitionMovements(kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements());
+        }
+        if (kafkaRebalanceSpec.getConcurrentLeaderMovements() > 0) {
+            rebalanceOptionsBuilder.withConcurrentLeaderMovements(kafkaRebalanceSpec.getConcurrentLeaderMovements());
+        }
+        if (kafkaRebalanceSpec.getReplicationThrottle() > 0) {
+            rebalanceOptionsBuilder.withReplicationThrottle(kafkaRebalanceSpec.getReplicationThrottle());
+        }
+
+        return rebalanceOptionsBuilder;
+
+    }
+
+    private Future<Void> reconcile(Reconciliation reconciliation, String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance, State currentState, RebalanceAnnotation rebalanceAnnotation) {
+
         log.info("{}: Rebalance action from state [{}]", reconciliation, currentState);
+
+        RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
            .compose(desiredStatus -> {

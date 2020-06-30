@@ -2926,11 +2926,19 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 
 [options="header"]
 |====
-|Property                  |Description
-|goals              1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
+|Property                                        |Description
+|goals                                    1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
 |string array
-|skipHardGoalCheck  1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
+|skipHardGoalCheck                        1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
 |boolean
+|concurrentPartitionMovementsPerBroker    1.2+<.<|The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.
+|integer
+|concurrentIntraBrokerPartitionMovements  1.2+<.<|The upper bound of ongoing partition replica movements between disks within each broker. Default is 2.
+|integer
+|concurrentLeaderMovements                1.2+<.<|The upper bound of ongoing partition leadership movements. Default is 1000.
+|integer
+|replicationThrottle                      1.2+<.<|The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
+|integer
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']

@@ -25,9 +25,11 @@ include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1
 
 include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
+include::../../modules/cruise-control/con-rebalance-performance.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-generating-optimization-proposals.adoc[leveloffset=+1]
 
