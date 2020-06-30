@@ -156,6 +156,7 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
     - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`
 * The pods for `KafkaConnect` and `KafkaConnectS2I` resources use a `ServiceAccount` called `_cluster-name_-cluster-connect`
 * The pods for `KafkaMirrorMaker` use a `ServiceAccount` called `_cluster-name_-mirror-maker`
+* The pods for `KafkaMirrorMaker2` use a `ServiceAccount` called `_cluster-name_-mirrormaker2`
 * The pods for `KafkaBridge` use a `ServiceAccount` called `_cluster-name_-bridge`
 
 == `ServiceAccount`
