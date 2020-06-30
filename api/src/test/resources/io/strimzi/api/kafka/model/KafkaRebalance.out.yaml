@@ -8,3 +8,7 @@ spec:
   - "DiskCapacityGoal"
   - "CpuCapacityGoal"
   skipHardGoalCheck: true
+  concurrentPartitionMovementsPerBroker: 0
+  concurrentIntraBrokerPartitionMovements: 0
+  concurrentLeaderMovements: 0
+  replicationThrottle: 0
