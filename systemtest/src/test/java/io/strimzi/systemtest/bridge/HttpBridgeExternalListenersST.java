@@ -125,7 +125,14 @@ class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
 
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
-            .withSpec(spec)
+            .withNewSpecLike(spec)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+                .withReplicas(1)
+                .withNewInlineLogging()
+                    .addToLoggers("bridge.root.logger", "DEBUG")
+                .endInlineLogging()
+                .withNewHttp(8080)
+            .endSpec()
             .done();
 
         Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
