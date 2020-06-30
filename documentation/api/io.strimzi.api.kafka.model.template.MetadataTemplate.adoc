@@ -1,11 +1,3 @@
-// This assembly is included in the following assemblies:
-//
-// assembly-customizing-deployments.adoc
-
-[id='con-customizing-labels-and-annotations-{context}']
-= Labels and Annotations
-
-For every resource, you can configure additional `Labels` and `Annotations`.
 `Labels` and `Annotations` are used to identify and organize resources, and are configured in the `metadata` property.
 
 For example:
@@ -27,7 +19,3 @@ template:
 
 The `labels` and `annotations` fields can contain any labels or annotations that do not contain the reserved string `strimzi.io`.
 Labels and annotations containing `strimzi.io` are used internally by Strimzi and cannot be configured.
-
-For Kafka Connect, annotations on the `KafkaConnect` resource are used to enable the creation and management of connectors using `KafkaConnector` resources. For more information, see xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[].
-
-NOTE: The `metadata` property is not applicable to container templates, such as the `kafkaContainer`.
