@@ -97,6 +97,10 @@ public class StatefulSetDiff extends AbstractResourceDiff {
                     }
                 }
             }
+            if (nodeMissingOrEmpty(lookupPath(source, pathValue)) && nodeMissingOrEmpty(lookupPath(target, pathValue))) {
+                continue;
+            }
+
             if (log.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
                 log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
