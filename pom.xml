@@ -106,7 +106,7 @@
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <quartz.version>2.2.1</quartz.version>
+        <quartz.version>2.3.2</quartz.version>
         <debezium.version>1.1.0.Final</debezium.version>
         <jaeger.version>1.0.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
