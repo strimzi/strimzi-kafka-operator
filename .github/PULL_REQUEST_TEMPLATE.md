@@ -15,7 +15,6 @@ _Please describe your pull request_
 
 _Please go through this checklist and make sure all applicable tasks have been done_
 
-- [ ] Update/write design documentation in `./design`
 - [ ] Write tests
 - [ ] Make sure all tests pass
 - [ ] Update documentation
