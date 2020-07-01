@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -63,7 +64,7 @@ public class PodUtils {
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Duration.ofMinutes(6).toMillis(),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.rollingUpdateTimeout(expectPods),
             () -> {
                 List<Pod> pods = kubeClient().listPods(selector);
                 if (pods.isEmpty() && expectPods == 0) {
