@@ -257,7 +257,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 Function<Pod, List<RestartReason>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
-                assertThat("Tls listener thumbprint annotation matches, restart should not be required",
+                assertThat("There are no changes in broker config, the restart should not be needed",
                         isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
@@ -286,7 +286,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
                 Pod pod = getPod(reconcileSts);
 
-                assertThat("External listener Thumbprint annotation changed, pod should need restart",
+                assertThat("There are no changes in broker config, the restart should not be needed",
                         isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
