@@ -51,11 +51,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 
@@ -237,7 +237,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)).isEmpty(), is(true));
+                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), empty());
                 async.flag();
             })));
     }
@@ -258,7 +258,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
                 Pod pod = getPod(reconcileSts);
                 assertThat("Tls listener thumbprint annotation matches, restart should not be required",
-                        isPodToRestart.apply(pod).size(), is(0));
+                        isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
@@ -287,7 +287,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 Pod pod = getPod(reconcileSts);
 
                 assertThat("External listener Thumbprint annotation changed, pod should need restart",
-                        isPodToRestart.apply(pod).isEmpty(), is(true));
+                        isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
@@ -330,7 +330,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 List<Function<Pod, List<RestartReason>>> capturedFunctions = functionArgumentCaptor;
                 assertThat(capturedFunctions, hasSize(1));
                 Function<Pod, List<RestartReason>> isPodToRestart = capturedFunctions.get(0);
-                assertThat(isPodToRestart.apply(getPod(reconcileSts)).isEmpty(), is(true));
+                assertThat(isPodToRestart.apply(getPod(reconcileSts)), empty());
 
                 async.flag();
             })));
