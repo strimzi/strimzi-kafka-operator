@@ -87,4 +87,4 @@ After configuring and deploying Kafka Exporter, you can link:{BookURLDeploying}#
 
 .Additional resources
 
-link:{BookURLUsing}#type-KafkaExporterTemplate-reference[].
+link:{BookURLUsing}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference].
