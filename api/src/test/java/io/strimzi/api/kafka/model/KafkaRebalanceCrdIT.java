@@ -42,6 +42,16 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
         createDelete(KafkaRebalance.class, "KafkaRebalance-with-goals-skip-hard-goal-check.yaml");
     }
 
+    @Test
+    void testKafkaRebalanceWithPerformanceTuning() {
+        createDelete(KafkaRebalance.class, "KafkaRebalance-performance-tuning.yaml");
+    }
+
+    @Test
+    void testKafkaRebalanceWithExcludedTopics() {
+        createDelete(KafkaRebalance.class, "KafkaRebalance-excluded-topics.yaml");
+    }
+
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);

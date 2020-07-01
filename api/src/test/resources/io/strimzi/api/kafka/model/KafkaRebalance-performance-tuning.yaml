@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+spec:
+  concurrentPartitionMovementsPerBroker: 10
+  concurrentIntraBrokerPartitionMovements: 10
+  concurrentLeaderMovements: 2000
+  replicationThrottle: 200000
