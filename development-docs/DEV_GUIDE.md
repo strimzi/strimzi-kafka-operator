@@ -1,9 +1,10 @@
-# Developing Strimzi
+# Development Guide for Strimzi
 
 This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](DEV_QUICK_START.md) document.
 
 <!-- TOC depthFrom:2 -->
 
+- [Developer Quick Start](#developer-quick-start)
 - [Build Pre-requisites](#build-pre-requisites)
 - [Make targets](#make-targets)
 - [Docker build options](#docker-build-options)
@@ -15,11 +16,83 @@ This document gives a detailed breakdown of the various build processes and opti
 
 <!-- /TOC -->
 
+## Developer Quick Start
+
+To build Strimzi from source you need an Kubernetes or OpenShift cluster available. You can install either [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [minishift](https://www.okd.io/minishift/) to have access to a cluster on your local machine.
+
+You will also need access to several command line utilities. See the [pre-requisites section](#build-pre-requisites) for more details.
+
+### Minishift Setup
+
+In order to perform the operations necessary for the integration tests, your user must have the cluster administrator role assigned. For example, if your username is `developer`, you can add the `cluster-admin` role using the commands below:
+
+    oc login -u system:admin
+
+    oc adm policy add-cluster-role-to-user cluster-admin developer
+    
+    oc login -u developer -p <password>
+
+## Build from source
+
+To build Strimzi from source the operator and Kafka code needs to be compiled into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the sections below this quick start guide. The commands below should work for both minishift and minikube clusters:
+
+1. If you don't have one already, create an account on the [Docker Hub](https://hub.docker.com/). Then log your local Docker client into the Hub using:
+
+        docker login
+
+2. Make sure that the `DOCKER_ORG` environment variable is set to the same value as your username on Docker Hub.
+
+        export DOCKER_ORG=docker_hub_username
+
+3. Now build the Docker images and push them to your repository on Docker Hub:
+
+        make clean
+        make all
+
+   Once this completes you should have several new repositories under your Docker Hub account (`docker_hub_username/operator`, `docker_hub_username/kafka` and `docker_hub_username/test-client`).
+
+   The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
+
+        make clean
+        make MVN_ARGS='-DskipTests -DskipIT' all
+
+4. In order to use the newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command:
+
+    ```
+    sed -Ei -e "s#(image|value): strimzi/([a-z0-9-]+):latest#\1: $DOCKER_ORG/\2:latest#" \
+            -e "s#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_ORG/\2#" \
+            install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+    ```
+
+   This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
+
+5. Then you can deploy the Cluster Operator by running: 
+
+   For a minikube cluster:
+
+        kubectl create -f install/cluster-operator
+   
+   Or for a minishift cluster:
+        
+        oc create -f install/cluster-operator
+
+
+6. Finally, you can deploy the cluster custom resource running:
+   
+   For minikube cluster:
+
+        kubectl create -f examples/kafka/kafka-ephemeral.yaml 
+   
+   Or for a minishift cluster:
+
+        oc create -f examples/kafka/kafka-ephemeral.yaml
+
+
 ## Build Pre-Requisites
 
-To build this project you must first install several command line utilities and a Kubernetes or OpenShift cluster
-
 ### Command line tools
+
+To build this project you must first install several command line utilities and a Kubernetes or OpenShift cluster.
 
 - [`make`](https://www.gnu.org/software/make/) - Make build system
 - [`mvn`](https://maven.apache.org/index.html) (version 3.5 and above) - Maven CLI
@@ -33,13 +106,33 @@ To build this project you must first install several command line utilities and 
     - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need **v3** version.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 
-In order to use `make` these all need to be available in your `$PATH`.
+In order to use `make` these all need to be available on your `$PATH`.
 
-#### Mac OS
+### Mac OS
 
 The `make` build is using GNU versions of `find` and `sed` utilities and is not compatible with the BSD versions available on Mac OS. When using Mac OS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you can do `brew install gnu-sed findutils grep coreutils`. This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
 The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
+
+#### Install Minishift (local install of OpenShift)
+
+`brew cask install minishift`
+
+At the moment of this writing you will need to fix xhyve driver for Minishift to work:
+https://stackoverflow.com/questions/56358247/error-creating-new-host-json-cannot-unmarshal-bool-into-go-struct-field-driver
+```
+brew uninstall docker-machine-driver-xhyve
+brew edit docker-machine-driver-xhyve
+```
+
+Change tag and revision:
+`:tag => "v0.3.3", :revision => "7d92f74a8b9825e55ee5088b8bfa93b042badc47"`
+
+```
+brew install docker-machine-driver-xhyve
+sudo chown root:wheel $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
+sudo chmod u+s $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
+```
 
 ### Kubernetes or OpenShift Cluster
 
@@ -251,7 +344,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-System tests has its own guide with more information. See [Testing Guide](TESTING.md) document for more information.
+System tests has its own guide with more information. See [Testing Guide](development-docs/TESTING.md) document for more information.
 
 ## DCO Signoff
 
