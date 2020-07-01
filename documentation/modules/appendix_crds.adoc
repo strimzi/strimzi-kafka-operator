@@ -2340,7 +2340,7 @@ include::../api/io.strimzi.api.kafka.model.template.KafkaUserTemplate.adoc[level
 [options="header"]
 |====
 |Property       |Description
-|secret  1.2+<.<|Template for KafkaUser resources. The template allows users to specify how is the `Secret` with password or certificates are generated.
+|secret  1.2+<.<|Template for KafkaUser resources. The template allows users to specify how the `Secret` with password or TLS certificates is generated.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

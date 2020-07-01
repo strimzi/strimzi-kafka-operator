@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for a KafkaUser resources.
+ * Representation of a template for a KafkaUser resource.
  */
 @Buildable(
         editableEnabled = false,
@@ -35,7 +35,7 @@ public class KafkaUserTemplate implements Serializable, UnknownPropertyPreservin
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for KafkaUser resources. " +
-            "The template allows users to specify how is the `Secret` with password or certificates are generated.")
+            "The template allows users to specify how the `Secret` with password or TLS certificates is generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getSecret() {
         return secret;

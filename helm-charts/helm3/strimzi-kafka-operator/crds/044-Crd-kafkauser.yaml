@@ -155,7 +155,7 @@ spec:
                           type: object
                           description: Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                       description: Metadata which should be applied to the resource.
-                  description: Template for KafkaUser resources. The template allows users to specify how is the `Secret` with password or certificates are generated.
+                  description: Template for KafkaUser resources. The template allows users to specify how the `Secret` with password or TLS certificates is generated.
               description: Template to specify how Kafka User `Secrets` are generated.
           description: The specification of the user.
         status:

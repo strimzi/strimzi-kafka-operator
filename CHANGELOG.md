@@ -17,7 +17,7 @@
 * Migration to Helm 3
 * Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
 * Use Strimzi Kafka Bridge 0.17.0
-* Make it possible to configure labels and annotations for secrets created by User Operator
+* Make it possible to configure labels and annotations for secrets created by the User Operator
 
 ### Deprecations and removals
 
