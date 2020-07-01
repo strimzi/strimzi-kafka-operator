@@ -11,7 +11,7 @@ All bugs, tasks or enhancements are tracked as [GitHub issues][issues]. Issues w
 
 The [developer quick start guide][dev-quick-start] describes how to quickly get setup to build Strimzi from source.
 
-The [hacking guide][hacking-guide] describes in more detail the various ways you can build Strimzi and how to test your changes before submitting a patch or opening a pull request.
+The [development guide][development-guide] describes in more detail the various ways you can build Strimzi and how to test your changes before submitting a patch or opening a pull request.
 
 The [release checklist][release-list] describes the steps that need to be completed for a new version release.
 
@@ -24,9 +24,8 @@ If you want to get in touch with us first before contributing, you can use:
 
 [issues]: https://github.com/strimzi/strimzi-kafka-operator/issues
 [newbie-issues]: https://github.com/strimzi/strimzi-kafka-operator/labels/good-start
-[hacking-guide]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md
-[dev-quick-start]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md
-[release-list]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/RELEASE.md
+[development-guide]: development-docs/DEV_GUIDE.md
+[release-list]: development-docs/RELEASE.md
 [doc-contrib-guide]: https://strimzi.io/contributing/guide/
 
 # How to become a maintainer
