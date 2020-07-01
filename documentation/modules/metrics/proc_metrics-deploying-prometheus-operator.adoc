@@ -21,8 +21,8 @@ On MacOS, use:
 +
 [source,shell,subs=+quotes]
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
-+
-NOTE: If it is not required, you can manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file.
+
+. (Optional) If it is not required, you can manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file.
 
 . Deploy the Prometheus Operator:
 +
