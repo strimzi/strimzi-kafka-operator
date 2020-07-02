@@ -668,16 +668,16 @@ class ConnectST extends AbstractST {
         KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
 
         String newTopic = "new-topic";
+        String connectorConfig = KafkaConnectorUtils.getConnectorConfig(connectPodName, CLUSTER_NAME, "localhost");
+
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("topics", newTopic);
             kc.getSpec().setTasksMax(8);
         });
 
-        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
-            () -> {
-                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083) + "/connectors/" + CLUSTER_NAME + "/config").out();
-                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
-            });
+        connectorConfig = KafkaConnectorUtils.waitForConnectorConfigUpdate(connectPodName, CLUSTER_NAME, connectorConfig, "localhost");
+        assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
+        assertThat(connectorConfig.contains("topics\":\"" + newTopic), is(true));
 
         // Now delete KafkaConnector resource and create connector manually
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();

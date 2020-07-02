@@ -85,7 +85,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
         LOGGER.info("Waiting for KafkaTopic change {}", topicName);
-        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec().getPartitions() == partitions,
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );

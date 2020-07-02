@@ -286,7 +286,7 @@ public class TopicST extends AbstractST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 try {
                     List<String> topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);

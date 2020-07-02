@@ -141,7 +141,7 @@ public class DeploymentUtils {
      */
     public static void waitForDeploymentRecovery(String name, String deploymentUid) {
         LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, kubeClient().getNamespace());
-        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getDeploymentUid(name).equals(deploymentUid));
         LOGGER.info("Deployment {} was recovered", name);
     }

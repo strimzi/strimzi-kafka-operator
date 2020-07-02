@@ -100,4 +100,16 @@ public class KafkaConnectorUtils {
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl http://localhost:8083/connectors/" + connectorName).out();
     }
+
+    public static String getConnectorConfig(String podName, String connectorName, String apiUrl) {
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
+            connectorName + "/config").out();
+    }
+
+    public static String waitForConnectorConfigUpdate(String podName, String connectorName, String oldConfig, String apiUrl) {
+        TestUtils.waitFor("Wait for KafkaConnector config will contain desired config", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
+            () -> !oldConfig.equals(getConnectorConfig(podName, connectorName, apiUrl)));
+        return getConnectorConfig(podName, connectorName, apiUrl);
+    }
 }

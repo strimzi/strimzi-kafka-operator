@@ -172,7 +172,7 @@ public class StatefulSetUtils {
      */
     public static void waitForStatefulSetRecovery(String name, String statefulSetUid) {
         LOGGER.info("Waiting for StatefulSet {}-{} recovery in namespace {}", name, statefulSetUid, kubeClient().getNamespace());
-        TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
         LOGGER.info("StatefulSet {} was recovered", name);
     }

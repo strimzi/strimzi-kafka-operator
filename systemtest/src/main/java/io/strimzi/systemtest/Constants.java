@@ -10,7 +10,7 @@ import java.time.Duration;
  * Interface for keep global constants used across system tests.
  */
 public interface Constants {
-    long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
+    long TIMEOUT_FOR_RESOURCE_RECOVERY = Duration.ofMinutes(6).toMillis();
     long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_SECRET_CREATION = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(14).toMillis();
@@ -42,6 +42,7 @@ public interface Constants {
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long CONNECT_STATUS_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
+    long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
     long PRODUCER_POLL_INTERVAL = Duration.ofSeconds(30).toMillis();
     long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
 
