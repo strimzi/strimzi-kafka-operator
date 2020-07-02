@@ -302,12 +302,12 @@ public class StatefulSetDiffTest {
     public void testTemplateTolerationBlank() {
         Toleration t1 = new TolerationBuilder()
                 .withEffect("NoSchedule")
-                .withValue("")
+                .withValue(null)
                 .build();
 
         Toleration t2 = new TolerationBuilder()
                 .withEffect("NoSchedule")
-                .withValue(null)
+                .withValue("")
                 .build();
 
         StatefulSet ss1 = new StatefulSetBuilder()

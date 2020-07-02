@@ -56,6 +56,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Pattern RESOURCE_PATH = Pattern.compile("^/spec/template/spec/(?:initContainers|containers)/[0-9]+/resources/(?:limits|requests)/(memory|cpu)$");
     private static final Pattern VOLUME_SIZE = Pattern.compile("^/spec/volumeClaimTemplates/[0-9]+/spec/resources/.*$");
+    private static final Pattern TOLERATION_VALUE = Pattern.compile("^/spec/template/spec/tolerations/[0-9]+/value$");
 
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
@@ -97,8 +98,12 @@ public class StatefulSetDiff extends AbstractResourceDiff {
                     }
                 }
             }
-            if (nodeMissingOrEmpty(lookupPath(source, pathValue)) && nodeMissingOrEmpty(lookupPath(target, pathValue))) {
-                continue;
+
+            Matcher tolerationMatchers = TOLERATION_VALUE.matcher(pathValue);
+            if (tolerationMatchers.matches()) {
+                if (nodeMissingOrEmpty(lookupPath(source, pathValue)) && nodeMissingOrEmpty(lookupPath(target, pathValue))) {
+                    continue;
+                }
             }
 
             if (log.isDebugEnabled()) {
