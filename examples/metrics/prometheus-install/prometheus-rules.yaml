@@ -139,14 +139,6 @@ spec:
       annotations:
         summary: 'All `zookeeper` containers in the Zookeeper pods down or in CrashLookBackOff status'
         description: 'All `zookeeper` containers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: ZookeeperTlsSidecarContainersDown
-      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'All `tls-sidecar` containers in the Zookeeper pods down or in CrashLookBackOff status'
-        description: 'All `tls-sidecar` containers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes'
   - name: entityOperator
     rules:
     - alert: TopicOperatorContainerDown
