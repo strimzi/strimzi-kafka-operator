@@ -16,6 +16,7 @@
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
 * Migration to Helm 3
 * Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
+* Extended the Grafana example dashboard for Kafka Connect with several charts to provide more comprehensive information
 
 ### Deprecations and removals
 
