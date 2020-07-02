@@ -35,6 +35,7 @@ import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -215,18 +216,15 @@ class LoggingChangeST extends AbstractST {
             k.getSpec().getEntityOperator().getUserOperator().setLogging(ilDebug);
         });
 
-        LOGGER.info("The EO shouldn't roll - verifying pod stability");
-        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
-
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
         // wait some time and check whether logs (UO and TO) after this time contain anything
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 3);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
@@ -283,9 +281,6 @@ class LoggingChangeST extends AbstractST {
             k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
         });
 
-        LOGGER.info("The EO shouldn't roll - verifying pod stability");
-        DeploymentUtils.waitForNoRollingUpdate(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPods);
-
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
@@ -294,7 +289,7 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL * 2);
         Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log is without records");
@@ -337,22 +332,21 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
 
-        LOGGER.info("The EO shouldn't roll - verifying pod stability");
-        DeploymentUtils.waitForNoRollingUpdate(eoDeploymentName, eoPods);
-
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                         && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
         //wait some time if TO and UO will log something
         Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         LOGGER.info("Asserting if log will contain some records");
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
         assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(not(emptyString())));
+
+        assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(eoDeploymentName), equalTo(eoPods));
     }
 
     @BeforeAll

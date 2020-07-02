@@ -73,6 +73,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -429,14 +430,18 @@ public abstract class AbstractModel {
     /**
      * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
      * @param data String with log4j2 properties in format key=value separated by new lines
-     * @return
+     * @return log4j2 configuration with monitorInterval property
      */
     protected String maybeAddMonitorIntervalToExternalLogging(String data) {
-        if (getAncillaryConfigMapKeyLogConfig().equals("log4j2.properties") && !data.contains("monitorInterval")) {
-            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL + "\n";
+        OrderedProperties orderedProperties = new OrderedProperties();
+        orderedProperties.addStringPairs(data);
+
+        Optional<String> mi = orderedProperties.asMap().keySet().stream().filter(key -> key.matches("^monitorInterval$")).findFirst();
+        if (mi.isPresent()) {
+            return data;
         } else {
             // do not override custom value
-            return data;
+            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL + "\n";
         }
     }
 
