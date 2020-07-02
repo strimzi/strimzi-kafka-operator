@@ -90,7 +90,7 @@ spec: <1>
   config: <3>
     #...
 ----
-<1> xref:type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster].
+<1> link:{BookURLUsing}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster].
 <2> The docker image for the pods.
 <3> Configuration of the Kafka Connect _workers_ (not connectors).
 +
