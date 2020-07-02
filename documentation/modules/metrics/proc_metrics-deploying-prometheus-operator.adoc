@@ -4,7 +4,7 @@
 
 [id='proc-metrics-deploying-prometheus-operator-{context}']
 
-= Deploying the Prometheus Operator
+= Deploying the CoreOS Prometheus Operator
 
 To deploy the Prometheus Operator to your Kafka cluster, apply the YAML bundle resources file from the https://github.com/coreos/prometheus-operator[Prometheus CoreOS repository].
 
