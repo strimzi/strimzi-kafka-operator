@@ -6,7 +6,8 @@
 
 = Deploying Prometheus
 
-To deploy Prometheus to your Kafka cluster to obtain monitoring data, apply the xref:ref-metrics-config-files-{context}[example resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
+To obtain monitoring data in your Kafka cluster,
+you can use your own Prometheus deployment or deploy Prometheus by applying the xref:ref-metrics-config-files-{context}[example resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
 
 The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace specified for the deployment.
 
