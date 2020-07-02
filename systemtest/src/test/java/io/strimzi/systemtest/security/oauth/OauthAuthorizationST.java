@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class OauthAuthorizationST extends OauthBaseST {
+public class OauthAuthorizationST extends OauthAbstractST {
 
     private OauthExternalKafkaClient teamAOauthKafkaClient;
     private OauthExternalKafkaClient teamBOauthKafkaClient;

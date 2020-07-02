@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
-import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CruiseControlApiST extends BaseST {
+public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String NAMESPACE = "cruise-control-api-test";

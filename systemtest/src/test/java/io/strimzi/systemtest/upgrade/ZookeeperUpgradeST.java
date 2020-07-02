@@ -6,7 +6,7 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -33,7 +33,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(UPGRADE)
-public class ZookeeperUpgradeST extends BaseST {
+public class ZookeeperUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ZookeeperUpgradeST.class);
 

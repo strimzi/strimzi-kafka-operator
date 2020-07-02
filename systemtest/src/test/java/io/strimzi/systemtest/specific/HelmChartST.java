@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +20,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.HELM;
 
 @Tag(HELM)
-class HelmChartST extends BaseST {
+class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 

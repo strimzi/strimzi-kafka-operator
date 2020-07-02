@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
@@ -43,7 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @OpenShiftOnly
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-public class OpenShiftTemplatesST extends BaseST {
+public class OpenShiftTemplatesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 

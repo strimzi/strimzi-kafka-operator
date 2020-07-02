@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
@@ -37,8 +37,8 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-public class HttpBridgeBaseST extends BaseST {
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
+public class HttpBridgeAbstractST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeAbstractST.class);
 
     protected WebClient client;
     protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";

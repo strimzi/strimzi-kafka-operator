@@ -6,7 +6,7 @@ package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -40,10 +40,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @ExtendWith(VertxExtension.class)
-public class OauthBaseST extends BaseST {
+public class OauthAbstractST extends AbstractST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";
-    protected static final Logger LOGGER = LogManager.getLogger(OauthBaseST.class);
+    protected static final Logger LOGGER = LogManager.getLogger(OauthAbstractST.class);
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
     protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";

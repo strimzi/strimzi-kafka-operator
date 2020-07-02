@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-public class OauthPlainST extends OauthBaseST {
+public class OauthPlainST extends OauthAbstractST {
 
     private OauthExternalKafkaClient oauthExternalKafkaClient;
 

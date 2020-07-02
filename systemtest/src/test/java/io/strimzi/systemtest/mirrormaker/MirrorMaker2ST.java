@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -58,7 +58,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @Tag(MIRROR_MAKER2)
 @Tag(CONNECT_COMPONENTS)
 @Tag(INTERNAL_CLIENTS_USED)
-class MirrorMaker2ST extends BaseST {
+class MirrorMaker2ST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMaker2ST.class);
     public static final String NAMESPACE = "mirrormaker2-cluster-test";

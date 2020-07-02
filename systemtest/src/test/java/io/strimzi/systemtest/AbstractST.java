@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(TestExecutionWatcher.class)
-public abstract class BaseST implements TestSeparator {
+public abstract class AbstractST implements TestSeparator {
 
     static {
         Crds.registerCustomKinds();
@@ -81,7 +81,7 @@ public abstract class BaseST implements TestSeparator {
 
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
 
-    private static final Logger LOGGER = LogManager.getLogger(BaseST.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     protected static final String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";

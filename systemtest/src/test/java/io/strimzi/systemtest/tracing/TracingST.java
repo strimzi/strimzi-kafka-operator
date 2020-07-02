@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -74,7 +74,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
-public class TracingST extends BaseST {
+public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
