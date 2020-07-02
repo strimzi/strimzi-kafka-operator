@@ -120,7 +120,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, name, client), is(true));
     }
 
     @Test
