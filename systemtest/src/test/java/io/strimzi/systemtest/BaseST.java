@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
@@ -91,9 +92,7 @@ public abstract class BaseST implements TestSeparator {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
-    private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
 
-    public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
     public static final String REQUESTS_MEMORY = "512Mi";
@@ -348,37 +347,6 @@ public abstract class BaseST implements TestSeparator {
     }
 
     /**
-     * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
-     * This method is {@Deprecated} and it should be removed in the future. Instead of use this method, you should use method {@link io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils#waitForPodDeletion(String)}
-     * which should be used by default in deletion process for all components (it force pod deletion via executor instead of fabric8 client, which seems to be unstable).
-     * @param time timeout in miliseconds
-     * @throws Exception exception
-     */
-    @Deprecated
-    void waitForDeletion(long time) throws Exception {
-        List<Pod> pods = kubeClient().listPods().stream().filter(
-            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
-        // Delete pods in case of kubernetes keep them up
-        pods.forEach(p -> kubeClient().deletePod(p));
-
-        LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
-        Thread.sleep(time);
-
-        // Collect pods again after proper removal
-        pods = kubeClient().listPods().stream().filter(
-            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
-        long podCount = pods.size();
-
-        StringBuilder nonTerminated = new StringBuilder();
-        if (podCount > 0) {
-            pods.forEach(
-                p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
-            );
-            throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
-        }
-    }
-
-    /**
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
     public void deployClusterOperatorViaHelmChart() {
@@ -511,34 +479,16 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
-        verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
-        verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);
+        verifyLabelsOnPods(clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
         verifyLabelsOnCOPod();
-        verifyLabelsOnPods(clusterName, "entity-operator", appName, "Kafka");
+        verifyLabelsOnPods(clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
         verifyLabelsForCRDs();
         verifyLabelsForKafkaAndZKServices(clusterName, appName);
         verifyLabelsForSecrets(clusterName, appName);
         verifyLabelsForConfigMaps(clusterName, appName, "");
         verifyLabelsForRoleBindings(clusterName, appName);
         verifyLabelsForServiceAccounts(clusterName, appName);
-    }
-
-    void verifyLabelsForKafkaOrZkPods(String clusterName, String podType, String appName) {
-        LOGGER.info("Verifying labels for {}", podType);
-
-        kubeClient().listPodsByPrefixInName(clusterName + "-" + podType).forEach(
-            pod -> {
-                String podName = pod.getMetadata().getName();
-                LOGGER.info("Verifying labels for pod {}", podName);
-                Map<String, String> labels = pod.getMetadata().getLabels();
-                assertThat(labels.get("app"), is(appName));
-                assertThat(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"), is(true));
-                assertThat(labels.get("statefulset.kubernetes.io/pod-name"), is(podName));
-                assertThat(labels.get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
-                assertThat(labels.get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
-                assertThat(labels.get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-").concat(podType)));
-            }
-        );
     }
 
     void verifyLabelsOnCOPod() {
