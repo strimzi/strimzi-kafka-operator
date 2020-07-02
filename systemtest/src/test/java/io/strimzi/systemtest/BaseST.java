@@ -510,7 +510,7 @@ public abstract class BaseST implements TestSeparator {
         }
     }
 
-    void verifyLabelsForKafkaCluster(String clusterName, String appName) {
+    protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
         verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
         verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);
         verifyLabelsOnCOPod();
@@ -622,7 +622,7 @@ public abstract class BaseST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
+    protected void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
         LOGGER.info("Verifying labels for Config maps");
 
         kubeClient().listConfigMaps()
@@ -652,7 +652,7 @@ public abstract class BaseST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForServiceAccounts(String clusterName, String appName) {
+    protected void verifyLabelsForServiceAccounts(String clusterName, String appName) {
         LOGGER.info("Verifying labels for Service Accounts");
 
         kubeClient().listServiceAccounts().stream()
