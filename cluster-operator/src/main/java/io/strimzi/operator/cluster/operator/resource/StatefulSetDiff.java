@@ -101,7 +101,11 @@ public class StatefulSetDiff extends AbstractResourceDiff {
 
             Matcher tolerationMatchers = TOLERATION_VALUE.matcher(pathValue);
             if (tolerationMatchers.matches()) {
-                if (nodeMissingOrEmpty(lookupPath(source, pathValue)) && nodeMissingOrEmpty(lookupPath(target, pathValue))) {
+                // Empty values are removed from k8s STS so setting tolerations.value to the empty value
+                // will get null as it appears to not to be set at all
+                // So if source is missing tolerations.value and target has tolerations.value set to empty string
+                // then continue otherwise it is seen as STS difference and pods are rolled (indefinitely)
+                if (isNodeMissingOrEmpty(lookupPath(source, pathValue)) && isNodeMissingOrEmpty(lookupPath(target, pathValue))) {
                     continue;
                 }
             }

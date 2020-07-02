@@ -29,7 +29,7 @@ public abstract class AbstractResourceDiff {
      * @param node tested node
      * @return true if node is empty or has empty value
      */
-    protected boolean nodeMissingOrEmpty(JsonNode node) {
+    protected boolean isNodeMissingOrEmpty(JsonNode node) {
         return node.isMissingNode() || node.getNodeType() == JsonNodeType.STRING && node.textValue().isEmpty();
     }
 
