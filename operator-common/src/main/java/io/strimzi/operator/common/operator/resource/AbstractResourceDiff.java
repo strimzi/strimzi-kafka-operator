@@ -26,12 +26,11 @@ public abstract class AbstractResourceDiff {
     }
 
     /**
-     * Empty node can have a value """" which compared with "" is different but semantically they are the same
      * @param node tested node
      * @return true if node is empty or has empty value
      */
     protected boolean nodeMissingOrEmpty(JsonNode node) {
-        return node.isMissingNode() || node.getNodeType() == JsonNodeType.STRING && node.asText().replace("\"", "").isEmpty();
+        return node.isMissingNode() || node.getNodeType() == JsonNodeType.STRING && node.textValue().isEmpty();
     }
 
     /**
