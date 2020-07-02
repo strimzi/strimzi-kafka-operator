@@ -93,7 +93,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart Function that returns a list is reasons why the given pod needs to be restarted, or an empty list if the pod does not need to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
         return getSecrets(sts).compose(compositeFuture -> {
             return maybeRollingUpdate(sts, podNeedsRestart, compositeFuture.resultAt(0), compositeFuture.resultAt(1));
         });
@@ -121,7 +121,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
     }
 
-    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
 
     public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
@@ -146,14 +146,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart The function for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Function<Pod, List<RestartReason>> podNeedsRestart) {
+    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Function<Pod, List<String>> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
-            List<RestartReason> reasons = podNeedsRestart.apply(pod);
+            List<String> reasons = podNeedsRestart.apply(pod);
             if (reasons != null && !reasons.isEmpty()) {
                 log.debug("Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
                 fut = restartPod(sts, pod);

@@ -153,7 +153,7 @@ public class KafkaRoller {
         runnable -> new Thread(runnable, "kafka-roller"));
 
     private ConcurrentHashMap<Integer, RestartContext> podToContext = new ConcurrentHashMap<>();
-    private Function<Pod, List<RestartReason>> podNeedsRestart;
+    private Function<Pod, List<String>> podNeedsRestart;
 
     /**
      * Asynchronously perform a rolling restart of some subset of the pods,
@@ -163,7 +163,7 @@ public class KafkaRoller {
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
      * @return A Future completed when rolling is complete.
      */
-    public Future<Void> rollingRestart(Function<Pod, List<RestartReason>> podNeedsRestart) {
+    public Future<Void> rollingRestart(Function<Pod, List<String>> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         List<Future> futures = new ArrayList<>(numPods);
         List<Integer> podIds = new ArrayList<>(numPods);
@@ -256,7 +256,6 @@ public class KafkaRoller {
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();
-                    e.printStackTrace();
                     log.info("{} Could not roll pod {} due to {}, retrying after at least {}ms",
                             reconciliation, podId, e, delay1);
                     schedule(podId, delay1, TimeUnit.MILLISECONDS);
@@ -290,13 +289,13 @@ public class KafkaRoller {
 
         private void closeLoggingAnyError() {
             if (adminClient != null) {
-                closeLoggingAnyError2(adminClient);
+                closeAdminClient(adminClient);
                 adminClient = null;
             }
         }
     }
 
-    private static void closeLoggingAnyError2(Admin admin) {
+    private static void closeAdminClient(Admin admin) {
         try {
             admin.close(Duration.ofMinutes(2));
         } catch (Exception e) {
@@ -385,7 +384,7 @@ public class KafkaRoller {
     }
 
     private RestartPlan restartPlan(int podId, Pod pod) throws ForceableProblem, InterruptedException, FatalProblem {
-        List<RestartReason> reasonToRestartPod = podNeedsRestart.apply(pod);
+        List<String> reasonToRestartPod = podNeedsRestart.apply(pod);
         // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
@@ -425,7 +424,7 @@ public class KafkaRoller {
                 }
             } catch (RuntimeException | Error e) {
                 if (adminClient != null) {
-                    closeLoggingAnyError2(adminClient);
+                    closeAdminClient(adminClient);
                 }
                 throw e;
             }

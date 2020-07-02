@@ -23,7 +23,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.RestartReason;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -192,7 +191,7 @@ public class KafkaUpdateTest {
                         return Future.succeededFuture();
                     }
                     @Override
-                    public Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart) {
+                    public Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
                         try {
                             rollExceptions.accept(0);
                             return Future.succeededFuture();

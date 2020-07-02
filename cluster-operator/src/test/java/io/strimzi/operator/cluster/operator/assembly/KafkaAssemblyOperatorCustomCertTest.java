@@ -30,7 +30,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.RestartReason;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -73,7 +72,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     private Kafka kafka;
     private KafkaAssemblyOperator operator;
     private KubernetesClient client;
-    private List<Function<Pod, List<RestartReason>>> functionArgumentCaptor = new ArrayList<>();
+    private List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
 
     /**
      * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
@@ -88,7 +87,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             return new ReconciliationState(reconciliation, kafkaAssembly) {
                 @Override
-                Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart) {
+                Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
                     functionArgumentCaptor.add(podNeedsRestart);
                     return Future.succeededFuture();
                 }
@@ -254,7 +253,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, List<RestartReason>> isPodToRestart = functionArgumentCaptor.get(0);
+                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
                 assertThat("There are no changes in broker config, the restart should not be needed",
@@ -264,7 +263,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
                 assertThat("Tls listener thumbprint annotation changed, pod should need restart",
                         isPodToRestart.apply(pod).get(0),
-                        equalTo(new RestartReason("custom certificate on the TLS listener changes")));
+                        equalTo("custom certificate on the TLS listener changes"));
 
                 async.flag();
             })));
@@ -282,7 +281,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, List<RestartReason>> isPodToRestart = functionArgumentCaptor.get(0);
+                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
 
@@ -293,7 +292,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
                 assertThat(isPodToRestart.apply(pod).get(0),
-                        equalTo(new RestartReason("custom certificate on the external listener changes")));
+                        equalTo("custom certificate on the external listener changes"));
 
                 async.flag();
             })));
@@ -327,9 +326,9 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER)));
 
-                List<Function<Pod, List<RestartReason>>> capturedFunctions = functionArgumentCaptor;
+                List<Function<Pod, List<String>>> capturedFunctions = functionArgumentCaptor;
                 assertThat(capturedFunctions, hasSize(1));
-                Function<Pod, List<RestartReason>> isPodToRestart = capturedFunctions.get(0);
+                Function<Pod, List<String>> isPodToRestart = capturedFunctions.get(0);
                 assertThat(isPodToRestart.apply(getPod(reconcileSts)), empty());
 
                 async.flag();

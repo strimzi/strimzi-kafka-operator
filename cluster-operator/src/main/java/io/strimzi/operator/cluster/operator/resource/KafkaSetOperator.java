@@ -66,12 +66,12 @@ public class KafkaSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
         return maybeRollingUpdate(sts, podNeedsRestart, null, null);
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<RestartReason>> podNeedsRestart,
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart,
                                            Secret clusterCaCertSecret, Secret coKeySecret) {
         throw new UnsupportedOperationException();
     }
