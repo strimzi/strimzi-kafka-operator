@@ -16,7 +16,7 @@ Example dashboards are provided in the `examples/metrics` directory as JSON file
 * `strimzi-operators.json`
 
 The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
-You may need to modify the example dashboards or add other metrics, depending on your infrastructure.
+You can modify the example dashboards or add other metrics, depending on your infrastructure.
 
 After setting up Prometheus and Grafana, you can visualize the Strimzi data on the Grafana dashboards.
 
@@ -53,8 +53,6 @@ Note the port number for port forwarding.
 ----
 kubectl port-forward svc/grafana 3000:80
 ----
-+
-NOTE: If using the OpenShift web console, you can switch to menu:Networking[Routes], and click the URL for the `grafana` Route.
 
 . Point a web browser to `http://localhost:3000`.
 +
@@ -83,7 +81,7 @@ When the Prometheus server has been collecting metrics for a Strimzi cluster for
 .Strimzi charts
 
 .Dashboard selection options
-[caption="Kafka dashboard visualization"]
+
 image::grafana-dashboard-selection.png[Strimzi dashboard selection]
 
 Strimzi Kafka:: Shows metrics for:
@@ -114,7 +112,7 @@ Strimzi Kafka:: Shows metrics for:
 * Log size
 +
 .Strimzi Kafka dashboard
-[caption="Kafka dashboard visualization"]
+
 image::grafana_kafka_dashboard.png[Kafka dashboard]
 
 Strimzi ZooKeeper:: Shows metrics for:

@@ -31,7 +31,7 @@ If you are accessing the user interface for the first time, see xref:assembly-me
 When metrics data has been collected for some time, the Kafka Exporter charts are populated.
 
 Strimzi Kafka Exporter:: Shows metrics for:
-
++
 * Topic count
 * Partition count
 * Replicas count
