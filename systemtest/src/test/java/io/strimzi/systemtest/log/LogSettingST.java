@@ -6,10 +6,11 @@ package io.strimzi.systemtest.log;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -18,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -64,8 +66,6 @@ class LogSettingST extends BaseST {
     static final String NAMESPACE = "log-setting-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
 
-    private static Kafka kafkaToDelete = new Kafka();
-
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
     private static final String WARN = "WARN";
@@ -79,12 +79,14 @@ class LogSettingST extends BaseST {
     private static final String MM_NAME = "my-mirror-maker";
     private static final String MM2_NAME = "my-mirror-maker-2";
     private static final String CONNECT_NAME = "my-connect";
+    private static final String CONNECTS2I_NAME = "my-connect-s2i";
 
     private static final String KAFKA_MAP = KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME);
     private static final String ZOOKEEPER_MAP = KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME);
     private static final String TO_MAP = String.format("%s-%s", CLUSTER_NAME, "entity-topic-operator-config");
     private static final String UO_MAP = String.format("%s-%s", CLUSTER_NAME, "entity-user-operator-config");
     private static final String CONNECT_MAP = KafkaConnectResources.metricsAndLogConfigMapName(CONNECT_NAME);
+    private static final String CONNECTS2I_MAP = KafkaConnectS2IResources.metricsAndLogConfigMapName(CONNECTS2I_NAME);
     private static final String MM_MAP = KafkaMirrorMakerResources.metricsAndLogConfigMapName(MM_NAME);
     private static final String MM2_MAP = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MM2_NAME);
     private static final String BRIDGE_MAP = KafkaBridgeResources.metricsAndLogConfigMapName(BRIDGE_NAME);
@@ -99,6 +101,7 @@ class LogSettingST extends BaseST {
             put("log4j.logger.org.apache.kafka", DEBUG);
             put("log4j.logger.kafka.request.logger", FATAL);
             put("log4j.logger.kafka.network.Processor", OFF);
+
             put("log4j.logger.kafka.server.KafkaApis", INFO);
             put("log4j.logger.kafka.network.RequestChannel$", ERROR);
             put("log4j.logger.kafka.controller", WARN);
@@ -224,6 +227,12 @@ class LogSettingST extends BaseST {
 
     @Test
     @Order(9)
+    void testLoggersConnectS2I() {
+        assertThat("KafkaConnectS2I's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, CONNECTS2I_MAP), is(true));
+    }
+
+    @Test
+    @Order(9)
     void testGcLoggingNonSetDisabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
@@ -316,6 +325,28 @@ class LogSettingST extends BaseST {
         assertThat(strimziCRs, containsString(CONNECT_NAME));
         assertThat(strimziCRs, containsString(userName));
         assertThat(strimziCRs, containsString(topicName));
+    }
+
+    @Test
+    @Order(13)
+    void checkPodsAndContainersForTiniProcess() {
+        /*
+        Reason why I used [/] in my grep command is, that when we only do 'grep /usr/bin/tini' the grep process will be printed
+        with the tini process, if we do the [/], it will take only the process that will continue with usr/bin/tini and exclude
+        the grep process. Second choice is adding the `grep -v 'grep /usr/bin/tini'`.
+         */
+        String command = "ps -ef | grep '[/]usr/bin/tini' | awk '{ print $2}'";
+
+        for (Pod pod : kubeClient().listPods()) {
+            String podName = pod.getMetadata().getName();
+            if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients") && !podName.contains(CONNECTS2I_NAME)) {
+                for (Container container : pod.getSpec().getContainers()) {
+                    LOGGER.info("Checking tini process for pod {} with container {}", pod, container);
+                    boolean isPresent = cmdKubeClient().execInPodContainer(false, podName, container.getName(), "/bin/bash", "-c", command).out().trim().equals("1");
+                    assertThat(isPresent, is(true));
+                }
+            }
+        }
     }
 
     private String configMap(String configMapName) {
@@ -423,10 +454,14 @@ class LogSettingST extends BaseST {
                         .endJvmOptions()
                     .endTopicOperator()
                 .endEntityOperator()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
             .endSpec()
             .done();
 
-        kafkaToDelete = KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -488,6 +523,17 @@ class LogSettingST extends BaseST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
                 .endSpec()
+            .done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewInlineLogging()
+                    .withLoggers(CONNECT_LOGGERS)
+                .endInlineLogging()
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
+            .endSpec()
             .done();
     }
 
