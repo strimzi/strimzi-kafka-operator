@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-enum CruiseControlEndpoints {
+public enum CruiseControlEndpoints {
 
     STATE("/kafkacruisecontrol/state"),
     REBALANCE("/kafkacruisecontrol/rebalance"),
@@ -15,6 +15,10 @@ enum CruiseControlEndpoints {
 
     CruiseControlEndpoints(String path) {
         this.path = path;
+    }
+
+    public String toString() {
+        return path;
     }
 
 
