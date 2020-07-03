@@ -45,6 +45,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
@@ -298,7 +299,7 @@ public class ZookeeperCluster extends AbstractModel {
             }
 
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                zk.templatePersistentVolumeClaimLabels = mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
+                zk.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
                         zk.templateStatefulSetLabels);
                 zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
             }
@@ -356,7 +357,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
     }
 
     public static String policyName(String cluster) {

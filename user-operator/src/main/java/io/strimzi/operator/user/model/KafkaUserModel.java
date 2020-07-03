@@ -21,6 +21,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -66,6 +67,8 @@ public class KafkaUserModel {
     private String ownerUid;
 
     private KafkaUserQuotas quotas;
+    private Map<String, String> templateSecretLabels;
+    private Map<String, String> templateSecretAnnotations;
 
     /**
      * Constructor
@@ -122,6 +125,13 @@ public class KafkaUserModel {
             result.setSimpleAclRules(simple.getAcls());
         }
         result.setQuotas(kafkaUser.getSpec().getQuotas());
+
+        if (kafkaUser.getSpec().getTemplate() != null
+                && kafkaUser.getSpec().getTemplate().getSecret() != null
+                && kafkaUser.getSpec().getTemplate().getSecret().getMetadata() != null)  {
+            result.templateSecretLabels = kafkaUser.getSpec().getTemplate().getSecret().getMetadata().getLabels();
+            result.templateSecretAnnotations = kafkaUser.getSpec().getTemplate().getSecret().getMetadata().getAnnotations();
+        }
 
         return result;
     }
@@ -269,7 +279,8 @@ public class KafkaUserModel {
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
-                    .withLabels(labels.toMap())
+                    .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), templateSecretLabels))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)

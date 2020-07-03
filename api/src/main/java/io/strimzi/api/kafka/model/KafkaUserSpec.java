@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.template.KafkaUserTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -30,6 +31,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
     private KafkaUserQuotas quotas;
+    private KafkaUserTemplate template;
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
@@ -62,6 +64,16 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     public void setQuotas(KafkaUserQuotas kafkaUserQuotas) {
         this.quotas = kafkaUserQuotas;
+    }
+
+    @Description("Template to specify how Kafka User `Secrets` are generated.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaUserTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(KafkaUserTemplate template) {
+        this.template = template;
     }
 
     @Override
