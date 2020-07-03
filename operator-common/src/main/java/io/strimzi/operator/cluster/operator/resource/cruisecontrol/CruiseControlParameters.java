@@ -36,4 +36,8 @@ public enum CruiseControlParameters {
         return key + "=" + URLEncoder.encode(String.join(",", values), StandardCharsets.UTF_8.toString());
     }
 
+    public String toString() {
+        return key;
+    }
+
 }

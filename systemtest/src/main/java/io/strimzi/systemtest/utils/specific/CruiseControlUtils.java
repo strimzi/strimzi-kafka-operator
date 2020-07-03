@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -33,20 +34,12 @@ public class CruiseControlUtils {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
-    private static final String CRUISE_CONTROL_BASE_ENDPOINT = "/kafkacruisecontrol/";
 
     private CruiseControlUtils() { }
 
     public enum SupportedHttpMethods {
         GET,
         POST
-    }
-
-    public enum CruiseControlEndpoints {
-        STATE,
-        REBALANCE,
-        STOP_PROPOSAL_EXECUTION,
-        USER_TASKS
     }
 
     @SuppressWarnings("Regexp")
@@ -60,7 +53,7 @@ public class CruiseControlUtils {
             "cruise-control",
             "/bin/bash",
             "-c",
-            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + CRUISE_CONTROL_BASE_ENDPOINT + endpoint.name().toLowerCase()).out();
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
