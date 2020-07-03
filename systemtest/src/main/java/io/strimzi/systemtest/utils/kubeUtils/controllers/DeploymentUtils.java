@@ -128,7 +128,7 @@ public class DeploymentUtils {
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         LOGGER.info("Waiting for Deployment {} rolling update", name);
         TestUtils.waitFor("Deployment " + name + " rolling update",
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.rollingUpdateTimeout(expectedPods), () -> depHasRolled(name, snapshot));
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(expectedPods), () -> depHasRolled(name, snapshot));
         waitForDeploymentReady(name);
         PodUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
         LOGGER.info("Deployment {} rolling update finished", name);
