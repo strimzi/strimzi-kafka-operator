@@ -81,19 +81,12 @@ spec:
           type: tls <4>
         configuration:
           preferredAddressType: InternalDNS <5>
-        networkPolicyPeers: <6>
-          - podSelector:
-              matchLabels:
-                app: kafka-consumer
-          - namespaceSelector:
-              matchLabels:
-                project: my-project
-        overrides: <7>
+        overrides: <6>
           # ...
-      authorization: <8>
+      authorization: <7>
         type: simple
         superUsers:
-          - super-user-name <9>
+          - super-user-name <8>
   # ...
 ----
 <1> Configuration options for enabling external listeners are described in the link:{BookURLUsing}#type-KafkaListeners-reference[Kafka listeners schema reference^]
@@ -101,8 +94,7 @@ spec:
 <3> Enables TLS encryption on the listener. Not required for `route` listeners.
 <4> Authentication specified as `tls`.
 <5> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#con-kafka-broker-external-listeners-nodeports-{context}[specify a preference for the first address type used by Strimzi as the node address].
-<6> (Optional) By default, Strimzi grants access to listeners to all applications and namespaces. The `networkPolicyPeers` property restricts access to specific pods and namespaces.
-<7> (Optional, but not applicable to `ingress` listeners) Overrides customize the bootstrap and broker addresses advertised to clients.
+<6> (Optional, but not applicable to `ingress` listeners) Overrides customize the bootstrap and broker addresses advertised to clients.
 Strimzi automatically determines the addresses to advertise to clients.
 The addresses are automatically assigned by Kubernetes.
 Use overrides if the infrastructure on which you are running Strimzi does not provide the right address.
@@ -110,8 +102,8 @@ Validation is not performed on overrides.
 The override configuration differs according to the external listener type,
 so you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports (shown) for `nodeport`.
 Refer to the link:{BookURLUsing}#type-KafkaListeners-reference[Kafka listeners schema reference^] for more information on external listener `overrides`.
-<8> Authorization link:{BookURLUsing}#ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
-<9> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
+<7> Authorization link:{BookURLUsing}#ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
+<8> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 
 . Create or update the `Kafka` resource.
 +
