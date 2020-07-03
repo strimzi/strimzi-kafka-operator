@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.timemeasuring.Operation;
@@ -232,7 +233,7 @@ class LogSettingST extends BaseST {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void testGcLoggingNonSetDisabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
@@ -242,7 +243,7 @@ class LogSettingST extends BaseST {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void testGcLoggingSetEnabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(true));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(true));
@@ -251,20 +252,23 @@ class LogSettingST extends BaseST {
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(true));
 
         assertThat("Connect GC logging is enabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(true));
+        assertThat("ConnectS2I GC logging is enabled", checkGcLoggingDeployments(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(true));
         assertThat("Mirror-maker GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(true));
         assertThat("Mirror-maker-2 GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(true));
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CONNECT_NAME);
+        String connectS2IName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(MM_NAME);
         String mm2Name = KafkaMirrorMaker2Resources.deploymentName(MM2_NAME);
         String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         Map<String, String> connectPods = DeploymentUtils.depSnapshot(connectName);
+        Map<String, String> connectS2IPods = DeploymentUtils.depSnapshot(connectS2IName);
         Map<String, String> mmPods = DeploymentUtils.depSnapshot(mmName);
         Map<String, String> mm2Pods = DeploymentUtils.depSnapshot(mm2Name);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
@@ -273,7 +277,6 @@ class LogSettingST extends BaseST {
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
-
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
@@ -289,6 +292,9 @@ class LogSettingST extends BaseST {
         KafkaConnectResource.replaceKafkaConnectResource(CONNECT_NAME, kc -> kc.getSpec().setJvmOptions(jvmOptions));
         DeploymentUtils.waitTillDepHasRolled(connectName, 1, connectPods);
 
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_NAME, cs2i -> cs2i.getSpec().setJvmOptions(jvmOptions));
+        DeploymentConfigUtils.waitTillDepConfigHasRolled(connectS2IName, connectPods);
+
         KafkaMirrorMakerResource.replaceMirrorMakerResource(MM_NAME, mm -> mm.getSpec().setJvmOptions(jvmOptions));
         DeploymentUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
@@ -302,12 +308,13 @@ class LogSettingST extends BaseST {
         assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(false));
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(false));
+        assertThat("ConnectS2I GC logging is disabled", checkGcLoggingDeployments(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(false));
         assertThat("Mirror-maker2 GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(false));
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     void testKubectlGetStrimzi() {
         String userName = "test-user";
         String topicName = "test-topic";
@@ -328,7 +335,7 @@ class LogSettingST extends BaseST {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     void checkPodsAndContainersForTiniProcess() {
         /*
         Reason why I used [/] in my grep command is, that when we only do 'grep /usr/bin/tini' the grep process will be printed
