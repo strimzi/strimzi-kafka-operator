@@ -399,15 +399,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                      description: Metadata which should be applied to the resource.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
                   description: Template for Kafka Bridge `Deployment`.
                 pod:
                   type: object
@@ -417,14 +417,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                       description: Metadata applied to the resource.
                     imagePullSecrets:
                       type: array
@@ -739,15 +739,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                      description: Metadata which should be applied to the resource.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
                   description: Template for Kafka Bridge API `Service`.
                 bridgeContainer:
                   type: object
@@ -821,14 +821,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                       description: Metadata to apply to the `PodDistruptionBugetTemplate`
                         resource.
                     maxUnavailable:

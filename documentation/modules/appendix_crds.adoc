@@ -1000,7 +1000,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [options="header"]
 |====
 |Property                    |Description
-|metadata             1.2+<.<|Metadata which should be applied to the resource.
+|metadata             1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |podManagementPolicy  1.2+<.<|PodManagementPolicy which will be used for this StatefulSet. Valid values are `Parallel` and `OrderedReady`. Defaults to `Parallel`.
 |string (one of [OrderedReady, Parallel])
@@ -1016,9 +1016,9 @@ include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[levelo
 [options="header"]
 |====
 |Property            |Description
-|labels       1.2+<.<|Labels which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|labels       1.2+<.<|Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
-|annotations  1.2+<.<|Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|annotations  1.2+<.<|Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
 |====
 
@@ -1067,7 +1067,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [options="header"]
 |====
 |Property         |Description
-|metadata  1.2+<.<|Metadata which should be applied to the resource.
+|metadata  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |====
 
@@ -1081,7 +1081,7 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 [options="header"]
 |====
 |Property                         |Description
-|metadata                  1.2+<.<|Metadata which should be applied to the resource.
+|metadata                  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |externalTrafficPolicy     1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
 |string (one of [Local, Cluster])
