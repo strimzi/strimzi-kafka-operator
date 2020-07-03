@@ -31,6 +31,7 @@ import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
+import io.strimzi.operator.common.Util;
 
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
-                    .withAnnotations(mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
@@ -128,7 +129,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withSelector(getSelectorLabels().toMap())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withAnnotations(mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
+                            .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
                             .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                         .endMetadata()
                         .withNewSpec()

@@ -23,7 +23,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Base64;
 
 import static io.strimzi.test.TestUtils.set;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -109,6 +111,7 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), is(emptyMap()));
         assertThat(generatedSecret.getMetadata().getLabels(),
                 is(Labels.fromMap(ResourceUtils.LABELS)
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
@@ -117,6 +120,42 @@ public class KafkaUserModelTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generatedSecret);
+    }
+
+    @Test
+    public void testGenerateSecretWithMetadataOverrides()    {
+        KafkaUser userWithTemplate = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewSecret()
+                            .withNewMetadata()
+                                .withLabels(singletonMap("label1", "value1"))
+                                .withAnnotations(singletonMap("anno1", "value1"))
+                            .endMetadata()
+                        .endSecret()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, userWithTemplate, clientsCaCert, clientsCaKey, null);
+        Secret generatedSecret = model.generateSecret();
+
+        assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+
+        assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generatedSecret.getMetadata().getLabels(),
+                is(Labels.fromMap(ResourceUtils.LABELS)
+                        .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesPartOf(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withAdditionalLabels(singletonMap("label1", "value1"))
+                        .toMap()));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), is(singletonMap("anno1", "value1")));
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
     }

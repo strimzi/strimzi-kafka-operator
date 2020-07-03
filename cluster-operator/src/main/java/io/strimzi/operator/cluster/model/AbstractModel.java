@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -711,7 +712,7 @@ public abstract class AbstractModel {
                     .withNamespace(namespace)
                     // labels with the Strimzi name label of the component (this.name)
                     .withLabels(getLabelsWithStrimziName(this.name, templatePersistentVolumeClaimLabels).toMap())
-                    .withAnnotations(mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
                     .withAccessModes("ReadWriteOnce")
@@ -794,7 +795,7 @@ public abstract class AbstractModel {
                     .withName(headlessServiceName)
                     .withLabels(getLabelsWithStrimziName(headlessServiceName, templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -836,7 +837,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templateStatefulSetLabels).toMap())
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -849,7 +850,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
-                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
+                            .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
@@ -887,7 +888,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
                     .withNamespace(namespace)
-                    .withAnnotations(mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -897,7 +898,7 @@ public abstract class AbstractModel {
                     .withNewTemplate()
                         .withNewMetadata()
                             .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
-                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
+                            .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withAffinity(affinity)
@@ -1221,52 +1222,6 @@ public abstract class AbstractModel {
      */
     public static String clusterCaKeySecretName(String cluster)  {
         return KafkaResources.clusterCaKeySecretName(cluster);
-    }
-
-    /**
-     * Merge two or more Maps together, should be used for merging multiple collections of Kubernetes labels or annotations
-     *
-     * @param base The base set of key value pairs that will be merged, if no overrides are present this will be returned.
-     * @param overrides One or more Maps to merge with base, duplicate keys will be overwritten by last-in priority.
-     *                  These are normally user configured labels/annotations that need to be merged with the base.
-     *
-     * @return A single Map of all the supplied maps merged together.
-     */
-    @SafeVarargs
-    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> base, Map<String, String>... overrides) {
-        Map<String, String> merged = new HashMap<>();
-
-        if (base != null) {
-            merged.putAll(base);
-        }
-
-        if (overrides != null) {
-            for (Map<String, String> toMerge : overrides) {
-
-                if (toMerge == null) {
-                    continue;
-                }
-                List<String> bannedLabelsOrAnnotations = toMerge
-                    .keySet()
-                    .stream()
-                    .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
-                    .collect(Collectors.toList());
-                if (bannedLabelsOrAnnotations.size() > 0) {
-                    throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations.toString());
-                }
-
-                Map<String, String> filteredToMerge = toMerge
-                    .entrySet()
-                    .stream()
-                // Remove Kubernetes Domain specific labels
-                    .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                merged.putAll(filteredToMerge);
-            }
-        }
-
-        return merged;
     }
 
     /**

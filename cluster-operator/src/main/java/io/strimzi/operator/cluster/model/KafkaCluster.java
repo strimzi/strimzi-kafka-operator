@@ -99,6 +99,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.json.JsonArray;
@@ -714,7 +715,7 @@ public class KafkaCluster extends AbstractModel {
             }
 
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                result.templatePersistentVolumeClaimLabels = mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
+                result.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
                         result.templateStatefulSetLabels);
                 result.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
             }
@@ -876,7 +877,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createDiscoverableService("ClusterIP", getServicePorts(),
-                mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
+                Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
                 templateServiceAnnotations));
     }
 
@@ -980,7 +981,7 @@ public class KafkaCluster extends AbstractModel {
 
             Service service = createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                     getLabelsWithStrimziName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels), getSelectorLabels(),
-                    mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations), loadBalancerIP);
+                    Util.mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations), loadBalancerIP);
 
             if (isExposedWithLoadBalancer()) {
                 if (templateExternalBootstrapServiceLoadBalancerSourceRanges != null) {
@@ -1063,7 +1064,7 @@ public class KafkaCluster extends AbstractModel {
 
             Service service = createService(perPodServiceName, getExternalServiceType(), ports,
                     getLabelsWithStrimziName(perPodServiceName, templatePerPodServiceLabels), selector,
-                    mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations), loadBalancerIP);
+                    Util.mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations), loadBalancerIP);
 
             if (isExposedWithLoadBalancer()) {
                 if (templatePerPodServiceLoadBalancerSourceRanges != null) {
@@ -1146,7 +1147,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithStrimziName(serviceName, templateExternalBootstrapRouteLabels).toMap())
-                        .withAnnotations(mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1227,7 +1228,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithStrimziName(perPodServiceName, templatePerPodIngressLabels).toMap())
-                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1284,7 +1285,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithStrimziName(serviceName, templateExternalBootstrapIngressLabels).toMap())
-                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()

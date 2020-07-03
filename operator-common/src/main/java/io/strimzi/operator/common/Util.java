@@ -5,6 +5,8 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -26,11 +28,13 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
@@ -289,5 +293,51 @@ public class Util {
     public static boolean shouldDisableHttp2() {
         return System.getProperty("java.version", "").startsWith("1.8")
                     && System.getenv("HTTP2_DISABLE") == null;
+    }
+
+    /**
+     * Merge two or more Maps together, should be used for merging multiple collections of Kubernetes labels or annotations
+     *
+     * @param base The base set of key value pairs that will be merged, if no overrides are present this will be returned.
+     * @param overrides One or more Maps to merge with base, duplicate keys will be overwritten by last-in priority.
+     *                  These are normally user configured labels/annotations that need to be merged with the base.
+     *
+     * @return A single Map of all the supplied maps merged together.
+     */
+    @SafeVarargs
+    public static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> base, Map<String, String>... overrides) {
+        Map<String, String> merged = new HashMap<>();
+
+        if (base != null) {
+            merged.putAll(base);
+        }
+
+        if (overrides != null) {
+            for (Map<String, String> toMerge : overrides) {
+
+                if (toMerge == null) {
+                    continue;
+                }
+                List<String> bannedLabelsOrAnnotations = toMerge
+                    .keySet()
+                    .stream()
+                    .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
+                    .collect(Collectors.toList());
+                if (bannedLabelsOrAnnotations.size() > 0) {
+                    throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations.toString());
+                }
+
+                Map<String, String> filteredToMerge = toMerge
+                    .entrySet()
+                    .stream()
+                    // Remove Kubernetes Domain specific labels
+                    .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                merged.putAll(filteredToMerge);
+            }
+        }
+
+        return merged;
     }
 }
