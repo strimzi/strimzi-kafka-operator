@@ -35,7 +35,7 @@ public class MockCruiseControl {
 
     private static final String SEP =  "-";
     private static final String REBALANCE =  "rebalance";
-    private static final String STATE =  "rebalance";
+    private static final String STATE =  "state";
     private static final String NO_GOALS =  "no-goals";
     private static final String VERBOSE =  "verbose";
     private static final String USER_TASK =  "user-task";

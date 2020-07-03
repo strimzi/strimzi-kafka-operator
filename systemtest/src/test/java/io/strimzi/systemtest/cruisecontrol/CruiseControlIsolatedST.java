@@ -5,8 +5,9 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.BaseST;
-import io.strimzi.systemtest.enums.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -86,7 +87,9 @@ public class CruiseControlIsolatedST extends BaseST {
 
         // attach the approve annotation -> RS
         LOGGER.info("Executing command in the namespace {}", cmdKubeClient().namespace(NAMESPACE).namespace());
-        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE).execInCurrentNamespace("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=approve").out();
+        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE)
+            .execInCurrentNamespace("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=" + KafkaRebalanceAnnotation.approve.toString())
+            .out();
 
         LOGGER.info("Response from the annotation process {}", response);
 

@@ -11,8 +11,8 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.KafkaRebalanceState;
 
 import java.time.Duration;
 
