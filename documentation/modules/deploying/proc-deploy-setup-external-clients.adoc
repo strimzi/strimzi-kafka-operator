@@ -20,7 +20,7 @@ The following external listener types are supported:
 * `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
 
 The type chosen depends on your requirements, and your environment and infrastructure.
-For example, `nodeport` is the least secure, so you might not wish to use it in a production environment.
+For example, loadbalancers might not be suitable for certain infrastructure, such as bare metal, where node ports provide a better option.
 
 In this procedure:
 
@@ -29,7 +29,7 @@ In this procedure:
 
 You can configure your listener to use TLS or SCRAM-SHA authentication,
 both of which can be used with TLS encryption.
-If you are using an authorization server, you can use token-based link:{BookURLUsing}#assembly-oauth-authentication_str[{oauth} authentication] and link:{BookURLUsing}#assembly-oauth-authorization_str[{oauth} authorization].
+If you are using an authorization server, you can use token-based link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization].
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
 
