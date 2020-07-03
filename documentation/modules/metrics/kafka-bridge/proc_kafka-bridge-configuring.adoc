@@ -5,9 +5,7 @@
 [id='proc-kafka-bridge-configuring-{context}']
 = Configuring Kafka Bridge
 
-This procedure shows how to enable Kafka Bridge metrics in the `KafkaBridge` resource.
-
-The property relevant to the Kafka Bridge configuration is shown in this procedure.
+This procedure shows how to enable Kafka Bridge metrics in the `KafkaBridge` resource using the `enableMetrics` property.
 
 You can configure this property as part of a deployment or redeployment of the Kafka Bridge.
 
@@ -20,7 +18,7 @@ You can configure this property as part of a deployment or redeployment of the K
 
 . Edit the `spec.enableMetrics` property for the `KafkaBridge` resource.
 +
-The property you can configure is shown in this example configuration:
+For example:
 +
 [source,yaml,subs="attributes+"]
 ----

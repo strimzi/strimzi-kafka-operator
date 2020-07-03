@@ -3,9 +3,15 @@
 // metrics/assembly-metrics.adoc
 
 [id='assembly-kafka-bridge-{context}']
-= Add Kafka Bridge
+= Monitor Kafka Bridge
 
 If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Kafka Bridge Prometheus endpoint.
+
+The example Grafana dashboard for the Kafka Bridge provides:
+
+* Information about HTTP connections and related requests to the different endpoints
+* Information about the Kafka consumers and producers used by the bridge
+* JVM metrics from the bridge itself
 
 include::modules/kafka-bridge/proc_kafka-bridge-configuring.adoc[leveloffset=+1]
 include::modules/kafka-bridge/proc_kafka-bridge-enabling-grafana.adoc[leveloffset=+1]
