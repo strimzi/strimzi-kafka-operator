@@ -13,3 +13,4 @@ spec:
   producer:
     config:
       foo: "buz"
+  enableMetrics: false

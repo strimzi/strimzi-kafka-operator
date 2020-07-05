@@ -14,6 +14,7 @@ Example dashboards are provided in the `examples/metrics` directory as JSON file
 * `strimzi-kafka-connect.json`
 * `strimzi-kafka-mirror-maker-2.json`
 * `strimzi-operators.json`
+* `strimzi-kafka-bridge.json`
 
 The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
 You can modify the example dashboards or add other metrics, depending on your infrastructure.

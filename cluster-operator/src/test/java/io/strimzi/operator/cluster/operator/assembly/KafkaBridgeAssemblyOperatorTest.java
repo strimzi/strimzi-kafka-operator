@@ -114,7 +114,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
@@ -204,7 +204,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
@@ -284,7 +284,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCmP = new HashMap<>();
         metricsCmP.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCmP);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
@@ -405,7 +405,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some differences
@@ -581,9 +581,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         metricsCm.put("foo", "bar");
 
         KafkaBridge foo = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, "foo", image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
         KafkaBridge bar = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, "bar", image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
         when(mockBridgeOps.listAsync(eq(clusterCmNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(bar));
@@ -656,7 +656,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
@@ -705,7 +705,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 0,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
