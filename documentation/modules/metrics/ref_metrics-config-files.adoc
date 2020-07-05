@@ -20,6 +20,7 @@ metrics
 │   ├── strimzi-zookeeper.json
 │   ├── strimzi-kafka-mirror-maker-2.json
 │   ├── strimzi-operators.json
+│   ├── strimzi-kafka-bridge.json
 │   └── strimzi-kafka-exporter.json <3>
 ├── kafka-connect-metrics.yaml <4>
 ├── kafka-metrics.yaml <5>

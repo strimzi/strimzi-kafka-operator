@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -64,7 +63,6 @@ public class KafkaBridgeClusterTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 15;
     private final int healthTimeout = 5;
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
     private final String defaultProducerConfiguration = "";
@@ -72,24 +70,14 @@ public class KafkaBridgeClusterTest {
 
     private final KafkaBridge resource = new KafkaBridgeBuilder(ResourceUtils.createEmptyKafkaBridgeCluster(namespace, cluster))
             .withNewSpec()
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-            .withImage(image)
-            .withReplicas(replicas)
-            .withBootstrapServers(bootstrapServers)
-            .withNewHttp(8080)
+                .withEnableMetrics(true)
+                .withImage(image)
+                .withReplicas(replicas)
+                .withBootstrapServers(bootstrapServers)
+                .withNewHttp(8080)
             .endSpec()
             .build();
     private final KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-
-    @Test
-    public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kbc.generateMetricsAndLogConfigMap(null);
-        checkMetricsConfigMap(metricsCm);
-    }
-
-    private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
-    }
 
     private Map<String, String> expectedLabels(String name)    {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
@@ -164,7 +152,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(svc.getSpec().getPorts().size(), is(2));
+        assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
@@ -193,7 +181,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort(), is(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol(), is("TCP"));

@@ -26,3 +26,5 @@ Additionally, you can configure your deployment to track messages end-to-end by 
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 //How to set up Kafka Exporter
 include::assembly_metrics-kafka-exporter.adoc[leveloffset=+1]
+//How to set up Kafka Bridge
+include::assembly_metrics-kafka-bridge.adoc[leveloffset=+1]
