@@ -2573,8 +2573,8 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging           1.2+<.<|Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
-|map
+|enableMetrics     1.2+<.<|Enable the metrics for the Kafka Bridge. Default is false.
+|boolean
 |livenessProbe     1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe    1.2+<.<|Pod readiness checking.

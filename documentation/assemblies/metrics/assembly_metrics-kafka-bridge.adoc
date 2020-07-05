@@ -1,0 +1,68 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='assembly-kafka-bridge-{context}']
+= Monitor Kafka Bridge
+
+If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Kafka Bridge Prometheus endpoint.
+
+The example Grafana dashboard for the Kafka Bridge provides:
+
+* Information about HTTP connections and related requests to the different endpoints
+* Information about the Kafka consumers and producers used by the bridge
+* JVM metrics from the bridge itself
+
+== Configuring Kafka Bridge
+
+You can enable the Kafka Bridge metrics in the `KafkaBridge` resource using the `enableMetrics` property.
+
+You can configure this property as part of a deployment or redeployment of the Kafka Bridge.
+
+For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka:9092
+  http:
+    # ...
+  enableMetrics: true
+  # ...
+----
+
+== Enabling the Kafka Bridge Grafana dashboard
+
+If you deployed Kafka Bridge with your Kafka cluster, you can enable Grafana to present the metrics data it exposes.
+
+A Kafka Bridge dashboard is provided in the `examples/metrics` directory as a JSON file:
+
+* `strimzi-kafka-bridge.json`
+
+When metrics data has been collected for some time, the Kafka Bridge charts are populated.
+
+Kafka Bridge:: Shows metrics for:
++
+* HTTP connections to the Kafka Bridge count
+* HTTP requests being processed count
+* Requests processed per second grouped by HTTP method
+* The total request rate grouped by response codes (2XX, 4XX, 5XX)
+* Bytes received and sent per second
+* Requests for each Kafka Bridge endpoint
+* Number of Kafka consumers, producers, and related opened connections used by the Kafka Bridge itself
+* Kafka producer:
+** The average number of records sent per second (grouped by topic)
+** The number of outgoing bytes sent to all brokers per second (grouped by topic)
+** The average number of records per second that resulted in errors (grouped by topic)
+* Kafka consumer:
+** The average number of records consumed per second (grouped by clientId-topic)
+** The average number of bytes consumed per second (grouped by clientId-topic)
+** Partitions assigned (grouped by clientId)
+* JVM memory used
+* JVM garbage collection time
+* JVM garbage collection count

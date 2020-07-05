@@ -435,7 +435,7 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalConfigMap) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalConfigMap));
-        if (isMetricsEnabled()) {
+        if (isMetricsEnabled() && getMetricsConfig() != null) {
             HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
