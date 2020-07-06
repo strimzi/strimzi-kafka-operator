@@ -18,7 +18,7 @@ The `tlsSidecar` property contains the configuration of the TLS sidecar containe
 For more information on configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
 
 The `template` property contains the configuration of the Entity Operator pod, such as labels, annotations, affinity, and tolerations.
-For more information on configuring templates, see xref:con-customizing-template-properties-str[].
+For more information on configuring templates, see xref:assembly-customizing-kubernetes-resources-str[].
 
 The `topicOperator` property contains the configuration of the Topic Operator.
 When this option is missing, the Entity Operator is deployed without the Topic Operator.

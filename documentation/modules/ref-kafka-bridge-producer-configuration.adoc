@@ -25,7 +25,7 @@ IMPORTANT: The Cluster Operator does not validate keys or values in the `config`
 When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
 In this circumstance, fix the configuration in the `KafkaBridge.spec.producer.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Bridge nodes.
 
-Use the three allowed `ssl` configuration options to run external listeners with a specific _cipher suite_ for a TLS version.
+Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
 
 .Example Kafka Bridge producer configuration
