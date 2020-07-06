@@ -44,4 +44,4 @@ kubectl apply -f _your-file_
 .Additional resources
 * For more information about the supported authorization methods, see xref:ref-kafka-authorization-{context}[authorization reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
-* For more information about configuring user authentication, see xref:ref-kafka-user-str[Kafka User resource].
+* For more information about configuring user authentication, see xref:ref-operator-user-str[Kafka User resource].
