@@ -207,7 +207,7 @@ You can use comma-separated lists.
 <30> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <31> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <32> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<33> xref:assembly-customizing-deployments-str[Template customization]. Here a pod is scheduled based with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<33> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <34> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
 <35> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
 <36> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.

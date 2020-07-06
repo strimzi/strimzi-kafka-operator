@@ -59,7 +59,7 @@ This is used when a `KafkaConnectS2I.spec.version` property is specified but not
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:con-configuring-container-images-deployment-configuration-kafka-mirror-maker[].
+This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:con-common-configuration-images-reference[].
 
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
 The image name to use as the default when deploying the topic operator,
@@ -206,7 +206,7 @@ The second includes the permissions needed for cluster-scoped resources.
 include::install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
 
-The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-deploying-co[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
 
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka broker pods
@@ -214,7 +214,7 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 include::install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
 
-The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-deploying-co[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
 
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
