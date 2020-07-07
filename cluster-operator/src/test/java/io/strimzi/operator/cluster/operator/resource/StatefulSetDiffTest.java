@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -296,46 +294,5 @@ public class StatefulSetDiffTest {
                 .build();
         assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(true));
         assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
-    }
-
-    @Test
-    public void testTemplateTolerationBlank() {
-        Toleration t1 = new TolerationBuilder()
-                .withEffect("NoSchedule")
-                .withValue(null)
-                .build();
-
-        Toleration t2 = new TolerationBuilder()
-                .withEffect("NoSchedule")
-                .withValue("")
-                .build();
-
-        StatefulSet ss1 = new StatefulSetBuilder()
-                .withNewMetadata()
-                .withNamespace("test")
-                .withName("foo")
-                .endMetadata()
-                .withNewSpec()
-                    .withNewTemplate()
-                        .withNewSpec()
-                            .withTolerations(t1)
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
-        StatefulSet ss2 = new StatefulSetBuilder()
-                .withNewMetadata()
-                .withNamespace("test")
-                .withName("foo")
-                .endMetadata()
-                .withNewSpec()
-                    .withNewTemplate()
-                        .withNewSpec()
-                            .withTolerations(t2)
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
-        assertThat(new StatefulSetDiff(ss1, ss2).changesSpecTemplate(), is(false));
     }
 }

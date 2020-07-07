@@ -5,7 +5,6 @@
 package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
 public abstract class AbstractResourceDiff {
@@ -23,14 +22,6 @@ public abstract class AbstractResourceDiff {
             }
         }
         return s;
-    }
-
-    /**
-     * @param node tested node
-     * @return true if node is empty or has empty value
-     */
-    protected boolean isNodeMissingOrEmpty(JsonNode node) {
-        return node.isMissingNode() || node.getNodeType() == JsonNodeType.STRING && node.textValue().isEmpty();
     }
 
     /**
