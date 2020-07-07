@@ -96,35 +96,35 @@ data:
     deny {
       is_topic_resource
       is_read_operation
-      not consumer_is_whitelisted
+      not consumer_is_allowlisted
     }
 
     deny {
       is_topic_resource
       is_write_operation
-      not producer_is_whitelisted
+      not producer_is_allowlisted
     }
 
     ###############################################################################
-    # Example whitelists. For conciseness in the tutorial, the whitelists are
-    # hardcoded inside the policy. In real-world deployments, the whitelists could
+    # Example allowlists. For conciseness in the tutorial, the allowlists are
+    # hardcoded inside the policy. In real-world deployments, the allowlists could
     # be loaded into OPA as raw JSON data.
     ###############################################################################
 
-    producer_whitelist = ["good-user"]
+    producer_allowlist = ["good-user"]
 
-    consumer_whitelist = ["good-user"]
+    consumer_allowlist = ["good-user"]
 
     ###############################################################################
-    # Helper rules for checking whitelists.
+    # Helper rules for checking allowlists.
     ###############################################################################
 
-    consumer_is_whitelisted {
-      consumer_whitelist[_] == principal.name
+    consumer_is_allowlisted {
+      consumer_allowlist[_] == principal.name
     }
 
-    producer_is_whitelisted {
-      producer_whitelist[_] == principal.name
+    producer_is_allowlisted {
+      producer_allowlist[_] == principal.name
     }
 
     ###############################################################################
