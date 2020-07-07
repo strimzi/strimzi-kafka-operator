@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.OlmResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
@@ -32,8 +32,8 @@ import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
-public class OlmBaseST extends BaseST {
-    private static final Logger LOGGER = LogManager.getLogger(OlmBaseST.class);
+public class OlmAbstractST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(OlmAbstractST.class);
 
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND);

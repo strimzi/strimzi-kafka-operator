@@ -2,9 +2,9 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.topic;
+package io.strimzi.systemtest.operators.topic;
 
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -20,7 +20,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 @Tag(SCALABILITY)
-public class TopicScalabilityST extends BaseST {
+public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
     private static final int NUMBER_OF_TOPICS = 1000;

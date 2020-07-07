@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.security;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -35,7 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-public class OpaIntegrationST extends BaseST {
+public class OpaIntegrationST extends AbstractST {
     public static final String NAMESPACE = "opa-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
     private static final String OPA_SUPERUSER = "arnost";

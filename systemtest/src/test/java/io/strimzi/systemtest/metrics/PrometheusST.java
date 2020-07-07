@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(PROMETHEUS)
 @Tag(METRICS)
-public class PrometheusST extends BaseST {
+public class PrometheusST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
 

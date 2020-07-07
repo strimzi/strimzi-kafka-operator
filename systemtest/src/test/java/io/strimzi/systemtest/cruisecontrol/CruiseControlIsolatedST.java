@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
-import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
-public class CruiseControlIsolatedST extends BaseST {
+public class CruiseControlIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlIsolatedST.class);
     private static final String NAMESPACE = "cruise-control-isolated-test";

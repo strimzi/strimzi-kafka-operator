@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -26,6 +26,8 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -81,7 +83,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 
 @Tag(REGRESSION)
-class CustomResourceStatusST extends BaseST {
+class CustomResourceStatusST extends AbstractST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";

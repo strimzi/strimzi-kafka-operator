@@ -49,7 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
-class HttpBridgeTlsST extends HttpBridgeBaseST {
+class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
 
     private String bridgeHost = "";

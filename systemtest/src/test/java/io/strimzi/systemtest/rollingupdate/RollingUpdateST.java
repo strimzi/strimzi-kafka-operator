@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-class RollingUpdateST extends BaseST {
+class RollingUpdateST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 

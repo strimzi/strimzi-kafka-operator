@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.connect;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -22,6 +22,8 @@ import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -83,7 +85,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(CONNECT_S2I)
 @Tag(CONNECT_COMPONENTS)
-class ConnectS2IST extends BaseST {
+class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);

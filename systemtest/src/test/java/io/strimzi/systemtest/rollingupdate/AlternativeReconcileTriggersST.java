@@ -7,7 +7,7 @@ package io.strimzi.systemtest.rollingupdate;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-class AlternativeReconcileTriggersST extends BaseST {
+class AlternativeReconcileTriggersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 
     static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";

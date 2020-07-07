@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -32,7 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-class LoggingChangeST extends BaseST {
+class LoggingChangeST extends AbstractST {
     static final String NAMESPACE = "logging-change-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LoggingChangeST.class);
 

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.oauth;
+package io.strimzi.systemtest.security.oauth;
 
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class OauthAuthorizationST extends OauthBaseST {
+public class OauthAuthorizationST extends OauthAbstractST {
 
     private OauthExternalKafkaClient teamAOauthKafkaClient;
     private OauthExternalKafkaClient teamBOauthKafkaClient;
