@@ -96,13 +96,13 @@ data:
     deny {
       is_topic_resource
       is_read_operation
-      not consumer_is_allowlisted
+      not consumer_is_on_allowlist
     }
 
     deny {
       is_topic_resource
       is_write_operation
-      not producer_is_allowlisted
+      not producer_is_on_allowlist
     }
 
     ###############################################################################
@@ -119,11 +119,11 @@ data:
     # Helper rules for checking allowlists.
     ###############################################################################
 
-    consumer_is_allowlisted {
+    consumer_is_on_allowlist {
       consumer_allowlist[_] == principal.name
     }
 
-    producer_is_allowlisted {
+    producer_is_on_allowlist {
       producer_allowlist[_] == principal.name
     }
 
