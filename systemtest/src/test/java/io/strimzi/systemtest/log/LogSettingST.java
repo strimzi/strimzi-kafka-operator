@@ -252,7 +252,7 @@ class LogSettingST extends BaseST {
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(true));
 
         assertThat("Connect GC logging is enabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(true));
-        assertThat("ConnectS2I GC logging is enabled", checkGcLoggingDeployments(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(true));
+        assertThat("ConnectS2I GC logging is enabled", checkGcLoggingDeploymentConfig(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(true));
         assertThat("Mirror-maker GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(true));
         assertThat("Mirror-maker-2 GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(true));
     }
@@ -268,7 +268,6 @@ class LogSettingST extends BaseST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         Map<String, String> connectPods = DeploymentUtils.depSnapshot(connectName);
-        Map<String, String> connectS2IPods = DeploymentUtils.depSnapshot(connectS2IName);
         Map<String, String> mmPods = DeploymentUtils.depSnapshot(mmName);
         Map<String, String> mm2Pods = DeploymentUtils.depSnapshot(mm2Name);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
@@ -308,7 +307,7 @@ class LogSettingST extends BaseST {
         assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(false));
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CONNECT_NAME)), is(false));
-        assertThat("ConnectS2I GC logging is disabled", checkGcLoggingDeployments(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(false));
+        assertThat("ConnectS2I GC logging is disabled", checkGcLoggingDeploymentConfig(KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(MM_NAME)), is(false));
         assertThat("Mirror-maker2 GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)), is(false));
     }
@@ -395,6 +394,13 @@ class LogSettingST extends BaseST {
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         Container container = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
+        LOGGER.info("Checking container with name: {}", container.getName());
+        return checkEnvVarValue(container);
+    }
+
+    private Boolean checkGcLoggingDeploymentConfig(String depConfName) {
+        LOGGER.info("Checking deployment config: {}", depConfName);
+        Container container = kubeClient().getDeploymentConfig(depConfName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
