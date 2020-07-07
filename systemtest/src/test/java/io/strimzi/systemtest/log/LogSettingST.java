@@ -335,12 +335,8 @@ class LogSettingST extends BaseST {
 
     @Test
     @Order(14)
-    void checkPodsAndContainersForTiniProcess() {
-        /*
-        Reason why I used [/] in my grep command is, that when we only do 'grep /usr/bin/tini' the grep process will be printed
-        with the tini process, if we do the [/], it will take only the process that will continue with usr/bin/tini and exclude
-        the grep process. Second choice is adding the `grep -v 'grep /usr/bin/tini'`.
-         */
+    void testCheckContainersHaveProcessOneAsTini() {
+        //Used [/] in the grep command so that grep process does not return itself
         String command = "ps -ef | grep '[/]usr/bin/tini' | awk '{ print $2}'";
 
         for (Pod pod : kubeClient().listPods()) {
