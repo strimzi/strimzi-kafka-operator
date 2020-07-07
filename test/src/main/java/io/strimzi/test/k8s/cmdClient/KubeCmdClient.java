@@ -100,6 +100,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     ExecResult execInPodContainer(String pod, String container, String... command);
 
+    ExecResult execInPodContainer(boolean logToOutput, String pod, String container, String... command);
+
     /**
      * Execute the given {@code command}.
      * @param command The command
