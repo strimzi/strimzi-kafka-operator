@@ -6,7 +6,6 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.enums.KafkaRebalanceState;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
