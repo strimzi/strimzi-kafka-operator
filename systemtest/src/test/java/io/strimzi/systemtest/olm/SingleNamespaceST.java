@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class SingleNamespaceST extends OlmBaseST {
+public class SingleNamespaceST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
 

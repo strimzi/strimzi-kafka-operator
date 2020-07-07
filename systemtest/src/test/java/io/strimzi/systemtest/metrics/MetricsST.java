@@ -6,7 +6,7 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
@@ -51,7 +51,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
 @Tag(METRICS)
-public class MetricsST extends BaseST {
+public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 

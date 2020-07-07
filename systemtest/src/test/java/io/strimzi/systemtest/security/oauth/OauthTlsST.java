@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.oauth;
+package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -64,7 +64,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-public class OauthTlsST extends OauthBaseST {
+public class OauthTlsST extends OauthAbstractST {
 
     private OauthExternalKafkaClient oauthExternalKafkaClientTls;
 

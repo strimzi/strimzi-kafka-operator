@@ -7,7 +7,7 @@ package io.strimzi.systemtest.rollingupdate;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-class KafkaRollerST extends BaseST {
+class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
     static final String NAMESPACE = "kafka-roller-cluster-test";
 

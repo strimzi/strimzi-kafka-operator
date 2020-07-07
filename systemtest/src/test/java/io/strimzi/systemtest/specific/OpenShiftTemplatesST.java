@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
@@ -42,7 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @OpenShiftOnly
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-public class OpenShiftTemplatesST extends BaseST {
+public class OpenShiftTemplatesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 

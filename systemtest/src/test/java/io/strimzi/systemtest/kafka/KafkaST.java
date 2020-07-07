@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -23,24 +23,19 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
-import io.strimzi.api.kafka.model.status.ListenerAddress;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -60,8 +55,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.timemeasuring.Operation;
-import io.vertx.core.json.JsonArray;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -70,24 +63,18 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
@@ -95,7 +82,6 @@ import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -109,7 +95,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-class KafkaST extends BaseST {
+class KafkaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -480,219 +466,6 @@ class KafkaST extends BaseST {
         checkReadinessLivenessProbe(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
-    }
-
-    /**
-     * Test sending messages over plain transport, without auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainAnonymous() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
-
-        final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
-    }
-
-    /**
-     * Test sending messages over tls transport using mutual tls auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsAuthenticated() {
-        String kafkaUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewTls()
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                            .endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUser)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "tls"), is(serviceDiscoveryArray));
-    }
-
-    /**
-     * Test sending messages over plain transport using scram sha auth
-     */
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainScramSha() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewPlain()
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endPlain()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
-
-        String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
-        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
-        Matcher m = p.matcher(brokerPodLog);
-        boolean found = false;
-        while (m.find()) {
-            found = true;
-            LOGGER.info("Broker pod log line about user {}: {}", kafkaUsername, m.group());
-        }
-        if (!found) {
-            LOGGER.warn("No broker pod log lines about user {}", kafkaUsername);
-            LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
-        }
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUsername)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512")));
-    }
-
-    /**
-     * Test sending messages over tls transport using scram sha auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsScramSha() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUsername)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512")));
     }
 
     @Test
@@ -1106,210 +879,6 @@ class KafkaST extends BaseST {
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePort() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-
-        // Check that Kafka status has correct addresses in NodePort external listener part
-        for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
-            if (listenerStatus.getType().equals("external")) {
-                List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
-                listStatusAddresses.sort(Comparator.comparing(String::toString));
-                List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
-                Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
-
-                List<String> nodeIps = kubeClient().listPods(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels())
-                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
-                nodeIps.sort(Comparator.comparing(String::toString));
-
-                assertThat(listStatusAddresses, is(nodeIps));
-                for (Integer port : listStatusPorts) {
-                    assertThat(port, is(nodePort));
-                }
-            }
-        }
-    }
-
-    @Test
-    @Tag(NODEPORT_SUPPORTED)
-    void testOverrideNodePortConfiguration() {
-        int brokerNodePort = 32000;
-        int brokerId = 0;
-
-        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
-        nodePortListenerBrokerOverride.setBroker(brokerId);
-        nodePortListenerBrokerOverride.setNodePort(brokerNodePort);
-        LOGGER.info("Setting nodePort to {} for broker {}", nodePortListenerBrokerOverride.getNodePort(),
-                nodePortListenerBrokerOverride.getBroker());
-
-        int clusterBootstrapNodePort = 32100;
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                                .withNewOverrides()
-                                    .withNewBootstrap()
-                                        .withNodePort(clusterBootstrapNodePort)
-                                    .endBootstrap()
-                                    .withBrokers(nodePortListenerBrokerOverride)
-                                .endOverrides()
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
-        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
-                KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
-        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
-                .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
-        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
-                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-    }
-
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePortTls() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                    .withNewKafkaListenerExternalNodePort()
-                    .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesTls(),
-            basicExternalKafkaClient.receiveMessagesTls()
-        );
-    }
-
-    @Test
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancer() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                            .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-    }
-
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerTls() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesTls(),
-            basicExternalKafkaClient.receiveMessagesTls()
-        );
-    }
-
-    @Test
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrueFalse() {
         int kafkaReplicas = 2;
@@ -1381,68 +950,6 @@ class KafkaST extends BaseST {
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
-    void verifyPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage) {
-        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
-                .map(pvc -> pvc.getMetadata().getName())
-                .collect(Collectors.toList());
-
-        jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
-            for (int i = 0; i < kafkaReplicas; i++) {
-                String volumeName = "data-" + singleVolumeStorage.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
-                LOGGER.info("Verifying volume: " + volumeName);
-                if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
-                    assertThat(pvcs, not(hasItem(volumeName)));
-                } else {
-                    assertThat(pvcs, hasItem(volumeName));
-                }
-            }
-        });
-    }
-
-    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
-
-        ArrayList pvcs = new ArrayList();
-
-        kubeClient().listPersistentVolumeClaims().stream()
-                .filter(pvc -> pvc.getMetadata().getName().contains("kafka"))
-                .forEach(volume -> {
-                    String volumeName = volume.getMetadata().getName();
-                    pvcs.add(volumeName);
-                    LOGGER.info("Checking labels for volume:" + volumeName);
-                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
-                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
-                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
-                    assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
-                });
-
-        LOGGER.info("Checking PVC names included in JBOD array");
-        for (int i = 0; i < kafkaReplicas; i++) {
-            for (int j = 0; j < diskCountPerReplica; j++) {
-                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
-            }
-        }
-
-        LOGGER.info("Checking PVC on Kafka pods");
-        for (int i = 0; i < kafkaReplicas; i++) {
-            ArrayList dataSourcesOnPod = new ArrayList();
-            ArrayList pvcsOnPod = new ArrayList();
-
-            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
-            for (int j = 0; j < diskCountPerReplica; j++) {
-                dataSourcesOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
-                        .getSpec().getVolumes().get(j).getName());
-                pvcsOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
-                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
-            }
-
-            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
-            for (int j = 0; j < diskCountPerReplica; j++) {
-                dataSourcesOnPod.contains("data-" + j);
-                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
-            }
-        }
-    }
-
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize() {
@@ -1492,18 +999,6 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
-    }
-
-    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
-        int k = 0;
-        for (int i = 0; i < kafkaRepl; i++) {
-            for (int j = 0; j < diskCount; j++) {
-                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
-                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
-                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizes[i]));
-                k++;
-            }
-        }
     }
 
     @Test
@@ -1684,25 +1179,6 @@ class KafkaST extends BaseST {
         );
     }
 
-    void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
-        for (Map.Entry<String, String> label : labels.entrySet()) {
-            assertThat("Label exists with concrete value in HasMetadata(Services, CM, STS) resources",
-                    label.getValue().equals(resources.getMetadata().getLabels().get(label.getKey())));
-        }
-    }
-
-    void verifyNullLabels(String[] labelKeys, Map<String, String> labels) {
-        for (String labelKey : labelKeys) {
-            assertThat(labels.get(labelKey), nullValue());
-        }
-    }
-
-    void verifyNullLabels(String[] labelKeys, HasMetadata resources) {
-        for (String labelKey : labelKeys) {
-            assertThat(resources.getMetadata().getLabels().get(labelKey), nullValue());
-        }
-    }
-
     @Test
     void testAppDomainLabels() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -1785,19 +1261,6 @@ class KafkaST extends BaseST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
-    }
-
-    void verifyAppLabels(Map<String, String> labels) {
-        LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
-        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
-        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
-    }
-
-    void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {
-        LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
-        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
     }
 
     @Test
@@ -2099,6 +1562,112 @@ class KafkaST extends BaseST {
                 assertThat(execProperties.getProperty(key), is(val));
             }
         }
+    }
+
+    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
+        int k = 0;
+        for (int i = 0; i < kafkaRepl; i++) {
+            for (int j = 0; j < diskCount; j++) {
+                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizes[i]));
+                k++;
+            }
+        }
+    }
+
+    void verifyPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage) {
+        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toList());
+
+        jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
+            for (int i = 0; i < kafkaReplicas; i++) {
+                String volumeName = "data-" + singleVolumeStorage.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
+                LOGGER.info("Verifying volume: " + volumeName);
+                if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
+                    assertThat(pvcs, not(hasItem(volumeName)));
+                } else {
+                    assertThat(pvcs, hasItem(volumeName));
+                }
+            }
+        });
+    }
+
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
+
+        ArrayList pvcs = new ArrayList();
+
+        kubeClient().listPersistentVolumeClaims().stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains("kafka"))
+                .forEach(volume -> {
+                    String volumeName = volume.getMetadata().getName();
+                    pvcs.add(volumeName);
+                    LOGGER.info("Checking labels for volume:" + volumeName);
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+                    assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
+                    assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
+                });
+
+        LOGGER.info("Checking PVC names included in JBOD array");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+
+        LOGGER.info("Checking PVC on Kafka pods");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            ArrayList dataSourcesOnPod = new ArrayList();
+            ArrayList pvcsOnPod = new ArrayList();
+
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
+                        .getSpec().getVolumes().get(j).getName());
+                pvcsOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
+                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
+            }
+
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.contains("data-" + j);
+                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+    }
+
+    void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
+        for (Map.Entry<String, String> label : labels.entrySet()) {
+            assertThat("Label exists with concrete value in HasMetadata(Services, CM, STS) resources",
+                    label.getValue().equals(resources.getMetadata().getLabels().get(label.getKey())));
+        }
+    }
+
+    void verifyNullLabels(String[] labelKeys, Map<String, String> labels) {
+        for (String labelKey : labelKeys) {
+            assertThat(labels.get(labelKey), nullValue());
+        }
+    }
+
+    void verifyNullLabels(String[] labelKeys, HasMetadata resources) {
+        for (String labelKey : labelKeys) {
+            assertThat(resources.getMetadata().getLabels().get(labelKey), nullValue());
+        }
+    }
+
+    void verifyAppLabels(Map<String, String> labels) {
+        LOGGER.info("Verifying labels {}", labels);
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
+        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
+    }
+
+    void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {
+        LOGGER.info("Verifying labels {}", labels);
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
     }
 
     @BeforeAll
