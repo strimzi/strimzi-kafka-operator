@@ -56,7 +56,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Pattern RESOURCE_PATH = Pattern.compile("^/spec/template/spec/(?:initContainers|containers)/[0-9]+/resources/(?:limits|requests)/(memory|cpu)$");
     private static final Pattern VOLUME_SIZE = Pattern.compile("^/spec/volumeClaimTemplates/[0-9]+/spec/resources/.*$");
-    private static final Pattern TOLERATION_VALUE = Pattern.compile("^/spec/template/spec/tolerations/[0-9]+/value$");
+    private static final Pattern TOLERATION_VALUE_PATH = Pattern.compile("^/spec/template/spec/tolerations/[0-9]+/value$");
 
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
@@ -99,7 +99,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
                 }
             }
 
-            Matcher tolerationMatchers = TOLERATION_VALUE.matcher(pathValue);
+            Matcher tolerationMatchers = TOLERATION_VALUE_PATH.matcher(pathValue);
             if (tolerationMatchers.matches()) {
                 // Empty values are removed from k8s STS so setting tolerations.value to the empty value
                 // will get null as it appears to not to be set at all
