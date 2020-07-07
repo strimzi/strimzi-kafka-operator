@@ -788,9 +788,7 @@ public class KafkaCluster extends AbstractModel {
         } else {
             tolerations = kafkaClusterSpec.getTolerations();
         }
-        if (tolerations != null) {
-            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
-        }
+        ModelUtils.removeEmptyValuesFromTolerations(tolerations);
         return tolerations;
     }
 

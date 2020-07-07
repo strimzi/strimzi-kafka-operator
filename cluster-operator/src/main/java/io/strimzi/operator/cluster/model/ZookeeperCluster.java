@@ -335,9 +335,7 @@ public class ZookeeperCluster extends AbstractModel {
         } else {
             tolerations = zookeeperClusterSpec.getTolerations();
         }
-        if (tolerations != null) {
-            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
-        }
+        ModelUtils.removeEmptyValuesFromTolerations(tolerations);
         return tolerations;
     }
 

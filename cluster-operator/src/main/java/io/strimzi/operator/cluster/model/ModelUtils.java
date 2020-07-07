@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.SystemProperty;
@@ -572,4 +573,9 @@ public class ModelUtils {
         return validLines;
     }
 
+    public static void removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
+        if (tolerations != null) {
+            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
+        }
+    }
 }
