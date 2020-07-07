@@ -242,15 +242,14 @@ public class StUtils {
     }
 
     /**
-     /**
      * Method for check if test is allowed on current Kubernetes version
-     * @param desiredKubernetesVersion kubernetes version which test needs
+     * @param maxKubernetesVersion kubernetes version which test needs
      * @return true if test is allowed, false if not
      */
-    public static boolean isAllowedOnCurrentK8sVersion(String desiredKubernetesVersion) {
-        if (desiredKubernetesVersion.equals("latest")) {
+    public static boolean isAllowedOnCurrentK8sVersion(String maxKubernetesVersion) {
+        if (maxKubernetesVersion.equals("latest")) {
             return true;
         }
-        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
+        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(maxKubernetesVersion);
     }
 }
