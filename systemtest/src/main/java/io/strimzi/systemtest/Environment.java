@@ -154,6 +154,10 @@ public class Environment {
         return Environment.CLUSTER_OPERATOR_INSTALL_TYPE.toUpperCase(Locale.ENGLISH).equals("OLM");
     }
 
+    public static boolean isHelmInstall() {
+        return Environment.CLUSTER_OPERATOR_INSTALL_TYPE.toUpperCase(Locale.ENGLISH).equals("HELM");
+    }
+
     public static boolean useLatestReleasedBridge() {
         return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }

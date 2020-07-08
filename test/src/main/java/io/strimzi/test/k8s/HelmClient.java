@@ -22,7 +22,7 @@ public class HelmClient {
     private static final Logger LOGGER = LogManager.getLogger(HelmClient.class);
 
     private static final String HELM_CMD = "helm";
-    private static final String INSTALL_TIMEOUT_SECONDS = "90";
+    private static final String INSTALL_TIMEOUT_SECONDS = "120s";
 
     private boolean initialized;
     private String namespace;
@@ -50,7 +50,7 @@ public class HelmClient {
                 .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(","));
         Exec.exec(wait(namespace(command("install",
-                "--name", releaseName,
+                releaseName,
                 "--set-string", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
                 chart.toString()))));
@@ -60,7 +60,7 @@ public class HelmClient {
     /** Delete a chart given its release name */
     public HelmClient delete(String releaseName) {
         // wait() not required, `helm delete` blocks by default
-        Exec.exec(command("delete", releaseName, "--purge"));
+        Exec.exec(command("delete", releaseName));
         return this;
     }
 

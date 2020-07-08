@@ -158,6 +158,14 @@ public class KubeClusterResource {
     }
 
     /**
+     * Provides approriate Helm client for running Helm operations in specific namespace
+     * @return Helm client
+     */
+    public static HelmClient helmClusterClient() {
+        return cluster.helmClient().namespace(cluster.getNamespace());
+    }
+
+    /**
      * Provides appropriate Kubernetes client with expected namespace for running cluster
      * @param inNamespace Namespace will be used as a current namespace for client
      * @return Kubernetes client with expected namespace in configuration

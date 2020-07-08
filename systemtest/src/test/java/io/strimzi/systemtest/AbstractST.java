@@ -16,7 +16,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.OlmResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.resources.operator.HelmResource;
+import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -24,7 +26,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -41,9 +42,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,10 +51,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -93,13 +89,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
 
-    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
-    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String REQUESTS_MEMORY = "512Mi";
-    public static final String REQUESTS_CPU = "200m";
-    public static final String LIMITS_MEMORY = "512Mi";
-    public static final String LIMITS_CPU = "1000m";
-
     protected String testClass;
     protected String testName;
 
@@ -110,10 +99,6 @@ public abstract class AbstractST implements TestSeparator {
     public static final String EXAMPLE_TOPIC_NAME = "my-topic";
 
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
-
-    private HelmClient helmClient() {
-        return cluster.helmClient().namespace(cluster.getNamespace());
-    }
 
     /**
      * This method install Strimzi Cluster Operator based on environment variable configuration.
@@ -126,11 +111,15 @@ public abstract class AbstractST implements TestSeparator {
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
             OlmResource.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+        } else if (Environment.isHelmInstall()) {
+            cluster.setNamespace(namespace);
+            cluster.createNamespace(namespace);
+            HelmResource.clusterOperator(operationTimeout, reconciliationInterval);
         } else {
             prepareEnvForOperator(namespace, bindingsNamespaces);
             applyRoleBindings(namespace, bindingsNamespaces);
             // 050-Deployment
-            KubernetesResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
+            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
         }
     }
 
@@ -345,47 +334,6 @@ public abstract class AbstractST implements TestSeparator {
         }
         return images;
     }
-
-    /**
-     * Deploy CO via helm chart. Using config file stored in test resources.
-     */
-    public void deployClusterOperatorViaHelmChart() {
-        String dockerReg = Environment.STRIMZI_REGISTRY;
-        String dockerOrg = Environment.STRIMZI_ORG;
-        String dockerTag = Environment.STRIMZI_TAG;
-
-        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-            entry("imageRepositoryOverride", dockerReg + "/" + dockerOrg),
-            entry("imageTagOverride", dockerTag),
-            entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
-            entry("resources.requests.memory", REQUESTS_MEMORY),
-            entry("resources.requests.cpu", REQUESTS_CPU),
-            entry("resources.limits.memory", LIMITS_MEMORY),
-            entry("resources.limits.cpu", LIMITS_CPU),
-            entry("logLevel", Environment.STRIMZI_LOG_LEVEL))
-            .collect(TestUtils.entriesToMap()));
-
-        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
-        // We need to delete all CRDs before install Strimzi via helm, otherwise install fail when some CRD is already created
-        cmdKubeClient().delete(KubeClusterResource.CO_INSTALL_DIR);
-        Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = cluster.setNamespace("kube-system");
-        InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
-        String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-        cmdKubeClient().applyContent(helmServiceAccount);
-        helmClient().init();
-        cluster.setNamespace(oldNamespace);
-        helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
-    }
-
-    /**
-     * Delete CO deployed via helm chart.
-     */
-    public void deleteClusterOperatorViaHelmChart() {
-        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
-        helmClient().delete(HELM_RELEASE_NAME);
-    }
-
 
     /**
      * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
