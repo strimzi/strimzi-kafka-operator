@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* xref:cluster-operator-str[Strimzi and Kafka is deployed]
+* link:{BookURLDeploying}#cluster-operator-str[Strimzi and Kafka is deployed^]
 * Source and target Kafka clusters are available
 * If they exist, the name of the `Secret` for the certificate used for TLS Server Authentication and the key under which the certificate is stored in the `Secret`
 

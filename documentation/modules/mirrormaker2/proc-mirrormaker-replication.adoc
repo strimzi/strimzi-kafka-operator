@@ -49,7 +49,7 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* xref:cluster-operator-str[Strimzi and Kafka is deployed]
+* link:{BookURLDeploying}#cluster-operator-str[Strimzi and Kafka is deployed^]
 * Source and target Kafka clusters are available
 
 .Procedure

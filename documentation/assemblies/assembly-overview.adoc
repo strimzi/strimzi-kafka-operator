@@ -8,12 +8,16 @@
 
 [id='overview-{context}']
 = Overview of Strimzi
-
 //standard intro
 include::../shared/snip-intro-text.adoc[leveloffset=+1]
 
-This guide describes configuration of Kafka components, as well as instructions for using Strimzi Operators.
+This guide provides instructions for configuring Kafka components and using Strimzi Operators.
 Procedures relate to how you might want to modify your deployment and introduce additional features, such as Cruise Control or distributed tracing.
+
+For instructions on deploying Strimzi, see link:{BookURLDeploying}[Deploying Strimzi^].
+
+You can configure your deployment using xref:assembly-custom-resources-str[Strimzi custom resources].
+The xref:api_reference-str[Custom resource API reference] describes the properties you can use in your configuration.
 
 //description of Kafka features
 include::../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
