@@ -38,6 +38,6 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
 if [ "$JAVA_MAJOR_VERSION" -ge "9" ] ; then
   JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
-fiq
+fi
 
 exec java $JAVA_OPTS -jar $JAR $@
