@@ -30,5 +30,3 @@ Strimzi verifies the certificates for the components against the CA certificate.
 
 * Strimzi components are verified against the _cluster CA_ Certificate Authority (CA)
 * Kafka clients are verified against the _clients CA_ Certificate Authority (CA)
-
-As ZooKeeper does not have native support for TLS, a _TLS sidecar_ deployment with ZooKeeper allows the Cluster Operator to provide data encryption and authentication between ZooKeeper nodes in a cluster.

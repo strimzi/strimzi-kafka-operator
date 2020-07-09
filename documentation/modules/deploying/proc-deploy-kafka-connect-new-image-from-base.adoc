@@ -90,7 +90,7 @@ spec: <1>
   config: <3>
     #...
 ----
-<1> link:{BookURLUsing}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster].
+<1> link:{BookURLUsing}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
 <2> The docker image for the pods.
 <3> Configuration of the Kafka Connect _workers_ (not connectors).
 +
@@ -101,4 +101,4 @@ or
 .Additional resources
 
 * For more information on the `KafkaConnect.spec.image property`, see link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka-connect[Container images^].
-* For more information on the `STRIMZI_KAFKA_CONNECT_IMAGES` variable, see link:{BookURLUsing}#ref-operators-cluster-operator-configuration-deploying-co[Cluster Operator Configuration^].
+* For more information on the `STRIMZI_KAFKA_CONNECT_IMAGES` variable, see link:{BookURLUsing}#ref-operator-cluster-str[Cluster Operator Configuration^].
