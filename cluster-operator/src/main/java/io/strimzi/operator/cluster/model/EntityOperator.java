@@ -198,7 +198,7 @@ public class EntityOperator extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
-        return ModelUtils.tolerations("spec.entityOperator.tolerations", "spec.entityOperator.template.pod.tolerations", entityOperatorSpec.getTemplate() == null ? null : entityOperatorSpec.getTemplate().getPod(), entityOperatorSpec.getTolerations());
+        return ModelUtils.tolerations("spec.entityOperator.tolerations", entityOperatorSpec.getTolerations(), "spec.entityOperator.template.pod.tolerations", entityOperatorSpec.getTemplate() == null ? null : entityOperatorSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")

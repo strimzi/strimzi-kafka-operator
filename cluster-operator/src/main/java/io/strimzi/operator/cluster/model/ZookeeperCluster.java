@@ -324,7 +324,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
-        return ModelUtils.tolerations("spec.zookeeper.tolerations", "spec.zookeeper.template.pod.tolerations", zookeeperClusterSpec.getTemplate() == null ? null : zookeeperClusterSpec.getTemplate().getPod(), zookeeperClusterSpec.getTolerations());
+        return ModelUtils.tolerations("spec.zookeeper.tolerations", zookeeperClusterSpec.getTolerations(), "spec.zookeeper.template.pod.tolerations", zookeeperClusterSpec.getTemplate() == null ? null : zookeeperClusterSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")

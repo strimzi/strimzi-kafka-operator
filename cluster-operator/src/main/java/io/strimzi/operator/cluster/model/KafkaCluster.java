@@ -777,7 +777,7 @@ public class KafkaCluster extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(KafkaClusterSpec kafkaClusterSpec) {
-        return ModelUtils.tolerations("spec.kafka.tolerations", "spec.kafka.template.pod.tolerations", kafkaClusterSpec.getTemplate() == null ? null : kafkaClusterSpec.getTemplate().getPod(), kafkaClusterSpec.getTolerations());
+        return ModelUtils.tolerations("spec.kafka.tolerations", kafkaClusterSpec.getTolerations(), "spec.kafka.template.pod.tolerations", kafkaClusterSpec.getTemplate() == null ? null : kafkaClusterSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")

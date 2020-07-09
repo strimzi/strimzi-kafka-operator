@@ -579,7 +579,7 @@ public class ModelUtils {
         }
     }
 
-    public static List<Toleration> tolerations(String tolerations, String templateTolerations, PodTemplate podTemplate, List<Toleration> tolerationList) {
+    public static List<Toleration> tolerations(String tolerations, List<Toleration> tolerationList, String templateTolerations, PodTemplate podTemplate) {
         List<Toleration> tolerationsListLocal;
         if (podTemplate != null && podTemplate.getTolerations() != null) {
             if (tolerationList != null) {
