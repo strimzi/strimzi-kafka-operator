@@ -572,22 +572,4 @@ public class ModelUtils {
         return validLines;
     }
 
-    /**
-     * Transforms data from String into Map. The entries are line separated tuples of key=value.
-     * @param string string to get data from
-     * @return Map of (key, value)
-     */
-    public static Map<String, String> stringToMap(String string) {
-        Map<String, String> result = new HashMap<>();
-        List<String> list = ModelUtils.getLinesWithoutCommentsAndEmptyLines(string);
-        for (String line: list) {
-            String[] split = line.split("=", 2);
-            if (split.length == 1) {
-                result.put(split[0], "");
-            } else {
-                result.put(split[0], split[1]);
-            }
-        }
-        return result;
-    }
 }
