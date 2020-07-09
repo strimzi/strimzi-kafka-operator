@@ -203,20 +203,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     @SuppressWarnings("deprecation")
-    static List<Toleration> tolerations(KafkaMirrorMakerSpec spec) {
-        List<Toleration> tolerations;
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getTolerations() != null) {
-            if (spec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.pod.tolerations; latter takes precedence");
-            }
-            tolerations = spec.getTemplate().getPod().getTolerations();
-        } else {
-            tolerations = spec.getTolerations();
-        }
-        ModelUtils.removeEmptyValuesFromTolerations(tolerations);
-        return tolerations;
+    static List<Toleration> tolerations(KafkaMirrorMakerSpec kafkaMirrorMakerSpec) {
+        return ModelUtils.tolerations("spec.tolerations", "spec.template.pod.tolerations", kafkaMirrorMakerSpec.getTemplate() == null ? null : kafkaMirrorMakerSpec.getTemplate().getPod(), kafkaMirrorMakerSpec.getTolerations());
     }
 
     @SuppressWarnings("deprecation")

@@ -324,19 +324,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
-        List<Toleration> tolerations;
-        if (zookeeperClusterSpec.getTemplate() != null
-                && zookeeperClusterSpec.getTemplate().getPod() != null
-                && zookeeperClusterSpec.getTemplate().getPod().getTolerations() != null) {
-            if (zookeeperClusterSpec.getAffinity() != null) {
-                log.warn("Tolerations given on both spec.zookeeper.tolerations and spec.zookeeper.template.pod.tolerations; latter takes precedence");
-            }
-            tolerations = zookeeperClusterSpec.getTemplate().getPod().getTolerations();
-        } else {
-            tolerations = zookeeperClusterSpec.getTolerations();
-        }
-        ModelUtils.removeEmptyValuesFromTolerations(tolerations);
-        return tolerations;
+        return ModelUtils.tolerations("spec.zookeeper.tolerations", "spec.zookeeper.template.pod.tolerations", zookeeperClusterSpec.getTemplate() == null ? null : zookeeperClusterSpec.getTemplate().getPod(), zookeeperClusterSpec.getTolerations());
     }
 
     @SuppressWarnings("deprecation")

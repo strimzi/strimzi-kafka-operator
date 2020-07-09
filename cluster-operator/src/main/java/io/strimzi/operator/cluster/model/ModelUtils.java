@@ -578,4 +578,18 @@ public class ModelUtils {
             tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
         }
     }
+
+    public static List<Toleration> tolerations(String tolerations, String templateTolerations, PodTemplate podTemplate, List<Toleration> tolerationList) {
+        List<Toleration> tolerationsListLocal;
+        if (podTemplate != null && podTemplate.getTolerations() != null) {
+            if (tolerationList != null) {
+                log.warn("Tolerations given on both {} and {}; latter takes precedence", tolerations, templateTolerations);
+            }
+            tolerationsListLocal = podTemplate.getTolerations();
+        } else {
+            tolerationsListLocal = tolerationList;
+        }
+        ModelUtils.removeEmptyValuesFromTolerations(tolerationsListLocal);
+        return tolerationsListLocal;
+    }
 }
