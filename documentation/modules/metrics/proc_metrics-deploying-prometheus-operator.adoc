@@ -22,7 +22,7 @@ On MacOS, use:
 [source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/{SupportedPrometheusVersion}/bundle.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
 +
-Choose a release that is compatible with your version of Kubernetes.
+Use the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix] to help you choose a release that is compatible with your version of Kubernetes. If using OpenShift, specify a release of the link:https://github.com/openshift/prometheus-operator[OpenShift fork^] of the Prometheus Operator repository.
 
 . (Optional) If it is not required, you can manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file.
 
