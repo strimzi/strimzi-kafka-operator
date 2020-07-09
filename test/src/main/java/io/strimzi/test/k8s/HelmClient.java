@@ -28,7 +28,7 @@ public class HelmClient {
     private boolean initialized;
     private String namespace;
 
-    private String helmCommand = HELM_CMD;
+    private static String helmCommand = HELM_CMD;
 
     public HelmClient(String namespace) {
         this.namespace = namespace;
@@ -59,7 +59,7 @@ public class HelmClient {
         return this;
     }
 
-    public boolean clientAvailable() {
+    public static boolean clientAvailable() {
         if (Exec.isExecutableOnPath(HELM_CMD)) {
             return true;
         } else if (Exec.isExecutableOnPath(HELM_3_CMD)) {
@@ -71,6 +71,7 @@ public class HelmClient {
 
     private List<String> command(String... rest) {
         List<String> result = new ArrayList<>();
+        LOGGER.info("HELM COMMAND IS: {}", helmCommand);
         result.add(helmCommand);
         result.addAll(asList(rest));
         return result;
