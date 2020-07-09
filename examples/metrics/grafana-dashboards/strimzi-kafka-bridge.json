@@ -163,7 +163,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(vertx_http_server_connections{container=~\"^.+-bridge\"})",
+          "expr": "sum(strimzi_bridge_http_server_connections{container=~\"^.+-bridge\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -284,7 +284,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(vertx_http_server_requests{container=~\"^.+-bridge\"})",
+          "expr": "sum(strimzi_bridge_http_server_requests{container=~\"^.+-bridge\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -406,7 +406,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(kafka_producer_count)",
+          "expr": "count(strimzi_bridge_kafka_producer_count)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -529,7 +529,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_producer_connection_count)",
+          "expr": "sum(strimzi_bridge_kafka_producer_connection_count)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -652,7 +652,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(kafka_consumer_last_heartbeat_seconds_ago != -1)",
+          "expr": "count(strimzi_bridge_kafka_consumer_last_heartbeat_seconds_ago != -1)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -775,7 +775,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_consumer_connection_count)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_connection_count)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -861,7 +861,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kafka_producer_record_send_total{topic != \"\"}[1m])) by (clientId, topic)",
+          "expr": "sum(rate(strimzi_bridge_kafka_producer_record_send_total{topic != \"\"}[1m])) by (clientId, topic)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -957,7 +957,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kafka_producer_byte_total{topic != \"\"}[1m])) by (clientId, topic)",
+          "expr": "sum(rate(strimzi_bridge_kafka_producer_byte_total{topic != \"\"}[1m])) by (clientId, topic)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -1053,7 +1053,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_producer_request_latency_avg{type = \"producer-metrics\"}) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_producer_request_latency_avg{type = \"producer-metrics\"}) by (clientId)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -1149,7 +1149,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kafka_consumer_bytes_consumed_total{topic != \"\"}[1m])) by (clientId, topic)",
+          "expr": "sum(rate(strimzi_bridge_kafka_consumer_bytes_consumed_total{topic != \"\"}[1m])) by (clientId, topic)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -1245,7 +1245,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kafka_consumer_records_consumed_total{topic != \"\"}[1m])) by (clientId, topic)",
+          "expr": "sum(rate(strimzi_bridge_kafka_consumer_records_consumed_total{topic != \"\"}[1m])) by (clientId, topic)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1342,7 +1342,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_consumer_assigned_partitions) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_assigned_partitions) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1440,7 +1440,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_consumer_poll_idle_ratio_avg) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_poll_idle_ratio_avg) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1538,7 +1538,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kafka_consumer_commit_total[1m])) by (clientId)",
+          "expr": "sum(rate(strimzi_bridge_kafka_consumer_commit_total[1m])) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1636,7 +1636,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_consumer_commit_latency_avg) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_commit_latency_avg) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1734,7 +1734,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_consumer_fetch_rate) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_fetch_rate) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1832,7 +1832,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_consumer_fetch_latency_avg) by (clientId)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_fetch_latency_avg) by (clientId)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1956,7 +1956,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m])) by (method)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m])) by (method)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2053,7 +2053,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2061,7 +2061,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{code=~\"^2..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^2..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2069,7 +2069,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{code=~\"^4..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^4..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2077,7 +2077,7 @@
           "refId": "C"
         },
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{code=~\"^5..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^5..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2175,7 +2175,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_bytesSent_count{container=~\"^.+-bridge\"}[1m])) by (container)",
+          "expr": "sum(rate(strimzi_bridge_http_server_bytesSent_count{container=~\"^.+-bridge\"}[1m])) by (container)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2273,7 +2273,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_bytesReceived_count{container=~\"^.+-bridge\"}[1m])) by (container)",
+          "expr": "sum(rate(strimzi_bridge_http_server_bytesReceived_count{container=~\"^.+-bridge\"}[1m])) by (container)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2370,7 +2370,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/[^/]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/[^/]+\"}[1m])) by (path)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -2465,7 +2465,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/.+/partitions/[0-9]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/.+/partitions/[0-9]+\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2562,7 +2562,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/[^/]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/[^/]+\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2660,7 +2660,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/subscription\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/subscription\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2758,7 +2758,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"DELETE\",path=~\"/consumers/.+/instances/.+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"DELETE\",path=~\"/consumers/.+/instances/.+\"}[1m])) by (path)",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -2857,7 +2857,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"GET\",path=~\"/consumers/.+/instances/.+/records\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"GET\",path=~\"/consumers/.+/instances/.+/records\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2955,7 +2955,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(vertx_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/offsets\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/offsets\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
