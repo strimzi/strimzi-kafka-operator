@@ -87,7 +87,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             return new ReconciliationState(reconciliation, kafkaAssembly) {
                 @Override
-                Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+                Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
                     functionArgumentCaptor.add(podNeedsRestart);
                     return Future.succeededFuture();
                 }
@@ -130,7 +130,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
                 mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
                 mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_14), 10000);
-        //supplier = ResourceUtils.supplierWithMocks(false);
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 passwordGenerator,

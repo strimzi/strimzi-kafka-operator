@@ -191,7 +191,7 @@ public class KafkaUpdateTest {
                         return Future.succeededFuture();
                     }
                     @Override
-                    public Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+                    public Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
                         try {
                             rollExceptions.accept(0);
                             return Future.succeededFuture();

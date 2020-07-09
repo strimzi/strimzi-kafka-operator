@@ -394,8 +394,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
         private Integer zkCurrentReplicas = null;
 
-        KafkaCluster kafkaCluster = null;
-        int oldKafkaReplicas;
+        private KafkaCluster kafkaCluster = null;
+        private int oldKafkaReplicas;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
         private Service kafkaService;
@@ -766,7 +766,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (sts != null) {
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
-                            return maybeKafkaRoll(sts, pod -> {
+                            return maybeRollKafka(sts, pod -> {
                                 if (pod == null) {
                                     throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StatefulSet.");
                                 }
@@ -859,7 +859,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         public Future<Void> waitForQuiescence(StatefulSet sts) {
             if (sts != null) {
-                return maybeKafkaRoll(sts,
+                return maybeRollKafka(sts,
                     pod -> {
                         boolean notUpToDate = !isPodUpToDate(sts, pod);
                         List<String> reason = emptyList();
@@ -1081,7 +1081,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             resultSts = (StatefulSet) ((ReconcileResult) result.resultAt(0)).resource();
                         }
 
-                        return maybeKafkaRoll(newSts, pod -> {
+                        return maybeRollKafka(newSts, pod -> {
                             log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return singletonList("Upgrade phase 1 of " + (twoPhase ? 2 : 1) + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                         }).map(resultSts);
@@ -1139,7 +1139,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
-                    .compose(ignored -> maybeKafkaRoll(sts, pod -> {
+                    .compose(ignored -> maybeRollKafka(sts, pod -> {
                         log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return singletonList("Upgrade: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                     }))
@@ -1241,7 +1241,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return singletonList("Downgrade phase 1 of " + phases + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                         };
-                        return maybeKafkaRoll(sts, fn).map(resultSts);
+                        return maybeRollKafka(sts, fn).map(resultSts);
                     })
                     .compose(ss2 -> {
                         log.info("{}: {}, phase 1 of {} completed", reconciliation, versionChange, phases);
@@ -1269,7 +1269,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
         }
 
-        Future<Void> maybeKafkaRoll(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+        /**
+         *
+         * @param sts Kafka statefullset
+         * @param podNeedsRestart this function serves as a predicate whether to roll pod or not
+         * @return succeeded future if kafka pod was rolled and is ready
+         */
+        Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
             return adminClientSecrets()
                 .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
@@ -1323,7 +1329,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
             return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
-                    .compose(ignored -> maybeKafkaRoll(sts, pod -> {
+                    .compose(ignored -> maybeRollKafka(sts, pod -> {
                         log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return singletonList("Upgrade phase 2 of 2: Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                     }))
@@ -2470,7 +2476,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
-            return withVoid(maybeKafkaRoll(kafkaDiffs.resource(), pod ->
+            return withVoid(maybeRollKafka(kafkaDiffs.resource(), pod ->
                     getReasonsToRestartPod(kafkaDiffs.resource(), pod, existingKafkaCertsChanged, this.clusterCa, this.clientsCa)));
         }
 

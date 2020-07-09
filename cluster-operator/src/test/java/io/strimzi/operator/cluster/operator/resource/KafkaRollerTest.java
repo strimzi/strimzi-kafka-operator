@@ -602,7 +602,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void updateBrokerConfigDynamically(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem, InterruptedException {
+        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem, InterruptedException {
             if (alterConfigsException != null) {
                 throw alterConfigsException;
             }

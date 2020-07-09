@@ -340,7 +340,7 @@ public class KafkaRoller {
 
                         if (restartPlan.needsReconfig) {
                             try {
-                                updateBrokerConfigDynamically(podId, restartPlan.adminClient(), restartPlan.diff);
+                                dynamicUpdateBrokerConfig(podId, restartPlan.adminClient(), restartPlan.diff);
                                 updatedDynamically = true;
                             } catch (ForceableProblem e) {
                                 log.debug("{}: Pod {} could not be updated dynamically ({}), will restart", reconciliation, podId, e);
@@ -449,7 +449,7 @@ public class KafkaRoller {
         );
     }
 
-    protected void updateBrokerConfigDynamically(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff)
+    protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> configDiff = configurationDiff.getConfigDiff();
         log.debug("{}: Altering broker {} with {}", reconciliation, podId, configDiff);

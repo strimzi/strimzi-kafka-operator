@@ -553,7 +553,7 @@ public class ModelUtils {
     }
 
     /**
-     * This method transforms a String into a List of Strings, where entry = line from input.
+     * This method transforms a String into a List of Strings, where each entry is an uncommented line of input.
      * The lines beginning with '#' (comments) are ignored.
      * @param config ConfigMap data as a String
      * @return List of String key=value
@@ -564,7 +564,7 @@ public class ModelUtils {
             List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
 
             for (String line : allLines) {
-                if (!line.startsWith("#") && !line.isEmpty()) {
+                if (!line.isEmpty() && !line.matches("\\s*\\#.*")) {
                     validLines.add(line);
                 }
             }

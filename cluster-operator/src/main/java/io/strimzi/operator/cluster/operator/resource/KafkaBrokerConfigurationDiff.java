@@ -69,7 +69,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     public KafkaBrokerConfigurationDiff(Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
         this.brokerId = brokerId;
-        this.diff = computeDiff(brokerId, desired, brokerConfigs, configModel);
+        this.diff = diff(brokerId, desired, brokerConfigs, configModel);
     }
 
     private static void fillPlaceholderValue(Map<String, String> orderedProperties, String placeholder, String value) {
@@ -136,9 +136,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      * @param configModel default configuration for {@code kafkaVersion} of broker
      * @return KafkaConfiguration containing all entries which were changed from current in desired configuration
      */
-    private static Collection<AlterConfigOp> computeDiff(int brokerId, String desired,
-                                                         Config brokerConfigs,
-                                                         Map<String, ConfigModel> configModel) {
+    private static Collection<AlterConfigOp> diff(int brokerId, String desired,
+                                                  Config brokerConfigs,
+                                                  Map<String, ConfigModel> configModel) {
         if (brokerConfigs == null) {
             return Collections.emptyList();
         }
@@ -195,7 +195,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
 
     private static void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
         if (!isIgnorableProperty(propertyName)) {
-            if (isEntryCustom(propertyName, configModel)) {
+            if (isCustomEntry(propertyName, configModel)) {
                 log.trace("custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
                 log.trace("property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
@@ -207,7 +207,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     }
 
     private static void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
-        if (isEntryCustom(entry.name(), configModel)) {
+        if (isCustomEntry(entry.name(), configModel)) {
             // we are deleting custom option
             log.trace("removing custom property {}", entry.name());
         } else if (entry.isDefault()) {
@@ -240,9 +240,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      * For some reason not all default entries have set ConfigEntry.ConfigSource.DEFAULT_CONFIG so we need to compare
      * @param entryName tested ConfigEntry
      * @param configModel configModel
-     * @return true if entry is default (not custom)
+     * @return true if entry is custom (not default)
      */
-    private static boolean isEntryCustom(String entryName, Map<String, ConfigModel> configModel) {
+    private static boolean isCustomEntry(String entryName, Map<String, ConfigModel> configModel) {
         return !configModel.keySet().contains(entryName);
     }
 
