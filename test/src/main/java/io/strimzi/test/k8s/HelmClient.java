@@ -28,7 +28,7 @@ public class HelmClient {
     private boolean initialized;
     private String namespace;
 
-    private static String helmCommand = HELM_CMD;
+    private String helmCommand = HELM_CMD;
 
     public HelmClient(String namespace) {
         this.namespace = namespace;
@@ -40,6 +40,7 @@ public class HelmClient {
 
     /** Install a chart given its local path, release name, and values to override */
     public HelmClient install(Path chart, String releaseName, Map<String, String> valuesMap) {
+        LOGGER.info("Installing helm-chart {}", releaseName);
         String values = Stream.of(valuesMap).flatMap(m -> m.entrySet().stream())
                 .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(","));
@@ -53,8 +54,8 @@ public class HelmClient {
 
     /** Delete a chart given its release name */
     public HelmClient delete(String releaseName) {
-        // wait() not required, `helm delete` blocks by default
-        Exec.exec(command("delete", releaseName));
+        LOGGER.info("Deleting helm-chart {}", releaseName);
+        Exec.exec(null, namespace(command("delete", releaseName)), 0, false, false);
         return this;
     }
 

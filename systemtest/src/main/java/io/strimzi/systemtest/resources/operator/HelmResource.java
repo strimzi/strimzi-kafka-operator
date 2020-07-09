@@ -56,8 +56,6 @@ public class HelmResource {
                 entry("operationTimeoutMs", Long.toString(operationTimeout)))
                 .collect(TestUtils.entriesToMap()));
 
-        // We need to delete all CRDs before install Strimzi via helm, otherwise install fail when some CRD is already created
-        cmdKubeClient().delete(KubeClusterResource.CO_INSTALL_DIR);
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
         InputStream helmAccountAsStream = HelmResource.class.getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
