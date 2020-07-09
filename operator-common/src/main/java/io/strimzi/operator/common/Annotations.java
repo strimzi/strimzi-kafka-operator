@@ -18,7 +18,6 @@ public class Annotations {
 
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
     public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
-    public static final String STRIMZI_DYNAMIC_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "dynamic-logging";
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
     public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
     @Deprecated
