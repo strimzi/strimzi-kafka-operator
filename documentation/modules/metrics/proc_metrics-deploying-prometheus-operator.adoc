@@ -15,12 +15,12 @@ To deploy the Prometheus Operator to your Kafka cluster, apply the YAML bundle r
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes+"]
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/{PrometheusSupport}/bundle.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/{SupportedPrometheusVersion}/bundle.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes+"]
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/{PrometheusSupport}/bundle.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/{SupportedPrometheusVersion}/bundle.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
 +
 Choose a release that is compatible with your version of Kubernetes.
 
