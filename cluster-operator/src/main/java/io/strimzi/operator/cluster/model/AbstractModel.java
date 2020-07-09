@@ -73,6 +73,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,7 @@ public abstract class AbstractModel {
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
+    protected static final String LOG4J2_MONITOR_INTERVAL = "30";
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
@@ -375,11 +377,10 @@ public abstract class AbstractModel {
 
     /**
      * Transforms map to log4j properties file format.
-     *
      * @param properties map of log4j properties.
      * @return log4j properties as a String.
      */
-    protected static String createPropertiesString(OrderedProperties properties) {
+    public String createLog4jProperties(OrderedProperties properties) {
         return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
     }
 
@@ -409,21 +410,38 @@ public abstract class AbstractModel {
                 newSettings.addMapPairs(inlineLogging.getLoggers());
             }
 
-            return createPropertiesString(newSettings);
-
+            return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
-                return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
+                return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(getAncillaryConfigMapKeyLogConfig()));
             } else {
                 log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
                         ((ExternalLogging) getLogging()).getName(),
                         getAncillaryConfigMapKeyLogConfig());
-                return createPropertiesString(getDefaultLogConfig());
+                return createLog4jProperties(getDefaultLogConfig());
             }
 
         } else {
             log.debug("logging is not set, using default loggers");
-            return createPropertiesString(getDefaultLogConfig());
+            return createLog4jProperties(getDefaultLogConfig());
+        }
+    }
+
+    /**
+     * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     * @param data String with log4j2 properties in format key=value separated by new lines
+     * @return log4j2 configuration with monitorInterval property
+     */
+    protected String maybeAddMonitorIntervalToExternalLogging(String data) {
+        OrderedProperties orderedProperties = new OrderedProperties();
+        orderedProperties.addStringPairs(data);
+
+        Optional<String> mi = orderedProperties.asMap().keySet().stream().filter(key -> key.matches("^monitorInterval$")).findFirst();
+        if (mi.isPresent()) {
+            return data;
+        } else {
+            // do not override custom value
+            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL + "\n";
         }
     }
 
