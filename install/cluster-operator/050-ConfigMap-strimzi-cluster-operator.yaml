@@ -5,7 +5,7 @@ metadata:
   labels:
     app: strimzi
 data:
-  log4j2.properties: |
+  log4j2.properties: |-
     name = COConfig
     monitorInterval = 30
 

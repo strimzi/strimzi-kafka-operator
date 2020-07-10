@@ -138,7 +138,7 @@ spec:
                   enum:
                   - simple
                   description: Authorization type. Currently the only supported type
-                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer`
+                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                     class for authorization.
               required:
               - acls
