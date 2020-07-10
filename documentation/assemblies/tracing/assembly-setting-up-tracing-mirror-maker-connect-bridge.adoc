@@ -19,4 +19,4 @@ Only messages produced and consumed by Kafka Connect itself are traced. To trace
 Messages produced and consumed by the Kafka Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the Kafka Bridge are also traced.
 In order to have end-to-end tracing, you must configure tracing in your HTTP clients.
 
-include::../modules/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]
+include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]

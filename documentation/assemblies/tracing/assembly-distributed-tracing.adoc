@@ -17,7 +17,7 @@ Before configuring distributed tracing in Strimzi clients and components, you mu
 
 NOTE: Distributed tracing is not supported for Kafka brokers.
 
-include::../modules/con-overview-distributed-tracing.adoc[leveloffset=+1]
+include::../../modules/tracing/con-overview-distributed-tracing.adoc[leveloffset=+1]
 
 .Outline of procedures
 

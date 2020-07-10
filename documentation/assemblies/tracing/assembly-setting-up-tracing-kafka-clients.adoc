@@ -6,6 +6,6 @@
 
 This section describes how to initialize a Jaeger tracer to allow you to instrument your client applications for distributed tracing.
 
-include::../modules/proc-configuring-jaeger-tracer-kafka-clients.adoc[leveloffset=+1]
+include::../../modules/tracing/proc-configuring-jaeger-tracer-kafka-clients.adoc[leveloffset=+1]
 
-include::../modules/ref-tracing-environment-variables.adoc[leveloffset=+1]
+include::../../modules/tracing/ref-tracing-environment-variables.adoc[leveloffset=+1]
