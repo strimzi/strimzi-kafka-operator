@@ -6,9 +6,11 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -58,12 +60,14 @@ public class MetricsST extends AbstractST {
     public static final String NAMESPACE = "metrics-cluster-test";
     public static final String SECOND_CLUSTER = "second-kafka-cluster";
     public static final String MIRROR_MAKER_CLUSTER = "mm2-cluster";
+    private static final String BRIDGE_CLUSTER = "my-bridge";
     private final Object lock = new Object();
     private HashMap<String, String> kafkaMetricsData;
     private HashMap<String, String> zookeeperMetricsData;
     private HashMap<String, String> kafkaConnectMetricsData;
     private HashMap<String, String> kafkaExporterMetricsData;
     private HashMap<String, String> kafkaMirrorMaker2MetricsData;
+    private HashMap<String, String> kafkaBridgeMetricsData;
     private HashMap<String, String> clusterOperatorMetricsData;
     private HashMap<String, String> userOperatorMetricsData;
     private HashMap<String, String> topicOperatorMetricsData;
@@ -286,6 +290,18 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
+    @Test
+    void testKafkaBridgeMetrics() {
+        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
+        assertThat("Collected KafkaBridge metrics are empty", kafkaBridgeMetricsData.size() > 0);
+        assertThat("Collected KafkaBridge metrics doesn't contains vertx metrics", kafkaBridgeMetricsData.values().toString().contains("vertx"));
+        assertThat("Collected KafkaBridge metrics doesn't contains jvm metrics", kafkaBridgeMetricsData.values().toString().contains("jvm"));
+
+        Pattern brdigeResponse = Pattern.compile("system_cpu_count ([\\d.][^\\n]+)");
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(brdigeResponse, kafkaBridgeMetricsData);
+        assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
+    }
+
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("cat");
@@ -334,6 +350,7 @@ public class MetricsST extends AbstractST {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
+        KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 7, 2).done();
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
@@ -345,6 +362,7 @@ public class MetricsST extends AbstractST {
         zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
         kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(CLUSTER_NAME);
         kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
     }
     
     private List<String> getExpectedTopics() {
