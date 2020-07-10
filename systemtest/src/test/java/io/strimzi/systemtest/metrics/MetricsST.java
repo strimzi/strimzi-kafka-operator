@@ -218,7 +218,7 @@ public class MetricsST extends AbstractST {
 
         connectResponse = Pattern.compile("strimzi_resources\\{kind=\"KafkaBridge\",} ([\\d.][^\\n]+)");
         values = MetricsUtils.collectSpecificMetric(connectResponse, clusterOperatorMetricsData);
-        assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 0));
+        assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
 
         connectResponse = Pattern.compile("strimzi_resources\\{kind=\"KafkaConnect\",} ([\\d.][^\\n]+)");
         values = MetricsUtils.collectSpecificMetric(connectResponse, clusterOperatorMetricsData);
