@@ -13,8 +13,10 @@ WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The f
 
 .Prerequisites
 
-* link:{BookURLDeploying}#cluster-operator-str[A running Cluster Operator^]
-* link:{BookURLDeploying}#deploying-kafka-cluster-str[A running Kafka cluster^]
+See the _Deploying Strimzi_ guide for instructions on running a:
+
+* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 
 .Procedure
 

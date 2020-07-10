@@ -37,9 +37,6 @@ kubectl apply -f kafka-connect.yaml
 .Additional resources
 
 * link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^]
-
 * link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a `KafkaConnector` resource to Kafka Connect^]
-
 * xref:type-KafkaConnect-reference[]
-
 * xref:type-KafkaConnectS2I-reference[]
