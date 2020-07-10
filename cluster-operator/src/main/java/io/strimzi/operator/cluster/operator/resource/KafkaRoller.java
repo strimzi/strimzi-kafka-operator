@@ -266,11 +266,11 @@ public class KafkaRoller {
     }
 
     /** Described how the "restart" (which might actually just be a reconfigure) will be performed. */
-    class RestartPlan {
+    static class RestartPlan implements AutoCloseable {
         private final boolean needsRestart;
         private final boolean needsReconfig;
         private final KafkaBrokerConfigurationDiff diff;
-        private Admin adminClient;
+        private final Admin adminClient;
         private final int podId;
 
         public RestartPlan(Admin adminClient, int podId, boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff) {
@@ -281,26 +281,19 @@ public class KafkaRoller {
             this.diff = diff;
         }
 
-        Admin adminClient() throws ForceableProblem, FatalProblem {
-            if (adminClient == null) {
-                adminClient = KafkaRoller.this.adminClient(podId, false);
-            }
+        Admin adminClient() {
             return adminClient;
         }
 
-        private void closeLoggingAnyError() {
+        @Override
+        public void close() {
             if (adminClient != null) {
-                closeAdminClient(adminClient);
-                adminClient = null;
+                try {
+                    adminClient.close(Duration.ofMinutes(2));
+                } catch (Exception e) {
+                    log.warn("Ignoring exception when closing admin client", e);
+                }
             }
-        }
-    }
-
-    private static void closeAdminClient(Admin admin) {
-        try {
-            admin.close(Duration.ofMinutes(2));
-        } catch (Exception e) {
-            log.warn("Ignoring exception when closing admin client", e);
         }
     }
 
@@ -322,34 +315,15 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + podName(podId), e);
         }
 
-        RestartPlan restartPlan = null;
-        try {
-            restartPlan = restartPlan(podId, pod);
+        try (RestartPlan restartPlan = restartPlan(podId, pod)) {
             if (restartPlan.needsRestart || restartPlan.needsReconfig) {
-
-                Integer controller = controller(podId, restartPlan.adminClient(), operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-                int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
-                        0, Integer::sum);
-                if (controller == podId && stillRunning > 1) {
+                if (deferController(podId, restartContext, restartPlan)) {
                     log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
                     throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                 } else {
                     if (canRoll(restartPlan.adminClient(), podId, 60_000, TimeUnit.MILLISECONDS)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        boolean updatedDynamically;
-
-                        if (restartPlan.needsReconfig) {
-                            try {
-                                dynamicUpdateBrokerConfig(podId, restartPlan.adminClient(), restartPlan.diff);
-                                updatedDynamically = true;
-                            } catch (ForceableProblem e) {
-                                log.debug("{}: Pod {} could not be updated dynamically ({}), will restart", reconciliation, podId, e);
-                                updatedDynamically = false;
-                            }
-                        } else {
-                            updatedDynamically = false;
-                        }
-                        if (!updatedDynamically) {
+                        if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
                             log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
@@ -377,57 +351,74 @@ public class KafkaRoller {
             } else {
                 throw e;
             }
-        } finally {
-            if (restartPlan != null) {
-                restartPlan.closeLoggingAnyError();
-            }
         }
     }
 
+    /**
+     * Dynamically update the broker config if the plan says we can.
+     * Return false if the broker was successfully updated dynamically.
+     */
+    private boolean maybeDynamicUpdateBrokerConfig(int podId, RestartPlan restartPlan) throws InterruptedException {
+        boolean updatedDynamically;
+
+        if (restartPlan.needsReconfig) {
+            try {
+                dynamicUpdateBrokerConfig(podId, restartPlan.adminClient(), restartPlan.diff);
+                updatedDynamically = true;
+            } catch (ForceableProblem e) {
+                log.debug("{}: Pod {} could not be updated dynamically ({}), will restart", reconciliation, podId, e);
+                updatedDynamically = false;
+            }
+        } else {
+            updatedDynamically = false;
+        }
+        return updatedDynamically;
+    }
+
+    /**
+     * Return true if the given {@code podId} is the controller and there are other brokers we might yet have to consider.
+     * This ensures that the controller is restarted/reconfigured last.
+     */
+    private boolean deferController(int podId, RestartContext restartContext, RestartPlan restartPlan) throws Exception {
+        Integer controller = controller(podId, restartPlan.adminClient(), operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+        int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
+                0, Integer::sum);
+        return controller == podId && stillRunning > 1;
+    }
+
+    /**
+     * Determine whether the pod should be restarted, or the broker reconfigured.
+     */
     private RestartPlan restartPlan(int podId, Pod pod) throws ForceableProblem, InterruptedException, FatalProblem {
         List<String> reasonToRestartPod = podNeedsRestart.apply(pod);
+        if (pod != null
+                && pod.getStatus() != null
+                && "Pending".equals(pod.getStatus().getPhase())
+                && pod.getStatus().getConditions().stream().filter(ps ->
+                "PodScheduled".equals(ps.getType())
+                        && "Unschedulable".equals(ps.getReason())
+                        && "False".equals(ps.getStatus())).findFirst().isPresent()
+                && !reasonToRestartPod.contains("Pod has old generation")) {
+            // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
+            // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
+            // and deleting a different pod in the meantime will likely result in another unschedulable pod.
+            throw new FatalProblem("Pod is unschedulable");
+        }
         // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
         boolean needsReconfig = false;
-        Admin adminClient = null;
+        Admin adminClient = adminClient(podId, false);
         if (!needsRestart) {
-            /*
-            First time we do the restart, the pod is Unschedulable, the post-restart livesness check fails with a timeout and the reconciliation ends
-              - lastProbeTime: null
-                lastTransitionTime: "2020-06-19T10:25:54Z"
-                message: '0/1 nodes are available: 1 Insufficient cpu.'
-                reason: Unschedulable
-                status: "False"
-                type: PodScheduled
-
-            Next reconciliation there's no reason to restart, so we try to determine whether we need to reconfigure.
-            We get CE. If this were not fatal we'd try the next broker (TEST FAIL).
-            In the old algo, because no change was necessary we never tried to open an AC
-
-            When pod later becomes schedulable due to spec change we had a stale pod, so we don't open the AC here,
-            but rather when getting the controller.
-            If we treat CE as fatal there we never restart the pod, so it never gets fixed.
-             */
-
-            // ConFigException is fatal here because otherwise we bring down the cluster by trying to roll other brokers
-            try {
-                adminClient = adminClient(podId, true);
-                diff = diff(adminClient, podId);
-                if (diff.getDiffSize() > 0) {
-                    if (diff.canBeUpdatedDynamically()) {
-                        log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
-                        needsReconfig = true;
-                    } else {
-                        log.info("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
-                        needsRestart = true;
-                    }
+            diff = diff(adminClient, podId);
+            if (diff.getDiffSize() > 0) {
+                if (diff.canBeUpdatedDynamically()) {
+                    log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
+                    needsReconfig = true;
+                } else {
+                    log.info("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
+                    needsRestart = true;
                 }
-            } catch (RuntimeException | Error e) {
-                if (adminClient != null) {
-                    closeAdminClient(adminClient);
-                }
-                throw e;
             }
         } else {
             log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
@@ -500,6 +491,10 @@ public class KafkaRoller {
 
     /** Immediately aborts rolling */
     static final class FatalProblem extends Exception {
+        public FatalProblem(String message) {
+            super(message);
+        }
+
         FatalProblem(String msg, Throwable cause) {
             super(msg, cause);
         }
