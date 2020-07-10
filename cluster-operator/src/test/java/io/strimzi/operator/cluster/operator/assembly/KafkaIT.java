@@ -54,8 +54,11 @@ public class KafkaIT {
     }
 
     @AfterAll
-    public static void after() {
-        vertx.close();
+    public static void after(VertxTestContext context) {
+        Checkpoint checkpoint = context.checkpoint();
+        vertx.close(done -> {
+            checkpoint.flag();
+        });
     }
 
     @BeforeEach
