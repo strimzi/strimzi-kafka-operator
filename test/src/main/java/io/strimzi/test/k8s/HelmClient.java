@@ -71,7 +71,6 @@ public class HelmClient {
 
     private List<String> command(String... rest) {
         List<String> result = new ArrayList<>();
-        LOGGER.info("HELM COMMAND IS: {}", helmCommand);
         result.add(helmCommand);
         result.addAll(asList(rest));
         return result;
