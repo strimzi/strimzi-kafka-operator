@@ -573,12 +573,27 @@ public class ModelUtils {
         return validLines;
     }
 
+    /**
+     * If the toleration.value is an empty string, set it to null. That solves an issue when built STS contains a filed
+     * with an empty property value. K8s is removing properties like this and thus we cannot fetch an equal STS which was
+     * created with (some) empty value.
+     * @param tolerations tolerations list to check whether toleration.value is an empty string and eventually replace it by null
+     */
     public static void removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
         if (tolerations != null) {
             tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
         }
     }
 
+    /**
+     * Checks whether tolerations and template.tolerations exits. If so, latter takes precedence. Entries like tolerations.value == ""
+     * are replaced by tolerations.value = null
+     * @param tolerations path to tolerations in CR
+     * @param tolerationList tolerations
+     * @param templateTolerations path to template.tolerations in CR
+     * @param podTemplate pod template containing tolerations
+     * @return adjusted list with tolerations
+     */
     public static List<Toleration> tolerations(String tolerations, List<Toleration> tolerationList, String templateTolerations, PodTemplate podTemplate) {
         List<Toleration> tolerationsListLocal;
         if (podTemplate != null && podTemplate.getTolerations() != null) {
@@ -589,7 +604,7 @@ public class ModelUtils {
         } else {
             tolerationsListLocal = tolerationList;
         }
-        ModelUtils.removeEmptyValuesFromTolerations(tolerationsListLocal);
+        removeEmptyValuesFromTolerations(tolerationsListLocal);
         return tolerationsListLocal;
     }
 }
