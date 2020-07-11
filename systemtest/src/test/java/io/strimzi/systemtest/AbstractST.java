@@ -505,8 +505,6 @@ public abstract class AbstractST implements TestSeparator {
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
-                assertThat(pod.getMetadata().getLabels().get("app"), is(appName));
-                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("[0-9A-Fa-f]+"), is(true));
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(kind));
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-" + podType)));
