@@ -764,7 +764,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container_name=\"kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container=\"kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -852,7 +852,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container_name=\"kafka\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container=\"kafka\"}[5m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
