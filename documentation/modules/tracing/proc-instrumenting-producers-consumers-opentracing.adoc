@@ -9,7 +9,7 @@ Use a Decorator pattern or Interceptors to instrument your Java Producer and Con
 
 .Procedure
 
-Perform these steps in the application code of each Kafka Producer and Consumer application.
+Perform the following steps in the application code of each Kafka Producer and Consumer application.
 
 . Add the Maven dependency for OpenTracing to the Producer or Consumer's `pom.xml` file.
 +
@@ -24,7 +24,7 @@ Perform these steps in the application code of each Kafka Producer and Consumer 
 
 . Instrument your client application code using either a Decorator pattern or Interceptors.
 
-* If you prefer to use a Decorator pattern, use following example:
+* To use a Decorator pattern:
 +
 [source,java,subs=attributes+]
 ----
@@ -56,7 +56,7 @@ ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
 
-* If you prefer to use Interceptors, use the following example:
+* To use Interceptors:
 +
 [source,java,subs=attributes+]
 ----
@@ -96,7 +96,7 @@ SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(),
 
 A __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
 
-If you use a Decorator pattern to instrument your Kafka Producer and Consumer applications, you can define custom span names by passing a `BiFunction` object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several built-in span names, which are described below.
+To use a Decorator pattern to instrument your Kafka Producer and Consumer applications, define custom span names by passing a `BiFunction` object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several built-in span names.
 
 .Example: Using custom span names to instrument client application code in a Decorator pattern
 

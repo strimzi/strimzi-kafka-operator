@@ -4,7 +4,7 @@
 [id='assembly-instrumenting-kafka-clients-tracers-{context}']
 = Instrumenting Kafka clients with tracers
 
-This section describes how to instrument Kafka Producer, Consumer, and Streams API applications for distributed tracing.
+Instrument Kafka Producer, Consumer, and Streams API applications for distributed tracing.
 
 include::../../modules/tracing/proc-instrumenting-producers-consumers-opentracing.adoc[leveloffset=+1]
 

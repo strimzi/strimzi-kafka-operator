@@ -9,7 +9,7 @@ This section describes how to instrument Kafka Streams API applications for dist
 
 .Procedure
 
-Perform the following steps for each Kafka Streams API application.
+In each Kafka Streams API application:
 
 . Add the `opentracing-kafka-streams` dependency to the pom.xml file for your Kafka Streams API application:
 +

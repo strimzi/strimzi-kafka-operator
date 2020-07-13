@@ -3,7 +3,7 @@
 // assembly-setting-up-tracing-kafka-clients.adoc
 
 [id='ref-tracing-environment-variables-{context}']
-= Tracing environment variables
+= Environment variables for tracing
 
 Use these environment variables when configuring a Jaeger tracer for Kafka clients.
 
@@ -30,7 +30,7 @@ m¦JAEGER_AGENT_PORT
 
 m¦JAEGER_ENDPOINT
 ¦No
-¦The traces endpoint. Only define this variable if the client application will bypass the `jaeger-agent` and connect directly to the `jaeger-collector`.
+¦The `traces` endpoint. Only define this variable if the client application will bypass the `jaeger-agent` and connect directly to the `jaeger-collector`.
 
 m¦JAEGER_AUTH_TOKEN
 ¦No
@@ -62,7 +62,12 @@ m¦JAEGER_REPORTER_FLUSH_INTERVAL
 
 m¦JAEGER_SAMPLER_TYPE
 ¦No
-¦The sampling strategy to use for client traces: Constant, Probabilistic, Rate Limiting, or Remote (the default type). 
+a¦The sampling strategy to use for client traces:
+
+* Constant
+* Probabilistic
+* Rate Limiting
+* Remote (the default)
 
 To sample all traces, use the Constant sampling strategy with a parameter of 1.
 

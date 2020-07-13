@@ -12,9 +12,7 @@ In Strimzi, tracing facilitates the end-to-end tracking of messages: from source
 [discrete]
 == How Strimzi supports tracing
 
-Strimzi uses the {OpenTracingHome} and {JaegerHome} projects.
-
-Tracing is supported for:
+Support for tracing is built in to the following components:
 
 * Kafka Connect (including Kafka Connect with Source2Image support)
 * MirrorMaker
@@ -26,28 +24,35 @@ To enable tracing in Kafka Producer, Consumer, and Kafka Streams API application
 
 Traces are sampled according to a sampling strategy and then visualized in the Jaeger user interface.
 
-Before configuring distributed tracing, you must first xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[initialize a Jaeger tracer] in the Kafka cluster.
-
-NOTE: Tracing is not supported for Kafka brokers. Setting up distributed tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, see the {OpenTracingDocs} and search for "inject and extract".
-
-include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
-
 [discrete]
 == Outline of procedures
 
 To set up distributed tracing for Strimzi, follow these procedures in order:
 
-* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
+* Set up tracing for clients:
 
-* xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument Kafka Producers and Consumers for tracing]
+** xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
 
-* xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
+* Instrument clients with tracers:
+
+** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument Kafka Producers and Consumers for tracing]
+
+** xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
 
 * xref:assembly-setting-up-tracing-mirror-maker-connect-bridge-{context}[Set up tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
 
 .Prerequisites
 
-* The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the https://www.jaegertracing.io/docs/1.14/deployment/[Jaeger deployment documentation^].
+* The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the https://www.jaegertracing.io/docs/1.18/deployment/[Jaeger deployment documentation^].
+
+[NOTE]
+====
+Tracing is not supported for Kafka brokers.
+
+Setting up distributed tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
+====
+
+include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
 
 include::assembly-setting-up-tracing-kafka-clients.adoc[leveloffset=+1]
 
