@@ -43,7 +43,7 @@ For example:
 |===
 |NAME     |TYPE      |CLUSTER-IP    |PORT(S)
 
-|grafana  |ClusterIP |172.30.123.40 |80/TCP
+|grafana  |ClusterIP |172.30.123.40 |3000/TCP
 |===
 +
 Note the port number for port forwarding.
