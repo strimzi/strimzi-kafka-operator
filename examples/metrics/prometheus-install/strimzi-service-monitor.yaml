@@ -7,7 +7,9 @@ metadata:
 spec:
   selector:
     matchExpressions:
-      - {key: "strimzi.io/kind", operator: In, values: ["Kafka", "KafkaConnect"]}
+      - key: "strimzi.io/kind"
+        operator: In
+        values: ["Kafka", "KafkaConnect"]
   namespaceSelector:
     matchNames:
       - myproject
