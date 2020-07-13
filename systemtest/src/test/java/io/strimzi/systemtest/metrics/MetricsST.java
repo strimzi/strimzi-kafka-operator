@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
@@ -16,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -71,6 +74,8 @@ public class MetricsST extends AbstractST {
     private HashMap<String, String> clusterOperatorMetricsData;
     private HashMap<String, String> userOperatorMetricsData;
     private HashMap<String, String> topicOperatorMetricsData;
+
+    private String bridgeTopic = "bridge-topic";
 
     @Test
     void testKafkaBrokersCount() {
@@ -145,13 +150,13 @@ public class MetricsST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange() {
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
+            .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
@@ -291,14 +296,36 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(BRIDGE)
     void testKafkaBridgeMetrics() {
-        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
-        assertThat("Collected KafkaBridge metrics are empty", kafkaBridgeMetricsData.size() > 0);
-        assertThat("Collected KafkaBridge metrics doesn't contains vertx metrics", kafkaBridgeMetricsData.values().toString().contains("vertx"));
-        assertThat("Collected KafkaBridge metrics doesn't contains jvm metrics", kafkaBridgeMetricsData.values().toString().contains("jvm"));
+        String producerName = "bridge-producer";
+        String consumerName = "bridge-consumer";
 
-        Pattern brdigeResponse = Pattern.compile("system_cpu_count ([\\d.][^\\n]+)");
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(brdigeResponse, kafkaBridgeMetricsData);
+        // Attach consumer before producer
+        KafkaClientsResource.consumerStrimziBridge(consumerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER), Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeTopic, 200).done();
+        KafkaClientsResource.producerStrimziBridge(producerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER), Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeTopic, 200).done();
+
+        TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");
+            kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
+            Pattern producerCountPattern = Pattern.compile("strimzi_bridge_kafka_producer_count\\{.*,} ([\\d.][^\\n]+)");
+            ArrayList<Double> producerCountValues = MetricsUtils.collectSpecificMetric(producerCountPattern, kafkaBridgeMetricsData);
+            return producerCountValues.stream().mapToDouble(i -> i).count() == (double) 1;
+        });
+
+        TestUtils.waitFor("KafkaConsumer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            LOGGER.info("Looking for 'strimzi_bridge_kafka_consumer_connection_count' in bridge metrics");
+            kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
+            Pattern consumerConnectionsPattern = Pattern.compile("strimzi_bridge_kafka_consumer_connection_count\\{.*,} ([\\d.][^\\n]+)");
+            ArrayList<Double> consumerConnectionsValues = MetricsUtils.collectSpecificMetric(consumerConnectionsPattern, kafkaBridgeMetricsData);
+            return consumerConnectionsValues.stream().mapToDouble(i -> i).count() > 0;
+        });
+
+        assertThat("Collected KafkaBridge metrics doesn't contains jvm metrics", kafkaBridgeMetricsData.values().toString().contains("jvm"));
+        assertThat("Collected KafkaBridge metrics doesn't contains strimzi metrics", kafkaBridgeMetricsData.values().toString().contains("strimzi_bridge_http_server"));
+
+        Pattern bridgeResponse = Pattern.compile("system_cpu_count ([\\d.][^\\n]+)");
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(bridgeResponse, kafkaBridgeMetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
@@ -352,6 +379,7 @@ public class MetricsST extends AbstractST {
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
         KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 7, 2).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, bridgeTopic).done();
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();

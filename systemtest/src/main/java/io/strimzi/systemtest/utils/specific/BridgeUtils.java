@@ -81,7 +81,7 @@ public class BridgeUtils {
                             String kafkaTopic = jsonResponse.getString("topic");
                             int kafkaPartition = jsonResponse.getInteger("partition");
                             String key = jsonResponse.getString("key");
-                            String value = jsonResponse.getString("value");
+                            Object value = jsonResponse.getValue("value");
                             long offset = jsonResponse.getLong("offset");
                             LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                         }
