@@ -2,7 +2,7 @@
 //
 // assembly-distributed-tracing.adoc
 
-[id='con-overview-distributed-tracing-{context}']
+[id='con-overview-opentracing-jaeger-{context}']
 = Overview of OpenTracing and Jaeger
 
 The OpenTracing specification defines APIs that developers can use to instrument applications for distributed tracing. It is independent from the tracing system.

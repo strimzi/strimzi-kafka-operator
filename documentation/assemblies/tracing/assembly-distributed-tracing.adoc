@@ -30,7 +30,7 @@ Before configuring distributed tracing, you must first xref:proc-configuring-jae
 
 NOTE: Tracing is not supported for Kafka brokers. Setting up distributed tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, see the {OpenTracingDocs} and search for "inject and extract".
 
-include::../../modules/tracing/con-overview-distributed-tracing.adoc[leveloffset=+1]
+include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
 
 [discrete]
 == Outline of procedures
