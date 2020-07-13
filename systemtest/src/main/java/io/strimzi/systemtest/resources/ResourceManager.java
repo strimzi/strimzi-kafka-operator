@@ -43,6 +43,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
@@ -93,6 +94,10 @@ public class ResourceManager {
 
     public static KubeCmdClient cmdKubeClient() {
         return KubeClusterResource.cmdKubeClient();
+    }
+
+    public static HelmClient helmClient() {
+        return KubeClusterResource.helmClusterClient();
     }
 
     public static Stack<Runnable> getPointerResources() {
