@@ -100,5 +100,7 @@ or
 
 .Additional resources
 
-* For more information on the `KafkaConnect.spec.image property`, see link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka-connect[Container images^].
-* For more information on the `STRIMZI_KAFKA_CONNECT_IMAGES` variable, see link:{BookURLUsing}#ref-operators-cluster-operator-configuration-deploying-co[Cluster Operator Configuration^].
+See the _Using Strimzi_ guide for more information on:
+
+* link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka-connect[Container images and the `KafkaConnect.spec.image property`^].
+* link:{BookURLUsing}#ref-operators-cluster-operator-configuration-deploying-co[Cluster Operator Configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^].
