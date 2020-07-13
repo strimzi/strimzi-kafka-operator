@@ -42,7 +42,7 @@ Please follow the guide for upgrading the resources: https://strimzi.io/docs/ope
 The `pod_name` and `container_name` labels provided on the cadvisor metrics are now just `pod` and `container` starting from Kubernetes 1.16.
 We removed the old ones from the Prometheus scraping configuration/alerts and on the Kafka and ZooKeeper dashboard as well.
 It means that the charts related to memory and CPU usage are not going to work on Kuvbernetes version previous 1.14.
-For more information see this Kubernetes PR https://github.com/kubernetes/kubernetes/pull/80376
+For more information on what is changed: https://github.com/strimzi/strimzi-kafka-operator/pull/3312
 
 ## 0.18.0
 
