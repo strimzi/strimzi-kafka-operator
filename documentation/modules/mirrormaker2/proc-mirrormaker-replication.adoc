@@ -49,8 +49,10 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* xref:cluster-operator-str[Strimzi and Kafka is deployed]
-* Source and target Kafka clusters are available
+* See the _Deploying Strimzi_ guide for instructions on running a:
+** link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+** link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
+* Source and target Kafka clusters must be available
 
 .Procedure
 

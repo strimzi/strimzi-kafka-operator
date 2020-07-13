@@ -6,7 +6,7 @@
 = Deploying the Cluster Operator using a Helm Chart
 
 As an alternative to using the YAML deployment files,
-this procedure shows how to deploy the the Cluster Operator using a Helm chart provided with Strimzi.
+this procedure shows how to deploy the Cluster Operator using a Helm chart provided with Strimzi.
 
 .Prerequisites
 

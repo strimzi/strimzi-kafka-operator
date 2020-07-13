@@ -15,6 +15,17 @@ Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deplo
 
 The procedures assume a Kubernetes cluster is available and running.
 
+ifdef::Downloading[]
+This section describes the procedures to deploy Strimzi on Kubernetes {KubernetesVersion}.
+endif::Downloading[]
+
+ifndef::Downloading[]
+Strimzi is based on Strimzi {StrimziVersion}.
+This section describes the procedures to deploy Strimzi on OpenShift {OpenShiftVersion}.
+endif::Downloading[]
+
+NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
+
 //Procedures to create Kafka cluster: deploy the Cluster Operator, deploy the Kafka cluster
 include::assembly-deploy-create-cluster.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Connect
