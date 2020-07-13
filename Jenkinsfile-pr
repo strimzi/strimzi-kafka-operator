@@ -89,12 +89,16 @@ pipeline {
                         env.DOCKER_REGISTRY = env.OC_VERSION == "3" ? "172.30.1.1:5000" : "default-route-openshift-image-registry.apps-crc.testing"
                         env.DOCKER_TAG="pr"
                     }
+                    if (env.ghprbCommentBody.contains('install_type=')) {
+                        env.CLUSTER_OPERATOR_INSTALL_TYPE = env.ghprbCommentBody.split('install_type=')[1].split(/\s/)[0]
+                    }
                     env.BUILD_PROJECT_STATUS = false
                     env.BUILD_DOCKER_IMAGE_STATUS = false
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
                     echo "DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}"
                     echo "DOCKER_ORG: ${env.DOCKER_ORG}"
                     echo "DOCKER_TAG: ${env.DOCKER_TAG}"
+                    echo "CLUSTER_OPERATOR_INSTALL_TYPE: ${env.CLUSTER_OPERATOR_INSTALL_TYPE}"
                 }
             }
         }
