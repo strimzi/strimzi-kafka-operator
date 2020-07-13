@@ -8,7 +8,7 @@ Distributed tracing is supported for MirrorMaker, Kafka Connect (including Kafka
 
 .Tracing in MirrorMaker
 
-For MirrorMaker, messages are traced from the source cluster to the target cluster; the trace data records messages entering and leaving the MirrorMaker component.
+For MirrorMaker, messages are traced from the source cluster to the target cluster. The trace data records messages entering and leaving the MirrorMaker component.
 
 .Tracing in Kafka Connect
 
@@ -17,6 +17,6 @@ Only messages produced and consumed by Kafka Connect itself are traced. To trace
 .Tracing in the Kafka Bridge
 
 Messages produced and consumed by the Kafka Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the Kafka Bridge are also traced.
-In order to have end-to-end tracing, you must configure tracing in your HTTP clients.
+To have end-to-end tracing, you must configure tracing in your HTTP clients.
 
 include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]

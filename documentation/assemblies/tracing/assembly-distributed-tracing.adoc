@@ -20,14 +20,14 @@ Support for tracing is built in to the following components:
 
 You enable and configure tracing for these components using template configuration properties in their custom resources.
 
-To enable tracing in Kafka Producer, Consumer, and Kafka Streams API applications, you _instrument_ application code using the link:https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library (included with Strimzi). When instrumented, clients generate trace data; for example, when producing messages or writing offsets to the log.
+To enable tracing in Kafka producers, consumers, and Kafka Streams API applications, you _instrument_ application code using the link:https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library (included with Strimzi). When instrumented, clients generate trace data; for example, when producing messages or writing offsets to the log.
 
 Traces are sampled according to a sampling strategy and then visualized in the Jaeger user interface.
 
 [discrete]
 == Outline of procedures
 
-To set up distributed tracing for Strimzi, follow these procedures in order:
+To set up tracing for Strimzi, follow these procedures in order:
 
 * Set up tracing for clients:
 
@@ -35,7 +35,7 @@ To set up distributed tracing for Strimzi, follow these procedures in order:
 
 * Instrument clients with tracers:
 
-** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument Kafka Producers and Consumers for tracing]
+** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument producers and consumers for tracing]
 
 ** xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
 
@@ -49,7 +49,7 @@ To set up distributed tracing for Strimzi, follow these procedures in order:
 ====
 Tracing is not supported for Kafka brokers.
 
-Setting up distributed tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
+Setting up tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
 ====
 
 include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
