@@ -271,11 +271,9 @@ public class KafkaRoller {
         private final boolean needsReconfig;
         private final KafkaBrokerConfigurationDiff diff;
         private final Admin adminClient;
-        private final int podId;
 
-        public RestartPlan(Admin adminClient, int podId, boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff) {
+        public RestartPlan(Admin adminClient, boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff) {
             this.adminClient = adminClient;
-            this.podId = podId;
             this.needsRestart = needsRestart;
             this.needsReconfig = needsReconfig;
             this.diff = diff;
@@ -423,7 +421,7 @@ public class KafkaRoller {
         } else {
             log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
         }
-        return new RestartPlan(adminClient, podId, needsRestart, needsReconfig, diff);
+        return new RestartPlan(adminClient, needsRestart, needsReconfig, diff);
     }
 
     /**
