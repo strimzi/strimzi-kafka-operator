@@ -114,7 +114,9 @@ The Kafka cluster is configured with a Kafka broker listener using TLS authentic
 +
 A service is created for each Kafka broker pod.
 +
-An additional service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
+A service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
++
+An additional service is created as the _external bootstrap address_ for external connection to the Kafka cluster using `nodeport` listeners.
 +
 The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
