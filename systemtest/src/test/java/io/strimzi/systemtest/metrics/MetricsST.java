@@ -88,7 +88,7 @@ public class MetricsST extends AbstractST {
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
-        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(290.0));
+        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(291.0));
     }
 
     @Test
@@ -405,6 +405,7 @@ public class MetricsST extends AbstractST {
         list.add("second-kafka-cluster.checkpoints.internal");
         list.add("heartbeats");
         list.add(TOPIC_NAME);
+        list.add(bridgeTopic);
         return list;
     }
 }
