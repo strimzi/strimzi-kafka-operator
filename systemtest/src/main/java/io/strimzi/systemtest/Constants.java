@@ -77,7 +77,7 @@ public interface Constants {
      */
     String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
     String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
-    String KAFKA_BRDIGE_CLIENTS_LABEL_VALUE = "kafka-clients";
+    String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";

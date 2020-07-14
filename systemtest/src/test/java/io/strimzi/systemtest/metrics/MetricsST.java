@@ -322,7 +322,7 @@ public class MetricsST extends AbstractST {
         });
 
         assertThat("Collected KafkaBridge metrics doesn't contains jvm metrics", kafkaBridgeMetricsData.values().toString().contains("jvm"));
-        assertThat("Collected KafkaBridge metrics doesn't contains strimzi metrics", kafkaBridgeMetricsData.values().toString().contains("strimzi_bridge_http_server"));
+        assertThat("Collected KafkaBridge metrics doesn't contains HTTP metrics", kafkaBridgeMetricsData.values().toString().contains("strimzi_bridge_http_server"));
 
         Pattern bridgeResponse = Pattern.compile("system_cpu_count ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(bridgeResponse, kafkaBridgeMetricsData);

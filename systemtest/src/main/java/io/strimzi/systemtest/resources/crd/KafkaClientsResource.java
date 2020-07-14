@@ -615,7 +615,7 @@ public class KafkaClientsResource {
     public static DoneableJob producerStrimziBridge(String producerName, String bridgeHostname, int port, String topicName, int messageCount, int sendInterval) {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
-        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRDIGE_CLIENTS_LABEL_VALUE);
+        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         return KubernetesResource.deployNewJob(new JobBuilder()
             .withNewMetadata()
@@ -668,7 +668,7 @@ public class KafkaClientsResource {
     public static DoneableJob consumerStrimziBridge(String consumerName, String bridgeHostname, int port, String topicName, int messageCount, int pollInterval, String consumerGroup) {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
-        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRDIGE_CLIENTS_LABEL_VALUE);
+        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         return KubernetesResource.deployNewJob(new JobBuilder()
             .withNewMetadata()
