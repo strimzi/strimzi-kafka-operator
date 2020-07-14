@@ -10,17 +10,26 @@ To deploy the Prometheus Operator to your Kafka cluster, apply the YAML bundle r
 
 .Procedure
 
-. Download the resource file from the repository and replace the example `namespace` with your own:
+. Download the `bundle.yaml` resources file from the repository.
 +
 On Linux, use:
 +
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
 +
 On MacOS, use:
 +
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
++
+** Replace the example `namespace` with your own.
++
+ifdef::Downloading[]
+** Use the latest `master` release as shown, or choose a release that is compatible with your version of Kubernetes (see the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix]). 
+The `master` release of the Prometheus Operator works with Kubernetes 1.18+.
+endif::Downloading[]
++
+NOTE: If using OpenShift, specify a release of the link:https://github.com/openshift/prometheus-operator[OpenShift fork^] of the Prometheus Operator repository.
 
 . (Optional) If it is not required, you can manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file.
 
@@ -28,5 +37,3 @@ curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bund
 +
 [source,shell,subs="+attributes"]
 kubectl apply -f prometheus-operator-deployment.yaml
-+
-NOTE: The Prometheus Operator installation works with Kubernetes 1.18+. To check which version to use with a different Kubernetes version, refer to the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix].
