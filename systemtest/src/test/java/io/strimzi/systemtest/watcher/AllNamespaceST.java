@@ -231,12 +231,4 @@ class AllNamespaceST extends AbstractNamespaceST {
     void setupEnvironment() {
         deployTestSpecificResources();
     }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        teardownEnvForOperator();
-        ResourceManager.setClassResources();
-        deployTestSpecificResources();
-        ResourceManager.setMethodResources();
-    }
 }

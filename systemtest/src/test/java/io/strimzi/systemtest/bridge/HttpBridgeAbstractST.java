@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -137,11 +136,6 @@ public class HttpBridgeAbstractST extends AbstractST {
                 .build();
 
         assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
     }
 
     public String getBridgeNamespace() {

@@ -189,52 +189,6 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param operationTimeout timeout for CO operations
-     * @param reconciliationInterval CO reconciliation interval
-     */
-    protected void recreateTestEnv(String coNamespace, long operationTimeout, long reconciliationInterval) throws Exception {
-        recreateTestEnv(coNamespace, Collections.singletonList(coNamespace), operationTimeout, reconciliationInterval);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) throws Exception {
-        recreateTestEnv(coNamespace, bindingsNamespaces, operationTimeout, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     * @param reconciliationInterval CO reconciliation interval
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) throws Exception {
-        ResourceManager.deleteMethodResources();
-        ResourceManager.deleteClassResources();
-
-        KubeClusterResource.getInstance().deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteNamespaces();
-
-        installClusterOperator(coNamespace, bindingsNamespaces, operationTimeout, reconciliationInterval);
-    }
-
-    /**
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
@@ -699,12 +653,6 @@ public abstract class AbstractST implements TestSeparator {
         }
 
         if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent() || assertionError != null) {
-                LOGGER.info("Test execution contains exception, going to recreate test environment");
-                recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
-                KubernetesResource.applyDefaultNetworkPolicySettings(cluster.getBindingsNamespaces());
-                LOGGER.info("Env recreated.");
-            }
             tearDownEnvironmentAfterEach();
         }
 

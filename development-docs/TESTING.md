@@ -128,18 +128,6 @@ For delete all resources from specific `Resources` instance you can do it like:
     ResourceManager.deleteClassResources();
 ```
 
-
-Another important thing is environment recreation in the case of failure. The `recreateTestEnv()` method in `BaseST`  is called in the case of an exception during test execution. 
-This is useful for these tests, which can break the cluster operator for subsequent test cases.
-
-Example of skip recreate environment in the case of failures. You must override the method from `BaseST` in your test class:
-```
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
-    }
-```
-
 #### Cluster Operator log check
 
 After each test there is a check for cluster operator logs which looks for unexpected errors or unexpected exceptions.

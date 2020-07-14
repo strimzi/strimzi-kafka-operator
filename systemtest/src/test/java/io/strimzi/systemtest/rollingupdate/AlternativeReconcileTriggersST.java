@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -215,11 +214,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         int sentAfter = internalKafkaClient.sendMessagesTls();
         assertThat(sentAfter, is(MESSAGE_COUNT));
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
     @BeforeAll

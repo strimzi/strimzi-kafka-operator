@@ -720,11 +720,6 @@ class RollingUpdateST extends AbstractST {
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
     }
 
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();

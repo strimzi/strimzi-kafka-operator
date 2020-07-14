@@ -552,11 +552,6 @@ class LogSettingST extends AbstractST {
     }
 
     @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
-    }
-
-    @Override
     protected void tearDownEnvironmentAfterAll() {
         teardownEnvForOperator();
     }
