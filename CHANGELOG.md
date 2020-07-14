@@ -38,6 +38,13 @@ In Strimzi 0.12.0, the `v1alpha1` versions of the following resources have been 
 In the next release, the `v1alpha1` versions of these resources will be removed. 
 Please follow the guide for upgrading the resources: https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-resources-str.
 
+#### Removal deprecated cadvisor metric labels
+
+The `pod_name` and `container_name` labels provided on the cadvisor metrics are now just `pod` and `container` starting from Kubernetes 1.16.
+We removed the old ones from the Prometheus scraping configuration/alerts and on the Kafka and ZooKeeper dashboard as well.
+It means that the charts related to memory and CPU usage are not going to work on Kuvbernetes version previous 1.14.
+For more information on what is changed: https://github.com/strimzi/strimzi-kafka-operator/pull/3312
+
 ## 0.18.0
 
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.
