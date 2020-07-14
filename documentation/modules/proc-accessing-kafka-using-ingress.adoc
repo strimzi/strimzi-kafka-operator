@@ -51,12 +51,12 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONFIG-FILE_
 
 . Extract the public certificate of the broker certificate authority
 +
 [source,shell,subs=+quotes]
-kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 . Use the extracted certificate in your Kafka client to configure the TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

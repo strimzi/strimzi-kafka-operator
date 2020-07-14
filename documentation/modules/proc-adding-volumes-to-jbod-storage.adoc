@@ -55,7 +55,7 @@ spec:
 +
 This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONFIG-FILE_
 
 . Create new topics or reassign existing partitions to the new disks.
 

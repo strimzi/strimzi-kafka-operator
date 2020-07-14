@@ -50,19 +50,19 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONFIG-FILE_
 
 . Find the port number of the bootstrap service.
 +
 [source,shell,subs=+quotes]
-kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'
+kubectl get service _KAFKA-CLUSTER-NAME_-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'
 +
 The port is used in the Kafka _bootstrap_ address.
 
 . Find the address of the Kubernetes node.
 +
 [source,shell,subs=+quotes]
-kubectl get node _node-name_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
+kubectl get node _KUBERNETES-NODE-NAME_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
 +
 If several different addresses are returned, select the address type you want based on the following order:
 +
@@ -79,7 +79,7 @@ Use the address with the port found in the previous step in the Kafka _bootstrap
 . Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
 +
 [source,shell,subs=+quotes]
-kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
