@@ -24,6 +24,13 @@ To enable tracing in Kafka producers, consumers, and Kafka Streams API applicati
 
 Traces are sampled according to a sampling strategy and then visualized in the Jaeger user interface.
 
+[NOTE]
+====
+Tracing is not supported for Kafka brokers.
+
+Setting up tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
+====
+
 [discrete]
 == Outline of procedures
 
@@ -44,13 +51,6 @@ To set up tracing for Strimzi, follow these procedures in order:
 .Prerequisites
 
 * The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the https://www.jaegertracing.io/docs/1.18/deployment/[Jaeger deployment documentation^].
-
-[NOTE]
-====
-Tracing is not supported for Kafka brokers.
-
-Setting up tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
-====
 
 include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
 

@@ -7,11 +7,19 @@
 
 Strimzi uses the OpenTracing and Jaeger projects.
 
-The OpenTracing specification defines APIs that developers can use to instrument applications for distributed tracing. It is independent from the tracing system.
+OpenTracing is an API specification that is independent from the tracing or monitoring system.
 
-When instrumented, applications generate _traces_ for individual transactions. Traces are composed of _spans_, which define specific units of work.
+* The OpenTracing APIs are used to _instrument_ application code
 
-Jaeger is a tracing system that provides client libraries for instrumenting applications. It implements the OpenTracing APIs. Use the Jaeger user interface to visualize, query, filter, and analyze trace data:
+* Instrumented applications generate _traces_ for individual transactions across the distributed system
+
+* Traces are composed of _spans_ that define specific units of work over time
+
+Jaeger is a tracing system for microservices-based distributed systems.
+
+* Jaeger implements the OpenTracing APIs and provides client libraries for instrumentation
+
+* The Jaeger user interface allows you to query, filter, and analyze trace data
 
 image:image_con-overview-distributed-tracing.png[Simple Jaeger query]
 

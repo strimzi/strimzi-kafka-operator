@@ -9,7 +9,7 @@ Use a Decorator pattern or Interceptors to instrument your Java producer and con
 
 .Procedure
 
-Perform the following steps in the application code of each producer and consumer application.
+In the application code of each producer and consumer application:
 
 . Add the Maven dependency for OpenTracing to the producer or consumer's `pom.xml` file.
 +
