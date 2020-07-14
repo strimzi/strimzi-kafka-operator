@@ -248,7 +248,7 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
+                        .withNewListeners()
                             .editOrNewTls()
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()

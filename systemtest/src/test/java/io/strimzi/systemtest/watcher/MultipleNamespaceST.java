@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.watcher;
 
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
@@ -72,7 +72,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         applyRoleBindings(CO_NAMESPACE);
         applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
         // 050-Deployment
-        KubernetesResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
+        BundleResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
         cluster.setNamespace(SECOND_NAMESPACE);
 

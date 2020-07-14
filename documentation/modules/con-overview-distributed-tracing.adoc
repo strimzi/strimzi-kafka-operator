@@ -9,7 +9,9 @@ Distributed tracing allows developers and system administrators to track the pro
 
 In Strimzi and data streaming platforms in general, distributed tracing facilitates the end-to-end tracking of messages: from source systems to the Kafka cluster and then to target systems and applications.
 
-As an aspect of system observability, distributed tracing complements the metrics that are available to view in link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards] and the available loggers for each component. 
+As an aspect of system observability, distributed tracing complements the metrics that are available to view in Grafana dashboards and the available loggers for each component.
+
+For more information on Grafana dashboards, see link:{BookURLDeploying}#assembly-metrics-setup-{context}[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
 .OpenTracing overview
 

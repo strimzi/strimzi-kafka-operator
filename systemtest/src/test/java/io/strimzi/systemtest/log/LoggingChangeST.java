@@ -8,28 +8,38 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 
 @Tag(REGRESSION)
 class LoggingChangeST extends AbstractST {
@@ -124,7 +134,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
 
-        KubernetesResource.clusterOperator(NAMESPACE)
+        BundleResource.clusterOperator(NAMESPACE)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -172,6 +182,171 @@ class LoggingChangeST extends AbstractST {
         assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
         assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    void testDynamicallySetEOloggingLevels() throws InterruptedException {
+        InlineLogging ilOff = new InlineLogging();
+        ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
+                .editSpec()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withInlineLogging(ilOff)
+                        .endTopicOperator()
+                        .editUserOperator()
+                            .withInlineLogging(ilOff)
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
+
+        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDeploymentName);
+
+        final String eoPodName = eoPods.keySet().iterator().next();
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Collections.singletonMap("rootLogger.level", "DEBUG"));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilDebug);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(ilDebug);
+        });
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+        );
+
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
+        // wait some time and check whether logs (UO and TO) after this time contain anything
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(not(emptyString())));
+
+        LOGGER.info("Setting external logging OFF");
+        ConfigMap configMapTo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-to")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j2.properties", "name=TOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=OFF\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        ConfigMap configMapUo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-uo")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData(Collections.singletonMap("log4j2.properties", "name=UOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=OFF\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
+
+        ExternalLogging elTo = new ExternalLoggingBuilder()
+                .withName("external-configmap-to")
+                .build();
+
+        ExternalLogging elUo = new ExternalLoggingBuilder()
+                .withName("external-configmap-uo")
+                .build();
+
+        LOGGER.info("Setting log level of TO and UO to OFF - records should not appear in log");
+        // change to external logging
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getEntityOperator().getTopicOperator().setLogging(elTo);
+            k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
+        });
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+        );
+
+        LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL * 2);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log is without records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(emptyString()));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(emptyString()));
+
+        LOGGER.info("Setting external logging OFF");
+        configMapTo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-to")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j2.properties", "name=TOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=DEBUG\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        configMapUo = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-uo")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData(Collections.singletonMap("log4j2.properties", "name=UOConfig\n" +
+                        "appender.console.type=Console\n" +
+                        "appender.console.name=STDOUT\n" +
+                        "appender.console.layout.type=PatternLayout\n" +
+                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "rootLogger.level=DEBUG\n" +
+                        "rootLogger.appenderRefs=stdout\n" +
+                        "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                        "rootLogger.additivity=false"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapTo);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+        );
+
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
+        //wait some time if TO and UO will log something
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "user-operator", "30s"), is(not(emptyString())));
+        assertThat(StUtils.getLogFromPodByTime(eoPodName, "topic-operator", "30s"), is(not(emptyString())));
+
+        assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(eoDeploymentName), equalTo(eoPods));
     }
 
     @BeforeAll
