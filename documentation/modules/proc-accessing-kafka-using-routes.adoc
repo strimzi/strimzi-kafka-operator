@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Deploy Kafka cluster with an external listener enabled and configured to the type `route`.
+. Deploy a Kafka cluster with an external listener enabled and configured to the type `route`.
 +
 An example configuration with an external listener configured to use `Routes`:
 +
@@ -35,19 +35,19 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-oc apply -f _your-file_
+oc apply -f _KAFKA-CONFIG-FILE_
 
 . Find the address of the bootstrap `Route`.
 +
-[source,shell]
-oc get routes _cluster-name_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
+[source,shell,subs=+quotes]
+oc get routes _KAFKA-CLUSTER-NAME_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
 +
 Use the address together with port 443 in your Kafka client as the _bootstrap_ address.
 
 . Extract the public certificate of the broker certification authority
 +
-[source,shell]
-kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+[source,shell,subs=+quotes]
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

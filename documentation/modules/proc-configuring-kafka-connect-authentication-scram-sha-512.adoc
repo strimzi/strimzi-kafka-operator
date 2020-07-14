@@ -20,13 +20,13 @@ NOTE: Secrets created by the User Operator may be used.
 +
 This can be done using `kubectl create`:
 [source,shell,subs=+quotes]
-echo -n '_<password>_' > _<my-password.txt>_
-kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+echo -n '_PASSWORD_' > _MY-PASSWORD.txt_
+kubectl create secret generic _MY-SECRET_ --from-file=_MY-PASSWORD.txt_
 
 . Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
 For example:
 +
-[source,yaml,subs=attributes+]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: KafkaConnect
@@ -36,10 +36,10 @@ spec:
   # ...
   authentication:
     type: scram-sha-512
-    username: _<my-username>_
+    username: _MY-USERNAME_
     passwordSecret:
-      secretName: _<my-secret>_
-      password: _<my-password.txt>_
+      secretName: _MY-SECRET_
+      password: _MY-PASSWORD.txt_
   # ...
 ----
 +
