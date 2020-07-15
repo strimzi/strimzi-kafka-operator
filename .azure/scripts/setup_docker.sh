@@ -6,6 +6,7 @@ set -e
 sudo apt-get remove --purge iotedge
 sudo apt-get remove --purge moby-cli
 sudo apt-get remove --purge moby-engine
+sudo apt-get remove --purge containerd.io
 
 # Do update and install docker
 sudo apt update
