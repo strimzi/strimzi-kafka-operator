@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.user;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -146,6 +147,29 @@ class UserST extends AbstractST {
     @Test
     void testScramUserWithQuotas() {
         testUserWithQuotas(KafkaUserResource.scramShaUser(CLUSTER_NAME, "scramed-arnost").done());
+    }
+
+    @Test
+    void testUserTemplate() {
+        String labelKey = "test-label-key";
+        String labelValue = "test-label-value";
+        String annotationKey = "test-annotation-key";
+        String annotationValue = "test-annotation-value";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewSecret()
+                        .editOrNewMetadata()
+                            .addToLabels(labelKey, labelValue)
+                            .addToAnnotations(annotationKey, annotationValue)
+                        .endMetadata()
+                    .endSecret()
+                .endTemplate()
+            .endSpec().done();
+
+        Secret userSecret = kubeClient().getSecret(USER_NAME);
+        assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
+        assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
 
     void testUserWithQuotas(KafkaUser user) {
