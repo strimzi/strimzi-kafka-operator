@@ -396,7 +396,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Integer zkCurrentReplicas = null;
 
         private KafkaCluster kafkaCluster = null;
-        private int oldKafkaReplicas;
+        private Integer kafkaCurrentReplicas = null;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
         private Service kafkaService;
@@ -1649,12 +1649,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
-                        oldKafkaReplicas = 0;
+                        kafkaCurrentReplicas = 0;
                         if (sts != null && sts.getSpec() != null)   {
-                            oldKafkaReplicas = sts.getSpec().getReplicas();
+                            kafkaCurrentReplicas = sts.getSpec().getReplicas();
                         }
 
-                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, oldKafkaReplicas);
+                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
                         this.kafkaService = kafkaCluster.generateService();
                         this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
                         return Future.succeededFuture(this);
