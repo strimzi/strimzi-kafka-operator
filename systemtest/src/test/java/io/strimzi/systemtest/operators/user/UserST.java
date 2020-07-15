@@ -151,23 +151,25 @@ class UserST extends AbstractST {
 
     @Test
     void testUserTemplate() {
-        String label = "test-label";
-        String annotation = "test-annotation";
+        String labelKey = "test-label-key";
+        String labelValue = "test-label-value";
+        String annotationKey = "test-annotation-key";
+        String annotationValue = "test-annotation-value";
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewSecret()
                         .editOrNewMetadata()
-                            .addToLabels(label, label)
-                            .addToAnnotations(annotation, annotation)
+                            .addToLabels(labelKey, labelValue)
+                            .addToAnnotations(annotationKey, annotationValue)
                         .endMetadata()
                     .endSecret()
                 .endTemplate()
             .endSpec().done();
 
         Secret userSecret = kubeClient().getSecret(USER_NAME);
-        assertThat(userSecret.getMetadata().getLabels().get(label), is(label));
-        assertThat(userSecret.getMetadata().getAnnotations().get(annotation), is(annotation));
+        assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
+        assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
 
     void testUserWithQuotas(KafkaUser user) {
