@@ -2815,23 +2815,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(res -> {
                             ConfigMap toCm = res.resultAt(0);
                             ConfigMap uoCm = res.resultAt(1);
-                            String configAnnotation = "";
 
                             if (topicOperator != null)  {
                                 this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toCm);
-                                configAnnotation += this.topicOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
                             }
 
                             if (userOperator != null)   {
                                 this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoCm);
-                                configAnnotation += this.userOperatorMetricsAndLogsConfigMap.getData().get("log4j2.properties");
                             }
 
-                            Map<String, String> annotations = new HashMap<>(1);
-                            annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, configAnnotation);
-
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
-
+                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), Collections.emptyMap(), imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             } else {

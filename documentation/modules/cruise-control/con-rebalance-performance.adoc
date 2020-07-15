@@ -1,0 +1,53 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='con-rebalance-{context}']
+
+= Rebalance performance tuning overview 
+
+When an xref:con-optimization-proposals-{context}[optimization proposal] is xref:proc-approving-optimization-proposal-{context}[approved], the partition reassignment commands that comprise the proposal are applied to the Kafka cluster by the Cruise Control server. 
+These commands consist of two types of operations:
+
+* Partition movement: Involves transferring the partition replica and its data to a new location. Partition movements can take one of two forms:
+    ** Inter-broker movement: The partition replica is moved to a log directory on a different broker.
+    ** Intra-broker movement: The partition replica is moved to a different log directory on the same broker.
+
+* Leadership movement: This involves switching the leader of the partition's replicas.
+
+Cruise Control batches up these reassignment commands and issues them to the Kafka cluster. 
+The performance of the cluster during the rebalance is affected by the number of each type of movement contained in each batch.
+Cruise Control provides several configuration options for tuning a cluster rebalance for optimal performance. 
+
+You can set these _tuning_ options at either the xref:ref-cruise-control-configuration-{context}[Cruise Control server] or xref:proc-generating-optimization-proposals-{context}[optimization proposal] levels:
+
+* The Cruise Control server setting can be set in the Kafka custom resource under `Kafka.spec.kafka.spec.cruiseControl.spec`. 
+* The individual rebalance performance configurations can be set under `KafkaRebalance.spec`. 
+
+The relevant configurations are summarised below:
+
+|==========================================================================================================================
+| Server Configuration                              | KafkaRebalance Configuration            | Description | Default Value 
+
+| `num.concurrent.partition.movements.per.broker`   | `concurrentPartitionMovementsPerBroker` | 
+  The maximum number of inter-broker partition movements in each partition reassignment batch | 5
+
+| `num.concurrent.intra.broker.partition.movements` | `concurrentIntraBrokerPartitionMovements`     | 
+  The maximum number of intra-broker partition movements in each partition reassignment batch | 2
+
+
+| `num.concurrent.leader.movements`                 | `concurrentLeaderMovements`             | 
+  The maximum number of partition leadership changes in each partition reassignment batch     | 1000        
+
+
+| `default.replication.throttle`                    | `replicationThrottle`                   |
+  The bandwidth (in bytes per second) to be assigned to the reassigning of partitions         | No Limit    
+|==========================================================================================================================
+
+Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance. 
+Using lower values reduces the load but increases the amount of time taken, and vice versa.
+
+.Additional resources
+
+* xref:type-CruiseControlSpec-reference[].
+* xref:type-KafkaRebalanceSpec-reference[].

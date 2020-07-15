@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-operators.adoc
+
+[id='using-the-cluster-operator-{context}']
+
+= Using the Cluster Operator
+
+The Cluster Operator is used to deploy a Kafka cluster and other Kafka components.
+
+The Cluster Operator is deployed using YAML installation files.
+
+For information on deploying the Cluster Operator, see link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying Strimzi_ guide.
+
+For information on the deployment options available for Kafka, see xref:assembly-deployment-configuration-kafka-str[Kafka Cluster configuration].
+
+NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provide a convenient way to add additional connectors.
+
+include::../modules/ref-operator-cluster.adoc[leveloffset=+1]

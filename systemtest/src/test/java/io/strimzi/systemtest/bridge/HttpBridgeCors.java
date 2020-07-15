@@ -32,7 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 
-public class HttpBridgeCors extends HttpBridgeBaseST {
+public class HttpBridgeCors extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCors.class);
     public static final String NAMESPACE = "bridge-cluster-test";

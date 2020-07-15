@@ -8,11 +8,24 @@ import java.util.List;
 
 public class RebalanceOptions {
 
+    /** Sets whether this rebalance only provides an optimisation proposal (true) or starts a rebalance (false) */
     private boolean isDryRun;
+    /** List of optimisation goal class names, must be a sub-set of the configured master goals and include all hard.goals unless skipHardGoals=true */
     private List<String> goals;
+    /** Include additional information in the response from the Cruise Control Server */
     private boolean verbose;
+    /** Allows specifying a custom goals list that does not incude all configured hard.goals */
     private boolean skipHardGoalCheck;
+    /** Sets whether the response should be JSON formatted or formated for readibility on the command line */
     private boolean json = true;
+    /** The upper bound of ongoing replica movements going into/out of each broker */
+    private int concurrentPartitionMovementsPerBroker;
+    /** The upper bound of ongoing replica movements between disks within each broker */
+    private int concurrentIntraBrokerPartitionMovements;
+    /** The upper bound of ongoing leadership movements */
+    private int concurrentLeaderMovements;
+    /** The upper bound, in bytes per second, on the bandwidth used to move replicas */
+    private long replicationThrottle;
 
     public boolean isDryRun() {
         return isDryRun;
@@ -34,12 +47,32 @@ public class RebalanceOptions {
         return json;
     }
 
+    public int getConcurrentPartitionMovementsPerBroker() {
+        return concurrentPartitionMovementsPerBroker;
+    }
+
+    public int getConcurrentIntraBrokerPartitionMovements() {
+        return concurrentIntraBrokerPartitionMovements;
+    }
+
+    public int getConcurrentLeaderMovements() {
+        return concurrentLeaderMovements;
+    }
+
+    public long getReplicationThrottle() {
+        return replicationThrottle;
+    }
+
     private RebalanceOptions(RebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
         this.verbose = builder.verbose;
         this.skipHardGoalCheck = builder.skipHardGoalCheck;
         this.goals = builder.goals;
         this.verbose = builder.verbose;
+        this.concurrentPartitionMovementsPerBroker = builder.concurrentPartitionMovementsPerBroker;
+        this.concurrentIntraBrokerPartitionMovements = builder.concurrentIntraPartitionMovements;
+        this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
+        this.replicationThrottle = builder.replicationThrottle;
     }
 
     public static class RebalanceOptionsBuilder {
@@ -48,12 +81,20 @@ public class RebalanceOptions {
         private boolean verbose;
         private boolean skipHardGoalCheck;
         private List<String> goals;
+        private int concurrentPartitionMovementsPerBroker;
+        private int concurrentIntraPartitionMovements;
+        private int concurrentLeaderMovements;
+        private long replicationThrottle;
 
         public RebalanceOptionsBuilder() {
             isDryRun = true;
             verbose = false;
             skipHardGoalCheck = false;
             goals = null;
+            concurrentPartitionMovementsPerBroker = 0;
+            concurrentIntraPartitionMovements = 0;
+            concurrentLeaderMovements = 0;
+            replicationThrottle = 0;
         }
 
         public RebalanceOptionsBuilder withFullRun() {
@@ -73,6 +114,38 @@ public class RebalanceOptions {
 
         public RebalanceOptionsBuilder withGoals(List<String> goals) {
             this.goals = goals;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withConcurrentPartitionMovementsPerBroker(int movements) {
+            if (movements < 0) {
+                throw new IllegalArgumentException("The max number of concurrent movements between brokers should be greater than zero");
+            }
+            this.concurrentPartitionMovementsPerBroker = movements;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withConcurrentIntraPartitionMovements(int movements) {
+            if (movements < 0) {
+                throw new IllegalArgumentException("The max number of concurrent intra partition movements should be greater than zero");
+            }
+            this.concurrentIntraPartitionMovements = movements;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withConcurrentLeaderMovements(int movements) {
+            if (movements < 0) {
+                throw new IllegalArgumentException("The max number of concurrent partition leadership movements should be greater than zero");
+            }
+            this.concurrentLeaderMovements = movements;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withReplicationThrottle(long bandwidth) {
+            if (bandwidth < 0) {
+                throw new IllegalArgumentException("The max replication bandwidth should be greater than zero");
+            }
+            this.replicationThrottle = bandwidth;
             return this;
         }
 

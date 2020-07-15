@@ -3,11 +3,18 @@
 // deploying/master.adoc
 
 [id="deploy-verify_{context}"]
-= Verifying the Strimzi deployment
+= Setting up client access to the Kafka cluster
 
-Having xref:deploy-tasks_{context}[deployed Strimzi], the procedure in this section shows how to deploy example producer and consumer clients.
+After you have xref:deploy-tasks_{context}[deployed Strimzi], the procedures in this section explain how to:
 
-The procedure assumes a Strimzi is available and running in a Kubernetes cluster.
+* Deploy example producer and consumer clients, which you can use to verify your deployment
+* Set up external client access to the Kafka cluster
++
+The steps to set up access to the Kafka cluster for a client outside Kubernetes are more complex,
+and require familiarity with the link:{BookURLUsing}#assembly-deployment-configuration-str[Kafka component configuration procedures^] described in the _Using Strimzi_ guide.
 
 //how to create clients that can access and use the deployment
 include::modules/proc-deploy-example-clients.adoc[leveloffset=+1]
+
+//how to set up external clients that can access and use the deployment
+include::modules/proc-deploy-setup-external-clients.adoc[leveloffset=+1]

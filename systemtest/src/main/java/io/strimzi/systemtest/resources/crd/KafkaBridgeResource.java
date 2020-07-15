@@ -60,6 +60,20 @@ public class KafkaBridgeResource {
         return deployKafkaBridge(kafkaBridgeBuilder.build());
     }
 
+    public static DoneableKafkaBridge kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap) {
+        return kafkaBridgeWithMetrics(name, clusterName, bootstrap, 1);
+    }
+
+    public static DoneableKafkaBridge kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
+
+        return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas)
+            .editSpec()
+                .withEnableMetrics(true)
+            .endSpec()
+            .build());
+    }
+
     private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
         return new KafkaBridgeBuilder(kafkaBridge)
             .withNewMetadata()

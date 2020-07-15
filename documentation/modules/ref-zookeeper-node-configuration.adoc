@@ -40,7 +40,7 @@ Selected options have default values:
 
 These options will be automatically configured when they are not present in the `Kafka.spec.zookeeper.config` property.
 
-Use the three allowed `ssl` configuration options to run external listeners with a specific _cipher suite_ for a TLS version.
+Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
 
 .Example ZooKeeper configuration

@@ -5,48 +5,6 @@
 [id='con-kafka-connect-logging-{context}']
 = Kafka Connect loggers
 
-Kafka Connect has its own configurable loggers:
+Use the `logging` property to configure loggers.
 
-* `connect.root.logger.level`
-* `log4j.logger.org.reflections`
-
-Kafka Connect uses the Apache `log4j` logger implementation.
-
-Use the `logging` property to configure loggers and logger levels.
-
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
-
-Here we see examples of `inline` and `external` logging.
-
-.Inline logging
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: KafkaConnect
-spec:
-  # ...
-  logging:
-    type: inline
-    loggers:
-      connect.root.logger.level: "INFO"
-  # ...
-----
-
-.External logging
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: KafkaConnect
-spec:
-  # ...
-  logging:
-    type: external
-    name: customConfigMap
-  # ...
-----
-
-.Additional resources
-
-* Garbage collector (GC) logging can also be enabled (or disabled). For more information about GC logging, see xref:ref-jvm-options-deployment-configuration-kafka[]
-* For more information about log levels, see {ApacheLoggers}.
+You can xref:property-kafka-connect-logging-reference[set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap].

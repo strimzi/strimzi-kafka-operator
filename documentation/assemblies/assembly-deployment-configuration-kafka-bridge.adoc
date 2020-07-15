@@ -19,6 +19,8 @@ The full schema of the `KafkaBridge` resource is described in the xref:type-Kafk
 All labels that are applied to the desired `KafkaBridge` resource will also be applied to the Kubernetes resources making up the Kafka Bridge cluster.
 This provides a convenient mechanism for resources to be labeled as required.
 
+The _Using Strimzi_ guide describes how to link:{BookURLUsing}#assembly-kafka-bridge-str[enable monitoring for the bridge].
+
 include::assembly-kafka-bridge-replicas.adoc[leveloffset=+1]
 
 include::assembly-kafka-bridge-bootstrap-servers.adoc[leveloffset=+1]

@@ -188,7 +188,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    String getAncillaryConfigMapKeyLogConfig() {
+    public String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
     }
 
@@ -334,5 +334,18 @@ public class EntityUserOperator extends AbstractModel {
 
     public void setContainerSecurityContext(SecurityContext securityContext) {
         templateContainerSecurityContext = securityContext;
+    }
+
+    /**
+     * Transforms properties to log4j2 properties file format and adds property for reloading the config
+     * @param properties map with properties
+     * @return modified string with monitorInterval
+     */
+    @Override
+    public String createLog4jProperties(OrderedProperties properties) {
+        if (!properties.asMap().keySet().contains("monitorInterval")) {
+            properties.addPair("monitorInterval", "30");
+        }
+        return super.createLog4jProperties(properties);
     }
 }

@@ -4,7 +4,7 @@
   honor_labels: true
   scrape_interval: 10s
   scrape_timeout: 10s
-  metrics_path: /metrics
+  metrics_path: /metrics/cadvisor
   scheme: https
   kubernetes_sd_configs:
   - role: node
@@ -43,28 +43,28 @@
     replacement: $1
     action: replace
   metric_relabel_configs:
-  - source_labels: [pod_name]
+  - source_labels: [pod]
     separator: ;
     regex: (.*)
     target_label: kubernetes_pod_name
     replacement: $1
     action: replace
   - separator: ;
-    regex: pod_name
+    regex: pod
     replacement: $1
     action: labeldrop
-  - source_labels: [container_name, __name__]
+  - source_labels: [container, __name__]
     separator: ;
     regex: POD;container_(network).*
-    target_label: container_name
+    target_label: container
     replacement: $1
     action: replace
-  - source_labels: [container_name]
+  - source_labels: [container]
     separator: ;
     regex: POD
     replacement: $1
     action: drop
-  - source_labels: [container_name]
+  - source_labels: [container]
     separator: ;
     regex: ^$
     replacement: $1

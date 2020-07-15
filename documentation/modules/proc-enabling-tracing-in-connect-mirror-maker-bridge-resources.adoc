@@ -101,5 +101,5 @@ kubectl apply -f your-file
 
 .Additional resources
 
-* xref:con-customizing-containers-{context}[]
-* xref:con-customizing-template-properties-{context}[]
+* xref:type-ContainerTemplate-reference[]
+* xref:assembly-customizing-kubernetes-resources-{context}[]

@@ -38,19 +38,19 @@ spec:
 +
 This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONFIG-FILE_
 
 . Find the hostname of the bootstrap loadbalancer.
 +
 This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
-kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+kubectl get service _KAFKA-CLUSTER-NAME_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 +
 If no hostname was found (nothing was returned by the command), use the loadbalancer IP address.
 +
 This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
-kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
+kubectl get service _KAFKA-CLUSTER-NAME_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
 +
 Use the hostname or IP address together with port 9094 in your Kafka client as the _bootstrap_ address.
 
@@ -59,7 +59,7 @@ Use the hostname or IP address together with port 9094 in your Kafka client as t
 This can be done using `kubectl get`:
 +
 [source,shell,subs=+quotes]
-kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

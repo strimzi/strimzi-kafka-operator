@@ -1000,7 +1000,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [options="header"]
 |====
 |Property                    |Description
-|metadata             1.2+<.<|Metadata which should be applied to the resource.
+|metadata             1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |podManagementPolicy  1.2+<.<|PodManagementPolicy which will be used for this StatefulSet. Valid values are `Parallel` and `OrderedReady`. Defaults to `Parallel`.
 |string (one of [OrderedReady, Parallel])
@@ -1016,9 +1016,9 @@ include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[levelo
 [options="header"]
 |====
 |Property            |Description
-|labels       1.2+<.<|Labels which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|labels       1.2+<.<|Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
-|annotations  1.2+<.<|Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|annotations  1.2+<.<|Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
 |====
 
@@ -1061,13 +1061,13 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
 |Property         |Description
-|metadata  1.2+<.<|Metadata which should be applied to the resource.
+|metadata  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |====
 
@@ -1081,7 +1081,7 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 [options="header"]
 |====
 |Property                         |Description
-|metadata                  1.2+<.<|Metadata which should be applied to the resource.
+|metadata                  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |externalTrafficPolicy     1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
 |string (one of [Local, Cluster])
@@ -1678,6 +1678,7 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 
 Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2170,6 +2171,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |quotas          1.2+<.<|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
 |xref:type-KafkaUserQuotas-{context}[`KafkaUserQuotas`]
+|template        1.2+<.<|Template to specify how Kafka User `Secrets` are generated.
+|xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`]
 |====
 
 [id='type-KafkaUserTlsClientAuthentication-{context}']
@@ -2328,6 +2331,20 @@ include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 |integer
 |====
 
+[id='type-KafkaUserTemplate-{context}']
+### `KafkaUserTemplate` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+include::../api/io.strimzi.api.kafka.model.template.KafkaUserTemplate.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property       |Description
+|secret  1.2+<.<|Template for KafkaUser resources. The template allows users to specify how the `Secret` with password or TLS certificates is generated.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|====
+
 [id='type-KafkaUserStatus-{context}']
 ### `KafkaUserStatus` schema reference
 
@@ -2365,6 +2382,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2557,8 +2575,8 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging           1.2+<.<|Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
-|map
+|enableMetrics     1.2+<.<|Enable the metrics for the Kafka Bridge. Default is false.
+|boolean
 |livenessProbe     1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe    1.2+<.<|Pod readiness checking.
@@ -2926,11 +2944,19 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 
 [options="header"]
 |====
-|Property                  |Description
-|goals              1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
+|Property                                        |Description
+|goals                                    1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
 |string array
-|skipHardGoalCheck  1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
+|skipHardGoalCheck                        1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
 |boolean
+|concurrentPartitionMovementsPerBroker    1.2+<.<|The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.
+|integer
+|concurrentIntraBrokerPartitionMovements  1.2+<.<|The upper bound of ongoing partition replica movements between disks within each broker. Default is 2.
+|integer
+|concurrentLeaderMovements                1.2+<.<|The upper bound of ongoing partition leadership movements. Default is 1000.
+|integer
+|replicationThrottle                      1.2+<.<|The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
+|integer
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']

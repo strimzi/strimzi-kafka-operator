@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -21,14 +22,22 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "goals", "skipHardGoalCheck" })
+@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "concurrentPartitionMovementsPerBroker",
+                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // Optimization goal configurations
     private List<String> goals;
     private boolean skipHardGoalCheck;
+
+    // Rebalance performance tuning configurations
+    private int concurrentPartitionMovementsPerBroker;
+    private int concurrentIntraBrokerPartitionMovements;
+    private int concurrentLeaderMovements;
+    private long replicationThrottle;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -53,6 +62,46 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
 
     public void setSkipHardGoalCheck(boolean skipHardGoalCheck) {
         this.skipHardGoalCheck = skipHardGoalCheck;
+    }
+
+    @Description("The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.")
+    @Minimum(0)
+    public int getConcurrentPartitionMovementsPerBroker() {
+        return concurrentPartitionMovementsPerBroker;
+    }
+
+    public void setConcurrentPartitionMovementsPerBroker(int movements) {
+        this.concurrentPartitionMovementsPerBroker = movements;
+    }
+
+    @Description("The upper bound of ongoing partition replica movements between disks within each broker. Default is 2.")
+    @Minimum(0)
+    public int getConcurrentIntraBrokerPartitionMovements() {
+        return concurrentIntraBrokerPartitionMovements;
+    }
+
+    public void setConcurrentIntraBrokerPartitionMovements(int movements) {
+        this.concurrentIntraBrokerPartitionMovements = movements;
+    }
+
+    @Description("The upper bound of ongoing partition leadership movements. Default is 1000.")
+    @Minimum(0)
+    public int getConcurrentLeaderMovements() {
+        return concurrentLeaderMovements;
+    }
+
+    public void setConcurrentLeaderMovements(int movements) {
+        this.concurrentLeaderMovements = movements;
+    }
+
+    @Description("The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.")
+    @Minimum(0)
+    public long getReplicationThrottle() {
+        return replicationThrottle;
+    }
+
+    public void setReplicationThrottle(long bandwidth) {
+        this.replicationThrottle = bandwidth;
     }
 
     @Override

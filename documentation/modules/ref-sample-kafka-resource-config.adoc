@@ -118,7 +118,7 @@ spec:
 ----
 
 <1> Replicas xref:assembly-kafka-broker-replicas-{context}[specifies the number of broker nodes].
-<2> Kafka version, link:{BookURLDeploying}#assembly-upgrade-str[which can be changed by following the upgrade procedure].
+<2> Kafka version, which can be changed by following link:{BookURLDeploying}#assembly-upgrade-str[the upgrade procedure].
 <3> Resource requests xref:ref-resource-limits-and-requests-{context}[specify the resources to reserve for a given container].
 <4> Resource limits specify the maximum resources that can be consumed by a container.
 <5> JVM options can xref:ref-jvm-options-{context}[specify the minimum (`-Xms`) and maximum (`-Xmx`) memory allocation for JVM].

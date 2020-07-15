@@ -33,6 +33,7 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "1.15",
       "status": "flaky",
       "flakyEnvVariable": "JENKINS_URL",
       "reason" : "From some reason, this test is not working on Jenkins. Locally it's fine."
@@ -72,9 +73,10 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "1.15",
       "status": "stable",
       "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
+      "reason" : "Strimzi 0.12.x needs kubernetes version 1.15 or lower, cause api changes in later versions to move Deployment from extensions to apps."
     }
   },
   {
@@ -111,9 +113,10 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "1.15",
       "status": "stable",
       "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
+      "reason" : "Strimzi 0.13.x needs kubernetes version 1.15 or lower, cause api changes in later versions to move Deployment from extensions to apps."
     }
   },
   {
@@ -150,6 +153,7 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "latest",
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
@@ -189,6 +193,7 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "latest",
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
@@ -228,6 +233,7 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "latest",
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
@@ -267,6 +273,7 @@
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
+      "maxK8sVersion": "latest",
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
@@ -306,6 +313,7 @@
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
+      "maxK8sVersion": "latest",
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."

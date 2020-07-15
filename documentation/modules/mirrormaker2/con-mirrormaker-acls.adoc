@@ -2,7 +2,7 @@
 //
 // assembly-mirrormaker.adoc
 
-[id='con-mirrormaker-acls{context}']
+[id='con-mirrormaker-acls-{context}']
 = ACL rules synchronization
 
 ACL access to remote topics is possible if you are *not* using the User Operator.

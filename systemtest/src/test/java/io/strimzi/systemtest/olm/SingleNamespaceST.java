@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.resources.OlmResource;
+import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class SingleNamespaceST extends OlmBaseST {
+public class SingleNamespaceST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
 

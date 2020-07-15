@@ -76,7 +76,7 @@ spec:
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: strimzi/kafka-bridge:0.16.0
+              value: strimzi/kafka-bridge:0.18.0
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: strimzi/jmxtrans:latest
             - name: STRIMZI_LOG_LEVEL

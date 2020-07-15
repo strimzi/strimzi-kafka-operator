@@ -39,7 +39,7 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
     private List<String> loadBalancerSourceRanges = new ArrayList<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;

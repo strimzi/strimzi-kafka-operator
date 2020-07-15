@@ -8,16 +8,16 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
-public class StrimziUpgradeST extends BaseST {
+public class StrimziUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
@@ -90,6 +90,7 @@ public class StrimziUpgradeST extends BaseST {
     void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
@@ -130,7 +131,8 @@ public class StrimziUpgradeST extends BaseST {
 
         try {
             for (JsonValue testParameters : parameters) {
-                if (StUtils.isAllowOnCurrentEnvironment(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("flakyEnvVariable"))) {
+                if (StUtils.isAllowOnCurrentEnvironment(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("flakyEnvVariable")) &&
+                    StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("maxK8sVersion"))) {
                     performUpgrade(testParameters.asJsonObject(), MESSAGE_COUNT, consumedMessagesCount);
                     consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
                 } else {
@@ -187,7 +189,7 @@ public class StrimziUpgradeST extends BaseST {
         applyRoleBindings(NAMESPACE);
 
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(BundleResource.defaultClusterOperator(NAMESPACE).build());
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -267,7 +269,7 @@ public class StrimziUpgradeST extends BaseST {
                 // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
                 expectedTopicCount += 1;
             }
-            String producerAdditionConfiguration = "delivery.timeout.ms=10000\nrequest.timeout.ms=10000";
+            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
             KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
             // ##############################

@@ -4,7 +4,9 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -30,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CruiseControlApiST extends BaseST {
+public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String NAMESPACE = "cruise-control-api-test";
@@ -41,12 +43,12 @@ public class CruiseControlApiST extends BaseST {
     @Tag(ACCEPTANCE)
     @Test
     void testCruiseControlDeploymentStateEndpoint()  {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STATE);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STATE);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE);
 
         LOGGER.info("Verifying that {} REST API is available", CRUISE_CONTROL_NAME);
 
@@ -60,7 +62,7 @@ public class CruiseControlApiST extends BaseST {
     @Order(2)
     @Test
     void testRebalance() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
 
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
@@ -68,7 +70,7 @@ public class CruiseControlApiST extends BaseST {
         LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
         CruiseControlUtils.waitForRebalanceEndpointIsReady();
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
 
         // all goals stats that contains
         assertThat(response, containsString("RackAwareGoal"));
@@ -94,12 +96,12 @@ public class CruiseControlApiST extends BaseST {
     @Order(3)
     @Test
     void testStopProposalExecution() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
 
         assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.STOP_PROPOSAL_EXECUTION);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP);
 
         assertThat(response, containsString("Proposal execution stopped."));
     }
@@ -107,19 +109,19 @@ public class CruiseControlApiST extends BaseST {
     @Order(4)
     @Test
     void testUserTasks() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
+        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlUtils.CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, containsString("GET"));
-        assertThat(response, containsString("/kafkacruisecontrol/state"));
+        assertThat(response, containsString(CruiseControlEndpoints.STATE.toString()));
         assertThat(response, containsString("POST"));
-        assertThat(response, containsString("/kafkacruisecontrol/rebalance"));
-        assertThat(response, containsString("/kafkacruisecontrol/stop_proposal_execution"));
-        assertThat(response, containsString("Completed"));
+        assertThat(response, containsString(CruiseControlEndpoints.REBALANCE.toString()));
+        assertThat(response, containsString(CruiseControlEndpoints.STOP.toString()));
+        assertThat(response, containsString(CruiseControlUserTaskStatus.COMPLETED.toString()));
     }
 
     @BeforeAll

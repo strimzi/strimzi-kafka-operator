@@ -7,15 +7,9 @@ include::shared/attributes.adoc[]
 
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
-include::assemblies/assembly-getting-started.adoc[leveloffset=+1]
-
 include::assemblies/assembly-deployment-configuration.adoc[leveloffset=+1]
 
 include::assemblies/assembly-operators.adoc[leveloffset=+1]
-
-include::assemblies/assembly-using-the-topic-operator.adoc[leveloffset=+1]
-
-include::assemblies/assembly-using-the-user-operator.adoc[leveloffset=+1]
 
 include::assemblies/assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
@@ -35,5 +29,6 @@ include::modules/appendix_faq.adoc[leveloffset=+1]
 :parent-context: {context}
 :context: reference
 ## Custom Resource API Reference
+include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
 include::modules/appendix_crds.adoc[]
 :context: {parent-context}

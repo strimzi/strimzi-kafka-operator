@@ -26,4 +26,4 @@ Maintenance time windows must therefore be at least this long.
 
 .Additional resources
 
-* For more information about the Cluster Operator configuration, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
+* For more information about the Cluster Operator configuration, see xref:ref-operator-cluster-str[].

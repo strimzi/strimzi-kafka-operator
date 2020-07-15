@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.KafkaRebalanceState;
 
@@ -67,6 +68,6 @@ public class ResourceOperation {
      * rollingUpdateTimeout returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update
      */
     public static long rollingUpdateTimeout(int numberOfPods) {
-        return Duration.ofMinutes(5).toMillis() * numberOfPods;
+        return Duration.ofMinutes(5).toMillis() * Math.max(1, numberOfPods);
     }
 }

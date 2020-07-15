@@ -4,13 +4,17 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRouteBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.status.ListenerAddress;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -20,11 +24,14 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,9 +40,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -44,12 +57,13 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-public class ListenersST extends BaseST {
+public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     public static final String NAMESPACE = "kafka-listeners-cluster-test";
@@ -62,6 +76,427 @@ public class ListenersST extends BaseST {
     private String customRootCA2 = "custom-certificate-root-2";
 
     private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
+
+    /**
+     * Test sending messages over plain transport, without auth
+     */
+    @Test
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testSendMessagesPlainAnonymous() {
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
+    }
+
+    /**
+     * Test sending messages over tls transport using mutual tls auth
+     */
+    @Test
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testSendMessagesTlsAuthenticated() {
+        String kafkaUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        // Use a Kafka with plain listener disabled
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewTls()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUser)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "tls"), is(serviceDiscoveryArray));
+    }
+
+    /**
+     * Test sending messages over plain transport using scram sha auth
+     */
+    @Test
+    @Tag(ACCEPTANCE)
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testSendMessagesPlainScramSha() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        // Use a Kafka with plain listener disabled
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
+
+        String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
+        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
+        Matcher m = p.matcher(brokerPodLog);
+        boolean found = false;
+        while (m.find()) {
+            found = true;
+            LOGGER.info("Broker pod log line about user {}: {}", kafkaUsername, m.group());
+        }
+        if (!found) {
+            LOGGER.warn("No broker pod log lines about user {}", kafkaUsername);
+            LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
+        }
+
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512")));
+    }
+
+    /**
+     * Test sending messages over tls transport using scram sha auth
+     */
+    @Test
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testSendMessagesTlsScramSha() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        // Use a Kafka with plain listener disabled
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .editOrNewTls()
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
+
+        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512")));
+    }
+
+    @Test
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testNodePort() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
+
+        // Check that Kafka status has correct addresses in NodePort external listener part
+        for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
+            if (listenerStatus.getType().equals("external")) {
+                List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
+                listStatusAddresses.sort(Comparator.comparing(String::toString));
+                List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
+                Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
+
+                List<String> nodeIps = kubeClient().listPods(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels())
+                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
+                nodeIps.sort(Comparator.comparing(String::toString));
+
+                assertThat(listStatusAddresses, is(nodeIps));
+                for (Integer port : listStatusPorts) {
+                    assertThat(port, is(nodePort));
+                }
+            }
+        }
+    }
+
+    @Test
+    @Tag(NODEPORT_SUPPORTED)
+    void testOverrideNodePortConfiguration() {
+        int brokerNodePort = 32000;
+        int brokerId = 0;
+
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(brokerId);
+        nodePortListenerBrokerOverride.setNodePort(brokerNodePort);
+        LOGGER.info("Setting nodePort to {} for broker {}", nodePortListenerBrokerOverride.getNodePort(),
+                nodePortListenerBrokerOverride.getBroker());
+
+        int clusterBootstrapNodePort = 32100;
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                                .withNewOverrides()
+                                    .withNewBootstrap()
+                                        .withNodePort(clusterBootstrapNodePort)
+                                    .endBootstrap()
+                                    .withBrokers(nodePortListenerBrokerOverride)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
+        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
+                KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
+        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+                .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
+        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
+                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
+    }
+
+    @Test
+    @Tag(ACCEPTANCE)
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testNodePortTls() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                    .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withKafkaUsername(USER_NAME)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .build();
+
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
+    }
+
+    @Test
+    @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testLoadBalancer() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .build();
+
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesPlain(),
+            basicExternalKafkaClient.receiveMessagesPlain()
+        );
+    }
+
+    @Test
+    @Tag(ACCEPTANCE)
+    @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testLoadBalancerTls() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+
+        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withKafkaUsername(USER_NAME)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .build();
+
+        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
+            basicExternalKafkaClient.sendMessagesTls(),
+            basicExternalKafkaClient.receiveMessagesTls()
+        );
+    }
+
+//    ##########################################
+//    #### Custom Certificates in Listeners ####
+//    ##########################################
 
     @Test
     @Tag(NODEPORT_SUPPORTED)

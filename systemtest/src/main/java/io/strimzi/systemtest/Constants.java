@@ -65,6 +65,7 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(80).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
+    long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
 
     // stability count ensures that after some reconciliation we have some additional time
     int GLOBAL_STABILITY_OFFSET_COUNT = 20;
@@ -76,6 +77,7 @@ public interface Constants {
      */
     String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
     String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
+    String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
@@ -91,6 +93,7 @@ public interface Constants {
     int CLUSTER_OPERATOR_METRICS_PORT = 8080;
     int USER_OPERATOR_METRICS_PORT = 8081;
     int TOPIC_OPERATOR_METRICS_PORT = 8080;
+    int KAFKA_BRIDGE_METRICS_PORT = 8080;
 
     String DEPLOYMENT = "Deployment";
     String SERVICE = "Service";

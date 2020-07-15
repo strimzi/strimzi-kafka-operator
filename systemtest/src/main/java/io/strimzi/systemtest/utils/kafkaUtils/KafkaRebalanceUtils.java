@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -45,7 +46,7 @@ public class KafkaRebalanceUtils {
         }
     }
 
-    // TODO: after revert of changes related to status we should you --> ResourceManager.waitForResourceStatus()
+    // TODO: after revert of changes related to status we should use --> ResourceManager.waitForResourceStatus()
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         LOGGER.info("Waiting for KafkaRebalance to be in the {} state", state);
 

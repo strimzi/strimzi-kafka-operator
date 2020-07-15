@@ -7,7 +7,7 @@
 
 This section describes how to monitor Strimzi Kafka, ZooKeeper, Kafka Connect, and Kafka MirrorMaker and MirrorMaker 2.0 clusters using Prometheus to provide monitoring data for example Grafana dashboards.
 
-Prometheus and Grafana can be also used to monitor the operators.
+Prometheus and Grafana can also be used to monitor Strimzi operators and xref:assembly-kafka-bridge-{context}[Kafka Bridge instances].
 The example Grafana dashboard for operators provides:
 
 * Information about the operator such as the number of reconciliations or number of Custom Resources they are processing

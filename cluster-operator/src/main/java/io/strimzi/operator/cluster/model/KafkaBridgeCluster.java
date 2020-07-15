@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -170,11 +171,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setReadinessProbe(kafkaBridge.getSpec().getReadinessProbe());
         }
 
-        Map<String, Object> metrics = spec.getMetrics();
-        if (metrics != null) {
-            kafkaBridgeCluster.setMetricsEnabled(true);
-            kafkaBridgeCluster.setMetricsConfig(metrics.entrySet());
-        }
+        kafkaBridgeCluster.setMetricsEnabled(spec.getEnableMetrics());
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
@@ -192,7 +189,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
 
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                kafkaBridgeCluster.templateServiceLabels = mergeLabelsOrAnnotations(template.getApiService().getMetadata().getLabels(),
+                kafkaBridgeCluster.templateServiceLabels = Util.mergeLabelsOrAnnotations(template.getApiService().getMetadata().getLabels(),
                         ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS));
                 kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
             }
@@ -230,11 +227,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
 
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        }
-
-        return createDiscoverableService("ClusterIP", ports, mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
     /**
@@ -264,10 +257,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
-
-        if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
-        }
 
         return portList;
     }
@@ -431,6 +420,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     @Override
     protected String getDefaultLogConfigFileName() {
         return "kafkaBridgeDefaultLoggingProperties";
+    }
+
+    @Override
+    public String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
     }
 
     /**

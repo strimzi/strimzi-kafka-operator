@@ -143,6 +143,24 @@ spec:
                   minimum: 0
                   description: A quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
               description: Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
+            template:
+              type: object
+              properties:
+                secret:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                          description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                        annotations:
+                          type: object
+                          description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
+                  description: Template for KafkaUser resources. The template allows users to specify how the `Secret` with password or TLS certificates is generated.
+              description: Template to specify how Kafka User `Secrets` are generated.
           description: The specification of the user.
         status:
           type: object

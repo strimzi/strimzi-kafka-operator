@@ -7,7 +7,7 @@
 
 This procedure shows how to configure Kafka Exporter in the `Kafka` resource through `KafkaExporter` properties.
 
-For more information about configuring the `Kafka` resource, see the link:{BookURLUsing}#ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration].
+For more information about configuring the `Kafka` resource, see the link:{BookURLUsing}#ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration] in the _Using Strimzi_ guide.
 
 The properties relevant to the Kafka Exporter configuration are shown in this procedure.
 
@@ -83,8 +83,8 @@ kubectl apply -f _kafka.yaml_
 
 .What to do next
 
-After configuring and deploying Kafka Exporter, you can link:{BookURLDeploying}#proc-kafka-exporter-enabling-str[enable Grafana to present the Kafka Exporter dashboards].
+After configuring and deploying Kafka Exporter, you can xref:proc-kafka-exporter-enabling-{context}[enable Grafana to present the Kafka Exporter dashboards].
 
 .Additional resources
 
-link:{BookURLUsing}#type-KafkaExporterTemplate-reference[].
+link:{BookURLUsing}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference].

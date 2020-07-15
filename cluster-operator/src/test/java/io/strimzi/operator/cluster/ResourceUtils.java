@@ -522,7 +522,7 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, Map<String, Object> metricsCm) {
+    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, boolean enableMetrics) {
         return new KafkaBridgeBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
@@ -536,7 +536,7 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapservers)
                     .withProducer(producer)
                     .withConsumer(consumer)
-                    .withMetrics(metricsCm)
+                    .withEnableMetrics(enableMetrics)
                     .withHttp(http)
                 .endSpec()
                 .build();

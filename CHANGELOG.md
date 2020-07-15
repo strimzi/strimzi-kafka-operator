@@ -16,7 +16,13 @@
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
 * Migration to Helm 3
 * Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
-* Extended the Grafana example dashboard for Kafka Connect with several charts to provide more comprehensive information
+* Use Strimzi Kafka Bridge 0.17.0
+* Make it possible to configure labels and annotations for secrets created by the User Operator
+* Strimzi Kafka Bridge metrics integration:
+  * enable/disable metrics in the KafkaBridge custom resource
+  * new Grafana dashboard for the bridge metrics
+* Support dynamically changeable logging in the Entity Operator 
+* Extended the Grafana example dashboard for Kafka Connect to provide more relevant information
 
 ### Deprecations and removals
 
@@ -32,6 +38,13 @@ In Strimzi 0.12.0, the `v1alpha1` versions of the following resources have been 
 
 In the next release, the `v1alpha1` versions of these resources will be removed. 
 Please follow the guide for upgrading the resources: https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-resources-str.
+
+#### Removal deprecated cadvisor metric labels
+
+The `pod_name` and `container_name` labels provided on the cadvisor metrics are now just `pod` and `container` starting from Kubernetes 1.16.
+We removed the old ones from the Prometheus scraping configuration/alerts and on the Kafka and ZooKeeper dashboard as well.
+It means that the charts related to memory and CPU usage are not going to work on Kuvbernetes version previous 1.14.
+For more information on what is changed: https://github.com/strimzi/strimzi-kafka-operator/pull/3312
 
 ## 0.18.0
 
