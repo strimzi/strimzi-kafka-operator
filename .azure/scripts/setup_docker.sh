@@ -11,7 +11,7 @@ sudo apt-get install containerd.io
 
 # Do update and install docker
 sudo apt update
-sudo apt install docker.io
+sudo apt install docker-ce docker-ce-cli containerd.io
 sudo systemctl unmask docker
 
 sudo mkdir /mnt/docker
