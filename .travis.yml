@@ -11,14 +11,7 @@ before_install:
 - if [ $(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p') -gt 1 ] ; then export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p'); export JAVA_VERSION=$JAVA_VERSION_BUILD; else export JAVA_VERSION_BUILD=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2/p'); export JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*)\.([0-9])\.([0-9]).*$/\1.\2.\3/p'); fi;
 - gem install asciidoctor
 - "./.travis/install_yq.sh"
-install:
-- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-- sudo apt-get update
-- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
-- docker version
-- mvn clean install -DskipTests=false -f test-container/pom.xml
-#- mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- "./.travis/setup_docker.sh"
 before_script:
 - "./.travis/setup-kubernetes.sh"
 - "./.travis/setup-helm.sh"
