@@ -23,6 +23,7 @@
   * enable/disable metrics in the KafkaBridge custom resource
   * new Grafana dashboard for the bridge metrics
 * Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
+* Extended the Grafana example dashboard for Kafka Connect to provide more relevant information
 
 ### Deprecations and removals
 
