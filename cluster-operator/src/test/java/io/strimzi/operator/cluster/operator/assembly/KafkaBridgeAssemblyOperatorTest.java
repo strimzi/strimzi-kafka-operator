@@ -23,7 +23,6 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -166,9 +165,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(bridge.getName()));
-                Map annotations = new HashMap();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
-                assertThat(dc, is(bridge.generateDeployment(annotations, true, null, null)));
+                assertThat(dc, is(bridge.generateDeployment(Collections.emptyMap(), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -369,9 +366,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
-                Map<String, String> annotations = new HashMap();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
-                assertThat(dc, is(compareTo.generateDeployment(annotations, true, null, null)));
+                assertThat(dc, is(compareTo.generateDeployment(Collections.emptyMap(), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
