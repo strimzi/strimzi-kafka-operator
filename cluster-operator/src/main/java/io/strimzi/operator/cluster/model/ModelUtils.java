@@ -551,4 +551,25 @@ public class ModelUtils {
         }
         return String.join(" ", javaSystemPropertiesList);
     }
+
+    /**
+     * This method transforms a String into a List of Strings, where each entry is an uncommented line of input.
+     * The lines beginning with '#' (comments) are ignored.
+     * @param config ConfigMap data as a String
+     * @return List of String key=value
+     */
+    public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
+        List<String> validLines = new ArrayList<>();
+        if (config != null) {
+            List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
+
+            for (String line : allLines) {
+                if (!line.isEmpty() && !line.matches("\\s*\\#.*")) {
+                    validLines.add(line);
+                }
+            }
+        }
+        return validLines;
+    }
+
 }

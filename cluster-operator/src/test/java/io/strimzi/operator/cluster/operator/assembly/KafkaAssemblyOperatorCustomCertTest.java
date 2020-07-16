@@ -4,13 +4,23 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.function.Function;
+
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -19,15 +29,15 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
+import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -38,23 +48,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 
-import java.util.Base64;
-import java.util.function.Function;
-
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorCustomCertTest {
@@ -68,18 +70,28 @@ public class KafkaAssemblyOperatorCustomCertTest {
     protected static Vertx vertx;
 
     private Kafka kafka;
-    private KafkaCluster kafkaCluster;
-    private ResourceOperatorSupplier supplier;
     private KafkaAssemblyOperator operator;
-    private ArgumentCaptor<StatefulSet> reconcileStsCaptor;
-    private ArgumentCaptor<Function<Pod, String>> isPodToRestartFunctionCaptor;
+    private KubernetesClient client;
+    private List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
 
     /**
      * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
      */
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
             super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            return new ReconciliationState(reconciliation, kafkaAssembly) {
+                @Override
+                Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+                    functionArgumentCaptor.add(podNeedsRestart);
+                    return Future.succeededFuture();
+                }
+            };
         }
 
         @Override
@@ -102,51 +114,28 @@ public class KafkaAssemblyOperatorCustomCertTest {
     @BeforeEach
     public void setup() {
         kafka = createKafka();
-        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
 
-        supplier = ResourceUtils.supplierWithMocks(false);
+        client = new MockKube()
+                .withCustomResourceDefinition(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).end()
+                .build();
+        Crds.kafkaOperation(client).inNamespace(namespace).create(kafka);
+        client.secrets().inNamespace(namespace).create(getTlsSecret());
+        client.secrets().inNamespace(namespace).create(getExternalSecret());
+        client.secrets().inNamespace(namespace).createNew().withNewMetadata()
+                .withNamespace(namespace)
+                .withName("testkafka-cluster-operator-certs")
+                .endMetadata()
+                .addToData("foo", "bar")
+                .done();
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
+                mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
+                mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_14), 10000);
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 passwordGenerator,
                 supplier,
                 config);
 
-        // Mock the Kafka CRD Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName)))
-                .thenReturn(Future.succeededFuture(createKafka()));
-        when(mockKafkaOps.updateStatusAsync(any()))
-                .thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName))))
-                .thenAnswer(i -> Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
-
-        reconcileStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockKafkaSetOps.reconcile(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)), reconcileStsCaptor.capture()))
-                .then(invocation -> Future.succeededFuture(ReconcileResult.patched(invocation.getArgument(2))));
-
-        ArgumentCaptor<StatefulSet> maybeRollingUpdateStsCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        isPodToRestartFunctionCaptor = ArgumentCaptor.forClass(Function.class);
-        when(mockKafkaSetOps.maybeRollingUpdate(maybeRollingUpdateStsCaptor.capture(), isPodToRestartFunctionCaptor.capture()))
-                .thenReturn(Future.succeededFuture());
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.get(eq(namespace), eq(clusterName)))
-                .thenReturn(kafkaCluster.generateMetricsAndLogConfigMap(null));
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName)))
-                .thenAnswer(i -> Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null)));
-
-        // Mock the SecretOperator
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(namespace), eq("my-tls-secret")))
-                .thenReturn(Future.succeededFuture(getTlsSecret()));
-        when(mockSecretOps.getAsync(eq(namespace), eq("my-external-secret")))
-                .thenReturn(Future.succeededFuture(getExternalSecret()));
-        when(mockSecretOps.reconcile(any(), any(), any()))
-                .then(invocation -> Future.succeededFuture(ReconcileResult.created(invocation.getArgument(2))));
     }
 
     @AfterAll
@@ -235,50 +224,45 @@ public class KafkaAssemblyOperatorCustomCertTest {
     }
 
     @Test
-    public void testPodToRestartFalseWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
+    public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
-
-                StatefulSet reconcileSts = reconcileStsCaptor.getValue();
+                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                assertThat(isPodToRestartFunctionCaptor.getAllValues(), hasSize(1));
-                Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
-                assertThat(isPodToRestart.apply(getPod(reconcileSts)), is(nullValue()));
-
+                assertThat(functionArgumentCaptor, hasSize(1));
+                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), empty());
                 async.flag();
             })));
     }
 
     @Test
-    public void testPodToRestartTrueWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
+    public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
-
-                StatefulSet reconcileSts = reconcileStsCaptor.getValue();
+                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                assertThat(isPodToRestartFunctionCaptor.getAllValues(), hasSize(1));
-                Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
+                assertThat(functionArgumentCaptor, hasSize(1));
+                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
-                assertThat("Tls listener thumbprint annotation matches, restart should not be required",
-                        isPodToRestart.apply(pod), is(nullValue()));
+                assertThat("There are no changes in broker config, the restart should not be needed",
+                        isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
                 assertThat("Tls listener thumbprint annotation changed, pod should need restart",
-                        isPodToRestart.apply(pod), is("custom certificate on the TLS listener changes"));
+                        isPodToRestart.apply(pod).get(0),
+                        equalTo("custom certificate on the TLS listener changes"));
 
                 async.flag();
             })));
@@ -289,34 +273,32 @@ public class KafkaAssemblyOperatorCustomCertTest {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
-
-                StatefulSet reconcileSts = reconcileStsCaptor.getValue();
+                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER, getTlsThumbprint()));
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER, getExternalThumbprint()));
 
-                assertThat(isPodToRestartFunctionCaptor.getAllValues(), hasSize(1));
-
+                assertThat(functionArgumentCaptor, hasSize(1));
+                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
 
-                Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
-                assertThat("External listener Thumbprint annotation changed, pod should need restart",
-                        isPodToRestart.apply(pod), is(nullValue()));
+                assertThat("There are no changes in broker config, the restart should not be needed",
+                        isPodToRestart.apply(pod), empty());
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
-                assertThat(isPodToRestart.apply(pod), is("custom certificate on the external listener changes"));
+                assertThat(isPodToRestart.apply(pod).get(0),
+                        equalTo("custom certificate on the external listener changes"));
 
                 async.flag();
             })));
     }
 
     @Test
-    public void testPodToRestartFalseAndNoCustomCertAnnotationsWhenNoCustomCertificates(VertxTestContext context) {
+    public void testPodToRestartIsEmptyAndNoCustomCertAnnotationsWhenNoCustomCertificates(VertxTestContext context) {
         kafka = new KafkaBuilder(createKafka())
                 .editSpec()
                     .editKafka()
@@ -329,28 +311,24 @@ public class KafkaAssemblyOperatorCustomCertTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(clusterName).patch(kafka);
 
-        // Mock the SecretOperator
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        verify(mockSecretOps, never()).getAsync(eq(namespace), eq("my-tls-secret"));
-        verify(mockSecretOps, never()).getAsync(eq(namespace), eq("my-external-secret"));
 
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(reconcileStsCaptor.getAllValues(), hasSize(1));
+                assertThat(functionArgumentCaptor, hasSize(1));
 
-                StatefulSet reconcileSts = reconcileStsCaptor.getValue();
+                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER)));
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER)));
 
-                assertThat(isPodToRestartFunctionCaptor.getAllValues(), hasSize(1));
-
-                Function<Pod, String> isPodToRestart = isPodToRestartFunctionCaptor.getValue();
-                assertThat(isPodToRestart.apply(getPod(reconcileSts)), is(nullValue()));
+                List<Function<Pod, List<String>>> capturedFunctions = functionArgumentCaptor;
+                assertThat(capturedFunctions, hasSize(1));
+                Function<Pod, List<String>> isPodToRestart = capturedFunctions.get(0);
+                assertThat(isPodToRestart.apply(getPod(reconcileSts)), empty());
 
                 async.flag();
             })));

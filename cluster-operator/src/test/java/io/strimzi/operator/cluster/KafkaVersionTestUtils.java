@@ -224,4 +224,8 @@ public class KafkaVersionTestUtils {
                 KafkaVersionTestUtils.getKafkaMirrorMaker2ImageMap()) {
         };
     }
+
+    public static KafkaVersion getLatestVersion() {
+        return getKafkaVersionLookup().version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+    }
 }
