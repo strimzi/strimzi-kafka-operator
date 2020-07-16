@@ -174,7 +174,7 @@ The `Deployment` of the operator then needs to specify this in its `spec.templat
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example of `Deployment` for the Cluster Operator
 ----
-include::install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+include::install/cluster-operator/051-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
       # ...
 ----
 

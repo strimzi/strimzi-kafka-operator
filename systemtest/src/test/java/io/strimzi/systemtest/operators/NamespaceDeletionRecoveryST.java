@@ -181,7 +181,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Setup Test environment with Kafka and store some messages
         prepareEnvForOperator(NAMESPACE);
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 051-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -236,7 +236,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate CO
         cluster.applyClusterOperatorInstallFiles();
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 051-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }
 

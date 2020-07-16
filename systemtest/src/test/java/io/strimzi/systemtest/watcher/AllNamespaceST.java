@@ -202,7 +202,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
                 KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
-        // 050-Deployment
+        // 051-Deployment
         BundleResource.clusterOperator("*").done();
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);

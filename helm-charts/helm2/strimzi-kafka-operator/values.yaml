@@ -9,7 +9,8 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-logLevel: INFO
+logVolume: co-logging-volume
+logConfigMap: strimzi-cluster-operator-logging
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local

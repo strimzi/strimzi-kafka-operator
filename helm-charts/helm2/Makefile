@@ -8,6 +8,7 @@ CHART_NAME = strimzi-kafka-operator
 CHART_PATH ?= ../helm2/strimzi-kafka-operator/
 CHART_RENDERED_TEMPLATES_TMP = ../../target/charts
 CHART_RENDERED_TEMPLATES_CLUSTERROLES = ../../cluster-operator/src/main/resources/cluster-roles/
+CHART_RENDERED_TEMPLATES_CONFIGMAPS = ../../cluster-operator/src/main/resources/config-maps/
 CHART_RENDERED_TEMPLATES_INSTALL = ../../install/cluster-operator/
 HELM_CLI = helm2
 

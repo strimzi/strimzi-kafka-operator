@@ -17,6 +17,10 @@ spec:
         strimzi.io/kind: cluster-operator
     spec:
       serviceAccountName: strimzi-cluster-operator
+      volumes:
+        - name: co-logging-volume
+          configMap:
+            name: strimzi-cluster-operator-logging
       containers:
         - name: strimzi-cluster-operator
           image: strimzi/operator:latest
@@ -25,6 +29,9 @@ spec:
               name: http
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
+          volumeMounts:
+            - name: co-logging-volume
+              mountPath: /opt/strimzi/custom-config/
           env:
             - name: STRIMZI_NAMESPACE
               valueFrom:
@@ -79,8 +86,6 @@ spec:
               value: strimzi/kafka-bridge:0.18.0
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: strimzi/jmxtrans:latest
-            - name: STRIMZI_LOG_LEVEL
-              value: "INFO"
           livenessProbe:
             httpGet:
               path: /healthy

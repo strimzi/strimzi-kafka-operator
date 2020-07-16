@@ -378,7 +378,7 @@ public final class TestUtils {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(deploymentFile);
-            // Change the docker org of the images in the 050-deployment.yaml
+            // Change the docker org of the images in the 051-deployment.yaml
             ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
             for (JsonNode envVar : containerNode.get("env")) {
                 String varName = envVar.get("name").textValue();
