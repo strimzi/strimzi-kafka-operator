@@ -71,7 +71,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         applyRoleBindings(CO_NAMESPACE);
         applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
-        // 051-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
         cluster.setNamespace(SECOND_NAMESPACE);

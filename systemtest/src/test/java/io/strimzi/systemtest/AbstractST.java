@@ -121,7 +121,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(namespace, bindingsNamespaces);
             applyRoleBindings(namespace, bindingsNamespaces);
-            // 051-Deployment
+            // 060-Deployment
             BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
         }
     }

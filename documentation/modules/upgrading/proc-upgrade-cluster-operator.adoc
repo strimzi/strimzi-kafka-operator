@@ -24,7 +24,7 @@ Any changes will be *overwritten* by the new version of the Cluster Operator.
 include::snip-cluster-operator-namespace-sed.adoc[]
 +
 .. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
-`install/cluster-operator/051-Deployment-cluster-operator.yaml` file to use those environment variables.
+`install/cluster-operator/060-Deployment-cluster-operator.yaml` file to use those environment variables.
 
 . When you have an updated configuration, deploy it along with the rest of the installation resources:
 +

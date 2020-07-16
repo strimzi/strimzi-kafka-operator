@@ -254,7 +254,7 @@ public class SpecificST extends AbstractST {
         prepareEnvForOperator(NAMESPACE);
 
         applyRoleBindings(NAMESPACE);
-        // 051-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }
 }
