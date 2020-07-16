@@ -91,6 +91,7 @@ public class ResourceOperatorSupplier {
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
     public final MetricsProvider metricsProvider;
+    public AdminClientProvider adminClientProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -135,7 +136,8 @@ public class ResourceOperatorSupplier {
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
                 new NodeOperator(vertx, client, operationTimeoutMs),
                 zkScalerProvider,
-                metricsProvider);
+                metricsProvider,
+                adminClientProvider);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -167,7 +169,8 @@ public class ResourceOperatorSupplier {
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
                                     ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider) {
+                                    MetricsProvider metricsProvider,
+                                    AdminClientProvider adminClientProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -198,5 +201,6 @@ public class ResourceOperatorSupplier {
         this.nodeOperator = nodeOperator;
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
+        this.adminClientProvider = adminClientProvider;
     }
 }

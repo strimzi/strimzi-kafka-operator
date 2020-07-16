@@ -50,7 +50,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     protected final PodOperator podOperations;
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
-    private final SecretOperator secretOperations;
+    protected final SecretOperator secretOperations;
 
     /**
      * Constructor
@@ -90,30 +90,38 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      * @param sts The StatefulSet
-     * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
+     * @param podNeedsRestart Function that returns a list is reasons why the given pod needs to be restarted, or an empty list if the pod does not need to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart) {
-        String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String namespace = sts.getMetadata().getNamespace();
-        Future<Secret> clusterCaKeySecretFuture = secretOperations.getAsync(
-                namespace, KafkaResources.clusterCaCertificateSecretName(cluster));
-        Future<Secret> coKeySecretFuture = secretOperations.getAsync(
-                namespace, ClusterOperator.secretName(cluster));
-        return CompositeFuture.join(clusterCaKeySecretFuture, coKeySecretFuture).compose(compositeFuture -> {
-            Secret clusterCaKeySecret = compositeFuture.resultAt(0);
-            if (clusterCaKeySecret == null) {
-                return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
-            }
-            Secret coKeySecret = compositeFuture.resultAt(1);
-            if (coKeySecret == null) {
-                return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(cluster)));
-            }
-            return maybeRollingUpdate(sts, podNeedsRestart, clusterCaKeySecret, coKeySecret);
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+        return getSecrets(sts).compose(compositeFuture -> {
+            return maybeRollingUpdate(sts, podNeedsRestart, compositeFuture.resultAt(0), compositeFuture.resultAt(1));
         });
     }
 
-    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+    protected CompositeFuture getSecrets(StatefulSet sts) {
+        String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        String namespace = sts.getMetadata().getNamespace();
+        Future<Secret> clusterCaCertSecretFuture = secretOperations.getAsync(
+            namespace, KafkaResources.clusterCaCertificateSecretName(cluster)).compose(secret -> {
+                if (secret == null) {
+                    return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaCertSecretName(cluster)));
+                } else {
+                    return Future.succeededFuture(secret);
+                }
+            });
+        Future<Secret> coKeySecretFuture = secretOperations.getAsync(
+            namespace, ClusterOperator.secretName(cluster)).compose(secret -> {
+                if (secret == null) {
+                    return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(cluster)));
+                } else {
+                    return Future.succeededFuture(secret);
+                }
+            });
+        return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
+    }
+
+    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
 
     public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
@@ -138,14 +146,16 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart The function for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Function<Pod, String> podNeedsRestart) {
+    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Function<Pod, List<String>> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
-            if (podNeedsRestart.apply(pod) != null) {
+            List<String> reasons = podNeedsRestart.apply(pod);
+            if (reasons != null && !reasons.isEmpty()) {
+                log.debug("Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
                 fut = restartPod(sts, pod);
             } else {
                 log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);

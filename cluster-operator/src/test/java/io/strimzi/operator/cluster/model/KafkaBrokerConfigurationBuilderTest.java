@@ -999,7 +999,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         public IsEquivalent(String expectedConfig) {
             super();
-            this.expectedLines = getLinesWithoutCommentsAndEmptyLines(expectedConfig);
+            this.expectedLines = ModelUtils.getLinesWithoutCommentsAndEmptyLines(expectedConfig);
         }
 
         public IsEquivalent(List<String> expectedLines) {
@@ -1009,22 +1009,9 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         @Override
         protected boolean matchesSafely(String config) {
-            List<String> actualLines = getLinesWithoutCommentsAndEmptyLines(config);
+            List<String> actualLines = ModelUtils.getLinesWithoutCommentsAndEmptyLines(config);
 
             return expectedLines.containsAll(actualLines) && actualLines.containsAll(expectedLines);
-        }
-
-        private List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
-            List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
-            List<String> validLines = new ArrayList<>();
-
-            for (String line : allLines)    {
-                if (!line.startsWith("#") && !line.isEmpty())   {
-                    validLines.add(line);
-                }
-            }
-
-            return validLines;
         }
 
         private String getLinesAsString(List<String> configLines)   {
