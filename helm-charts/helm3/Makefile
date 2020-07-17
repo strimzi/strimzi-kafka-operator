@@ -8,7 +8,6 @@ CHART_NAME=strimzi-kafka-operator
 CHART_PATH ?= ../helm3/strimzi-kafka-operator/
 CHART_RENDERED_TEMPLATES_TMP=../../target/charts
 CHART_RENDERED_TEMPLATES_CLUSTERROLES=../../cluster-operator/src/main/resources/cluster-roles/
-CHART_RENDERED_TEMPLATES_CONFIGMAPS = ../../cluster-operator/src/main/resources/config-maps/
 CHART_RENDERED_TEMPLATES_INSTALL=../../install/cluster-operator/
 HELM_CLI=helm3
 
@@ -49,12 +48,6 @@ helm_install: helm_clean helm_template
 	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ClusterRole-*.yaml' -printf "%p " -exec yq r {} kind \; \
 	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
 	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
-	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_CONFIGMAPS)
-	mkdir -p $(CHART_RENDERED_TEMPLATES_CONFIGMAPS)
-	# Find rendered resources which are ConfigMaps and move them
-	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ConfigMap-*.yaml' -printf "%p " -exec yq r {} kind \; \
-	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
-	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_CONFIGMAPS)
 
 helm_pkg: helm_lint helm_install
 	# Copying unarchived Helm Chart to release directory
