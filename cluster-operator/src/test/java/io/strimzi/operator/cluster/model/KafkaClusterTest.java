@@ -3535,4 +3535,27 @@ public class KafkaClusterTest {
         KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka());
     }
 
+    @Test
+    public void testCruiseControlWithSingleNodeKafka() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("offsets.topic.replication.factor", 1);
+        config.put("transaction.state.log.replication.factor", 1);
+        config.put("transaction.state.log.min.isr", 1);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+        assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. Cruise Control cannot be deployed with the single node Kafka cluster."));
+    }
 }
