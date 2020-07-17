@@ -3556,6 +3556,7 @@ public class KafkaClusterTest {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
             KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         });
-        assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. Cruise Control cannot be deployed with the single node Kafka cluster."));
+        assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. " +
+                "Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes."));
     }
 }
