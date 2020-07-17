@@ -479,7 +479,7 @@ public class KafkaCluster extends AbstractModel {
             addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
         }
 
-        if (kafkaClusterSpec.getReplicas() < 2 && kafkaSpec.getCruiseControl() != null) {
+        if (kafkaSpec.getCruiseControl() != null && kafkaClusterSpec.getReplicas() < 2) {
             throw new InvalidResourceException("Kafka " +
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
                     " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
