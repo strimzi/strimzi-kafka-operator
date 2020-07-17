@@ -2,6 +2,8 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: strimzi-cluster-operator-logging
+  labels:
+    app: strimzi
 data:
   log4j2.properties: |
     name = COConfig

@@ -9,7 +9,7 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-logVolume: co-logging-volume
+logVolume: cluster-operator-logging-volume
 logConfigMap: strimzi-cluster-operator-logging
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
