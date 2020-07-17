@@ -177,6 +177,46 @@ spec:
       annotations:
         summary: 'All Kafka Bridge containers down or in CrashLookBackOff status'
         description: 'All Kafka Bridge containers have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: AvgProducerLatency
+      expr: strimzi_bridge_kafka_producer_request_latency_avg > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge average consumer fetch latency'
+        description: 'The average fetch latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: AvgConsumerFetchLatency
+      expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge consumer average fetch latency'
+        description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: AvgConsumerCommitLatency
+      expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge consumer average commit latency'
+        description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: Http4xxErrorRate
+      expr: strimzi_bridge_http_server_requestCount_total{code=~"^4..$", container=~"^.+-bridge", path !="/favicon.ico"} > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge returns code 4xx too often'
+        description: 'Kafka Bridge returns code 4xx too much ({{ $value }}) for the path {{ $labels.path }}'
+    - alert: Http5xxErrorRate
+      expr: strimzi_bridge_http_server_requestCount_total{code=~"^5..$", container=~"^.+-bridge"} > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge returns code 5xx too often'
+        description: 'Kafka Bridge returns code 5xx too much ({{ $value }}) for the path {{ $labels.path }}'
   - name: mirrorMaker
     rules:
     - alert: MirrorMakerContainerDown
