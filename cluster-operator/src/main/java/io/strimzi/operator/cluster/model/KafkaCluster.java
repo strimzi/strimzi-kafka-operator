@@ -1811,6 +1811,7 @@ public class KafkaCluster extends AbstractModel {
     private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth, String listener) {
         boolean hasJwksRefreshSecondsValidInput =  oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
         boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
+        boolean hasJwksMinRefreshPauseSecondsValidInput = oAuth.getJwksMinRefreshPauseSeconds() != null && oAuth.getJwksMinRefreshPauseSeconds() >= 0;
 
         if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
             log.error("{}: Introspection endpoint URI or JWKS endpoint URI has to be specified", listener);
@@ -1832,9 +1833,24 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": User Info Endpoint URI can only be used if the Introspection Endpoint URI is also configured");
         }
 
-        if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput)) {
-            log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
-            throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+        if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput || hasJwksMinRefreshPauseSecondsValidInput)) {
+            log.error("{}: jwksRefreshSeconds, jwksExpirySeconds and jwksMinRefreshPauseSeconds can only be used together with jwksEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": jwksRefreshSeconds, jwksExpirySeconds and jwksMinRefreshPauseSeconds can only be used together with jwksEndpointUri");
+        }
+
+        if (oAuth.getJwksRefreshSeconds() != null && !hasJwksRefreshSecondsValidInput) {
+            log.error("{}: jwksRefreshSeconds needs to be a positive integer (set to: {})", listener, oAuth.getJwksRefreshSeconds());
+            throw new InvalidResourceException(listener + ": jwksRefreshSeconds needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
+        }
+
+        if (oAuth.getJwksExpirySeconds() != null && !hasJwksExpirySecondsValidInput) {
+            log.error("{}: jwksExpirySeconds needs to be a positive integer (set to: {})", listener, oAuth.getJwksExpirySeconds());
+            throw new InvalidResourceException(listener + ": jwksExpirySeconds needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
+        }
+
+        if (oAuth.getJwksMinRefreshPauseSeconds() != null && !hasJwksMinRefreshPauseSecondsValidInput) {
+            log.error("{}: jwksMinRefreshPauseSeconds needs to be a positive integer or zero (set to: {})", listener, oAuth.getJwksMinRefreshPauseSeconds());
+            throw new InvalidResourceException(listener + ": jwksMinRefreshPauseSeconds needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
         }
 
         if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||

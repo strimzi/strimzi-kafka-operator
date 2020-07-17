@@ -365,6 +365,11 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
             writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;", listenerNameInProperty, String.join(" ", options)));
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=OAUTHBEARER", listenerNameInProperty));
+
+            if (oauth.getMaxSecondsWithoutReauthentication() != null) {
+                writer.println(String.format("listener.name.%s.connections.max.reauth.ms=%s", listenerNameInProperty, 1000 * oauth.getMaxSecondsWithoutReauthentication()));
+            }
+
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
@@ -417,6 +422,9 @@ public class KafkaBrokerConfigurationBuilder {
         }
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
+        }
+        if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, oauth.isEnableECDSA());
         addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
@@ -513,6 +521,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
             writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
+            writer.println("strimzi.authorization.grants.refresh.period.seconds=" + keycloakAuthz.getGrantsRefreshPeriodSeconds());
+            writer.println("strimzi.authorization.grants.refresh.pool.size=" + keycloakAuthz.getGrantsRefreshPoolSize());
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {

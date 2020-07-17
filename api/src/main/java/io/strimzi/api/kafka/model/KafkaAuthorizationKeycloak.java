@@ -23,7 +23,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
                     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-                    "delegateToKafkaAcls", "superUsers"})
+                    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -38,6 +38,8 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
     private boolean delegateToKafkaAcls = false;
+    private Integer grantsRefreshPeriodSeconds;
+    private Integer grantsRefreshPoolSize;
     private List<String> superUsers;
 
     @Description("Must be `" + TYPE_KEYCLOAK + "`")
@@ -86,7 +88,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     }
 
     @Description("Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies." +
-            "Default value is `false`.")
+            " Default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isDelegateToKafkaAcls() {
         return delegateToKafkaAcls;
@@ -94,6 +96,25 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public void setDelegateToKafkaAcls(boolean delegateToKafkaAcls) {
         this.delegateToKafkaAcls = delegateToKafkaAcls;
+    }
+
+    @Description("The time between two consecutive grants refresh runs in seconds. The default value is 60.")
+    public Integer getGrantsRefreshPeriodSeconds() {
+        return grantsRefreshPeriodSeconds;
+    }
+
+    public void setGrantsRefreshPeriodSeconds(Integer grantsRefreshPeriodSeconds) {
+        this.grantsRefreshPeriodSeconds = grantsRefreshPeriodSeconds;
+    }
+
+    @Description("The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, the sooner the job completes," +
+        " but also the heavier the load on the authorization server. The default value is 5.")
+    public Integer getGrantsRefreshPoolSize() {
+        return grantsRefreshPoolSize;
+    }
+
+    public void setGrantsRefreshPoolSize(Integer grantsRefreshPoolSize) {
+        this.grantsRefreshPoolSize = grantsRefreshPoolSize;
     }
 
     @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
