@@ -8,28 +8,30 @@ import io.vertx.core.json.JsonObject;
 
 public class CruiseControlRebalanceResponse extends CruiseControlResponse {
 
-    private boolean notEnoughDataForProposal;
-    private boolean proposalIsStillCalculating;
+    private boolean isSufficientDataForProposal;
+    private boolean isProposalInProgress;
 
     CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
         super(userTaskId, json);
-        this.notEnoughDataForProposal = false;
-        this.proposalIsStillCalculating = false;
+        // There is sufficient data for proposal unless response says otherwise
+        this.isSufficientDataForProposal = true;
+        // Proposal is not in progress unless response says otherwise
+        this.isProposalInProgress = false;
     }
 
-    public boolean thereIsNotEnoughDataForProposal() {
-        return this.notEnoughDataForProposal;
+    public boolean isSufficientDataForProposal() {
+        return this.isSufficientDataForProposal;
     }
 
-    public void setNotEnoughDataForProposal(boolean notEnoughData) {
-        this.notEnoughDataForProposal = notEnoughData;
+    public void setSufficientDataForProposal(boolean notEnoughData) {
+        this.isSufficientDataForProposal = notEnoughData;
     }
 
-    public boolean proposalIsStillCalculating() {
-        return proposalIsStillCalculating;
+    public boolean isProposalInProgress() {
+        return isProposalInProgress;
     }
 
-    public void setProposalIsStillCalculating(boolean proposalIsStillCalculating) {
-        this.proposalIsStillCalculating = proposalIsStillCalculating;
+    public void setProposalInProgress(boolean proposalInProgress) {
+        this.isProposalInProgress = proposalInProgress;
     }
 }

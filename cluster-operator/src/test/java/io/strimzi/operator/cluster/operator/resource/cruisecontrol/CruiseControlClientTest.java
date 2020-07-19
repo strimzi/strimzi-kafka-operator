@@ -22,6 +22,7 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
@@ -115,7 +116,7 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                 .onComplete(context.succeeding(result -> {
-                    context.verify(() -> assertTrue(result.thereIsNotEnoughDataForProposal()));
+                    context.verify(() -> assertFalse(result.isSufficientDataForProposal()));
                     checkpoint.flag();
                 }));
     }
@@ -132,7 +133,7 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                 .onComplete(context.succeeding(result -> {
-                    context.verify(() -> assertTrue(result.proposalIsStillCalculating()));
+                    context.verify(() -> assertTrue(result.isProposalInProgress()));
                     checkpoint.flag();
                 }));
     }
