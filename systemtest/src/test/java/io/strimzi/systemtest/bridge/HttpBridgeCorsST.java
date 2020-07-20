@@ -32,9 +32,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 
-public class HttpBridgeCors extends HttpBridgeAbstractST {
+public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCors.class);
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
     public static final String NAMESPACE = "bridge-cluster-test";
     private static final String CORS_ORIGIN = "https://strimzi.io";
 

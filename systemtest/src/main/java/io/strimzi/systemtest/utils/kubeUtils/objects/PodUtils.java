@@ -63,7 +63,7 @@ public class PodUtils {
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.rollingUpdateTimeout(expectPods),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
                 List<Pod> pods = kubeClient().listPods(selector);
                 if (pods.isEmpty() && expectPods == 0) {
@@ -132,7 +132,7 @@ public class PodUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(1),
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
