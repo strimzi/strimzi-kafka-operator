@@ -11,8 +11,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -51,8 +49,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     public static final String NAMESPACE = "bridge-cluster-test";
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
-
-    private String defaultKafkaClientsPodName;
 
     @Test
     void testSendSimpleMessage() throws Exception {
@@ -296,7 +292,16 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         // Deploy kafka
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec().done();
 
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
@@ -307,9 +312,5 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
-
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
     }
 }
