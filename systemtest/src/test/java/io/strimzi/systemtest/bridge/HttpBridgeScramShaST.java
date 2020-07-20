@@ -122,7 +122,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, name, client), is(true));
     }
 
     @Test
@@ -177,7 +177,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
     }
 
     @BeforeAll

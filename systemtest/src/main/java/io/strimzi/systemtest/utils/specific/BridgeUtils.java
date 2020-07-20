@@ -171,4 +171,22 @@ public class BridgeUtils {
                                                   WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
         return createBridgeConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
     }
+
+    public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deleting consumer");
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        client.delete(bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + name)
+            .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON)
+            .as(BodyCodec.jsonObject())
+            .send(ar -> {
+                if (ar.succeeded()) {
+                    LOGGER.info("Consumer deleted");
+                    future.complete(ar.succeeded());
+                } else {
+                    LOGGER.error("Cannot delete consumer", ar.cause());
+                    future.completeExceptionally(ar.cause());
+                }
+            });
+        return future.get(1, TimeUnit.MINUTES);
+    }
 }

@@ -13,6 +13,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -277,7 +278,8 @@ public class StrimziUpgradeST extends AbstractST {
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("KafkaUser " + userName + " availability", 10_000L, 120_000L,
+        TestUtils.waitFor("KafkaUser " + userName + " availability", Constants.GLOBAL_POLL_INTERVAL_MEDIUM,
+            ResourceOperation.getTimeoutForResourceReadiness(KafkaUser.RESOURCE_KIND),
             () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages

@@ -31,7 +31,7 @@ public class ConfigMapUtils {
      */
     public static void waitForConfigMapRecovery(String name, String configMapUid) {
         LOGGER.info("Waiting for config map {}-{} recovery in namespace {}", name, configMapUid, kubeClient().getNamespace());
-        TestUtils.waitFor("Config map " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Config map " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getConfigMapUid(name).equals(configMapUid));
         LOGGER.info("Config map {} was recovered", name);
     }
@@ -44,7 +44,7 @@ public class ConfigMapUtils {
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for ConfigMap {} label change {} -> {}", configMapName, entry.getKey(), entry.getValue());
                 TestUtils.waitFor("ConfigMap label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
