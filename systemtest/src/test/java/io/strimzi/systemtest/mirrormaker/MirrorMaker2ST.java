@@ -78,6 +78,7 @@ class MirrorMaker2ST extends AbstractST {
         Map<String, Object> expectedConfig = StUtils.loadProperties("group.id=mirrormaker2-cluster\n" +
                 "key.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
                 "value.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
+                "header.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
                 "config.storage.topic=mirrormaker2-cluster-configs\n" +
                 "status.storage.topic=mirrormaker2-cluster-status\n" +
                 "offset.storage.topic=mirrormaker2-cluster-offsets\n" +
