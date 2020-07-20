@@ -38,9 +38,12 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(EXTERNAL_CLIENTS_USED)
 public class HttpBridgeAbstractST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeAbstractST.class);
+    public static final String NAMESPACE = "bridge-cluster-test";
 
+    public static String bridgeHost = "";
+    public static int bridgePort = Constants.HTTP_BRIDGE_INGRESS_PORT;
+    public static String kafkaClientsPodName = "";
     protected WebClient client;
-    protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
     protected boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Deleting consumer");

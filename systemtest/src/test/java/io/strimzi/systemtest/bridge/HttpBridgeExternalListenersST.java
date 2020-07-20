@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-class HttpBridgeExternalListenersST extends HttpBridgeBaseST {
+class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
 
     @Test
