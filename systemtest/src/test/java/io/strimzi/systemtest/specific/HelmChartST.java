@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.Constants.HELM;
 
 @Tag(HELM)
@@ -46,12 +44,5 @@ class HelmChartST extends AbstractST {
     @Override
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteNamespaces();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        HelmResource.clusterOperator();
-        cluster.deleteNamespaces();
-        cluster.createNamespace(NAMESPACE);
     }
 }

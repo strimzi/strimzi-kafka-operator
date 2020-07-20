@@ -314,12 +314,6 @@ public class TopicST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
     }
 
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-        deployTestSpecificResources();
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();

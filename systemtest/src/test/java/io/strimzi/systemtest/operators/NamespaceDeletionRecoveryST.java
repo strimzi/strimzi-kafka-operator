@@ -249,9 +249,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         cluster.createNamespace(NAMESPACE);
     }
 
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
-
     @BeforeAll
     void createStorageClass() {
         kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();

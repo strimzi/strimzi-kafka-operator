@@ -24,8 +24,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
@@ -209,10 +207,5 @@ public class OpenShiftTemplatesST extends AbstractST {
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skipping env recreation after each test - resources should be same for whole test class!");
     }
 }
