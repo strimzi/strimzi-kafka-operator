@@ -4,29 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import io.debezium.kafka.KafkaCluster;
-import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -66,7 +44,28 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.getInstance;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -80,7 +79,7 @@ public abstract class TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorBaseIT.class);
 
-    private static KubeClusterResource cluster = KubeClusterResource.getInstance();
+    private static KubeClusterResource cluster;
 
     protected static String oldNamespace;
 
@@ -100,6 +99,8 @@ public abstract class TopicOperatorBaseIT {
 
     @BeforeAll
     public static void setupKubeCluster() throws IOException {
+        cluster = getInstance();
+
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
@@ -126,6 +127,10 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterAll
     public static void teardownKubeCluster() {
+        if (cluster == null) {
+            return; // assume failed
+        }
+
         CountDownLatch latch = new CountDownLatch(1);
         if (oldNamespace != null) {
             cmdKubeClient()
@@ -206,21 +211,28 @@ public abstract class TopicOperatorBaseIT {
             boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
                     KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "true"));
 
-            if (deletionEnabled && kubeClient != null) {
-                List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
+            try {
+                if (deletionEnabled && kubeClient != null) {
+                    List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
 
-                // Wait for the operator to delete all the existing topics in Kafka
-                for (KafkaTopic item : items) {
-                    LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
-                    LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
-                    waitForTopicInKafka(new TopicName(item).toString(), false);
-                    waitForTopicInKube(item.getMetadata().getName(), false);
+                    // Wait for the operator to delete all the existing topics in Kafka
+                    for (KafkaTopic item : items) {
+                        String mdName = item.getMetadata().getName();
+                        String topicName = new TopicName(item).toString();
+                        // TODO FIXME !!
+                        if (topicName.startsWith("__")) continue;
+
+                        LOGGER.info("Deleting {} from Kube", mdName);
+                        operation().inNamespace(NAMESPACE).withName(mdName).cascading(true).delete();
+                        LOGGER.info("Awaiting deletion of {} in Kafka", mdName);
+                        waitForTopicInKafka(topicName, false);
+                        waitForTopicInKube(mdName, false);
+                    }
+                    Thread.sleep(5_000);
                 }
-                Thread.sleep(5_000);
+            } finally {
+                stopTopicOperator();
             }
-
-            stopTopicOperator();
 
             if (!deletionEnabled && kubeClient != null) {
                 List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
@@ -277,15 +289,7 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected static int zkPort(KafkaCluster cluster) {
-        // TODO Method was added in DBZ-540, so no need for reflection once
-        // dependency gets upgraded
-        try {
-            Field zkServerField = KafkaCluster.class.getDeclaredField("zkServer");
-            zkServerField.setAccessible(true);
-            return ((ZookeeperServer) zkServerField.get(cluster)).getPort();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return cluster.zkPort();
     }
 
     protected void stopTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {

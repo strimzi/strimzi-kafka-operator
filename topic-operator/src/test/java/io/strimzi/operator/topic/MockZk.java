@@ -95,4 +95,9 @@ class MockZk implements Zk {
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
         return null;
     }
+
+    @Override
+    public Future<Boolean> pathExists(String path) {
+        return Future.succeededFuture(false);
+    }
 }

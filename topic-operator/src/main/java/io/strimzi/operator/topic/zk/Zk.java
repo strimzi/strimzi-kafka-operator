@@ -135,6 +135,14 @@ public interface Zk {
      */
     Zk unwatchData(String path);
 
+    /**
+     * Does the path exist.
+     *
+     * @param path The path
+     * @return Future with the result.
+     */
+    Future<Boolean> pathExists(String path);
+
     // TODO getAcl(), setAcl(), multi()
 
 }

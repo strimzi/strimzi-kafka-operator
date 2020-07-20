@@ -203,7 +203,6 @@ public class ZkImpl implements Zk {
             },
             handler);
         return this;
-
     }
 
     @Override
@@ -249,4 +248,21 @@ public class ZkImpl implements Zk {
         return this;
     }
 
+    @Override
+    public Future<Boolean> pathExists(String path) {
+        Promise<Boolean> promise = Promise.promise();
+        workerPool().<Boolean>executeBlocking(
+            p -> {
+                p.future().onComplete(promise);
+                try {
+                    p.complete(zookeeper.exists(path));
+                } catch (Throwable t) {
+                    p.fail(t);
+                }
+            }, ar -> {
+                // Never executed because of self deadlock (julien_viet)
+            }
+        );
+        return promise.future();
+    }
 }

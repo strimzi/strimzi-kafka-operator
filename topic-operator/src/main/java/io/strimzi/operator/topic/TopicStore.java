@@ -21,6 +21,15 @@ interface TopicStore {
     }
 
     /**
+     * Throw this when TopicStore's state is invalid.
+     * e.g. in the case of KafkaStreamsTopicStore we throw this when
+     * waiting on a async result takes too long -- see Config#STALE_RESULT_TIMEOUT_MS
+     */
+    public static class InvalidStateException extends Exception {
+
+    }
+
+    /**
      * Asynchronously get the topic with the given name
      * completing the returned future when done.
      * If no topic with the given name exists, the future will complete with
