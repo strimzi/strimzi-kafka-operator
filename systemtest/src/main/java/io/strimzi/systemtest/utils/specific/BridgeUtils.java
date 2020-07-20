@@ -77,7 +77,16 @@ public class BridgeUtils {
                 if (ar.succeeded() && ar.result().statusCode() == 200) {
                     HttpResponse<JsonArray> response = ar.result();
                     if (response.body().size() > 0) {
-                        LOGGER.debug("{}", response.body());
+                        for (int i = 0; i < response.body().size(); i++) {
+                            JsonObject jsonResponse = response.body().getJsonObject(i);
+                            LOGGER.info("JsonResponse: {}", jsonResponse.toString());
+                            String kafkaTopic = jsonResponse.getString("topic");
+                            int kafkaPartition = jsonResponse.getInteger("partition");
+                            String key = jsonResponse.getString("key");
+                            Object value = jsonResponse.getValue("value");
+                            long offset = jsonResponse.getLong("offset");
+                            LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
+                        }
                         LOGGER.info("Received {} messages from KafkaBridge", response.body().size());
                     } else {
                         LOGGER.warn("Received body 0 messages: {}", response.body());

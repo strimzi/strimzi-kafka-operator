@@ -6,19 +6,12 @@ package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
-import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.IngressBackend;
-import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
-import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
@@ -35,7 +28,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
@@ -185,42 +176,6 @@ public class KubernetesResource {
                 .build()
         );
         return kCRBList;
-    }
-
-    private static Ingress getIngressResource(String serviceName, int port) {
-        IngressBackend backend = new IngressBackend();
-        backend.setServiceName(serviceName);
-        backend.setServicePort(new IntOrString(port));
-
-        HTTPIngressPath path = new HTTPIngressPath();
-        path.setPath("/");
-        path.setBackend(backend);
-
-        return new IngressBuilder()
-            .withNewMetadata()
-                .withName(serviceName)
-            .endMetadata()
-            .withNewSpec()
-                .withRules(new IngressRuleBuilder()
-                    .withHost(StUtils.getHost())
-                    .withNewHttp()
-                        .withPaths(path)
-                    .endHttp()
-                    .build())
-            .endSpec()
-            .build();
-    }
-
-    public static DoneableIngress createIngress(String serviceName, int port, String clientNamespace, String kafkaClientsPodName) {
-        Ingress ingress = getIngressResource(serviceName, port);
-
-        LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
-        ResourceManager.kubeClient().createIngress(ingress);
-
-        TestUtils.waitFor("Ingress will connect to service", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_CR_CREATION,
-            () -> cmdKubeClient().execInPod(kafkaClientsPodName, "curl", StUtils.getHost()).out().contains("bridge_version"));
-
-        return new DoneableIngress(deleteLater(ingress));
     }
 
     public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace, String transportProtocol) {
@@ -438,9 +393,5 @@ public class KubernetesResource {
 
     public static Job deleteLater(Job resource) {
         return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().batch().jobs(), resource);
-    }
-
-    public static Ingress deleteLater(Ingress resource) {
-        return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().extensions().ingresses(), resource);
     }
 }

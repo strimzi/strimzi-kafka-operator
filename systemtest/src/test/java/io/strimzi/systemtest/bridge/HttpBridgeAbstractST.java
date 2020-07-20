@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.vertx.core.Vertx;
@@ -40,9 +41,14 @@ public class HttpBridgeAbstractST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeAbstractST.class);
     public static final String NAMESPACE = "bridge-cluster-test";
 
+    public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     public static String bridgeHost = "";
-    public static int bridgePort = Constants.HTTP_BRIDGE_INGRESS_PORT;
     public static String kafkaClientsPodName = "";
+    public static String bridgeServiceName = KafkaBridgeResources.serviceName(CLUSTER_NAME);
+
+    public static String producerName = "bridge-producer";
+    public static String consumerName = "bridge-consumer";
+
     protected WebClient client;
 
     protected boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
@@ -63,14 +69,10 @@ public class HttpBridgeAbstractST extends AbstractST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    public String getBridgeNamespace() {
-        return "bridge-cluster-test";
-    }
-
     @BeforeAll
     void deployClusterOperator(Vertx vertx) throws Exception {
         ResourceManager.setClassResources();
-        installClusterOperator(getBridgeNamespace());
+        installClusterOperator(NAMESPACE);
 
         // Create http client
         client = WebClient.create(vertx, new WebClientOptions()
