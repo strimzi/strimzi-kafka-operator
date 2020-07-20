@@ -132,7 +132,7 @@ public class PodUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Duration.ofMinutes(6).toMillis(),
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(1),
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
